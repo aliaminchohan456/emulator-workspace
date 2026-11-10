@@ -3,7 +3,8 @@
 Baseline: clean commit **7f1b0ed**. This closure pass is built on **54f5195**
 and adds the secure-window detector, guest network shaping, the WPF Agent
 Sessions surface, the Python MCP client, the active-session recheck and the
-final acceptance harness. Build: **0 errors**, **32 tests passing**.
+final acceptance harness. Closure commit: **0317d53**. Build: **0 errors**,
+**32 tests passing**.
 
 Pins are unchanged: Emulator **37.2.12.0 / build 16428233**, vendored protos,
 `system-images;android-35;default;x86_64` rev 2, WHPX. The historical Phase 1
