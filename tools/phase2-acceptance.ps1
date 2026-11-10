@@ -381,8 +381,13 @@ try {
     $stale = Invoke-Ws @("call", "--op", "input.tap", "--args-file", $staleArgs, "--token-file", $TokenFile, "--root", $Root) -AllowFailure
     Add-Check "deny.stale-frame" ($stale.Text -match "stale_observation") $stale.Text
 
-    $ambiguous = Call "ui.assert" '{"selector":{"resourceId":""}}'
-    Add-Check "deny.ambiguous" ($ambiguous.Text -match "ambiguous_selector") $ambiguous.Text
+    # The sample exposes two controls with contentDescription "dup_action", so
+    # the ambiguous-selector path is deterministic and the exact count is known.
+    $duplicateTree = Call "observation.tree" "{}"
+    $duplicateCount = @($duplicateTree.Json.nodes | Where-Object { $_.contentDescription -eq "dup_action" }).Count
+    Add-Check "fixture.duplicate-selectors" ($duplicateCount -eq 2) "dup_action matches=$duplicateCount"
+    $ambiguous = Call "ui.assert" '{"selector":{"contentDescription":"dup_action"}}'
+    Add-Check "deny.ambiguous" ($ambiguous.Text -match "ambiguous_selector" -and $ambiguous.Text -match "2 nodes matched") $ambiguous.Text
 
     $idemArgs = Join-Path $out "idem-a.json"
     $idemOther = Join-Path $out "idem-b.json"

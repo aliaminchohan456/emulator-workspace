@@ -43,6 +43,8 @@ public final class MainActivity extends Activity {
     private TextView status;
     private TextView secureMarker;
     private LinearLayout loginPanel;
+    private TextView duplicateMarker;
+    private final AtomicInteger DUPLICATE_TAPS = new AtomicInteger();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -132,8 +134,48 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         root.addView(sampleView, sampleParams);
 
+        // Deterministic duplicate-selector surface: two controls share the
+        // content description "dup_action" so an agent selector that targets
+        // them is deterministically ambiguous (exactly two matches), and the
+        // "dup_marker" counter shows whether a queued tap ever reached the app.
+        LinearLayout duplicateRow = new LinearLayout(this);
+        duplicateRow.setOrientation(LinearLayout.HORIZONTAL);
+        Button duplicateA = new Button(this);
+        duplicateA.setText("Duplicate A");
+        duplicateA.setContentDescription("dup_action");
+        duplicateA.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recordDuplicateTap();
+            }
+        });
+        duplicateRow.addView(duplicateA);
+        Button duplicateB = new Button(this);
+        duplicateB.setText("Duplicate B");
+        duplicateB.setContentDescription("dup_action");
+        duplicateB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recordDuplicateTap();
+            }
+        });
+        duplicateRow.addView(duplicateB);
+        root.addView(duplicateRow);
+
+        duplicateMarker = new TextView(this);
+        duplicateMarker.setText("DUP_TAPS=0");
+        duplicateMarker.setTextColor(Color.WHITE);
+        duplicateMarker.setContentDescription("dup_marker");
+        root.addView(duplicateMarker);
+
         setContentView(root);
         Log.i(TAG, "ACTIVITY_READY pid=" + android.os.Process.myPid());
+    }
+
+    private void recordDuplicateTap() {
+        int index = DUPLICATE_TAPS.incrementAndGet();
+        duplicateMarker.setText("DUP_TAPS=" + index);
+        Log.i(TAG, "DUP_TAP index=" + index);
     }
 
     private void setSecure(boolean enabled) {
