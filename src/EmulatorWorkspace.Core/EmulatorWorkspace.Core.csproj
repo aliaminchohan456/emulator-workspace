@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EmulatorWorkspace.Core</RootNamespace>
+    <AssemblyName>EmulatorWorkspace.Core</AssemblyName>
+  </PropertyGroup>
+</Project>

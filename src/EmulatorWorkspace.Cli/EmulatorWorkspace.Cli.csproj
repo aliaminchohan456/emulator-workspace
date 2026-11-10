@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>EmulatorWorkspace.Cli</RootNamespace>
+    <AssemblyName>wsctl</AssemblyName>
+    <PublishSingleFile>false</PublishSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
+    <ProjectReference Include="..\EmulatorWorkspace.Controller\EmulatorWorkspace.Controller.csproj" />
+  </ItemGroup>
+</Project>

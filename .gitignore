@@ -1,0 +1,14 @@
+bin/
+obj/
+artifacts/*
+!artifacts/.gitkeep
+!artifacts/README.md
+.work/
+*.user
+*.suo
+.vs/
+TestResults/
+*.log
+*.binlog
+__pycache__/
+*.pyc

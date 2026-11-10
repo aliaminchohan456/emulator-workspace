@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EmulatorWorkspace.Cli/EmulatorWorkspace.Cli.csproj" />
+    <Project Path="src/EmulatorWorkspace.Controller/EmulatorWorkspace.Controller.csproj" />
+    <Project Path="src/EmulatorWorkspace.Core/EmulatorWorkspace.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csproj" />
+  </Folder>
+</Solution>
