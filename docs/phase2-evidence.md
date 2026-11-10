@@ -41,11 +41,11 @@ the default AVD home were not used.
 - **MCP stdio server**: stdout is protocol-only, diagnostics go to stderr, token
   comes from `WS_AGENT_TOKEN_FILE` or `WS_AGENT_TOKEN`, and tools map 1:1 to the
   supervisor registry.
-- **WPF Agent Sessions surface**: the **Agents** toolbar button opens a window
-  listing paired clients, session ID, guest, scopes, expiry and state; pending
-  pairings with template selection and scope editing; revoke; human takeover;
-  and the latest 25 agent operations. It is built in the desktop project and in
-  the solution build.
+- The WPF Agent Sessions surface lists paired clients, sessions, guests, scopes,
+  expiry and state, pending pairings with template/scope approval, revoke,
+  human takeover and the latest 25 agent operations. A final-commit probe after
+  the non-blocking close change loaded 11 sessions/11 pairings and exited 0
+  (`artifacts/phase2/20261110-213845/agent-sessions-probe-final.json`).
 - **Sample fixture**: semantic login form, host HTTP login, FLAG_SECURE screen,
   counter and animated scene. APK 16,787 bytes, SHA-256
   `6B56060693294149F8A394E66AFB9579809DE81B2E7490E0567721416FBBF1C7`.
