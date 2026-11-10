@@ -4,6 +4,7 @@
     <Project Path="src/EmulatorWorkspace.Contracts/EmulatorWorkspace.Contracts.csproj" />
     <Project Path="src/EmulatorWorkspace.Controller/EmulatorWorkspace.Controller.csproj" />
     <Project Path="src/EmulatorWorkspace.Core/EmulatorWorkspace.Core.csproj" />
+    <Project Path="src/EmulatorWorkspace.Mcp/EmulatorWorkspace.Mcp.csproj" />
     <Project Path="src/EmulatorWorkspace.Supervisor/EmulatorWorkspace.Supervisor.csproj" />
   </Folder>
   <Folder Name="/tests/">

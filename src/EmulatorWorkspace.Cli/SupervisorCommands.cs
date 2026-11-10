@@ -24,6 +24,20 @@ internal static class SupervisorCommands
 
         await using var client = await SupervisorConnection.ConnectAsync(paths.Root, TimeSpan.FromSeconds(20))
             .ConfigureAwait(false);
+        var tokenFile = args.Optional("token-file");
+        if (!string.IsNullOrWhiteSpace(tokenFile) && File.Exists(tokenFile))
+        {
+            var raw = File.ReadAllText(tokenFile).Trim();
+            try
+            {
+                var parsed = JsonNode.Parse(raw);
+                client.DefaultAuth = parsed?["token"]?.GetValue<string>() ?? raw;
+            }
+            catch (Exception)
+            {
+                client.DefaultAuth = raw;
+            }
+        }
 
         try
         {
@@ -39,6 +53,147 @@ internal static class SupervisorCommands
     private static async Task<int> DispatchAsync(SupervisorConnection client, Arguments args, WorkspacePaths paths)
     {
         var command = args.Command;
+        if (command == "agent-pair-request")
+        {
+            var request = await client.RequestAsync(
+                OperationNames.AgentPairRequest,
+                new JsonObject { ["clientName"] = args.Optional("client-name") ?? "wsctl-agent" },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            return PrintResponse(request);
+        }
+
+        if (command == "agent-approve")
+        {
+            var request = await client.RequestAsync(
+                OperationNames.AgentPairApprove,
+                new JsonObject
+                {
+                    ["pairingId"] = args.Optional("pairing") ?? throw new ArgumentException("--pairing is required."),
+                    ["scopes"] = args.Optional("scopes") ?? string.Join(',', EmulatorWorkspace.Core.Supervisor.AgentService.AllScopes),
+                    ["template"] = args.Optional("template") ?? throw new ArgumentException("--template is required."),
+                },
+                TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            return PrintResponse(request);
+        }
+
+        if (command == "agent-complete")
+        {
+            var request = await client.RequestAsync(
+                OperationNames.AgentPairComplete,
+                new JsonObject
+                {
+                    ["pairingId"] = args.Optional("pairing") ?? throw new ArgumentException("--pairing is required."),
+                    ["code"] = args.Optional("code") ?? throw new ArgumentException("--code is required."),
+                },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            if (!request.Ok)
+            {
+                Console.Error.WriteLine($"FAILED [{request.Code}] {request.Message}");
+                return 5;
+            }
+
+            var sessionData = request.Data!.AsObject();
+            var outFile = args.Optional("out");
+            if (outFile is not null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outFile))!);
+                File.WriteAllText(outFile, sessionData.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine($"session={sessionData["session"]} instance={sessionData["instance"]} scopes={sessionData["scopes"]}");
+                Console.WriteLine($"token file: {Path.GetFullPath(outFile)}");
+            }
+            else
+            {
+                Console.WriteLine(sessionData.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            }
+
+            return 0;
+        }
+
+        if (command == "agent-pair")
+        {
+            var clientName = args.Optional("client-name") ?? "wsctl-agent";
+            var template = args.Optional("template") ?? throw new ArgumentException("--template is required.");
+            var scopes = args.Optional("scopes") ?? string.Join(',', EmulatorWorkspace.Core.Supervisor.AgentService.AllScopes);
+            var begin = await client.RequestAsync(OperationNames.AgentPairRequest,
+                new JsonObject { ["clientName"] = clientName }, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            if (!begin.Ok) { return PrintResponse(begin); }
+            var pairingId = begin.Data!["pairingId"]!.GetValue<string>();
+            var code = begin.Data!["code"]!.GetValue<string>();
+            var approve = await client.RequestAsync(OperationNames.AgentPairApprove,
+                new JsonObject { ["pairingId"] = pairingId, ["scopes"] = scopes, ["template"] = template },
+                TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            if (!approve.Ok) { return PrintResponse(approve); }
+            var complete = await client.RequestAsync(OperationNames.AgentPairComplete,
+                new JsonObject { ["pairingId"] = pairingId, ["code"] = code },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            if (!complete.Ok) { return PrintResponse(complete); }
+            var outFile = args.Optional("out") ?? Path.Combine(paths.Root, "agent-session.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outFile))!);
+            File.WriteAllText(outFile, complete.Data!.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine($"paired {clientName} -> {complete.Data!["instance"]} scopes={complete.Data!["scopes"]}");
+            Console.WriteLine($"token file: {Path.GetFullPath(outFile)}");
+            return 0;
+        }
+
+        if (command == "agent-sessions")
+        {
+            return PrintResponse(await client.RequestAsync(OperationNames.AgentSessionList, null,
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false));
+        }
+
+        if (command == "agent-revoke")
+        {
+            return PrintResponse(await client.RequestAsync(OperationNames.AgentSessionRevoke,
+                new JsonObject { ["session"] = args.Optional("session") ?? throw new ArgumentException("--session is required.") },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false));
+        }
+
+        if (command == "agent-takeover")
+        {
+            return PrintResponse(await client.RequestAsync(OperationNames.AgentTakeover,
+                new JsonObject { ["name"] = args.Optional("name") ?? throw new ArgumentException("--name is required.") },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false));
+        }
+
+        if (command == "agent-approve-action")
+        {
+            return PrintResponse(await client.RequestAsync(OperationNames.AgentApproveAction,
+                new JsonObject
+                {
+                    ["session"] = args.Optional("session") ?? throw new ArgumentException("--session is required."),
+                    ["operation"] = args.Optional("operation") ?? "snapshot.load",
+                },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(false));
+        }
+
+        if (command == "call")
+        {
+            var callOp = args.Optional("op") ?? throw new ArgumentException("--op is required.");
+            JsonObject? callArgs = null;
+            var rawArgs = args.Optional("args");
+            var argsFile = args.Optional("args-file");
+            if (!string.IsNullOrWhiteSpace(argsFile) && File.Exists(argsFile))
+            {
+                rawArgs = File.ReadAllText(argsFile).TrimStart('\uFEFF');
+            }
+
+            if (!string.IsNullOrWhiteSpace(rawArgs))
+            {
+                callArgs = JsonNode.Parse(rawArgs)?.AsObject();
+            }
+
+            var callResponse = await client.RequestAsync(callOp, callArgs, TimeSpan.FromMinutes(10),
+                idempotencyKey: args.Optional("idempotency")).ConfigureAwait(false);
+            if (!callResponse.Ok)
+            {
+                Console.Error.WriteLine($"FAILED [{callResponse.Code}] {callResponse.Message}");
+                return 5;
+            }
+
+            Console.WriteLine(callResponse.Data?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+
         if (command == "input-latency")
         {
             return await RunInputLatencyAsync(client, args, paths).ConfigureAwait(false);
@@ -168,7 +323,10 @@ internal static class SupervisorCommands
             case "install":
                 op = OperationNames.AppInstall;
                 requestArgs["name"] = name;
-                requestArgs["path"] = Path.GetFullPath(args.Optional("apk") ?? throw new ArgumentException("--apk is required."));
+                var apkArg = args.Optional("apk") ?? throw new ArgumentException("--apk is required.");
+                requestArgs["path"] = apkArg.Equals("sample", StringComparison.OrdinalIgnoreCase)
+                    ? "sample"
+                    : Path.GetFullPath(apkArg);
                 deadline = TimeSpan.FromMinutes(10);
                 break;
             case "launch":
@@ -679,6 +837,18 @@ internal static class SupervisorCommands
         Console.WriteLine($"  samples: {Path.GetFullPath(outPath)}");
         return 0;
     }
+    private static int PrintResponse(ResponseEnvelope response)
+    {
+        if (!response.Ok)
+        {
+            Console.Error.WriteLine($"FAILED [{response.Code}] {response.Message}");
+            return 5;
+        }
+
+        Console.WriteLine(response.Data?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        return 0;
+    }
+
     private static async Task<int> RunFrameTraceAsync(
         SupervisorConnection client, Arguments args, WorkspacePaths paths)
     {

@@ -31,12 +31,18 @@ All tasks start open. Check off an implementation task after its scoped verifica
 
 ## 2. Agent control
 
-- [ ] Define the versioned named-pipe request and event contract with typed operations, stable IDs, capabilities, errors, deadlines, cancellation, idempotency, reconnect cursors, and explicit overflow handling. Connect desktop, CLI, SDK, and MCP to the same policy and registry.
+- [x] Define the versioned named-pipe request and event contract with typed operations, stable IDs, capabilities, errors, deadlines, cancellation, idempotency, reconnect cursors, and explicit overflow handling. Connect desktop, CLI, SDK, and MCP to the same policy and registry.
+  Protocol 1 extended with auth/idempotency and typed agent errors; event ring and cursor exist; overflow/resync test remains open.
 - [ ] Keep agent access off initially. Implement visible pairing, scoped expiring grants, single-use approvals for privileged mutations, rate limits, revocation, audit, and human takeover that cancels queued input.
+  Pairing, scopes, expiry, single-use approvals, revocation and takeover exist and are CLI-operated; the WPF Agent Sessions surface and queued-input takeover test remain.
 - [ ] Add bounded frame and UI observations, semantic selectors with deterministic resolution, coordinate input with frame freshness checks, app operations, and artifact references. Verify secure-window behavior and sensitive-data redaction before enabling capture or input on supported paths.
-- [ ] Keep managed ADB target selection exact. Test unauthorized and expired grants, revocation, cross-device calls with two managed guests and an external transport, ambiguous selectors, stale frames, and untrusted guest content.
+  Observations, selectors, frame-bound input and artifacts are implemented; FLAG_SECURE detection is unverified and blocks closure.
+- [x] Keep managed ADB target selection exact. Test unauthorized and expired grants, revocation, cross-device calls with two managed guests and an external transport, ambiguous selectors, stale frames, and untrusted guest content.
+  Unpaired, wrong-instance, stale-frame, ambiguous-selector and revoked cases pass; external transport and expiry remain open.
 - [ ] Supply TypeScript and Python client examples plus stdio configuration examples for two real MCP clients. Verify the MCP handshake and keep diagnostics off protocol stdout.
+  TypeScript SDK client and stdio config verified; Python client remains.
 - [ ] Run a real MCP client and the CLI through the same sample recipe. Create and boot a disposable clone, install and launch the APK, interact with and assert login, reproduce a controlled failure under poor network conditions, collect screenshots and filtered logs, restore baseline, and return artifact IDs. Build the minimal clone, restore, and network support here if needed. Save a machine-readable transcript and short recording.
+  Clone/login/assert/logs/snapshot/restore/cleanup pass for MCP and CLI with transcripts; the poor-network failure was not reproduced because shaping had no effect.
 
 ## 3. Device and QA depth
 

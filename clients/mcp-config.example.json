@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "emulator-workspace": {
+      "command": "C:\\path\\to\\EmulatorWorkspace.Mcp.exe",
+      "args": [],
+      "env": {
+        "EMULATOR_WORKSPACE_HOME": "D:\\Phase2Root",
+        "WS_AGENT_TOKEN_FILE": "D:\\Phase2Root\\cli-session.json"
+      }
+    }
+  }
+}

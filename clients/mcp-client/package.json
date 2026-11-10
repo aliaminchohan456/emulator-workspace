@@ -1,0 +1,8 @@
+{
+  "name": "ws-mcp-qa-client",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  }
+}

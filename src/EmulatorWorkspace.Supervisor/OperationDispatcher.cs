@@ -1,4 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Core.Engine;
@@ -24,6 +27,7 @@ public sealed class OperationDispatcher
     private readonly SupervisorStore _store;
     private readonly InstanceManager _manager;
     private readonly Journal _journal;
+    private readonly AgentService _agents;
     private readonly Action _requestShutdown;
     private readonly DateTimeOffset _startedUtc = DateTimeOffset.UtcNow;
 
@@ -33,6 +37,7 @@ public sealed class OperationDispatcher
         SupervisorStore store,
         InstanceManager manager,
         Journal journal,
+        AgentService agents,
         Action requestShutdown)
     {
         _paths = paths;
@@ -40,6 +45,7 @@ public sealed class OperationDispatcher
         _store = store;
         _manager = manager;
         _journal = journal;
+        _agents = agents;
         _requestShutdown = requestShutdown;
     }
 
@@ -53,10 +59,69 @@ public sealed class OperationDispatcher
         var startedUtc = DateTimeOffset.UtcNow;
         var argsJson = request.Args?.ToJsonString(PipeFraming.JsonOptions) ?? "{}";
         var callerName = $"{peer.ProcessName}#{peer.ProcessId} session={peer.SessionId}";
+        var callerKind = "local_user";
+        AgentSession? session = null;
+        var actor = "operator";
+        var idemKey = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey;
+        var digest = Digest(request.Op, argsJson);
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(request.Auth))
+            {
+                session = _agents.ResolveSession(request.Auth!);
+                callerKind = "agent";
+                callerName = $"{session.ClientName}/{session.Id}";
+                actor = session.Id;
+            }
+        }
+        catch (SupervisorOperationException ex)
+        {
+            _store.RecordOperation(
+                request.Id, request.Op, "agent", "unresolved", argsJson,
+                startedUtc, DateTimeOffset.UtcNow, "denied", ex.Code, ex.Message, 0);
+            _journal.Append("denied", new OperationRequest(request.Op, CallerIdentity.Agent("unresolved"), null), null, null);
+            return Failure(request.Id, ex.Code, ex.Message, ex.Retryable, stopwatch);
+        }
 
         _store.RecordOperation(
-            request.Id, request.Op, "local_user", callerName, argsJson,
+            request.Id, request.Op, callerKind, callerName, argsJson,
             startedUtc, null, "started", null, null, null);
+
+        ResponseEnvelope? cached = null;
+        if (idemKey is not null)
+        {
+            var existing = _agents.Store.GetIdempotency(actor, idemKey);
+            if (existing is { } value)
+            {
+                if (!value.Operation.Equals(request.Op, StringComparison.Ordinal)
+                    || !value.Digest.Equals(digest, StringComparison.Ordinal))
+                {
+                    return Failure(
+                        request.Id, ErrorCodes.IdempotencyConflict,
+                        "This idempotency key was used with different arguments.", false, stopwatch);
+                }
+
+                if (value.State is "completed" or "failed" && value.Response is not null)
+                {
+                    cached = JsonSerializer.Deserialize<ResponseEnvelope>(value.Response, PipeFraming.JsonOptions);
+                    if (cached is not null)
+                    {
+                        cached.Id = request.Id;
+                        return cached;
+                    }
+                }
+
+                if (value.State is "in_progress" or "unknown_outcome")
+                {
+                    return Failure(
+                        request.Id, ErrorCodes.UnknownOutcome,
+                        "The mutation outcome is unknown after a restart; reconcile before retrying.", false, stopwatch);
+                }
+            }
+
+            _agents.Store.BeginIdempotency(actor, idemKey, request.Op, digest);
+        }
 
         try
         {
@@ -65,15 +130,21 @@ public sealed class OperationDispatcher
             {
                 _journal.Append(
                     "denied",
-                    new OperationRequest(request.Op, CallerIdentity.Agent("supervisor-agent-claim"), null),
+                    new OperationRequest(request.Op, CallerIdentity.Agent(session?.Id ?? "supervisor-agent-claim"), null),
                     null,
                     null);
                 throw new SupervisorOperationException(
                     ErrorCodes.Denied,
-                    "Agent access is disabled. Pair a client from the desktop to create a scoped grant.");
+                    "A caller-declared agent role cannot elevate or impersonate; pair a real session instead.");
             }
 
-            var data = await DispatchAsync(request.Op, request.Args, sink, cancellationToken).ConfigureAwait(false);
+            if (session is not null)
+            {
+                AuthorizeAgent(session, request.Op, request.Args);
+            }
+
+            var data = await DispatchAsync(request.Op, request.Args, sink, cancellationToken, session)
+                .ConfigureAwait(false);
             stopwatch.Stop();
             var response = new ResponseEnvelope
             {
@@ -84,66 +155,139 @@ public sealed class OperationDispatcher
                 Data = data,
                 DurationMs = (long)stopwatch.ElapsedMilliseconds,
             };
+            if (idemKey is not null)
+            {
+                _agents.Store.CompleteIdempotency(actor, idemKey, "completed", JsonSerializer.Serialize(response, PipeFraming.JsonOptions));
+            }
+
             _store.RecordOperation(
-                request.Id, request.Op, "local_user", callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, argsJson,
                 startedUtc, DateTimeOffset.UtcNow, "ok", ErrorCodes.Ok, "ok", (long)stopwatch.ElapsedMilliseconds);
             return response;
         }
         catch (SupervisorOperationException ex)
         {
             stopwatch.Stop();
-            _store.RecordOperation(
-                request.Id, request.Op, "local_user", callerName, argsJson,
-                startedUtc, DateTimeOffset.UtcNow, "failed", ex.Code, ex.Message, (long)stopwatch.ElapsedMilliseconds);
-            return new ResponseEnvelope
+            var response = Failure(request.Id, ex.Code, ex.Message, ex.Retryable, stopwatch);
+            if (idemKey is not null)
             {
-                Id = request.Id,
-                Ok = false,
-                Code = ex.Code,
-                Message = ex.Message,
-                Data = new JsonObject { ["retryable"] = ex.Retryable },
-                DurationMs = (long)stopwatch.ElapsedMilliseconds,
-            };
+                _agents.Store.CompleteIdempotency(actor, idemKey, "failed", JsonSerializer.Serialize(response, PipeFraming.JsonOptions));
+            }
+
+            _store.RecordOperation(
+                request.Id, request.Op, callerKind, callerName, argsJson,
+                startedUtc, DateTimeOffset.UtcNow, "failed", ex.Code, ex.Message, (long)stopwatch.ElapsedMilliseconds);
+            return response;
         }
         catch (OperationCanceledException)
         {
             stopwatch.Stop();
+            if (idemKey is not null)
+            {
+                _agents.Store.CompleteIdempotency(actor, idemKey, "unknown_outcome", null);
+            }
+
             _store.RecordOperation(
-                request.Id, request.Op, "local_user", callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, argsJson,
                 startedUtc, DateTimeOffset.UtcNow, "cancelled", ErrorCodes.Cancelled, "cancelled",
                 (long)stopwatch.ElapsedMilliseconds);
-            return new ResponseEnvelope
-            {
-                Id = request.Id,
-                Ok = false,
-                Code = ErrorCodes.Cancelled,
-                Message = "Operation cancelled.",
-                DurationMs = (long)stopwatch.ElapsedMilliseconds,
-            };
+            return Failure(request.Id, ErrorCodes.Cancelled, "Operation cancelled.", false, stopwatch);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
+            if (idemKey is not null)
+            {
+                _agents.Store.CompleteIdempotency(actor, idemKey, "unknown_outcome", null);
+            }
+
             _store.RecordOperation(
-                request.Id, request.Op, "local_user", callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, argsJson,
                 startedUtc, DateTimeOffset.UtcNow, "error", ErrorCodes.Internal, ex.Message,
                 (long)stopwatch.ElapsedMilliseconds);
-            return new ResponseEnvelope
-            {
-                Id = request.Id,
-                Ok = false,
-                Code = ErrorCodes.Internal,
-                Message = ex.Message,
-                DurationMs = (long)stopwatch.ElapsedMilliseconds,
-            };
+            return Failure(request.Id, ErrorCodes.Internal, ex.Message, false, stopwatch);
         }
     }
+
+    private static ResponseEnvelope Failure(string id, string code, string message, bool retryable, Stopwatch stopwatch)
+    {
+        if (stopwatch.IsRunning)
+        {
+            stopwatch.Stop();
+        }
+
+        return new ResponseEnvelope
+        {
+            Id = id,
+            Ok = false,
+            Code = code,
+            Message = message,
+            Data = new JsonObject { ["retryable"] = retryable },
+            DurationMs = (long)stopwatch.ElapsedMilliseconds,
+        };
+    }
+
+    private static string Digest(string op, string argsJson) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(op + "\n" + argsJson))).ToLowerInvariant();
+
+    private void AuthorizeAgent(AgentSession session, string op, JsonObject? args)
+    {
+        if (op is OperationNames.AgentPairApprove or OperationNames.AgentSessionList
+            or OperationNames.AgentSessionRevoke or OperationNames.AgentTakeover
+            or OperationNames.AgentApproveAction)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.ForbiddenScope, "This operation is reserved for the local operator.");
+        }
+
+        var scope = RequiredScope(op);
+        if (scope is null)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.ForbiddenScope, $"Operation '{op}' is not available to agent sessions.");
+        }
+
+        _agents.RequireScope(session, scope);
+        if (IsInstanceBound(op))
+        {
+            _agents.BindInstance(session, args);
+        }
+    }
+
+    private static string? RequiredScope(string op) => op switch
+    {
+        OperationNames.InstanceStatus or OperationNames.ObservationScreenshot
+            or OperationNames.ObservationTree or OperationNames.LogsRead
+            or OperationNames.EventPoll or OperationNames.ArtifactRead or OperationNames.UiAssert => AgentService.ScopeObserve,
+        OperationNames.InputTap or OperationNames.InputText or OperationNames.InputKey
+            or OperationNames.InputSwipe => AgentService.ScopeInput,
+        OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground =>
+            AgentService.ScopeApp,
+        OperationNames.InstanceStart or OperationNames.InstanceWait or OperationNames.InstanceStop
+            or OperationNames.InstanceRestart or OperationNames.DeviceCreateDisposable =>
+            AgentService.ScopeLifecycle,
+        OperationNames.NetworkProfile => AgentService.ScopeNetwork,
+        OperationNames.SnapshotSave or OperationNames.SnapshotLoad => AgentService.ScopeRestore,
+        OperationNames.DeviceCleanup => AgentService.ScopeCleanup,
+        _ => null,
+    };
+
+    private static bool IsInstanceBound(string op) => op is
+        OperationNames.InstanceStatus or OperationNames.InstanceStart or OperationNames.InstanceWait
+        or OperationNames.InstanceStop or OperationNames.InstanceRestart or OperationNames.ObservationScreenshot
+        or OperationNames.ObservationTree or OperationNames.InputTap or OperationNames.InputText
+        or OperationNames.InputKey or OperationNames.InputSwipe or OperationNames.AppInstall
+        or OperationNames.AppLaunch or OperationNames.AppForeground or OperationNames.LogsRead
+        or OperationNames.EventPoll or OperationNames.NetworkProfile or OperationNames.SnapshotSave
+        or OperationNames.SnapshotLoad or OperationNames.DeviceCleanup or OperationNames.ArtifactRead
+        or OperationNames.DeviceCreateDisposable;
 
     private async Task<JsonNode?> DispatchAsync(
         string op,
         JsonObject? args,
         IEventSink sink,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        AgentSession? session)
     {
         var name = JsonArgs.String(args, "name") ?? "";
 
@@ -286,6 +430,12 @@ public sealed class OperationDispatcher
                 return new JsonObject { ["name"] = name, ["samples"] = _manager.Trace(name) };
 
             case OperationNames.InputTap:
+                if (session is not null)
+                {
+                    return await _agents.TapAsync(session, args ?? new JsonObject(), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
                 return await _manager.TapAsync(
                     name,
                     JsonArgs.Int(args, "x") ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "x is required."),
@@ -314,11 +464,32 @@ public sealed class OperationDispatcher
                     .ConfigureAwait(false);
 
             case OperationNames.AppInstall:
+            {
+                var path = JsonArgs.String(args, "path");
+                if (session is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(path) || path.Equals("sample", StringComparison.OrdinalIgnoreCase))
+                    {
+                        path = Path.Combine(_paths.Root, "apps", "ws-sample.apk");
+                    }
+
+                    var approvedRoot = Path.GetFullPath(Path.Combine(_paths.Root, "apps")) + Path.DirectorySeparatorChar;
+                    var full = Path.GetFullPath(path);
+                    if (!full.StartsWith(approvedRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new SupervisorOperationException(
+                            ErrorCodes.ForbiddenScope,
+                            "Agent sessions may only install the approved sample APK.");
+                    }
+
+                    path = full;
+                }
+
                 return await _manager.InstallAsync(
                     name,
-                    JsonArgs.String(args, "path") ?? throw new SupervisorOperationException(
-                        ErrorCodes.InvalidRequest, "path is required."),
+                    path ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "path is required."),
                     cancellationToken).ConfigureAwait(false);
+            }
 
             case OperationNames.AppLaunch:
                 return await _manager.LaunchAsync(
@@ -356,12 +527,160 @@ public sealed class OperationDispatcher
                     cancellationToken).ConfigureAwait(false);
 
             case OperationNames.SnapshotLoad:
+                if (session is not null)
+                {
+                    return await _agents.RestoreAsync(session, args ?? new JsonObject(), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
                 return await _manager.SnapshotAsync(
                     name,
                     JsonArgs.String(args, "tag") ?? throw new SupervisorOperationException(
                         ErrorCodes.InvalidRequest, "tag is required."),
                     save: false,
                     cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.AgentPairRequest:
+                return _agents.RequestPairing(
+                    JsonArgs.String(args, "clientName") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "clientName is required."));
+
+            case OperationNames.AgentPairApprove:
+                return _agents.ApprovePairing(
+                    JsonArgs.String(args, "pairingId") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "pairingId is required."),
+                    JsonArgs.String(args, "scopes") ?? "observe,input,app,lifecycle,network,restore,cleanup,artifact",
+                    JsonArgs.String(args, "template") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "template is required."));
+
+            case OperationNames.AgentPairComplete:
+                return _agents.CompletePairing(
+                    JsonArgs.String(args, "pairingId") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "pairingId is required."),
+                    JsonArgs.String(args, "code") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "code is required."));
+
+            case OperationNames.AgentSessionList:
+            {
+                var sessions = new JsonArray();
+                foreach (var item in _agents.Store.ListSessions())
+                {
+                    sessions.Add(new JsonObject
+                    {
+                        ["session"] = item.Id,
+                        ["clientName"] = item.ClientName,
+                        ["instance"] = item.Instance,
+                        ["scopes"] = item.Scopes,
+                        ["createdUtc"] = item.CreatedUtc.ToString("O"),
+                        ["expiresUtc"] = item.ExpiresUtc.ToString("O"),
+                        ["revoked"] = item.Revoked,
+                        ["expired"] = item.ExpiresUtc < DateTimeOffset.UtcNow,
+                    });
+                }
+
+                var pairings = new JsonArray();
+                foreach (var item in _agents.Store.ListPairings())
+                {
+                    pairings.Add(new JsonObject
+                    {
+                        ["pairingId"] = item.Id,
+                        ["clientName"] = item.ClientName,
+                        ["status"] = item.Status,
+                        ["instance"] = item.Instance,
+                        ["expiresUtc"] = item.ExpiresUtc.ToString("O"),
+                    });
+                }
+
+                return new JsonObject { ["sessions"] = sessions, ["pairings"] = pairings };
+            }
+
+            case OperationNames.AgentSessionRevoke:
+                _agents.Store.RevokeSession(
+                    JsonArgs.String(args, "session") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "session is required."));
+                return new JsonObject { ["revoked"] = true };
+
+            case OperationNames.AgentTakeover:
+            {
+                var target = JsonArgs.String(args, "name") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "name is required.");
+                var count = _agents.Store.RevokeSessionsForInstance(target);
+                _agents.BumpGeneration(target);
+                _agents.RecordEvent(target, "takeover", new JsonObject { ["revokedSessions"] = count });
+                return new JsonObject { ["instance"] = target, ["revokedSessions"] = count };
+            }
+
+            case OperationNames.AgentApproveAction:
+                return new JsonObject
+                {
+                    ["code"] = _agents.ApproveAction(
+                        JsonArgs.String(args, "session") ?? throw new SupervisorOperationException(
+                            ErrorCodes.InvalidRequest, "session is required."),
+                        JsonArgs.String(args, "operation") ?? throw new SupervisorOperationException(
+                            ErrorCodes.InvalidRequest, "operation is required.")),
+                    ["expiresSeconds"] = 300,
+                };
+
+            case OperationNames.DeviceCreateDisposable:
+            {
+                var target = session?.Instance ?? throw new SupervisorOperationException(
+                    ErrorCodes.Unauthorized, "Pairing is required.");
+                var record = _manager.Get(target);
+                return new JsonObject
+                {
+                    ["instance"] = record.Name,
+                    ["serial"] = record.AdbSerial,
+                    ["imagePackage"] = record.ImagePackage,
+                    ["state"] = record.State.ToString(),
+                };
+            }
+
+            case OperationNames.ObservationScreenshot:
+                return await _agents.ScreenshotAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.ObservationTree:
+                return await _agents.UiTreeAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.InputText:
+                return await _agents.TypeAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    args ?? new JsonObject(), cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.UiAssert:
+                return await _agents.AssertAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    args ?? new JsonObject(), cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.LogsRead:
+                return await _agents.LogsAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    args ?? new JsonObject(), cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.NetworkProfile:
+                return await _agents.NetworkAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    args ?? new JsonObject(), cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.EventPoll:
+            {
+                var target = session?.Instance ?? name;
+                return _agents.PollEvents(target, args?["cursor"]?.GetValue<long>() ?? 0);
+            }
+
+            case OperationNames.ArtifactRead:
+                return _agents.ReadArtifact(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    JsonArgs.String(args, "artifactId") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "artifactId is required."));
+
+            case OperationNames.DeviceCleanup:
+                return await _agents.CleanupAsync(
+                    session ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Pairing is required."),
+                    args ?? new JsonObject(), cancellationToken).ConfigureAwait(false);
 
             default:
                 throw new SupervisorOperationException(

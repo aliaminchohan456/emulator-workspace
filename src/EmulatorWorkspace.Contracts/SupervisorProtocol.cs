@@ -28,6 +28,12 @@ public sealed class RequestEnvelope
     public JsonObject? Args { get; set; }
 
     public int? DeadlineMs { get; set; }
+
+    /// <summary>Opaque session credential. Never logged or echoed in responses.</summary>
+    public string? Auth { get; set; }
+
+    /// <summary>Bounded idempotency key scoped to the caller and operation.</summary>
+    public string? IdempotencyKey { get; set; }
 }
 
 public sealed class ResponseEnvelope
@@ -86,6 +92,18 @@ public static class ErrorCodes
     public const string ControllerFailure = "controller_failure";
     public const string SupervisorUnavailable = "supervisor_unavailable";
     public const string Internal = "internal_error";
+    public const string Unauthorized = "unauthorized";
+    public const string ForbiddenScope = "forbidden_scope";
+    public const string Expired = "expired";
+    public const string Revoked = "revoked";
+    public const string WrongInstance = "wrong_instance";
+    public const string StaleObservation = "stale_observation";
+    public const string AmbiguousSelector = "ambiguous_selector";
+    public const string SelectorNotFound = "selector_not_found";
+    public const string SecureWindow = "secure_window";
+    public const string ApprovalRequired = "approval_required";
+    public const string IdempotencyConflict = "idempotency_conflict";
+    public const string UnknownOutcome = "unknown_outcome";
 }
 
 public static class OperationNames
@@ -125,6 +143,25 @@ public static class OperationNames
     public const string SnapshotLoad = "snapshot.load";
 
     public const string DiagnosticsSummary = "diagnostics.summary";
+
+    public const string AgentPairRequest = "agent.pair.request";
+    public const string AgentPairApprove = "agent.pair.approve";
+    public const string AgentPairComplete = "agent.pair.complete";
+    public const string AgentSessionList = "agent.session.list";
+    public const string AgentSessionRevoke = "agent.session.revoke";
+    public const string AgentTakeover = "agent.takeover";
+    public const string AgentApproveAction = "agent.approveAction";
+
+    public const string DeviceCreateDisposable = "device.createDisposable";
+    public const string DeviceCleanup = "device.cleanup";
+    public const string ObservationScreenshot = "observation.screenshot";
+    public const string ObservationTree = "observation.tree";
+    public const string InputText = "input.text";
+    public const string UiAssert = "ui.assert";
+    public const string LogsRead = "logs.read";
+    public const string EventPoll = "event.poll";
+    public const string NetworkProfile = "network.profile";
+    public const string ArtifactRead = "artifact.read";
 }
 
 public static class EventNames

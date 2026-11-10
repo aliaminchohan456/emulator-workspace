@@ -17,6 +17,8 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | Deterministic sample APK | `sample/` + `artifacts/phase1/sample/ws-sample.apk` | Verified |
 | Host baseline + Phase 0 harness | `tools/host-baseline.ps1`, `tools/phase0-spike.ps1` | 26/26 checks (run `run-20261110-152217`) |
 | Phase 1 acceptance harness | `tools/phase1-acceptance.ps1` | 19/19 (run `20261110-183709`); original 18/19 preserved |
+| MCP stdio server | `src/EmulatorWorkspace.Mcp` | Phase 2, typed tools |
+| TypeScript MCP client | `clients/mcp-client` | Workflow verified (SDK 1.32.2) |
 | Unit tests | `tests/EmulatorWorkspace.Tests` | 23 passing |
 
 The MCP server and root lab UI remain Phase 2 and Phase 4 work.
@@ -96,6 +98,24 @@ The interactive viewport uses the controller's RGB888 stream at 540x1200
 (~30-34 FPS end to end on this host) written to a bounded six-file ring; PNG is
 kept for one-shot screenshots and as an explicit fallback.
 
+Local agent integration:
+
+```powershell
+# Operator creates a disposable clone and a scoped session
+wsctl create --name tpl --root D:\Phase2Root
+wsctl agent-pair --client-name dev-agent --template tpl --out D:\Phase2Root\agent.json --root D:\Phase2Root
+
+# MCP server over stdio (token from a file, never from arguments)
+$env:EMULATOR_WORKSPACE_HOME="D:\Phase2Root"
+$env:WS_AGENT_TOKEN_FILE="D:\Phase2Root\agent.json"
+src\EmulatorWorkspace.Mcp\bin\Debug\net10.0\EmulatorWorkspace.Mcp.exe
+```
+
+Agent access is off until a local operator approves a pairing; sessions carry
+explicit scopes, expire, are revocable, and are bound to one disposable guest.
+Phase 2 is not closed: secure capture, network shaping, the WPF Agent Sessions
+surface and a second MCP client remain open. See `docs/phase2-evidence.md`.
+
 Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 
 ## Safety model
@@ -115,6 +135,7 @@ Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 - [Phase 0 evidence](docs/phase0-evidence.md)
 - [Phase 1 evidence](docs/phase1-evidence.md)
 - [Phase 1 stabilization evidence](docs/phase1-1-evidence.md)
+- [Phase 2 evidence](docs/phase2-evidence.md)
 - [Tools](tools/README.md)
 - [Plan](plan.md)
 - [Task checklist](task.md)

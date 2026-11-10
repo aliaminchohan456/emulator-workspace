@@ -29,6 +29,8 @@ public sealed class SupervisorConnection : IAsyncDisposable
 
     public Action<string>? Trace { get; set; }
 
+    public string? DefaultAuth { get; set; }
+
     public static async Task<SupervisorConnection> ConnectAsync(
         string root,
         TimeSpan startupTimeout,
@@ -58,7 +60,9 @@ public sealed class SupervisorConnection : IAsyncDisposable
         string op,
         JsonObject? args,
         TimeSpan? deadline = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? auth = null,
+        string? idempotencyKey = null)
     {
         var id = Guid.NewGuid().ToString("N");
         var request = new RequestEnvelope
@@ -67,6 +71,8 @@ public sealed class SupervisorConnection : IAsyncDisposable
             Op = op,
             Args = args,
             DeadlineMs = deadline is null ? null : (int)Math.Min(int.MaxValue, deadline.Value.TotalMilliseconds),
+            Auth = auth ?? DefaultAuth,
+            IdempotencyKey = idempotencyKey,
         };
 
         var completion = new TaskCompletionSource<ResponseEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);

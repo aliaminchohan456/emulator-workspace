@@ -1,4 +1,4 @@
-bin/
+﻿bin/
 obj/
 artifacts/*
 !artifacts/.gitkeep
@@ -12,3 +12,4 @@ TestResults/
 *.binlog
 __pycache__/
 *.pyc
+node_modules/

@@ -12,6 +12,16 @@ proven on the reference host. Pinned for testing: Android Emulator 37.2.12
 the engine's own gRPC controller protos. Evidence, deviations, and remaining
 measurements are in [docs/phase0-evidence.md](docs/phase0-evidence.md).
 
+Phase 2 status (2026-11-10): a local-only agent integration is implemented on
+the supervisor. Pairing creates a revocable, expiring, scoped session bound to
+one disposable AVD; a real MCP TypeScript SDK client and wsctl completed the same
+login/observe/assert/logs/snapshot/restore workflow on WHPX. Unpaired, wrong
+guest, stale frame, ambiguous selector and revoked credentials are denied with
+typed errors; cleanup removed the clone and kept the template. The phase is not
+closed: FLAG_SECURE observation is unverified (blocker), guest network shaping
+did not take effect, the WPF Agent Sessions surface and a second MCP client are
+missing. Evidence: [docs/phase2-evidence.md](docs/phase2-evidence.md).
+
 Phase 1 status (2026-11-10, stabilization pass): the developer MVP runs on real
 Windows hardware. A persistent per-user supervisor owns lifecycle, SQLite state,
 ports, credentials, and a versioned named-pipe contract; the WPF desktop embeds
@@ -116,6 +126,23 @@ Verified in [docs/phase1-evidence.md](docs/phase1-evidence.md), acceptance run
   auto-sized image; zoom beyond the viewport is clipped rather than pannable.
 - Input latency (20 samples per GPU mode), low-space forcing, multi-touch, and
   software-renderer re-measurement remain open.
+
+## Phase 2 outcomes and blockers
+
+- Protocol 1 envelopes gained an opaque session credential and idempotency key;
+  typed errors cover unauthorized, forbidden scope, expired, revoked, wrong
+  instance, stale observation, ambiguous selector, approval required and
+  unknown outcome. In-progress mutations are reconciled as `unknown_outcome`.
+- Pairing approval creates a fresh disposable AVD from a stopped template
+  (never a running disk copy), keeps engine endpoints/tokens inside the
+  supervisor, and supports revocation and takeover.
+- MCP stdio tools map to the same operation registry as wsctl; stdout is
+  protocol-only and the token comes from a file.
+- Verified: MCP and CLI login/assert/logs/screenshot/snapshot save+restore,
+  cleanup with approval, unpaired/wrong-instance/stale/ambiguous/revoked denials.
+- Open blockers: FLAG_SECURE capture was not detected on the first attempt and
+  the tightened detector is unverified; guest network shaping had no measurable
+  effect; WPF Agent Sessions approval surface and a second MCP client are absent.
 
 ## Initial compatibility matrix
 

@@ -53,14 +53,17 @@ internal static class Program
             }
 
             using var journal = new Journal(paths.JournalPath);
+            using var agentStore = new AgentStore(paths);
+            agentStore.ReconcileInProgressMutations();
             var hub = new SupervisorEventHub();
             var manager = new InstanceManager(paths, sdk, store, hub);
+            var agents = new AgentService(paths, sdk, manager, agentStore);
             var adopted = await manager.AdoptAsync(shutdown.Token).ConfigureAwait(false);
             Log("Adoption: " + adopted.ToJsonString());
 
             OperationDispatcher dispatcher;
             SupervisorPipeServer server;
-            dispatcher = new OperationDispatcher(paths, sdk, store, manager, journal, () =>
+            dispatcher = new OperationDispatcher(paths, sdk, store, manager, journal, agents, () =>
             {
                 Log("Shutdown requested by client.");
                 shutdown.Cancel();
