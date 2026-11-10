@@ -129,11 +129,6 @@ public final class MainActivity extends Activity {
         loginPanel.setContentDescription("login_panel");
         root.addView(loginPanel);
 
-        sampleView = new SampleView();
-        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
-        root.addView(sampleView, sampleParams);
-
         // Deterministic duplicate-selector surface: two controls share the
         // content description "dup_action" so an agent selector that targets
         // them is deterministically ambiguous (exactly two matches), and the
@@ -167,6 +162,11 @@ public final class MainActivity extends Activity {
         duplicateMarker.setTextColor(Color.WHITE);
         duplicateMarker.setContentDescription("dup_marker");
         root.addView(duplicateMarker);
+
+        sampleView = new SampleView();
+        LinearLayout.LayoutParams sampleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+        root.addView(sampleView, sampleParams);
 
         setContentView(root);
         Log.i(TAG, "ACTIVITY_READY pid=" + android.os.Process.myPid());

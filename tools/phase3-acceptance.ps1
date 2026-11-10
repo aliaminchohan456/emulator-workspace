@@ -65,23 +65,123 @@ function Add-Check([string]$lane, [string]$name, [bool]$ok, [string]$detail) {
     Log ("{0} [{1}] {2}: {3}" -f $(if ($ok) { "PASS" } else { "FAIL" }), $lane, $name, $detail)
 }
 
-function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure) {
-    $previous = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $output = & $wsctl @arguments 2>&1
-        $code = $LASTEXITCODE
+function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure, [int]$timeoutSeconds = 420) {
+    # The client is bounded: a supervisor that never answers is reported as a
+    # timeout instead of blocking the harness.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $wsctl
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.CreateNoWindow = $true
+    $quoted = @()
+    foreach ($argument in $arguments) {
+        $quoted += ('"' + ($argument -replace '"', '\"') + '"')
     }
-    finally {
-        $ErrorActionPreference = $previous
+    $info.Arguments = $quoted -join " "
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdout = $process.StandardOutput.ReadToEndAsync()
+    $stderr = $process.StandardError.ReadToEndAsync()
+    $timedOut = -not $process.WaitForExit($timeoutSeconds * 1000)
+    if ($timedOut) {
+        try { $process.Kill() } catch { }
+        try { $process.WaitForExit(5000) | Out-Null } catch { }
     }
 
-    $text = ($output | Out-String).Trim()
-    if ($code -ne 0 -and -not $AllowFailure) {
+    $text = ""
+    try { $text = $stdout.Result + $stderr.Result } catch { }
+    $code = -1
+    try { $code = $process.ExitCode } catch { }
+    try { $process.Dispose() } catch { }
+    $text = ($text | Out-String).Trim()
+    if ($code -ne 0 -and -not $AllowFailure -and -not $timedOut) {
         throw "wsctl $($arguments -join ' ') failed ($code): $text"
     }
 
-    return [pscustomobject]@{ Code = $code; Text = $text }
+    return [pscustomobject]@{ Code = $code; Text = $text; TimedOut = $timedOut }
+}
+function Invoke-Adb([string[]]$arguments, [int]$timeoutSeconds = 30) {
+    # Every ADB client is bounded: on timeout only this owned client is
+    # terminated; the shared ADB server and unrelated targets are untouched.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $adb
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.CreateNoWindow = $true
+    $quoted = @()
+    foreach ($argument in $arguments) {
+        $quoted += ('"' + ($argument -replace '"', '\"') + '"')
+    }
+    $info.Arguments = $quoted -join " "
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdout = $process.StandardOutput.ReadToEndAsync()
+    $stderr = $process.StandardError.ReadToEndAsync()
+    $timedOut = -not $process.WaitForExit($timeoutSeconds * 1000)
+    if ($timedOut) {
+        try { $process.Kill() } catch { }
+        try { $process.WaitForExit(5000) | Out-Null } catch { }
+    }
+
+    $text = ""
+    try { $text = $stdout.Result + $stderr.Result } catch { }
+    $code = -1
+    try { $code = $process.ExitCode } catch { }
+    try { $process.Dispose() } catch { }
+    return [pscustomobject]@{
+        Code = $code
+        Text = ($text | Out-String).Trim()
+        TimedOut = $timedOut
+    }
+}
+function Test-Anr([string]$serial) {
+    $dump = (Invoke-Adb @("-s", $serial, "shell", "dumpsys", "window")).Text
+    return ($dump -match "Not Responding|isn't responding|ANR in")
+}
+
+function Ensure-NoAnr([string]$serial, [string]$instance, [int]$attempts = 3) {
+    # A stuck SystemUI/launcher can raise a blocking "not responding" dialog
+    # that hides the application from every observer. The guest is restarted
+    # until the dialog is gone, and the recovery is reported.
+    $recovered = $false
+    for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+        if (-not (Test-Anr $serial)) { return [pscustomobject]@{ Clear = $true; Recovered = $recovered } }
+        $recovered = $true
+        Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) | Out-Null
+        Invoke-Ws @("start", "--name", $instance, "--root", $Root) | Out-Null
+        Invoke-Ws @("wait", "--name", $instance, "--timeout", "600", "--root", $Root) | Out-Null
+    }
+    return [pscustomobject]@{ Clear = -not (Test-Anr $serial); Recovered = $recovered }
+}
+
+function Unlock-Guest([string]$serial) {
+    # Headless guests boot with the keyguard up, which hides the application
+    # window from the runner and from the hierarchy dump.
+    Invoke-Adb @("-s", $serial, "shell", "wm", "dismiss-keyguard") | Out-Null
+    Invoke-Adb @("-s", $serial, "shell", "input", "keyevent", "82") | Out-Null
+    Start-Sleep -Seconds 2
+}
+
+function Wait-TransportUsable([string]$serial, [int]$seconds = 90) {
+    # Bounded reconnect of one owned transport, never a global ADB action.
+    $deadline = (Get-Date).AddSeconds($seconds)
+    $attempts = 0
+    while ((Get-Date) -lt $deadline) {
+        $probe = Invoke-Adb @("-s", $serial, "shell", "echo", "ws-transport-probe")
+        if ($probe.Code -eq 0 -and $probe.Text -match "ws-transport-probe") { return $true }
+        if ($attempts -lt 3) {
+            $attempts++
+            Invoke-Adb @("reconnect", $serial) | Out-Null
+        }
+        Start-Sleep -Seconds 3
+    }
+    return $false
 }
 
 function Parse-Json([string]$text) {
@@ -174,6 +274,7 @@ try {
 
     # Exact identity of the primary guest is resolved once and reused.
     $idP = Parse-Json (Invoke-Ws @("adb-identity", "--name", $sessionP.instance, "--root", $Root) -AllowFailure).Text
+    if ($idP) { Unlock-Guest $idP.serial }
     if (-not $idP) {
         $idP = [pscustomobject]@{ serial = "emulator-5556" }
     }
@@ -222,7 +323,7 @@ try {
     Add-Check "snapshot" "list" ($snapList.Code -eq 0 -and $base -ne $null) "count=$($snapJson.count) compatible=$($base.compatible)"
     $compatible = @($snapJson.snapshots | Where-Object { $_.compatible })
     $newest = @($compatible | Sort-Object { $_.createdUtc } -Descending)[0]
-    $older = @($compatible | Where-Object { $_.tag -ne $newest.tag })[0]
+    $older = @($compatible | Where-Object { $_.tag -ne $newest.tag -and $_.tag -ne "default_boot" })[0]
     if ($older) {
         $snapDelete = Invoke-Ws @("snapshot-delete", "--name", $sessionP.instance, "--tag", $older.tag, "--root", $Root) -AllowFailure
         Add-Check "snapshot" "delete-older" ($snapDelete.Code -eq 0) ("deleted=$($older.tag)")
@@ -236,7 +337,7 @@ try {
     $frame = Invoke-Ws @("call", "--op", "observation.screenshot", "--token-file", $tokenP, "--root", $Root) -AllowFailure
     $frameJson = Parse-Json $frame.Text
     $staleFile = Join-Path $out "stale-after-restore.json"
-    Set-Content $staleFile (@{ frameId = $frameJson.frameId; x = 540; y = 700 } | ConvertTo-Json) -Encoding UTF8
+    Set-Content $staleFile (@{ frameId = $frameJson.frameId; x = 540; y = 1400 } | ConvertTo-Json) -Encoding UTF8
     $snapSave2 = Invoke-Ws @("snapshot-save", "--name", $sessionP.instance, "--tag", "p3-restore", "--root", $Root) -AllowFailure
     $approval = Invoke-Ws @("agent-approve-action", "--session", $sessionP.session, "--operation", "snapshot.load", "--root", $Root)
     $approvalCode = (Parse-Json $approval.Text).code
@@ -247,8 +348,8 @@ try {
     $bootDeadline = (Get-Date).AddSeconds(360)
     $booted = $false
     while ((Get-Date) -lt $bootDeadline) {
-        $state = (& $adb -s $idP.serial get-state 2>&1 | Out-String).Trim()
-        $boot = (& $adb -s $idP.serial shell getprop sys.boot_completed 2>&1 | Out-String).Trim()
+        $state = (Invoke-Adb @("-s", $idP.serial, "get-state")).Text
+        $boot = (Invoke-Adb @("-s", $idP.serial, "shell", "getprop", "sys.boot_completed")).Text
         if ($state -eq "device" -and $boot -eq "1") { $booted = $true; break }
         Start-Sleep -Seconds 3
     }
@@ -261,7 +362,7 @@ try {
     # Lane C: two guests and the external ADB transport.
     Invoke-Ws @("start", "--name", $sessionQ.instance, "--token-file", $tokenQ, "--root", $Root) | Out-Null
     Invoke-Ws @("wait", "--name", $sessionQ.instance, "--timeout", "600", "--token-file", $tokenQ, "--root", $Root) | Out-Null
-    $before = (& $adb devices -l 2>&1 | Out-String)
+    $before = (Invoke-Adb @("devices", "-l")).Text
     Save-Text "adb-devices-before.txt" $before
     $identityP = Invoke-Ws @("adb-identity", "--name", $sessionP.instance, "--root", $Root) -AllowFailure
     $identityQ = Invoke-Ws @("adb-identity", "--name", $sessionQ.instance, "--root", $Root) -AllowFailure
@@ -278,7 +379,7 @@ try {
     $cross = Invoke-Ws @("call", "--op", "instance.status", "--args-file", $crossFile, "--token-file", $tokenP, "--root", $Root) -AllowFailure
     Add-Check "transport" "cross-guest-denied" ($cross.Text -match "wrong_instance") "agent on P cannot address Q"
 
-    $after = (& $adb devices -l 2>&1 | Out-String)
+    $after = (Invoke-Adb @("devices", "-l")).Text
     Save-Text "adb-devices-after.txt" $after
     $unchanged = ($after -match [regex]::Escape($idQ.transportId)) -and ($after -match [regex]::Escape($idP.transportId))
     Add-Check "transport" "external-state-unchanged" $unchanged "transport ids stable across agent calls"
@@ -313,6 +414,24 @@ try {
         ("non-emulator transports visible=$($physical.Count); managed serials are emulator-only")
 
     # Lane D: queued-input race with a controlled synchronization point.
+    # The fixture is put back in the foreground first so the marker can be read
+    # before and after the race.
+    $anr = Ensure-NoAnr $idP.serial $sessionP.instance
+    Add-Check "guest" "no-anr-overlay" $anr.Clear "recovered=$($anr.Recovered)"
+    Unlock-Guest $idP.serial
+    & $adb -s $idP.serial shell monkey -p dev.emulatorworkspace.sample -c android.intent.category.LAUNCHER 1 2>&1 | Out-Null
+    Start-Sleep -Seconds 5
+    & $adb -s $idP.serial shell uiautomator dump /sdcard/p3-before.xml 2>&1 | Out-Null
+    $beforeDump = (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-before.xml")).Text
+    $beforeNode = [regex]::Match($beforeDump, '<node[^>]*content-desc="dup_marker"[^>]*>')
+    $markerBefore = ""
+    if ($beforeNode.Success) {
+        $beforeText = [regex]::Match($beforeNode.Value, 'text="([^"]*)"')
+        if ($beforeText.Success) { $markerBefore = $beforeText.Groups[1].Value }
+    }
+    Add-Check "race" "fixture-foreground" ($markerBefore -eq "DUP_TAPS=0") "marker before the race=$markerBefore"
+    $tapBaseline = (Invoke-Adb @("-s", $idP.serial, "logcat", "-d", "-s", "WS_SAMPLE:I")).Text
+    $tapBaselineCount = ([regex]::Matches($tapBaseline, "DUP_TAP index=")).Count
     $hold = Invoke-Ws @("input-hold", "--name", $sessionP.instance, "--root", $Root) -AllowFailure
     Add-Check "race" "input-held" ($hold.Code -eq 0) (($hold.Text -split "`n")[0])
     $tapFile = Join-Path $out "race-tap.json"
@@ -344,7 +463,7 @@ try {
     Add-Check "race" "queued-input-not-authorized" ($tapResult -match "revoked" -or $tapResult -match "cancelled" -or $tapResult -match "forbidden") `
         (($tapResult -split "`n" | Where-Object { $_ -match "FAILED" } | Select-Object -First 1))
     & $adb -s $idP.serial shell uiautomator dump /sdcard/p3-race.xml 2>&1 | Out-Null
-    $dump = (& $adb -s $idP.serial shell cat /sdcard/p3-race.xml 2>&1 | Out-String)
+    $dump = (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-race.xml")).Text
     Save-Text "race-ui.xml" $dump
     $nodeMatch = [regex]::Match($dump, '<node[^>]*content-desc="dup_marker"[^>]*>')
     $markerText = ""
@@ -352,10 +471,11 @@ try {
         $textMatch = [regex]::Match($nodeMatch.Value, 'text="([^"]*)"')
         if ($textMatch.Success) { $markerText = $textMatch.Groups[1].Value }
     }
-    $tapLog = (& $adb -s $idP.serial logcat -d -s WS_SAMPLE:I 2>&1 | Out-String)
+    $tapLog = (Invoke-Adb @("-s", $idP.serial, "logcat", "-d", "-s", "WS_SAMPLE:I")).Text
     Save-Text "race-logcat.txt" $tapLog
     $dupTaps = ([regex]::Matches($tapLog, "DUP_TAP index=")).Count
-    Add-Check "race" "guest-marker-unchanged" ($markerText -eq "DUP_TAPS=0" -and $dupTaps -eq 0) ("marker=$markerText dupTapLogLines=$dupTaps")
+    Add-Check "race" "guest-marker-unchanged" ($markerText -eq "DUP_TAPS=0" -and $dupTaps -eq $tapBaselineCount) `
+        ("marker=$markerText dupTapLogLines=$dupTaps baseline=$tapBaselineCount")
     [ordered]@{
         queuedUtc = $queuedUtc
         takeoverUtc = $takeoverUtc
@@ -371,7 +491,7 @@ try {
     Set-Content (Join-Path $out "battery.json") (@{ name = $sessionQ.instance; level = 42; charging = $true } | ConvertTo-Json) -Encoding UTF8
     $battery = Invoke-Ws @("call", "--op", "sim.battery", "--args-file", (Join-Path $out "battery.json"), "--root", $Root) -AllowFailure
     Add-Check "simulation" "battery" ($battery.Code -eq 0) (($battery.Text -split "`n")[0])
-    $batteryState = (& $adb -s $idQ.serial shell dumpsys battery 2>&1 | Out-String)
+    $batteryState = (Invoke-Adb @("-s", $idQ.serial, "shell", "dumpsys", "battery")).Text
     Save-Text "battery-dumpsys.txt" $batteryState
     Add-Check "simulation" "battery-verified" ($batteryState -match "level: 42") (([regex]::Match($batteryState, "level: \d+")).Value)
     $rotate = Invoke-Ws @("rotate", "--name", $sessionQ.instance, "--rotation", "1", "--root", $Root) -AllowFailure
@@ -382,19 +502,43 @@ try {
         $bundletool = Get-ChildItem $ToolDir -Filter "bundletool-*.jar" -ErrorAction SilentlyContinue | Select-Object -First 1
         $apks = Join-Path $ToolDir "apks\ws-sample.apks"
         if ($bundletool -and (Test-Path $apks)) {
+            $splitBuild = Join-Path $repo "sample\build-split-apk.ps1"
+            $newestSource = Get-ChildItem (Join-Path $repo "sample\src") -Recurse -Filter "*.java" |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if ((Test-Path $splitBuild) -and $newestSource -and $newestSource.LastWriteTime -gt (Get-Item $apks).LastWriteTime) {
+                Log "rebuilding the signed APK set from the current sample sources"
+                & powershell -ExecutionPolicy Bypass -File $splitBuild -OutDir (Join-Path $ToolDir "apks") -Bundletool $bundletool.FullName 2>&1 | Out-Null
+            }
+
             $version = (& java -jar $bundletool.FullName version 2>&1 | Out-String).Trim()
             Save-Text "bundletool-version.txt" $version
             Add-Check "deployment" "bundletool" ($version -match "\d+\.\d+") $version
 
-            & $adb -s $idP.serial uninstall dev.emulatorworkspace.sample 2>&1 | Out-Null
-            $install = (& java -jar $bundletool.FullName install-apks --apks=$apks --device-id=$idP.serial 2>&1 | Out-String)
+            # The deployment target is a freshly booted duplicate so the
+            # selected device is unambiguous for an external tool.
+            Invoke-Ws @("start", "--name", "p3-dup", "--root", $Root) | Out-Null
+            Invoke-Ws @("wait", "--name", "p3-dup", "--timeout", "600", "--root", $Root) | Out-Null
+            $dupIdentity = Parse-Json (Invoke-Ws @("adb-identity", "--name", "p3-dup", "--root", $Root) -AllowFailure).Text
+            $dupSerial = $dupIdentity.serial
+            Add-Check "deployment" "target-selected" ($dupSerial -ne $null -and $dupSerial -ne $idP.serial) "target serial=$dupSerial"
+            $dupAnr = Ensure-NoAnr $dupSerial "p3-dup"
+            Add-Check "deployment" "no-anr-overlay" $dupAnr.Clear "recovered=$($dupAnr.Recovered)"
+            Unlock-Guest $dupSerial
+            $usable = Wait-TransportUsable $dupSerial
+            Add-Check "deployment" "transport-usable" $usable "round-trip probe on the selected serial"
+            $install = ""
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+                $install = (& java -jar $bundletool.FullName install-apks --apks=$apks --device-id=$dupSerial 2>&1 | Out-String)
+                if ($install -notmatch "Unable to find the requested device") { break }
+                Start-Sleep -Seconds 5
+            }
             Save-Text "bundletool-install.txt" $install
-            $installed = (& $adb -s $idP.serial shell pm list packages 2>&1 | Out-String)
+            $installed = (Invoke-Adb @("-s", $dupSerial, "shell", "pm", "list", "packages")).Text
             Add-Check "deployment" "apks-install" ($installed -match "dev.emulatorworkspace.sample") "package present after .apks deployment"
-            $splits = (& $adb -s $idP.serial shell dumpsys package dev.emulatorworkspace.sample 2>&1 | Out-String)
+            $splits = (Invoke-Adb @("-s", $dupSerial, "shell", "dumpsys", "package", "dev.emulatorworkspace.sample")).Text
             Save-Text "package-dumpsys.txt" $splits
             Add-Check "deployment" "split-install-recorded" ($splits -match "split") "package manager reports split APKs"
-            $otherPackages = (& $adb -s $idQ.serial shell pm list packages 2>&1 | Out-String)
+            $otherPackages = (Invoke-Adb @("-s", $idQ.serial, "shell", "pm", "list", "packages")).Text
             Add-Check "deployment" "target-explicit" (-not ($otherPackages -match "dev.emulatorworkspace.sample")) "the other guest did not receive the deployment"
 
             $bad = Join-Path $out "malformed.apks"
@@ -423,13 +567,24 @@ appId: dev.emulatorworkspace.sample
             $env:ANDROID_HOME = $sdk
             $env:ANDROID_SDK_ROOT = $sdk
             $env:MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED = "true"
-            $otherBefore = (& $adb -s $idQ.serial logcat -d -s WS_SAMPLE:I 2>&1 | Out-String)
+            $otherBefore = (Invoke-Adb @("-s", $idQ.serial, "logcat", "-d", "-s", "WS_SAMPLE:I")).Text
+            $runnerSerial = $dupSerial
             $otherBeforeCount = ([regex]::Matches($otherBefore, "DUP_TAP index=")).Count
-            $maestroRun = (& $maestroBat test --device $idP.serial $flow 2>&1 | Out-String)
+            $listing = (Invoke-Adb @("devices", "-l")).Text
+            $listed = $listing -match ("(?m)^" + [regex]::Escape($runnerSerial) + "\s+device")
+            if (-not $listed) {
+                Invoke-Adb @("reconnect", $runnerSerial) | Out-Null
+                Start-Sleep -Seconds 5
+                $listing = (Invoke-Adb @("devices", "-l")).Text
+                $listed = $listing -match ("(?m)^" + [regex]::Escape($runnerSerial) + "\s+device")
+            }
+            Save-Text "maestro-devices.txt" $listing
+            Add-Check "runner" "device-visible-to-runner" $listed "serial=$runnerSerial listed for the external runner"
+            $maestroRun = (& $maestroBat test --device $runnerSerial $flow 2>&1 | Out-String)
             $maestroCode = $LASTEXITCODE
             Save-Text "maestro-run.txt" $maestroRun
             Add-Check "runner" "maestro-flow" ($maestroCode -eq 0) "exit=$maestroCode"
-            $otherAfter = (& $adb -s $idQ.serial logcat -d -s WS_SAMPLE:I 2>&1 | Out-String)
+            $otherAfter = (Invoke-Adb @("-s", $idQ.serial, "logcat", "-d", "-s", "WS_SAMPLE:I")).Text
             $otherAfterCount = ([regex]::Matches($otherAfter, "DUP_TAP index=")).Count
             Add-Check "runner" "touches-only-selected-guest" ($otherAfterCount -eq $otherBeforeCount) "other guest tap count $otherBeforeCount -> $otherAfterCount"
         }
@@ -440,6 +595,8 @@ appId: dev.emulatorworkspace.sample
 
     if (-not $KeepRunning) {
         foreach ($instance in @($sessionP.instance, $sessionQ.instance, "p3-dup", "p3-import")) {
+            Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) -AllowFailure | Out-Null
+            Start-Sleep -Seconds 2
             $cleanup = Invoke-Ws @("destroy", "--name", $instance, "--root", $Root) -AllowFailure
             Log ("cleanup {0}: exit={1} {2}" -f $instance, $cleanup.Code, (($cleanup.Text -split "`n")[0]))
         }

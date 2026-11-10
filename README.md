@@ -20,7 +20,9 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | MCP stdio server | `src/EmulatorWorkspace.Mcp` | Phase 2, typed tools |
 | TypeScript MCP client | `clients/mcp-client` | Full workflow + secure check (SDK 1.32.2) |
 | Python MCP client | `clients/mcp-python` | Discovery + `device_status` (mcp 2.3.0) |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 32 passing |
+| Device library, snapshots, transport identity | `src/EmulatorWorkspace.Core/Supervisor/DeviceLibraryService.cs` | Phase 3, verified |
+| Phase 3 acceptance harness | `tools/phase3-acceptance.ps1` | Lifecycle, transport, race, simulation, deployment lanes |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 39 passing |
 
 The root-lab UI remains Phase 4 work. Phase 2 closure evidence is in
 `docs/phase2-evidence.md`; Phase 1's desktop click-through and performance
@@ -146,6 +148,7 @@ Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 - [Phase 1 evidence](docs/phase1-evidence.md)
 - [Phase 1 stabilization evidence](docs/phase1-1-evidence.md)
 - [Phase 2 evidence](docs/phase2-evidence.md)
+- [Phase 3 evidence](docs/phase3-evidence.md)
 - [Tools](tools/README.md)
 - [Plan](plan.md)
 - [Task checklist](task.md)

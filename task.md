@@ -47,11 +47,15 @@ All tasks start open. Check off an implementation task after its scoped verifica
 ## 3. Device and QA depth
 
 - [ ] Expand the Device Library with phone and tablet presets, profile customization and import/export, ownership-aware SDK AVD imports, and resource checks. Verify imported originals are preserved.
+  Phone/tablet presets, disk estimates and versioned profile export/import (no secrets) are implemented and verified. Ownership-aware import of an *external* SDK AVD is not implemented; the next action is a preview-and-copy importer that validates source ownership, state, symlinks and reparse points before producing an independent workspace copy.
 - [ ] Complete headless attachment, duplicate, disposable clone, reset, and delete. Add named snapshots with fingerprint validation, clean fallback, recovery point protection, and disk limits. Test parallel starts, interruptions, low space, and rollback.
+  Duplicate (with a new port pair, disk lineage and reparse-point refusal for running sources), reset, delete, snapshot list/validate/delete, fingerprinting, newest-recovery-point protection and a clean-boot fallback after a snapshot load are implemented and verified. Parallel starts, forced interruption and a low-space run are still open.
 - [ ] Add split APK and verified `.apks` installs, explicit `.aab` build and signing choices, manifest and ABI inspection, package and permission operations, deep links, instrumentation, and install diagnostics.
 - [ ] Add crash and ANR capture, bug reports, searchable Logcat export, recordings, UI hierarchy highlighting, profiling entry points, a scoped guest file explorer, and advanced shell controls.
+  Not started in this pass; bounded filtered Logcat export already exists in the agent contract.
 - [ ] Ship GPS, rotation, battery and charging, and documented network speed and latency controls. Probe routes, offline and packet loss, sensors, camera and microphone, locale and timezone, display settings, and telephony or SMS for the second pack. Show exact capability and host-integration limits.
 - [ ] Add bounded recipe recording and replay with preconditions, assertions, deadlines, stop conditions, baseline context, and artifacts. Verify clone and restore under two-guest load.
+  Not started; the reusable pieces (fingerprint, disk lineage, snapshot metadata, scoped approvals, event journal) now exist in the supervisor.
 - [ ] Document opt-in external ADB interoperability and tested integrations. Verify a deployment through Gradle/ADB or Android Studio and a run through an external test runner. Add command palette shortcuts for common workflows.
 
 ## 4. Root Lab
@@ -95,3 +99,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 1 input latency | Partial | Headless dispatch-to-captured-frame: 20/20 valid, p50 434 / p95 474 ms host single; 695/1012 two guests; 741/858 software | Validate WPF composition proxy; 20 samples per mode |
 | Phase 1 disk guard | Verified (injected) | 2 unit tests force low/sufficient space; `low_disk` code and message | Constrained-volume run |
 | Phase 1 acceptance (stabilized) | Verified | `artifacts/phase1-1/acceptance-20261110-183709`: 19/19, strict launch pass | Keep as regression baseline |
+| Phase 2 regression closure | Verified | `artifacts/phase2/20261110-222634`: 42/42, 0 failures; the ambiguous-selector probe now asserts the exact match count (2) against the fixture's duplicated `dup_action` controls | Keep the fixture surface stable so the count stays exact |
+| Phase 3 device library | Verified (partial) | Duplicate with lineage and reparse-point refusal, reset, versioned profile export/import without secrets, presets, disk estimate | External SDK AVD import is still open |
+| Phase 3 snapshots | Verified | List/validate/delete with fingerprints, newest-recovery-point protection, clean-boot fallback after a snapshot load | Test parallel starts, interruption and low space |
+| Phase 3 transport identity | Verified | Two guests, exact serial/transport/engine-pid identity, recycled transport, disconnected target fails closed, physical devices never managed | Two *running* managed guests plus an external transport remain to be repeated |
+| Phase 3 queued-input race | Verified | Hold -> queued (timestamp) -> takeover -> release; the queued tap returned `revoked` and the guest marker stayed `DUP_TAPS=0` | Exercise the same race with two guests under load |
+| Phase 3 deployment | Verified | bundletool 1.18.1 built a signed `.aab`/`.apks` and installed it on one selected guest; malformed set produced a typed diagnostic | Add `.apks` support to the supervisor itself |
+| Phase 3 external runner | Verified | Maestro 2.12.1 flow ran on the selected guest; the other guest's tap count stayed 0 | Pin the flow and add a Gradle deployment path |
+| Phase 3 acceptance harness | Verified | `tools/phase3-acceptance.ps1` run `20261111-030838`: 56 checks, 0 failures; the Phase 2 acceptance runs inside it (`20261111-030904`, 43 checks, 0 failures) | Re-run after any engine or SDK change |
+| Guest ANR overlay | Diagnosed | A blocking "Quickstep isn't responding" dialog was captured in the Maestro debug artifacts and explains the earlier alternating runs; both harnesses now detect it and restart the guest | Keep the detection in the acceptance path |
+| Snapshot restore recovery | Verified | A snapshot load that does not bring the guest back now triggers a clean boot and reports `recovery=cold_boot` | Test the same path under two-guest load |

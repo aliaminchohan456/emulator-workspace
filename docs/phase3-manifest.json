@@ -1,0 +1,591 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-11-10T22:21:18.6398300Z",
+  "runId": "20261111-030838",
+  "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-030838",
+  "rawArtifactsAreGitignored": true,
+  "commit": "27bfb64",
+  "headCommit": "4d40697",
+  "workTree": "clean",
+  "pins": {
+    "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+    "imageRevision": "Pkg.Revision=2",
+    "dotnet": "10.0.302"
+  },
+  "root": "D:\\Phase3Root",
+  "freeBytesAtStart": 389266534400,
+  "failedChecks": 0,
+  "totalChecks": 56,
+  "lanes": {
+    "host": {
+      "passed": 3,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "free-space",
+          "passed": true,
+          "detail": "free=362.5 GB",
+          "atUtc": "2026-11-10T22:08:39.7411228Z"
+        },
+        {
+          "check": "build",
+          "passed": true,
+          "detail": "dotnet build exit=0",
+          "atUtc": "2026-11-10T22:08:45.6314332Z"
+        },
+        {
+          "check": "unit-tests",
+          "passed": true,
+          "detail": "Passed:    39",
+          "atUtc": "2026-11-10T22:08:53.9690333Z"
+        }
+      ]
+    },
+    "setup": {
+      "passed": 2,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "approved-apk",
+          "passed": true,
+          "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+          "atUtc": "2026-11-10T22:08:54.0682999Z"
+        },
+        {
+          "check": "pairs",
+          "passed": true,
+          "detail": "P=ag-81f87d Q=ag-57f399",
+          "atUtc": "2026-11-10T22:09:03.5635079Z"
+        }
+      ]
+    },
+    "phase2": {
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "acceptance",
+          "passed": true,
+          "detail": "exit=0 failed=0 run=20261111-030904",
+          "atUtc": "2026-11-10T22:13:30.6190690Z"
+        }
+      ]
+    },
+    "lifecycle": {
+      "passed": 9,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "duplicate-running-refused",
+          "passed": true,
+          "detail": "running writable disks are never copied",
+          "atUtc": "2026-11-10T22:13:34.0361378Z"
+        },
+        {
+          "check": "duplicate",
+          "passed": true,
+          "detail": "target=p3-dup ports=5562/8558 lineage=2b393e6ad00549d68d000f544aba37fc",
+          "atUtc": "2026-11-10T22:13:40.0977061Z"
+        },
+        {
+          "check": "duplicate-isolated",
+          "passed": true,
+          "detail": "source=24cb13e04b5989d249ce296c4d2f3cd193438f6d8f036acb514792dbc77c9bd2 target=a3dc9586f507349d4d1a69ad684e41874fa7cc3bf5fd1f9b526af6a7d10bd69f",
+          "atUtc": "2026-11-10T22:13:40.1168698Z"
+        },
+        {
+          "check": "template-untouched",
+          "passed": true,
+          "detail": "tpl3: state=Defined engineAlive=false pid=\r",
+          "atUtc": "2026-11-10T22:13:40.5435288Z"
+        },
+        {
+          "check": "reset",
+          "passed": true,
+          "detail": "freedBytes=0",
+          "atUtc": "2026-11-10T22:13:40.9796707Z"
+        },
+        {
+          "check": "presets",
+          "passed": true,
+          "detail": "presets=4",
+          "atUtc": "2026-11-10T22:13:41.4138295Z"
+        },
+        {
+          "check": "disk-estimate",
+          "passed": true,
+          "detail": "required=4294967296 free=377308319744",
+          "atUtc": "2026-11-10T22:13:41.4329871Z"
+        },
+        {
+          "check": "profile-export",
+          "passed": true,
+          "detail": "schema=1 secrets=False",
+          "atUtc": "2026-11-10T22:13:41.8624941Z"
+        },
+        {
+          "check": "profile-import",
+          "passed": true,
+          "detail": "{\r",
+          "atUtc": "2026-11-10T22:13:47.3469971Z"
+        }
+      ]
+    },
+    "snapshot": {
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "save",
+          "passed": true,
+          "detail": "snapshot save ag-81f87d tag=p3-base via=adb in 3.4s",
+          "atUtc": "2026-11-10T22:13:51.1886231Z"
+        },
+        {
+          "check": "list",
+          "passed": true,
+          "detail": "count=5 compatible=True",
+          "atUtc": "2026-11-10T22:13:51.6286030Z"
+        },
+        {
+          "check": "delete-older",
+          "passed": true,
+          "detail": "deleted=mcp-baseline",
+          "atUtc": "2026-11-10T22:13:52.8495476Z"
+        },
+        {
+          "check": "delete-guarded",
+          "passed": true,
+          "detail": "newest recovery point protected",
+          "atUtc": "2026-11-10T22:13:53.3029620Z"
+        },
+        {
+          "check": "delete-forced",
+          "passed": true,
+          "detail": "{\"name\":\"ag-81f87d\",\"tag\":\"p3-base\",\"deleted\":true,\"freedBytes\":2695462261,\"lastRecoveryPoint\":true}",
+          "atUtc": "2026-11-10T22:13:54.4069893Z"
+        },
+        {
+          "check": "restore",
+          "passed": true,
+          "detail": "{\r",
+          "atUtc": "2026-11-10T22:14:10.0836823Z"
+        },
+        {
+          "check": "restore-readiness",
+          "passed": true,
+          "detail": "the guest reports sys.boot_completed=1 after the restore",
+          "atUtc": "2026-11-10T22:14:10.3110360Z"
+        },
+        {
+          "check": "stale-frame-invalidated",
+          "passed": true,
+          "detail": "frame id rejected after restore",
+          "atUtc": "2026-11-10T22:14:15.3905878Z"
+        }
+      ]
+    },
+    "transport": {
+      "passed": 9,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "identity",
+          "passed": true,
+          "detail": "P=emulator-5556/94 Q=emulator-5560/95",
+          "atUtc": "2026-11-10T22:15:54.5858228Z"
+        },
+        {
+          "check": "distinct-targets",
+          "passed": true,
+          "detail": "serials and identities differ",
+          "atUtc": "2026-11-10T22:15:54.6034726Z"
+        },
+        {
+          "check": "cross-guest-denied",
+          "passed": true,
+          "detail": "agent on P cannot address Q",
+          "atUtc": "2026-11-10T22:15:56.2816909Z"
+        },
+        {
+          "check": "external-state-unchanged",
+          "passed": true,
+          "detail": "transport ids stable across agent calls",
+          "atUtc": "2026-11-10T22:15:56.5483009Z"
+        },
+        {
+          "check": "recycled-transport-resolves",
+          "passed": true,
+          "detail": "transportId=96 (was 95) enginePid=18732",
+          "atUtc": "2026-11-10T22:16:02.7994204Z"
+        },
+        {
+          "check": "disconnected-target-fails-closed",
+          "passed": true,
+          "detail": "FAILED [instance_unavailable] The managed serial 'emulator-5560' is not visible to the pinned ADB server.",
+          "atUtc": "2026-11-10T22:16:16.0666380Z"
+        },
+        {
+          "check": "disconnected-target-not-substituted",
+          "passed": true,
+          "detail": "a missing target is never substituted with another guest",
+          "atUtc": "2026-11-10T22:16:16.3629091Z"
+        },
+        {
+          "check": "reconnect-rebounds",
+          "passed": true,
+          "detail": "transportId=97 (was 95)",
+          "atUtc": "2026-11-10T22:17:17.7309076Z"
+        },
+        {
+          "check": "physical-devices-not-managed",
+          "passed": true,
+          "detail": "non-emulator transports visible=0; managed serials are emulator-only",
+          "atUtc": "2026-11-10T22:17:17.7769228Z"
+        }
+      ]
+    },
+    "guest": {
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "no-anr-overlay",
+          "passed": true,
+          "detail": "recovered=False",
+          "atUtc": "2026-11-10T22:17:18.4664211Z"
+        }
+      ]
+    },
+    "race": {
+      "passed": 6,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "fixture-foreground",
+          "passed": true,
+          "detail": "marker before the race=DUP_TAPS=0",
+          "atUtc": "2026-11-10T22:17:31.5996045Z"
+        },
+        {
+          "check": "input-held",
+          "passed": true,
+          "detail": "{\"instance\":\"ag-81f87d\",\"held\":true,\"heldSinceUtc\":\"2026-11-10T22:17:33.4075395\\u002B00:00\",\"waiting\":0}",
+          "atUtc": "2026-11-10T22:17:33.5666472Z"
+        },
+        {
+          "check": "input-queued",
+          "passed": true,
+          "detail": "queuedUtc=2026-11-10T22:17:37.7209959+00:00",
+          "atUtc": "2026-11-10T22:17:38.4186054Z"
+        },
+        {
+          "check": "takeover",
+          "passed": true,
+          "detail": "{\r   \"instance\": \"ag-81f87d\",\r   \"revokedSessions\": 1\r }",
+          "atUtc": "2026-11-10T22:17:39.3943220Z"
+        },
+        {
+          "check": "queued-input-not-authorized",
+          "passed": true,
+          "detail": "wsctl.exe : FAILED [revoked] The agent session has been revoked.\r",
+          "atUtc": "2026-11-10T22:17:40.3535045Z"
+        },
+        {
+          "check": "guest-marker-unchanged",
+          "passed": true,
+          "detail": "marker=DUP_TAPS=0 dupTapLogLines=0 baseline=0",
+          "atUtc": "2026-11-10T22:17:43.5344852Z"
+        }
+      ]
+    },
+    "simulation": {
+      "passed": 4,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "geo-fix",
+          "passed": true,
+          "detail": "{\r",
+          "atUtc": "2026-11-10T22:17:44.4333079Z"
+        },
+        {
+          "check": "battery",
+          "passed": true,
+          "detail": "{\r",
+          "atUtc": "2026-11-10T22:17:45.5604354Z"
+        },
+        {
+          "check": "battery-verified",
+          "passed": true,
+          "detail": "level: 42",
+          "atUtc": "2026-11-10T22:17:45.7451210Z"
+        },
+        {
+          "check": "rotation",
+          "passed": true,
+          "detail": "ag-57f399 rotation set to 1",
+          "atUtc": "2026-11-10T22:17:46.6499517Z"
+        }
+      ]
+    },
+    "deployment": {
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "bundletool",
+          "passed": true,
+          "detail": "1.18.1",
+          "atUtc": "2026-11-10T22:17:47.4290560Z"
+        },
+        {
+          "check": "target-selected",
+          "passed": true,
+          "detail": "target serial=emulator-5562",
+          "atUtc": "2026-11-10T22:19:30.0212564Z"
+        },
+        {
+          "check": "no-anr-overlay",
+          "passed": true,
+          "detail": "recovered=False",
+          "atUtc": "2026-11-10T22:19:31.0976394Z"
+        },
+        {
+          "check": "transport-usable",
+          "passed": true,
+          "detail": "round-trip probe on the selected serial",
+          "atUtc": "2026-11-10T22:19:38.3857976Z"
+        },
+        {
+          "check": "apks-install",
+          "passed": true,
+          "detail": "package present after .apks deployment",
+          "atUtc": "2026-11-10T22:19:46.8018217Z"
+        },
+        {
+          "check": "split-install-recorded",
+          "passed": true,
+          "detail": "package manager reports split APKs",
+          "atUtc": "2026-11-10T22:19:47.3128618Z"
+        },
+        {
+          "check": "target-explicit",
+          "passed": true,
+          "detail": "the other guest did not receive the deployment",
+          "atUtc": "2026-11-10T22:19:47.7042736Z"
+        },
+        {
+          "check": "malformed-apks-diagnosed",
+          "passed": true,
+          "detail": "exit=1 typed diagnostic returned",
+          "atUtc": "2026-11-10T22:19:49.3087315Z"
+        }
+      ]
+    },
+    "runner": {
+      "passed": 3,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "device-visible-to-runner",
+          "passed": true,
+          "detail": "serial=emulator-5562 listed for the external runner",
+          "atUtc": "2026-11-10T22:19:50.1723175Z"
+        },
+        {
+          "check": "maestro-flow",
+          "passed": true,
+          "detail": "exit=0",
+          "atUtc": "2026-11-10T22:20:46.1545258Z"
+        },
+        {
+          "check": "touches-only-selected-guest",
+          "passed": true,
+          "detail": "other guest tap count 0 -> 0",
+          "atUtc": "2026-11-10T22:20:46.9762436Z"
+        }
+      ]
+    },
+    "cleanup": {
+      "passed": 2,
+      "failed": 0,
+      "checks": [
+        {
+          "check": "disposables-removed",
+          "passed": true,
+          "detail": "remaining=0",
+          "atUtc": "2026-11-10T22:21:18.5869067Z"
+        },
+        {
+          "check": "template-preserved",
+          "passed": true,
+          "detail": "template kept",
+          "atUtc": "2026-11-10T22:21:18.6092718Z"
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "adb-devices-after.txt",
+      "bytes": 398,
+      "sha256": "d620bb350ac20b5f4170216fbeca489f0c90a61560a6061be17ae7081bcaf705"
+    },
+    {
+      "name": "adb-devices-before.txt",
+      "bytes": 398,
+      "sha256": "d620bb350ac20b5f4170216fbeca489f0c90a61560a6061be17ae7081bcaf705"
+    },
+    {
+      "name": "adb-identity.json",
+      "bytes": 878,
+      "sha256": "3b166c923afafc363e8ead32f7ca396379d7160a7e93497cba1a958b7cf3c747"
+    },
+    {
+      "name": "battery-dumpsys.txt",
+      "bytes": 390,
+      "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+    },
+    {
+      "name": "battery.json",
+      "bytes": 78,
+      "sha256": "6fde234dea9bc372363ae1d329180b68c73a7c0c7b3db7d2c97d270063ca15b9"
+    },
+    {
+      "name": "build.txt",
+      "bytes": 87,
+      "sha256": "bf072412b8e31817eda6e4549e9089538ef3614ebf9f84d84d7fa1903695f646"
+    },
+    {
+      "name": "bundletool-install.txt",
+      "bytes": 523,
+      "sha256": "9ffbc40f155849cc4571cd757f0c4adfeb8b43b88813706be84bebe53e7c4006"
+    },
+    {
+      "name": "bundletool-malformed.txt",
+      "bytes": 2089,
+      "sha256": "cafac0450edcfe3d62db24b5d4449dd4900a37502f7a5a1f9362ed9c19df2b9b"
+    },
+    {
+      "name": "bundletool-version.txt",
+      "bytes": 11,
+      "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+    },
+    {
+      "name": "cross-guest.json",
+      "bytes": 35,
+      "sha256": "04b974cb2c4275d7c0dcebdcc16e8ed148a049e6e45b695b49c985a1142cc35e"
+    },
+    {
+      "name": "geo.json",
+      "bytes": 107,
+      "sha256": "39a5444554eab969b708f9e89f15effa42ed3dd7066094034d4bf84f51a6931d"
+    },
+    {
+      "name": "instances-final.txt",
+      "bytes": 81,
+      "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+    },
+    {
+      "name": "maestro-devices.txt",
+      "bytes": 521,
+      "sha256": "2a87a084a12f312ff06fbb98ab97034ec1a70510574ee192435b8e335e5feb77"
+    },
+    {
+      "name": "maestro-duplicate.yaml",
+      "bytes": 163,
+      "sha256": "86b52458fb4819706a83c87154b31f92084112b8da20d3d7827e54aaa3d38c90"
+    },
+    {
+      "name": "maestro-run.txt",
+      "bytes": 264,
+      "sha256": "c1a8f1200115640e105181a36c60cbac0ae49023303b42a0d20ed43a4c0512c0"
+    },
+    {
+      "name": "malformed.apks",
+      "bytes": 27,
+      "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+    },
+    {
+      "name": "package-dumpsys.txt",
+      "bytes": 3538,
+      "sha256": "811e43be33c01c7a70a91e383c904ed1c28d5699740ea5f3cd9bbc7e9356d077"
+    },
+    {
+      "name": "phase2-acceptance.txt",
+      "bytes": 10966,
+      "sha256": "4befeb44cf7d36bc4ce0e1b9820e6b05ff9ab084aa2eeff03a50379ace05f81f"
+    },
+    {
+      "name": "phase2-summary.json",
+      "bytes": 12129,
+      "sha256": "2e7ce781bdd7386b37f15fe001d2a9f29b6efcfb1d40e3bb1eb934c8db0c5ea7"
+    },
+    {
+      "name": "profile-export.json",
+      "bytes": 538,
+      "sha256": "2de193f242ee1ca7f7389eb94ffb673a89545bead7e339298e1ccb62d7783b3f"
+    },
+    {
+      "name": "profile-import-request.json",
+      "bytes": 928,
+      "sha256": "887eab6d619d188226da0cb20119df041bbc4122621190baddbff62173f1b67b"
+    },
+    {
+      "name": "race-logcat.txt",
+      "bytes": 994,
+      "sha256": "0dafda6399d1ee8eefedf0f2dfe33fa9d0076e65befaafbe825456a75794ea40"
+    },
+    {
+      "name": "race-tap-result.txt",
+      "bytes": 402,
+      "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+    },
+    {
+      "name": "race-tap.json",
+      "bytes": 94,
+      "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+    },
+    {
+      "name": "race-timeline.json",
+      "bytes": 648,
+      "sha256": "7068dcf39a7600429c0fc7a10cdc182b3136b77b61ad9e08578b6bdbccc8be3c"
+    },
+    {
+      "name": "race-ui.xml",
+      "bytes": 6742,
+      "sha256": "ea21ff7b73dcd30d8e23788930d3b9e3760cedb226be691773d61cc922a08ea9"
+    },
+    {
+      "name": "restore.json",
+      "bytes": 63,
+      "sha256": "916867ee13df260320a762a902d857c4b8398c08e94a694ce0d61e0f4b6f8b15"
+    },
+    {
+      "name": "snapshot-list.json",
+      "bytes": 1948,
+      "sha256": "b9209aadaffc101d9a5d5e267fbf773856bcb5ac37f0ad8c322d26fa7c466274"
+    },
+    {
+      "name": "stale-after-restore.json",
+      "bytes": 78,
+      "sha256": "6ae03e8376491ecc709026091c4ea3e342713648aad806a42ef9d85945036523"
+    },
+    {
+      "name": "tests.txt",
+      "bytes": 351,
+      "sha256": "e234f00c66d88086ac374ed34d7f3ad848c29a6cdaf727d3e7a56aafde1ea2d1"
+    },
+    {
+      "name": "transcript.txt",
+      "bytes": 5050,
+      "sha256": "015ba28e45140c161bef9ea429c20802832c902b66b06b2f9340ab4dac1d2382"
+    },
+    {
+      "name": "versions.json",
+      "bytes": 757,
+      "sha256": "cbe69aab85120a6d5bdff0259878e6fb8e194d5190ac82fe2f95672143147ec0"
+    }
+  ]
+}

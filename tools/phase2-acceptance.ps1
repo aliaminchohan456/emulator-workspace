@@ -68,25 +68,101 @@ function Add-Check([string]$name, [bool]$ok, [string]$detail) {
     Log ("{0} {1}: {2}" -f $(if ($ok) { "PASS" } else { "FAIL" }), $name, $detail)
 }
 
-function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure) {
-    $previous = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $output = & $wsctl @arguments 2>&1
-        $code = $LASTEXITCODE
+function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure, [int]$timeoutSeconds = 420) {
+    # The client is bounded: a supervisor that never answers is reported as a
+    # timeout instead of blocking the harness.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $wsctl
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.CreateNoWindow = $true
+    $quoted = @()
+    foreach ($argument in $arguments) {
+        $quoted += ('"' + ($argument -replace '"', '\"') + '"')
     }
-    finally {
-        $ErrorActionPreference = $previous
+    $info.Arguments = $quoted -join " "
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdout = $process.StandardOutput.ReadToEndAsync()
+    $stderr = $process.StandardError.ReadToEndAsync()
+    $timedOut = -not $process.WaitForExit($timeoutSeconds * 1000)
+    if ($timedOut) {
+        try { $process.Kill() } catch { }
+        try { $process.WaitForExit(5000) | Out-Null } catch { }
     }
 
-    $text = ($output | Out-String).Trim()
-    if ($code -ne 0 -and -not $AllowFailure) {
+    $text = ""
+    try { $text = $stdout.Result + $stderr.Result } catch { }
+    $code = -1
+    try { $code = $process.ExitCode } catch { }
+    try { $process.Dispose() } catch { }
+    $text = ($text | Out-String).Trim()
+    if ($code -ne 0 -and -not $AllowFailure -and -not $timedOut) {
         throw "wsctl $($arguments -join ' ') failed ($code): $text"
     }
 
-    return [pscustomobject]@{ Code = $code; Text = $text }
+    return [pscustomobject]@{ Code = $code; Text = $text; TimedOut = $timedOut }
+}
+function Test-Anr([string]$serial) {
+    $dump = (Invoke-Adb @("-s", $serial, "shell", "dumpsys", "window")).Text
+    return ($dump -match "Not Responding|isn't responding|ANR in")
 }
 
+function Ensure-NoAnr([string]$serial, [string]$instance, [int]$attempts = 3) {
+    # A stuck SystemUI/launcher can raise a blocking "not responding" dialog
+    # that hides the application from every observer. The guest is restarted
+    # until the dialog is gone, and the recovery is reported.
+    $recovered = $false
+    for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+        if (-not (Test-Anr $serial)) { return [pscustomobject]@{ Clear = $true; Recovered = $recovered } }
+        $recovered = $true
+        Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) | Out-Null
+        Invoke-Ws @("start", "--name", $instance, "--root", $Root) | Out-Null
+        Invoke-Ws @("wait", "--name", $instance, "--timeout", "600", "--root", $Root) | Out-Null
+    }
+    return [pscustomobject]@{ Clear = -not (Test-Anr $serial); Recovered = $recovered }
+}
+
+function Invoke-Adb([string[]]$arguments, [int]$timeoutSeconds = 30) {
+    # Every ADB client is bounded: on timeout only this owned client is
+    # terminated; the shared ADB server and unrelated targets are untouched.
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $adb
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.CreateNoWindow = $true
+    $quoted = @()
+    foreach ($argument in $arguments) {
+        $quoted += ('"' + ($argument -replace '"', '\"') + '"')
+    }
+    $info.Arguments = $quoted -join " "
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdout = $process.StandardOutput.ReadToEndAsync()
+    $stderr = $process.StandardError.ReadToEndAsync()
+    $timedOut = -not $process.WaitForExit($timeoutSeconds * 1000)
+    if ($timedOut) {
+        try { $process.Kill() } catch { }
+        try { $process.WaitForExit(5000) | Out-Null } catch { }
+    }
+
+    $text = ""
+    try { $text = $stdout.Result + $stderr.Result } catch { }
+    $code = -1
+    try { $code = $process.ExitCode } catch { }
+    try { $process.Dispose() } catch { }
+    return [pscustomobject]@{
+        Code = $code
+        Text = ($text | Out-String).Trim()
+        TimedOut = $timedOut
+    }
+}
 function Parse-Json([string]$text) {
     try {
         return $text | ConvertFrom-Json
@@ -204,6 +280,8 @@ try {
 
     $install = Invoke-Ws @("install", "--name", $instance, "--apk", "sample", "--token-file", $TokenFile, "--root", $Root) -AllowFailure
     Add-Check "install" ($install.Code -eq 0) ($install.Text -split "`n")[0]
+    $anr = Ensure-NoAnr $serial $instance
+    Add-Check "guest.no-anr-overlay" $anr.Clear "recovered=$($anr.Recovered)"
     $launch = Invoke-Ws @("launch", "--name", $instance, "--package", "dev.emulatorworkspace.sample", "--token-file", $TokenFile, "--root", $Root) -AllowFailure
     Add-Check "launch" ($launch.Code -eq 0) ($launch.Text -split "`n")[0]
     Start-Sleep -Seconds 3
@@ -248,8 +326,8 @@ try {
     $bootDeadline = (Get-Date).AddSeconds(360)
     $booted = $false
     while ((Get-Date) -lt $bootDeadline) {
-        $state = (& $adb -s $serial get-state 2>&1 | Out-String).Trim()
-        $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Out-String).Trim()
+        $state = (Invoke-Adb @("-s", $serial, "get-state")).Text
+        $boot = (Invoke-Adb @("-s", $serial, "shell", "getprop", "sys.boot_completed")).Text
         if ($state -eq "device" -and $boot -eq "1") { $booted = $true; break }
         Start-Sleep -Seconds 3
     }
@@ -268,6 +346,8 @@ try {
 
     # Guest-only network shaping: baseline success, shaped timeout, baseline again.
     Add-Check "adb.ready.pre-network" (Wait-Adb $serial 120) "get-state=device"
+    $anr2 = Ensure-NoAnr $serial $instance
+    Add-Check "guest.no-anr-overlay.pre-network" $anr2.Clear "recovered=$($anr2.Recovered)"
     $netBaseline = Call "network.profile" '{"delay":"none","speed":"full","latencyMs":0}'
     Call "input.tap" '{"selector":{"contentDescription":"login_button"}}' | Out-Null
     Start-Sleep -Seconds 3
@@ -397,7 +477,7 @@ try {
     $staleShot = Call "observation.screenshot" "{}"
     $staleFrame = $staleShot.Json.frameId
     $staleArgs = Join-Path $out "stale-frame.json"
-    Set-Content $staleArgs ("{`"frameId`":`"$staleFrame`",`"x`":540,`"y`":720}") -Encoding UTF8
+    Set-Content $staleArgs ("{`"frameId`":`"$staleFrame`",`"x`":540,`"y`":1400}") -Encoding UTF8
     $bump = Invoke-Ws @("call", "--op", "input.tap", "--args-file", $staleArgs, "--token-file", $TokenFile, "--root", $Root) -AllowFailure
     Add-Check "stale.bump" ($bump.Code -eq 0) $bump.Text
     $stale = Invoke-Ws @("call", "--op", "input.tap", "--args-file", $staleArgs, "--token-file", $TokenFile, "--root", $Root) -AllowFailure

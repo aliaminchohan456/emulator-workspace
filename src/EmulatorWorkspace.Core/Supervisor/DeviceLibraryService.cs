@@ -346,6 +346,17 @@ public sealed class DeviceLibraryService
         WriteConfig(target, targetConfig);
 
         var sourceMetadata = ReadMetadata(source);
+        if (sourceMetadata is null)
+        {
+            sourceMetadata = new JsonObject
+            {
+                ["lineageId"] = "lin-" + ComputeConfigFingerprint(ReadConfig(source))[..16],
+                ["createdUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+                ["configFingerprint"] = ComputeConfigFingerprint(ReadConfig(source)),
+            };
+            WriteMetadata(source, sourceMetadata);
+        }
+
         var lineage = Guid.NewGuid().ToString("N");
         WriteMetadata(target, new JsonObject
         {

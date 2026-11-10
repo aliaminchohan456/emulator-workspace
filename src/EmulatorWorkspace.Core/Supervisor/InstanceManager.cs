@@ -662,18 +662,80 @@ public sealed class InstanceManager
                 throw new SupervisorOperationException(ErrorCodes.SnapshotFailed, $"Snapshot '{tag}' returned: {output}");
             }
 
+            var recovery = "none";
+            if (!save)
+            {
+                // A snapshot load can leave the guest without an interactive
+                // Android runtime. The restore is only complete once the guest
+                // answers again; otherwise the supervisor performs a clean boot
+                // so the caller always gets a usable guest back.
+                if (!await WaitForInteractiveAsync(record, TimeSpan.FromSeconds(90), cancellationToken)
+                        .ConfigureAwait(false))
+                {
+                    await StopAsync(name, force: true, cancellationToken).ConfigureAwait(false);
+                    await StartAsync(
+                        name,
+                        gpu: null,
+                        headless: record.Headless,
+                        coldBoot: true,
+                        ramdisk: null,
+                        cancellationToken).ConfigureAwait(false);
+                    await WaitAsync(name, TimeSpan.FromSeconds(300), cancellationToken).ConfigureAwait(false);
+                    recovery = "cold_boot";
+                }
+                else
+                {
+                    recovery = "restored";
+                }
+            }
+
             return new JsonObject
             {
                 ["name"] = name,
                 ["tag"] = tag,
                 ["action"] = save ? "save" : "load",
                 ["seconds"] = Math.Round(stopwatch.Elapsed.TotalSeconds, 2),
+                ["recovery"] = recovery,
             };
         }
         catch (InvalidOperationException ex)
         {
             throw new SupervisorOperationException(ErrorCodes.SnapshotFailed, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Reports whether the guest answers again after a snapshot load: the
+    /// transport must exist and Android must report boot completion.
+    /// </summary>
+    private async Task<bool> WaitForInteractiveAsync(
+        InstanceRecord record, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow + timeout;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            try
+            {
+                var probe = await _adb.RunAsync(
+                        record.AdbSerial,
+                        new[] { "shell", "getprop", "sys.boot_completed" },
+                        TimeSpan.FromSeconds(15),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (probe.ExitCode == 0 && probe.StandardOutput.Trim() == "1")
+                {
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // The guest is still coming back; keep waiting.
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
+        }
+
+        return false;
     }
 
     public async Task<byte[]> CapturePngAsync(
@@ -727,6 +789,21 @@ public sealed class InstanceManager
                 $"The managed serial '{record.AdbSerial}' is '{state}'; the target is not usable.");
         }
 
+        var probe = await _adb.RunAsync(
+                record.AdbSerial,
+                new[] { "shell", "echo", "ws-identity-probe" },
+                TimeSpan.FromSeconds(20),
+                cancellationToken)
+            .ConfigureAwait(false);
+        var transportUsable = probe.ExitCode == 0
+                              && probe.StandardOutput.Contains("ws-identity-probe", StringComparison.Ordinal);
+        if (!transportUsable)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                $"The managed serial '{record.AdbSerial}' is listed but did not answer a round-trip probe.");
+        }
+
         var identity = string.Join(
             "|",
             record.Name,
@@ -750,6 +827,7 @@ public sealed class InstanceManager
             ["engineStartUtc"] = record.EngineStartTimeUtc,
             ["consolePort"] = record.ConsolePort,
             ["grpcPort"] = record.GrpcPort,
+            ["transportUsable"] = transportUsable,
             ["identity"] = Convert.ToHexString(
                 System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(identity)))
                 .ToLowerInvariant(),

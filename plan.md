@@ -26,6 +26,19 @@ transport cross-check and a live queued-input takeover race; Phase 1's desktop
 click-through and performance targets remain separate open items. Evidence:
 [docs/phase2-evidence.md](docs/phase2-evidence.md).
 
+Phase 3 status (2026-11-11): the device library, snapshot, transport-identity,
+simulation, deployment and external-runner slices are implemented and verified on
+WHPX in `tools/phase3-acceptance.ps1`. A snapshot load no longer leaves the
+guest unusable: the supervisor waits for the guest to answer again and performs
+a clean boot when it does not. Two managed guests, an exact serial/transport/
+engine-pid identity, a queued-input takeover race, a targeted `.apks`
+deployment with pinned bundletool and a Maestro run against one selected guest
+are all recorded in `docs/phase3-evidence.md`. Open: external SDK AVD import,
+recipe record/replay, package/deep-link/instrumentation operations, crash/ANR
+and bug-report capture, the second simulation pack, the desktop command palette
+and the WPF click-through run. Evidence:
+[docs/phase3-evidence.md](docs/phase3-evidence.md).
+
 Phase 1 status (2026-11-10, stabilization pass): the developer MVP runs on real
 Windows hardware. A persistent per-user supervisor owns lifecycle, SQLite state,
 ports, credentials, and a versioned named-pipe contract; the WPF desktop embeds

@@ -49,6 +49,12 @@ the default AVD home were not used.
 - **Sample fixture**: semantic login form, host HTTP login, FLAG_SECURE screen,
   counter and animated scene. APK 16,787 bytes, SHA-256
   `6B56060693294149F8A394E66AFB9579809DE81B2E7490E0567721416FBBF1C7`.
+  Phase 3 extended the same fixture with a deterministic duplicate-selector
+  surface (two controls sharing the content description `dup_action` and a
+  `dup_marker` counter) and added a version code for bundle tooling; the
+  acceptance APK for Phase 3 is SHA-256
+  `09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351`
+  (see [phase3-evidence.md](phase3-evidence.md)).
 
 ## Secure observation — verified
 
