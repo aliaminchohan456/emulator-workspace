@@ -245,8 +245,11 @@ public sealed class OperationDispatcher
 
             case OperationNames.FrameSubscribe:
             {
-                var width = JsonArgs.Int(args, "width") ?? 720;
-                var id = await _manager.SubscribeFramesAsync(name, width, sink.SendEventAsync, cancellationToken)
+                var width = JsonArgs.Int(args, "width") ?? 540;
+                var height = JsonArgs.Int(args, "height") ?? 1200;
+                var format = JsonArgs.String(args, "format") ?? "rgb";
+                var id = await _manager.SubscribeFramesAsync(
+                        name, format, width, height, sink.SendEventAsync, cancellationToken)
                     .ConfigureAwait(false);
                 sink.TrackSubscription(id);
                 return new JsonObject
@@ -254,7 +257,7 @@ public sealed class OperationDispatcher
                     ["subscription"] = id,
                     ["name"] = name,
                     ["width"] = width,
-                    ["path"] = _manager.FramePath(name),
+                    ["path"] = _manager.FramePath(name, format),
                 };
             }
 

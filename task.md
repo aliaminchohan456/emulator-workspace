@@ -84,3 +84,8 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 1 acceptance | Partial | `tools/phase1-acceptance.ps1` run `20261110-172411`: 19 checks, 18 pass, 1 fail (SystemUI ANR) | Re-run on a quiet host; add latency probe |
 | Phase 0 regression via supervisor | Verified | `tools/phase0-spike.ps1` run `run-20261110-174228`: 26/26 checks, two guests, snapshots 5.61/5.86 s | Keep in release CI |
 | Phase 1 performance | Missed target | 3.66 FPS single / 1.07 FPS two guests, p95 352 / 1641 ms; limiter is emulator PNG capture | Profile capture path; test raw RGBA and 720x1600 guest |
+| Phase 1 strict launch | Verified | `launch-check.ps1`: pass on a settled guest, pass under two-guest load, fresh acceptance 19/19; original ANR failure preserved | Automate the same check in WPF click-through |
+| Phase 1 capture path | Verified (faster) | RGB888 540x1200: 32.6-34.5 FPS supervisor, 29.4 FPS WPF, p95 45 ms; PNG 3.66 FPS retained as fallback | Profile encoded transport; 60 FPS still missed |
+| Phase 1 input latency | Partial | Headless dispatch-to-captured-frame: 20/20 valid, p50 434 / p95 474 ms host single; 695/1012 two guests; 741/858 software | Validate WPF composition proxy; 20 samples per mode |
+| Phase 1 disk guard | Verified (injected) | 2 unit tests force low/sufficient space; `low_disk` code and message | Constrained-volume run |
+| Phase 1 acceptance (stabilized) | Verified | `artifacts/phase1-1/acceptance-20261110-183709`: 19/19, strict launch pass | Keep as regression baseline |

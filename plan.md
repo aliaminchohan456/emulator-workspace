@@ -12,14 +12,17 @@ proven on the reference host. Pinned for testing: Android Emulator 37.2.12
 the engine's own gRPC controller protos. Evidence, deviations, and remaining
 measurements are in [docs/phase0-evidence.md](docs/phase0-evidence.md).
 
-Phase 1 status (2026-11-10): the developer MVP runs on real Windows hardware.
-A persistent per-user supervisor owns lifecycle, SQLite state, ports,
-credentials, and a versioned named-pipe contract; the WPF desktop embeds the
-live guest with input, Inspector, Logcat, and APK drop. The deterministic sample
-APK installs, launches, and answers taps. Acceptance run `20261110-172411`
-passed 18 of 19 checks; the one failure is a SystemUI ANR overlay on the launch
-foreground check. Evidence, measurements, and open gates are in
-[docs/phase1-evidence.md](docs/phase1-evidence.md).
+Phase 1 status (2026-11-10, stabilization pass): the developer MVP runs on real
+Windows hardware. A persistent per-user supervisor owns lifecycle, SQLite state,
+ports, credentials, and a versioned named-pipe contract; the WPF desktop embeds
+the live guest with input, Inspector, Logcat, and APK drop. Acceptance run
+`20261110-183709` passed 19/19 checks, including a strict launch check that
+rejects ANR overlays; the original 18/19 run and its artifacts are preserved.
+The interactive capture path moved from PNG to controller RGB888 at 540x1200,
+measuring 32-34 FPS through the supervisor and 29.4 FPS in WPF versus 3.66 FPS
+before. The 60 FPS and p95 <=100 ms targets are still missed. Evidence, raw
+samples, and open gates are in
+[docs/phase1-1-evidence.md](docs/phase1-1-evidence.md).
 
 ## Initial architecture decisions
 
@@ -142,8 +145,10 @@ Declare the reference host, Windows build, CPU, GPU and driver, RAM, storage, WH
 
 Compare completed workflows with Android Studio agent integration, the raw Emulator CLI, and an existing mobile MCP server. Use measured results, reproducible steps, and documented limitations in release claims.
 
-Measured Phase 1 (host GPU, acceptance `20261110-172411`): one guest 3.66
-delivered FPS (p50 239 ms, p95 352 ms frame interval); two guests 1.07 FPS
-(p50 882 ms, p95 1641 ms). Guest-side rendering was ~57 FPS, identifying the
-emulator screenshot encoder as the limiter. Targets are not met on this host;
-software fallback and 20-sample input latency remain open.
+Measured Phase 1 stabilization (host GPU, RGB24 540x1200): one guest 32.6-34.5
+delivered FPS (p50 24-26 ms, p95 45-46 ms), two booted guests 20.1 FPS (p50
+47 ms, p95 86 ms), software GPU 17.2 FPS (p50 55 ms, p95 94 ms). Input latency
+dispatch-to-captured-frame was p50 434 ms / p95 474 ms single guest, 695/1012 ms
+two guests, 741/858 ms software. The 60 FPS target is still missed; the remaining
+limiter is engine capture plus host CPU. Composition-proxy latency is not yet
+validated.

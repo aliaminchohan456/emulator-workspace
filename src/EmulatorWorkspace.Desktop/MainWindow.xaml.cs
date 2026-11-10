@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Text.Json.Nodes;
 using EmulatorWorkspace.Desktop.Services;
 using EmulatorWorkspace.Desktop.ViewModels;
 
@@ -33,6 +34,101 @@ public partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
+    public async Task<int> RunLatencyProbeAsync(int count, string outPath, int frameTimeoutSeconds = 45)
+    {
+        Topmost = true;
+        WindowState = WindowState.Normal;
+        Activate();
+        var frameDeadline = DateTimeOffset.UtcNow.AddSeconds(frameTimeoutSeconds);
+        while (DateTimeOffset.UtcNow < frameDeadline
+               && (!_viewModel.IsConnected || !_viewModel.HasFrame))
+        {
+            await Task.Delay(250);
+        }
+
+        if (!_viewModel.HasFrame)
+        {
+            MessageBox.Show("No frame arrived; the guest must be running with the sample app foreground.",
+                "Latency probe", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return 2;
+        }
+
+        var samples = new JsonArray();
+        var values = new List<double>();
+        var timeouts = 0;
+        for (var trial = 1; trial <= count; trial++)
+        {
+            var latency = await _viewModel.ProbeTapAsync(540, 720, 2500);
+            Services.DesktopLog.Write($"probe trial {trial} latency={(latency?.ToString("N1") ?? "timeout")}");
+            if (latency is null)
+            {
+                timeouts++;
+                samples.Add(new JsonObject { ["trial"] = trial, ["timeout"] = true });
+            }
+            else
+            {
+                values.Add(latency.Value);
+                samples.Add(new JsonObject
+                {
+                    ["trial"] = trial,
+                    ["ms"] = Math.Round(latency.Value, 2),
+                    ["timeout"] = false,
+                });
+            }
+
+            await Task.Delay(220);
+
+            var partial = new JsonObject
+            {
+                ["trials"] = trial,
+                ["valid"] = values.Count,
+                ["timeouts"] = timeouts,
+                ["samples"] = samples.DeepClone(),
+            };
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+            await File.WriteAllTextAsync(outPath + ".partial",
+                partial.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        values.Sort();
+        double Percentile(double fraction)
+        {
+            if (values.Count == 0)
+            {
+                return 0;
+            }
+
+            var index = Math.Clamp((int)Math.Ceiling(fraction * values.Count) - 1, 0, values.Count - 1);
+            return Math.Round(values[index], 2);
+        }
+
+        var trace = await _viewModel.GetFrameTraceAsync();
+        var summary = new JsonObject
+        {
+            ["mode"] = _viewModel.GpuMode,
+            ["compositionProxy"] = true,
+            ["trials"] = count,
+            ["valid"] = values.Count,
+            ["timeouts"] = timeouts,
+            ["p50Ms"] = Percentile(0.50),
+            ["p95Ms"] = Percentile(0.95),
+            ["minMs"] = values.Count == 0 ? 0 : Math.Round(values[0], 2),
+            ["maxMs"] = values.Count == 0 ? 0 : Math.Round(values[^1], 2),
+            ["deliveredWidth"] = _viewModel.DeliveredFrameWidth,
+            ["deliveredHeight"] = _viewModel.DeliveredFrameHeight,
+            ["deliveredFps"] = Math.Round(_viewModel.DeliveredFps, 2),
+            ["dropped"] = _viewModel.DroppedFrames,
+            ["guestWidth"] = _viewModel.GuestWidth,
+            ["guestHeight"] = _viewModel.GuestHeight,
+            ["frameTrace"] = trace,
+            ["samples"] = samples,
+            ["capturedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+        await File.WriteAllTextAsync(outPath, summary.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        return 0;
+    }
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName is nameof(MainViewModel.Frame)

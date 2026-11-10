@@ -54,6 +54,22 @@ public sealed class EmulatorControlChannel : IDisposable
             new Google.Protobuf.WellKnownTypes.Empty(),
             CreateOptions(deadline, cancellationToken)).ResponseAsync;
 
+    public Task<Android.Emulation.Control.Image> GetImageAsync(
+        ImageFormat request,
+        TimeSpan? deadline = null,
+        CancellationToken cancellationToken = default) =>
+        _controller.getScreenshotAsync(request, CreateOptions(deadline, cancellationToken)).ResponseAsync;
+
+    public async IAsyncEnumerable<Android.Emulation.Control.Image> StreamImagesAsync(
+        ImageFormat request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        using var call = _controller.streamScreenshot(request, CreateOptions(null, cancellationToken));
+        await foreach (var image in call.ResponseStream.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        {
+            yield return image;
+        }
+    }
     public async Task<byte[]> GetScreenshotPngAsync(
         int? width = null,
         int? height = null,

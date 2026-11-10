@@ -32,11 +32,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private SupervisorConnection? _connection;
     private string? _framePath;
+    private PendingFrame? _pendingFrame;
     private int _frameSequence;
     private string? _frameSubscription;
     private string? _logcatSubscription;
     private bool _frameLoopRunning;
     private PendingInput? _pendingInput;
+    private ProbeState? _probe;
     private string ViewportWidthHint = "n/a";
     private int? _lastMarkerColor;
     private DateTimeOffset _lastFramePresented;
@@ -508,7 +510,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             IsConnected = false;
             ErrorMessage = ex.Message;
-            StatusMessage = "Supervisor unavailable.";
+            StatusMessage = "Supervisor or SDK unavailable.";
+            ShowSetup = true;
+            HasBlockingIssue = true;
+            SetupSummary = "The pinned Android SDK could not be used. Fix the items below, then choose Refresh.";
+            SetupIssues.Clear();
+            SetupIssues.Add("Android SDK incomplete or missing: " + ex.Message);
+            SetupIssues.Add("Install cmdline-tools, platform-tools, emulator 37.2.12, and system-images;android-35;default;x86_64 revision 2 from the official SDK Manager.");
+            SetupIssues.Add("Accept the SDK licenses, set ANDROID_HOME to that SDK, then restart the workspace supervisor.");
+            DoctorText = "No SDK report available. The pinned image and emulator are never substituted automatically.";
         }
         finally
         {
@@ -810,6 +820,83 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// One latency trial: dispatch a tap, wait for a presented frame whose sample
+    /// marker colour changed, then timestamp the next WPF composition pass.
+    /// Returns null on timeout.
+    /// </summary>
+    public async Task<double?> ProbeTapAsync(int x, int y, int timeoutMs = 2500)
+    {
+        if (SelectedDevice is null || !SelectedDevice.IsRunning || Frame is null)
+        {
+            return null;
+        }
+
+        var baseline = SampleMarkerColor();
+        if (baseline is null)
+        {
+            return null;
+        }
+
+        var completion = new TaskCompletionSource<double?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _probe = new ProbeState(completion, Stopwatch.StartNew());
+        _pendingInput = new PendingInput(DateTimeOffset.UtcNow, baseline);
+
+        try
+        {
+            await RequestAsync(
+                OperationNames.InputTap,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["x"] = x, ["y"] = y },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+            _probe = null;
+            _pendingInput = null;
+            return null;
+        }
+
+        var winner = await Task.WhenAny(completion.Task, Task.Delay(timeoutMs)).ConfigureAwait(true);
+        if (winner != completion.Task)
+        {
+            _probe = null;
+            _pendingInput = null;
+            return null;
+        }
+
+        return await completion.Task.ConfigureAwait(true);
+    }
+
+    public async Task<JsonObject?> GetFrameTraceAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await RequestAsync(
+                OperationNames.FrameTrace,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    public string GpuMode => SelectedDevice?.Gpu ?? "";
+
+    public int DeliveredFrameWidth => FrameWidth;
+
+    public int DeliveredFrameHeight => FrameHeight;
+
+    public double DeliveredFps => FramesPerSecond;
+
+    public int DroppedFrames => _droppedFrames;
+
     public async Task SendTapAsync(int x, int y)
     {
         if (SelectedDevice is null || !SelectedDevice.IsRunning)
@@ -1076,7 +1163,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DesktopLog.Write("subscribe request");
             var data = await RequestAsync(
                 OperationNames.FrameSubscribe,
-                new JsonObject { ["name"] = device.Name, ["width"] = 540 },
+                new JsonObject { ["name"] = device.Name, ["format"] = "rgb", ["width"] = 540, ["height"] = 1200 },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
             _frameSubscription = data["subscription"]!.GetValue<string>();
             _framePath = data["path"]?.GetValue<string>();
@@ -1164,17 +1251,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 if (envelope.Data is JsonObject frame)
                 {
                     var path = frame["path"]?.GetValue<string>();
-                    GuestWidth = frame["width"]?.GetValue<int>() ?? GuestWidth;
-                    GuestHeight = frame["height"]?.GetValue<int>() ?? GuestHeight;
+                    var format = frame["format"]?.GetValue<string>() ?? "png";
+                    var frameWidth = frame["width"]?.GetValue<int>() ?? 0;
+                    var frameHeight = frame["height"]?.GetValue<int>() ?? 0;
+                    var stride = frame["stride"]?.GetValue<int>() ?? frameWidth * 3;
+                    var guestWidth = frame["guestWidth"]?.GetValue<int>() ?? GuestWidth;
+                    var guestHeight = frame["guestHeight"]?.GetValue<int>() ?? GuestHeight;
                     var dropped = frame["dropped"]?.GetValue<int>() ?? 0;
                     _dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
                     {
                         _droppedFrames += dropped;
                         _frameSequence = frame["seq"]?.GetValue<int>() ?? _frameSequence;
+                        GuestWidth = guestWidth;
+                        GuestHeight = guestHeight;
                         if (path is not null)
                         {
                             _framePath = path;
-                            QueueFrame(path);
+                            QueueFrame(new PendingFrame(path, format, frameWidth, frameHeight, stride));
                         }
                     });
                 }
@@ -1209,9 +1302,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void QueueFrame(string path)
+    private void QueueFrame(PendingFrame frame)
     {
-        Interlocked.Exchange(ref _framePath, path);
+        _pendingFrame = frame;
         if (_frameSignal.CurrentCount == 0)
         {
             _frameSignal.Release();
@@ -1234,15 +1327,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         while (!_lifetime.IsCancellationRequested)
         {
             await _frameSignal.WaitAsync(_lifetime.Token).ConfigureAwait(false);
-            var path = Interlocked.Exchange(ref _framePath, null);
-            if (path is null)
+            var pending = Interlocked.Exchange(ref _pendingFrame, null);
+            if (pending is null)
             {
                 continue;
             }
 
             try
             {
-                var bitmap = LoadBitmap(path);
+                var bitmap = LoadFrame(pending);
                 if (bitmap.PixelWidth > 0)
                 {
                     DesktopLog.Write($"decoded {bitmap.PixelWidth}x{bitmap.PixelHeight}");
@@ -1257,6 +1350,37 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 // pipeline; the next frame is already on its way.
             }
         }
+    }
+
+    private static BitmapSource? LoadFrame(PendingFrame frame)
+    {
+        if (frame.Format is "rgb24" or "bgr24")
+        {
+            if (frame.Width <= 0 || frame.Height <= 0)
+            {
+                return null;
+            }
+
+            var bytes = File.ReadAllBytes(frame.Path);
+            if (bytes.Length != frame.Width * frame.Height * 3)
+            {
+                return null;
+            }
+
+            var source = BitmapSource.Create(
+                frame.Width,
+                frame.Height,
+                96,
+                96,
+                PixelFormats.Rgb24,
+                null,
+                bytes,
+                frame.Stride);
+            source.Freeze();
+            return source;
+        }
+
+        return LoadBitmap(frame.Path);
     }
 
     private static BitmapSource LoadBitmap(string path)
@@ -1317,6 +1441,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 _inputLatencies.Add(latency);
                 _pendingInput = null;
                 OnPropertyChanged(nameof(InputLatencyText));
+
+                if (_probe is { } probe)
+                {
+                    _probe = null;
+                    EventHandler? handler = null;
+                    handler = (_, _) =>
+                    {
+                        CompositionTarget.Rendering -= handler;
+                        probe.Completion.TrySetResult(probe.Clock.Elapsed.TotalMilliseconds);
+                    };
+                    CompositionTarget.Rendering += handler;
+                }
             }
         }
 
@@ -1486,6 +1622,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     private sealed record PendingInput(DateTimeOffset DispatchedUtc, int? BaselineColor);
+
+    private sealed record ProbeState(TaskCompletionSource<double?> Completion, Stopwatch Clock);
+
+    private sealed record PendingFrame(string Path, string Format, int Width, int Height, int Stride);
 }
 
 public sealed class SupervisorRequestException(string code, string message) : Exception(message)

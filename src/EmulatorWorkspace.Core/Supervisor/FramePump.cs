@@ -1,17 +1,27 @@
 ﻿using System.Diagnostics;
-using System.Text.Json.Nodes;
-using EmulatorWorkspace.Contracts;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using EmulatorWorkspace.Controller;
 using EmulatorWorkspace.Core.Engine;
 using EmulatorWorkspace.Core.Instances;
 
 namespace EmulatorWorkspace.Core.Supervisor;
 
+public sealed record FramePumpOptions(string Format, int Width, int Height)
+{
+    public bool IsRaw => Format.Equals("rgb", StringComparison.OrdinalIgnoreCase)
+                         || Format.Equals("bgr", StringComparison.OrdinalIgnoreCase);
+}
+
 public sealed record FrameEvent(
     string Instance,
     uint Sequence,
     int Width,
     int Height,
+    int Stride,
+    string Format,
+    int GuestWidth,
+    int GuestHeight,
     long Bytes,
     ulong EmulatorTimestampUs,
     DateTimeOffset ReceivedUtc,
@@ -30,15 +40,18 @@ public sealed record FrameSample(
     int Dropped);
 
 /// <summary>
-/// One latest-frame pipeline per instance: the engine gRPC stream is read on a
-/// background task, the newest frame is written to a single bounded file, and
-/// subscribers receive a small event pointing at it. Stale frames are replaced
-/// rather than queued.
+/// One latest-frame pipeline per instance. The engine stream is read on a
+/// background task and only the newest frame is exposed: either a raw BGR24
+/// file for the interactive viewport or a PNG file for one-shot/fallback use.
+/// Stale frames are overwritten, never queued.
 /// </summary>
 public sealed class FramePump : IAsyncDisposable
 {
+    private static readonly Regex PhysicalSize = new(@"Physical size:\s*(\d+)x(\d+)", RegexOptions.Compiled);
+
     private readonly InstanceRecord _record;
     private readonly string _outputDirectory;
+    private readonly FramePumpOptions _options;
     private readonly Func<FrameEvent, Task> _onFrame;
     private readonly Func<string, string, Task> _onClosed;
     private readonly object _traceGate = new();
@@ -48,22 +61,29 @@ public sealed class FramePump : IAsyncDisposable
     private uint _lastSequence;
     private DateTimeOffset _lastReceived;
     private DateTimeOffset _lastPublished;
+    private readonly Queue<string> _rawFiles = new();
+    private int _guestWidth;
+    private int _guestHeight;
 
     public FramePump(
         InstanceRecord record,
         string outputDirectory,
+        FramePumpOptions options,
         Func<FrameEvent, Task> onFrame,
         Func<string, string, Task> onClosed)
     {
         _record = record;
         _outputDirectory = outputDirectory;
+        _options = options;
         _onFrame = onFrame;
         _onClosed = onClosed;
     }
 
     public bool IsRunning => _loop is { IsCompleted: false };
 
-    public string OutputPath => System.IO.Path.Combine(_outputDirectory, _record.Name + ".png");
+    public string OutputPath => System.IO.Path.Combine(
+        _outputDirectory,
+        _record.Name + (_options.IsRaw ? ".bgr" : ".png"));
 
     public IReadOnlyList<FrameSample> Trace
     {
@@ -76,7 +96,7 @@ public sealed class FramePump : IAsyncDisposable
         }
     }
 
-    public async Task StartAsync(int width, CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (IsRunning)
         {
@@ -84,11 +104,9 @@ public sealed class FramePump : IAsyncDisposable
         }
 
         Directory.CreateDirectory(_outputDirectory);
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var discovery = await EmulatorDiscovery.ReadAsync(
-            new AdbClient(ResolveAdb()),
-            _record.AdbSerial,
-            cancellationToken).ConfigureAwait(false);
+        var adb = new AdbClient(ResolveSdk().AdbExe);
+        var discovery = await EmulatorDiscovery.ReadAsync(adb, _record.AdbSerial, cancellationToken)
+            .ConfigureAwait(false);
 
         if (discovery.GrpcPort != _record.GrpcPort || discovery.AdbPort != _record.ConsolePort + 1)
         {
@@ -96,7 +114,17 @@ public sealed class FramePump : IAsyncDisposable
                 "The advertised controller endpoint does not match the managed instance.");
         }
 
-        _loop = Task.Run(() => RunAsync(discovery, width, _cts.Token), CancellationToken.None);
+        var size = await adb.RunAsync(
+            _record.AdbSerial,
+            new[] { "shell", "wm", "size" },
+            TimeSpan.FromSeconds(15),
+            cancellationToken).ConfigureAwait(false);
+        var match = PhysicalSize.Match(size.StandardOutput);
+        _guestWidth = match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : 1080;
+        _guestHeight = match.Success ? int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) : 2400;
+
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _loop = Task.Run(() => RunAsync(discovery, _cts.Token), CancellationToken.None);
     }
 
     public async Task StopAsync()
@@ -130,7 +158,7 @@ public sealed class FramePump : IAsyncDisposable
         _loop = null;
     }
 
-    private async Task RunAsync(EmulatorDiscovery discovery, int width, CancellationToken cancellationToken)
+    private async Task RunAsync(EmulatorDiscovery discovery, CancellationToken cancellationToken)
     {
         var attempt = 0;
         while (!cancellationToken.IsCancellationRequested)
@@ -138,10 +166,34 @@ public sealed class FramePump : IAsyncDisposable
             try
             {
                 using var channel = EmulatorControlChannel.Connect(discovery.GrpcPort, discovery.GrpcToken, "bearer");
-                await foreach (var frame in channel.StreamScreenshotsAsync(width, cancellationToken).ConfigureAwait(false))
+                if (_options.IsRaw)
                 {
-                    attempt = 0;
-                    await PublishAsync(frame, cancellationToken).ConfigureAwait(false);
+                    var request = new Android.Emulation.Control.ImageFormat
+                    {
+                        Format = Android.Emulation.Control.ImageFormat.Types.ImgFormat.Rgb888,
+                        Width = (uint)Math.Max(0, _options.Width),
+                        Height = (uint)Math.Max(0, _options.Height),
+                    };
+
+                    await foreach (var image in channel.StreamImagesAsync(request, cancellationToken).ConfigureAwait(false))
+                    {
+                        attempt = 0;
+                        await PublishAsync(
+                            image.Image_.ToByteArray(),
+                            (int)image.Format.Width,
+                            (int)image.Format.Height,
+                            image.Seq,
+                            image.TimestampUs).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await foreach (var frame in channel.StreamScreenshotsAsync(_options.Width, cancellationToken).ConfigureAwait(false))
+                    {
+                        attempt = 0;
+                        await PublishAsync(frame.PngBytes, 0, 0, frame.Sequence, frame.TimestampMicroseconds)
+                            .ConfigureAwait(false);
+                    }
                 }
 
                 await _onClosed(_record.Name, "frame stream ended").ConfigureAwait(false);
@@ -161,7 +213,7 @@ public sealed class FramePump : IAsyncDisposable
 
                 try
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -171,40 +223,73 @@ public sealed class FramePump : IAsyncDisposable
         }
     }
 
-    private async Task PublishAsync(ControllerFrame frame, CancellationToken cancellationToken)
+    private async Task PublishAsync(byte[] payload, int width, int height, uint sequence, ulong timestampUs)
     {
-        var received = frame.ReceivedUtc;
-        if (_lastPublished != default && (received - _lastPublished).TotalMilliseconds < 100)
+        var received = DateTimeOffset.UtcNow;
+        if (_lastPublished != default && (received - _lastPublished).TotalMilliseconds < 16)
         {
             return;
         }
 
-        _lastPublished = received;
-        var temp = OutputPath + "." + Guid.NewGuid().ToString("N")[..8] + ".tmp";
-        await File.WriteAllBytesAsync(temp, frame.PngBytes, cancellationToken).ConfigureAwait(false);
-        File.Move(temp, OutputPath, overwrite: true);
-
-        var written = DateTimeOffset.UtcNow;
-        var dropped = 0;
-        if (_lastSequence != 0 && frame.Sequence > _lastSequence + 1)
+        if (_options.IsRaw)
         {
-            dropped = checked((int)(frame.Sequence - _lastSequence - 1));
+            if (width <= 0 || height <= 0 || payload.Length != width * height * 3)
+            {
+                return;
+            }
+        }
+        else if (width == 0)
+        {
+            (width, height) = ReadPngSize(payload);
+            if (width <= 0)
+            {
+                return;
+            }
+        }
+
+        string publishedPath;
+        if (_options.IsRaw)
+        {
+            publishedPath = System.IO.Path.Combine(_outputDirectory, $"{_record.Name}-{sequence}.bgr");
+            await File.WriteAllBytesAsync(publishedPath, payload).ConfigureAwait(false);
+            lock (_rawFiles)
+            {
+                _rawFiles.Enqueue(publishedPath);
+                while (_rawFiles.Count > 6)
+                {
+                    var stale = _rawFiles.Dequeue();
+                    try
+                    {
+                        File.Delete(stale);
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+            }
+        }
+        else
+        {
+            var temp = OutputPath + "." + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+            await File.WriteAllBytesAsync(temp, payload).ConfigureAwait(false);
+            File.Move(temp, OutputPath, overwrite: true);
+            publishedPath = OutputPath;
+        }
+
+        _lastPublished = received;
+
+        var dropped = 0;
+        if (_lastSequence != 0 && sequence > _lastSequence + 1)
+        {
+            dropped = checked((int)(sequence - _lastSequence - 1));
         }
 
         var interval = _lastReceived == default ? 0 : (received - _lastReceived).TotalMilliseconds;
         _lastReceived = received;
-        _lastSequence = frame.Sequence;
+        _lastSequence = sequence;
 
-        var (width, height) = ReadPngSize(frame.PngBytes);
         var sample = new FrameSample(
-            frame.Sequence,
-            frame.TimestampMicroseconds,
-            received,
-            width,
-            height,
-            frame.PngBytes.Length,
-            interval,
-            dropped);
+            sequence, timestampUs, received, width, height, payload.Length, interval, dropped);
         lock (_traceGate)
         {
             _trace.Enqueue(sample);
@@ -216,14 +301,18 @@ public sealed class FramePump : IAsyncDisposable
 
         var frameEvent = new FrameEvent(
             _record.Name,
-            frame.Sequence,
+            sequence,
             width,
             height,
-            frame.PngBytes.Length,
-            frame.TimestampMicroseconds,
+            width * 3,
+            _options.IsRaw ? "rgb24" : "png",
+            _guestWidth,
+            _guestHeight,
+            payload.Length,
+            timestampUs,
             received,
-            written,
-            OutputPath,
+            DateTimeOffset.UtcNow,
+            publishedPath,
             dropped);
 
         try
@@ -232,8 +321,7 @@ public sealed class FramePump : IAsyncDisposable
         }
         catch (Exception)
         {
-            // A disconnected subscriber must not stop the capture loop; the
-            // subscription is removed by the session that owned it.
+            // A disconnected subscriber must not stop capture.
         }
     }
 
@@ -249,11 +337,7 @@ public sealed class FramePump : IAsyncDisposable
         return (width, height);
     }
 
-    private static string ResolveAdb()
-    {
-        var sdk = SdkLocator.Resolve();
-        return sdk.AdbExe;
-    }
+    private static SdkLocator ResolveSdk() => SdkLocator.Resolve();
 
     public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
 }

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Phase 1 acceptance: supervisor, guest lifecycle, capture, APK loop, recovery.
@@ -30,7 +30,7 @@ if (-not $Sdk) { $Sdk = $env:ANDROID_HOME }
 if (-not $Sdk) { $Sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 
 $runId = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = Join-Path $repo ("artifacts\phase1\" + $runId)
+$out = Join-Path $repo ("artifacts\phase1-1\" + $runId)
 New-Item -ItemType Directory -Force $out | Out-Null
 $transcript = Join-Path $out "transcript.txt"
 $results = @()
@@ -112,17 +112,22 @@ Record "capture.continuous" ($trace.ExitCode -eq 0 -and $traceJson.frames -gt 10
 # 3. Developer loop through the supervisor
 $install = Invoke-Wsctl @("install", "--name", "qa1", "--apk", $apk)
 Record "apk.install" ($install.Output -match "installed") $install.Output
-$launch = Invoke-Wsctl @("launch", "--name", "qa1", "--package", "dev.emulatorworkspace.sample")
-Start-Sleep -Seconds 3
-$foreground = Invoke-Wsctl @("foreground", "--name", "qa1")
-Record "apk.launch" ($foreground.Output -match "dev.emulatorworkspace.sample") $foreground.Output
+# Strict launch: sample activity focused, no ANR overlay, tap produces a marker
+# and a changed frame. An ANR is always a failure for this scenario.
+$launchOut = & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "launch-check.ps1") `
+    -Root $Root -Name qa1 -OutDir "artifacts\phase1-1" 2>&1 | Out-String
+$launchCode = $LASTEXITCODE
+$launchClass = if ($launchOut -match "FAIL (fail-[a-z]+)") { $Matches[1] } elseif ($launchCode -eq 0) { "pass" } else { "fail-unknown" }
+Record "apk.launch" ($launchCode -eq 0) ("class=$launchClass " + $launchOut)
+$launchOut | Set-Content (Join-Path $out "launch-check.txt") -Encoding UTF8
 
 $frame = Invoke-Wsctl @("frame", "--name", "qa1", "--via", "controller", "--out", (Join-Path $out "screenshot.png"))
 Record "screenshot" (Test-Path (Join-Path $out "screenshot.png")) $frame.Output
 
 $tap = Invoke-Wsctl @("tap", "--name", "qa1", "--x", "540", "--y", "720")
 Start-Sleep -Seconds 2
-$tapLog = & $adb -s emulator-5554 logcat -d -s WS_SAMPLE:I 2>&1 | Out-String
+$serialQa1 = ([regex]::Match((Invoke-Wsctl @("status", "--name", "qa1")).Output, "serial=(emulator-\d+)")).Groups[1].Value
+$tapLog = & $adb -s $serialQa1 logcat -d -s WS_SAMPLE:I 2>&1 | Out-String
 Record "input.visible" ($tapLog -match "TAP index=") "WS_SAMPLE marker present"
 $tapLog | Set-Content (Join-Path $out "logcat-marker.txt") -Encoding UTF8
 

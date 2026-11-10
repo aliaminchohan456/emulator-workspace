@@ -1,8 +1,11 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EmulatorWorkspace.Contracts;
+using EmulatorWorkspace.Core.Engine;
 using EmulatorWorkspace.Core.Supervisor;
+using EmulatorWorkspace.Controller;
 using EmulatorWorkspace.Core.Workspace;
 
 namespace EmulatorWorkspace.Cli;
@@ -36,6 +39,16 @@ internal static class SupervisorCommands
     private static async Task<int> DispatchAsync(SupervisorConnection client, Arguments args, WorkspacePaths paths)
     {
         var command = args.Command;
+        if (command == "input-latency")
+        {
+            return await RunInputLatencyAsync(client, args, paths).ConfigureAwait(false);
+        }
+
+        if (command == "capture-bench")
+        {
+            return await RunCaptureBenchAsync(client, args, paths).ConfigureAwait(false);
+        }
+
         if (command == "frame-trace")
         {
             return await RunFrameTraceAsync(client, args, paths).ConfigureAwait(false);
@@ -334,6 +347,338 @@ internal static class SupervisorCommands
         return 0;
     }
 
+    private sealed record LatestFrame(string Path, int Width, int Height, uint Seq);
+
+    private static async Task<int> RunInputLatencyAsync(
+        SupervisorConnection client, Arguments args, WorkspacePaths paths)
+    {
+        var name = args.Optional("name") ?? throw new ArgumentException("--name is required.");
+        var samplesRequested = args.OptionalInt("samples") ?? 20;
+        var x = args.OptionalInt("x") ?? 540;
+        var y = args.OptionalInt("y") ?? 720;
+        var outPath = args.Optional("out")
+                      ?? Path.Combine(paths.Root, $"input-latency-{DateTime.Now:HHmmss}.json");
+
+        LatestFrame? latest = null;
+        var gate = new object();
+        void OnEvent(EventEnvelope envelope)
+        {
+            if (envelope.Event != "frame" || envelope.Data is not JsonObject data)
+            {
+                return;
+            }
+
+            var path = data["path"]?.GetValue<string>();
+            if (path is null)
+            {
+                return;
+            }
+
+            lock (gate)
+            {
+                latest = new LatestFrame(
+                    path,
+                    data["width"]?.GetValue<int>() ?? 0,
+                    data["height"]?.GetValue<int>() ?? 0,
+                    (uint)(data["seq"]?.GetValue<int>() ?? 0));
+            }
+        }
+
+        int ReadColor(LatestFrame frame)
+        {
+            try
+            {
+                using var stream = new FileStream(frame.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                var bytes = new byte[stream.Length];
+                stream.ReadExactly(bytes);
+                if (frame.Width <= 0 || frame.Height <= 0 || bytes.Length != frame.Width * frame.Height * 3)
+                {
+                    return -1;
+                }
+
+                var px = frame.Width / 2;
+                var py = (int)(frame.Height * 0.30);
+                var index = (py * frame.Width + px) * 3;
+                return (bytes[index] << 16) | (bytes[index + 1] << 8) | bytes[index + 2];
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
+        client.EventReceived += OnEvent;
+        var subscribe = await client.RequestAsync(
+            "frame.subscribe",
+            new JsonObject { ["name"] = name, ["format"] = "rgb", ["width"] = 540, ["height"] = 1200 },
+            TimeSpan.FromSeconds(60)).ConfigureAwait(false);
+        if (!subscribe.Ok)
+        {
+            Console.Error.WriteLine($"FAILED [{subscribe.Code}] {subscribe.Message}");
+            return 5;
+        }
+
+        var subscription = subscribe.Data!["subscription"]!.GetValue<string>();
+        var waitStart = DateTimeOffset.UtcNow;
+        while (latest is null && (DateTimeOffset.UtcNow - waitStart).TotalSeconds < 15)
+        {
+            await Task.Delay(50).ConfigureAwait(false);
+        }
+
+        if (latest is null)
+        {
+            Console.Error.WriteLine("No frame arrived; is the guest running and awake?");
+            return 5;
+        }
+
+        var samples = new List<JsonObject>();
+        var values = new List<double>();
+        var timeouts = 0;
+        for (var trial = 1; trial <= samplesRequested; trial++)
+        {
+            LatestFrame current;
+            lock (gate)
+            {
+                current = latest!;
+            }
+
+            var baseline = ReadColor(current);
+            if (baseline < 0)
+            {
+                await Task.Delay(100).ConfigureAwait(false);
+                continue;
+            }
+
+            var clock = Stopwatch.StartNew();
+            var tap = await client.RequestAsync(
+                "input.tap",
+                new JsonObject { ["name"] = name, ["x"] = x, ["y"] = y },
+                TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+            if (!tap.Ok)
+            {
+                samples.Add(new JsonObject { ["trial"] = trial, ["error"] = tap.Code, ["message"] = tap.Message });
+                timeouts++;
+                continue;
+            }
+
+            double? measured = null;
+            while (clock.ElapsedMilliseconds < 2500)
+            {
+                LatestFrame candidate;
+                lock (gate)
+                {
+                    candidate = latest!;
+                }
+
+                if (candidate.Seq != current.Seq)
+                {
+                    var color = ReadColor(candidate);
+                    if (color >= 0 && color != baseline)
+                    {
+                        measured = clock.Elapsed.TotalMilliseconds;
+                        break;
+                    }
+                }
+
+                await Task.Delay(5).ConfigureAwait(false);
+            }
+
+            if (measured is null)
+            {
+                timeouts++;
+                samples.Add(new JsonObject { ["trial"] = trial, ["timeout"] = true });
+            }
+            else
+            {
+                values.Add(measured.Value);
+                samples.Add(new JsonObject
+                {
+                    ["trial"] = trial,
+                    ["ms"] = Math.Round(measured.Value, 2),
+                    ["timeout"] = false,
+                });
+            }
+
+            await Task.Delay(200).ConfigureAwait(false);
+        }
+
+        await client.RequestAsync(
+            "frame.unsubscribe",
+            new JsonObject { ["subscription"] = subscription },
+            TimeSpan.FromSeconds(15)).ConfigureAwait(false);
+        client.EventReceived -= OnEvent;
+
+        values.Sort();
+        double Percentile(double fraction)
+        {
+            if (values.Count == 0)
+            {
+                return 0;
+            }
+
+            var index = Math.Clamp((int)Math.Ceiling(fraction * values.Count) - 1, 0, values.Count - 1);
+            return Math.Round(values[index], 2);
+        }
+
+        var summary = new JsonObject
+        {
+            ["name"] = name,
+            ["metric"] = "dispatch-to-captured-frame-with-response",
+            ["compositionProxy"] = false,
+            ["trials"] = samplesRequested,
+            ["valid"] = values.Count,
+            ["timeouts"] = timeouts,
+            ["p50Ms"] = Percentile(0.50),
+            ["p95Ms"] = Percentile(0.95),
+            ["minMs"] = values.Count == 0 ? 0 : Math.Round(values[0], 2),
+            ["maxMs"] = values.Count == 0 ? 0 : Math.Round(values[^1], 2),
+            ["samples"] = new JsonArray(samples.Select(s => (JsonNode)s).ToArray()),
+        };
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+        File.WriteAllText(outPath, summary.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(
+            $"input-latency {name}: valid={values.Count}/{samplesRequested} timeouts={timeouts} " +
+            $"p50={summary["p50Ms"]}ms p95={summary["p95Ms"]}ms");
+        Console.WriteLine($"  samples: {Path.GetFullPath(outPath)}");
+        return values.Count >= Math.Ceiling(samplesRequested * 0.8) ? 0 : 2;
+    }
+    private static async Task<int> RunCaptureBenchAsync(
+        SupervisorConnection client, Arguments args, WorkspacePaths paths)
+    {
+        var name = args.Optional("name") ?? throw new ArgumentException("--name is required.");
+        var format = (args.Optional("format") ?? "rgba").ToLowerInvariant();
+        var width = args.OptionalInt("width") ?? 0;
+        var height = args.OptionalInt("height") ?? 0;
+        var seconds = args.OptionalInt("seconds") ?? 8;
+        var outPath = args.Optional("out")
+                      ?? Path.Combine(paths.Root, $"capture-bench-{format}-{width}-{DateTime.Now:HHmmss}.json");
+
+        var status = await client.RequestAsync(
+            "instance.status",
+            new JsonObject { ["name"] = name },
+            TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+        if (!status.Ok)
+        {
+            Console.Error.WriteLine($"FAILED [{status.Code}] {status.Message}");
+            return 5;
+        }
+
+        var serial = status.Data!["serial"]!.GetValue<string>();
+        var sdk = SdkLocator.Resolve();
+        var adb = new AdbClient(sdk.AdbExe);
+        var discovery = await EmulatorDiscovery.ReadAsync(adb, serial).ConfigureAwait(false);
+
+        using var channel = EmulatorControlChannel.Connect(discovery.GrpcPort, discovery.GrpcToken, "bearer");
+        var request = new Android.Emulation.Control.ImageFormat();
+        request.Format = format switch
+        {
+            "png" => Android.Emulation.Control.ImageFormat.Types.ImgFormat.Png,
+            "rgb" => Android.Emulation.Control.ImageFormat.Types.ImgFormat.Rgb888,
+            _ => Android.Emulation.Control.ImageFormat.Types.ImgFormat.Rgba8888,
+        };
+        request.Width = (uint)Math.Max(0, width);
+        request.Height = (uint)Math.Max(0, height);
+
+        var samples = new List<(DateTimeOffset At, int Bytes, int Width, int Height, uint Seq, ulong Ts)>();
+        byte[]? firstPayload = null;
+        var firstWidth = 0;
+        var firstHeight = 0;
+        var started = DateTimeOffset.UtcNow;
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(seconds));
+
+        try
+        {
+            await foreach (var image in channel.StreamImagesAsync(request, cts.Token).ConfigureAwait(false))
+            {
+                var payload = image.Image_.ToByteArray();
+                samples.Add((DateTimeOffset.UtcNow, payload.Length, (int)image.Format.Width, (int)image.Format.Height, image.Seq, image.TimestampUs));
+                if (firstPayload is null)
+                {
+                    firstPayload = payload;
+                    firstWidth = (int)image.Format.Width;
+                    firstHeight = (int)image.Format.Height;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Cancelled)
+        {
+        }
+
+        var intervals = new List<double>();
+        for (var i = 1; i < samples.Count; i++)
+        {
+            intervals.Add((samples[i].At - samples[i - 1].At).TotalMilliseconds);
+        }
+
+        intervals.Sort();
+        double Percentile(double fraction)
+        {
+            if (intervals.Count == 0)
+            {
+                return 0;
+            }
+
+            var index = Math.Clamp((int)Math.Ceiling(fraction * intervals.Count) - 1, 0, intervals.Count - 1);
+            return Math.Round(intervals[index], 2);
+        }
+
+        var elapsed = (DateTimeOffset.UtcNow - started).TotalSeconds;
+        var bytesTotal = samples.Sum(s => (long)s.Bytes);
+        var expected = format == "rgba" && firstWidth > 0
+            ? firstWidth * firstHeight * 4L
+            : format == "rgb" && firstWidth > 0
+                ? firstWidth * firstHeight * 3L
+                : 0;
+
+        var summary = new JsonObject
+        {
+            ["name"] = name,
+            ["format"] = format,
+            ["requestedWidth"] = width,
+            ["requestedHeight"] = height,
+            ["seconds"] = Math.Round(elapsed, 2),
+            ["frames"] = samples.Count,
+            ["fps"] = samples.Count == 0 ? 0 : Math.Round(samples.Count / elapsed, 2),
+            ["firstWidth"] = firstWidth,
+            ["firstHeight"] = firstHeight,
+            ["firstBytes"] = firstPayload?.Length ?? 0,
+            ["expectedRawBytes"] = expected,
+            ["bytesPerSecond"] = elapsed <= 0 ? 0 : (long)(bytesTotal / elapsed),
+            ["p50IntervalMs"] = Percentile(0.50),
+            ["p95IntervalMs"] = Percentile(0.95),
+            ["samples"] = new JsonArray(samples.Select(s => (JsonNode)new JsonObject
+            {
+                ["atUtc"] = s.At.ToString("O"),
+                ["bytes"] = s.Bytes,
+                ["width"] = s.Width,
+                ["height"] = s.Height,
+                ["seq"] = s.Seq,
+                ["timestampUs"] = s.Ts,
+            }).ToArray()),
+        };
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+        File.WriteAllText(outPath, summary.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        if (firstPayload is not null && format != "png")
+        {
+            File.WriteAllBytes(outPath + ".raw", firstPayload);
+        }
+        else if (firstPayload is not null)
+        {
+            File.WriteAllBytes(outPath + ".png", firstPayload);
+        }
+
+        Console.WriteLine(
+            $"capture-bench {name} {format} req={width}x{height}: frames={samples.Count} fps={summary["fps"]} " +
+            $"dims={firstWidth}x{firstHeight} bytes={firstPayload?.Length} rawExpected={expected} " +
+            $"p50={summary["p50IntervalMs"]}ms p95={summary["p95IntervalMs"]}ms");
+        Console.WriteLine($"  samples: {Path.GetFullPath(outPath)}");
+        return 0;
+    }
     private static async Task<int> RunFrameTraceAsync(
         SupervisorConnection client, Arguments args, WorkspacePaths paths)
     {

@@ -16,8 +16,8 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | WPF desktop (rail, embedded viewport, Inspector, Logcat, APK drop) | `src/EmulatorWorkspace.Desktop` | Phase 1 MVP |
 | Deterministic sample APK | `sample/` + `artifacts/phase1/sample/ws-sample.apk` | Verified |
 | Host baseline + Phase 0 harness | `tools/host-baseline.ps1`, `tools/phase0-spike.ps1` | 26/26 checks (run `run-20261110-152217`) |
-| Phase 1 acceptance harness | `tools/phase1-acceptance.ps1` | 19 checks, 18 pass (run `20261110-172411`) |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 21 passing |
+| Phase 1 acceptance harness | `tools/phase1-acceptance.ps1` | 19/19 (run `20261110-183709`); original 18/19 preserved |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 23 passing |
 
 The MCP server and root lab UI remain Phase 2 and Phase 4 work.
 
@@ -80,12 +80,21 @@ $ws = "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 Supervisor diagnostics: `wsctl supervisor-status`, `wsctl supervisor-stop`.
 `wsctl --direct <command>` keeps the pre-supervisor path for diagnostics only.
 
-Sample APK and acceptance:
+Sample APK, strict launch check, capture benchmarks and acceptance:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File sample\build-sample-apk.ps1
-powershell -ExecutionPolicy Bypass -File tools\phase1-acceptance.ps1
+powershell -ExecutionPolicy Bypass -File tools\launch-check.ps1 -Root D:\Phase1Root -Name t1
+powershell -ExecutionPolicy Bypass -File tools\phase1-acceptance.ps1 -Root D:\Phase1Accept2
+wsctl capture-bench --name t1 --format rgb --width 540 --height 1200 --seconds 5
+wsctl frame-trace --name t1 --seconds 10
+wsctl input-latency --name t1 --samples 20
+powershell -ExecutionPolicy Bypass -File tools\latency-probe.ps1 -Root D:\Phase1Root -Name t1 -Count 20
 ```
+
+The interactive viewport uses the controller's RGB888 stream at 540x1200
+(~30-34 FPS end to end on this host) written to a bounded six-file ring; PNG is
+kept for one-shot screenshots and as an explicit fallback.
 
 Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 
@@ -105,6 +114,7 @@ Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 
 - [Phase 0 evidence](docs/phase0-evidence.md)
 - [Phase 1 evidence](docs/phase1-evidence.md)
+- [Phase 1 stabilization evidence](docs/phase1-1-evidence.md)
 - [Tools](tools/README.md)
 - [Plan](plan.md)
 - [Task checklist](task.md)

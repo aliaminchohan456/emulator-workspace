@@ -1055,7 +1055,7 @@ public sealed class InstanceManager
     }
 
     public async Task<string> SubscribeFramesAsync(
-        string name, int width, Func<EventEnvelope, Task> send, CancellationToken cancellationToken)
+        string name, string format, int width, int height, Func<EventEnvelope, Task> send, CancellationToken cancellationToken)
     {
         var runtime = RuntimeFor(name);
         var record = runtime.Record;
@@ -1066,9 +1066,11 @@ public sealed class InstanceManager
 
         if (runtime.Frames is null || !runtime.Frames.IsRunning)
         {
+            var options = new FramePumpOptions(format, width, height);
             var pump = new FramePump(
                 record,
                 _frameDirectory,
+                options,
                 async frame =>
                 {
                     await _hub.PublishAsync(frame.Instance, "frame", EventNames.Frame, new JsonObject
@@ -1076,6 +1078,10 @@ public sealed class InstanceManager
                         ["seq"] = frame.Sequence,
                         ["width"] = frame.Width,
                         ["height"] = frame.Height,
+                        ["stride"] = frame.Stride,
+                        ["format"] = frame.Format,
+                        ["guestWidth"] = frame.GuestWidth,
+                        ["guestHeight"] = frame.GuestHeight,
                         ["bytes"] = frame.Bytes,
                         ["emulatorTimestampUs"] = frame.EmulatorTimestampUs,
                         ["receivedUtc"] = frame.ReceivedUtc.ToString("O"),
@@ -1092,7 +1098,7 @@ public sealed class InstanceManager
                     }).ConfigureAwait(false);
                 });
 
-            await pump.StartAsync(width, cancellationToken).ConfigureAwait(false);
+            await pump.StartAsync(cancellationToken).ConfigureAwait(false);
             runtime.Frames = pump;
         }
 
@@ -1194,7 +1200,9 @@ public sealed class InstanceManager
         return array;
     }
 
-    public string FramePath(string name) => Path.Combine(_frameDirectory, name + ".png");
+    public string FramePath(string name, string format) => Path.Combine(
+        _frameDirectory,
+        name + (format.Equals("rgb", StringComparison.OrdinalIgnoreCase) ? ".bgr" : ".png"));
 
     public async Task ShutdownAsync()
     {
@@ -1317,20 +1325,8 @@ public sealed class InstanceManager
         return runtime;
     }
 
-    private void EnsureDiskFree(long requiredBytes, string action)
-    {
-        var root = Path.GetPathRoot(_paths.Root) ?? "C:\\";
-        var drive = new DriveInfo(root);
-        if (drive.AvailableFreeSpace < requiredBytes)
-        {
-            throw new SupervisorOperationException(
-                ErrorCodes.LowDisk,
-                $"Not enough free space on {root} to {action}: " +
-                $"{drive.AvailableFreeSpace / 1024d / 1024 / 1024:N1} GiB free, " +
-                $"{requiredBytes / 1024d / 1024 / 1024:N0} GiB required. " +
-                "Free space or move the workspace root.");
-        }
-    }
+    private void EnsureDiskFree(long requiredBytes, string action) =>
+        DiskSpaceGuard.Ensure(_paths.Root, requiredBytes, action);
 
     private async Task<string?> SafeVersionAsync(CancellationToken cancellationToken)
     {

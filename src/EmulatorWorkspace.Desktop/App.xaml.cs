@@ -53,8 +53,36 @@ public partial class App : Application
             return;
         }
 
+        var probeCount = 0;
+        string? probeOut = null;
+        for (var index = 0; index < e.Args.Length; index++)
+        {
+            if (e.Args[index].Equals("--latency-probe", StringComparison.OrdinalIgnoreCase)
+                && index + 1 < e.Args.Length)
+            {
+                int.TryParse(e.Args[index + 1], out probeCount);
+            }
+            else if (e.Args[index].Equals("--out", StringComparison.OrdinalIgnoreCase)
+                     && index + 1 < e.Args.Length)
+            {
+                probeOut = Path.GetFullPath(e.Args[index + 1]);
+            }
+        }
+
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+
+        if (probeCount > 0)
+        {
+            window.Loaded += async (_, _) =>
+            {
+                var output = probeOut ?? Path.Combine(
+                    Environment.GetEnvironmentVariable("EMULATOR_WORKSPACE_HOME") ?? ".",
+                    "latency-probe.json");
+                var code = await window.RunLatencyProbeAsync(probeCount, output);
+                Shutdown(code);
+            };
+        }
     }
 }

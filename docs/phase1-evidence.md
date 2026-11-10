@@ -7,6 +7,12 @@ APK install/launch, Logcat, and recovery evidence on a real WHPX guest.
 Baseline commit at the start of this phase: **e675321**. This document describes
 the work that follows it.
 
+> Stabilization update: the strict launch check now passes (19/19 fresh run
+> `20261110-183709`), and the interactive capture path moved to RGB888 at
+> 540x1200 (32.6-34.5 FPS supervisor, 29.4 FPS WPF). See
+> [phase1-1-evidence.md](phase1-1-evidence.md). The original 18/19 run below is
+> preserved as history.
+
 ## Preflight and baseline reconciliation
 
 | Item | Result |
