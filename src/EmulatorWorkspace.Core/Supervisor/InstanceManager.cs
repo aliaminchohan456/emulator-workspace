@@ -696,6 +696,67 @@ public sealed class InstanceManager
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Reports the exact identity of the managed target: instance name, ADB
+    /// serial, the transport id the pinned ADB server currently resolves, the
+    /// engine process generation and the owned ports. A serial that is missing
+    /// or not in the "device" state fails closed instead of touching another
+    /// transport.
+    /// </summary>
+    public async Task<JsonObject> AdbIdentityAsync(string name, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var listing = await _adb.ListDevicesAsync(cancellationToken).ConfigureAwait(false);
+        var transport = AdbIdentity.Find(listing, record.AdbSerial);
+        var transportId = transport?.TransportId;
+        var state = transport?.State;
+        var model = transport?.Model;
+        var device = transport?.Device;
+        var product = transport?.Product;
+        if (state is null)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                $"The managed serial '{record.AdbSerial}' is not visible to the pinned ADB server.");
+        }
+
+        if (!state.Equals("device", StringComparison.Ordinal))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                $"The managed serial '{record.AdbSerial}' is '{state}'; the target is not usable.");
+        }
+
+        var identity = string.Join(
+            "|",
+            record.Name,
+            record.AdbSerial,
+            transportId ?? "",
+            record.EnginePid?.ToString() ?? "",
+            record.EngineStartTimeUtc ?? "",
+            record.ConsolePort.ToString(),
+            record.GrpcPort.ToString());
+
+        return new JsonObject
+        {
+            ["name"] = record.Name,
+            ["serial"] = record.AdbSerial,
+            ["transportId"] = transportId,
+            ["state"] = state,
+            ["model"] = model,
+            ["device"] = device,
+            ["product"] = product,
+            ["enginePid"] = record.EnginePid,
+            ["engineStartUtc"] = record.EngineStartTimeUtc,
+            ["consolePort"] = record.ConsolePort,
+            ["grpcPort"] = record.GrpcPort,
+            ["identity"] = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(identity)))
+                .ToLowerInvariant(),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
     public async Task<JsonObject> VerifyTargetAsync(string name, CancellationToken cancellationToken)
     {
         var record = RuntimeFor(name).Record;
@@ -942,6 +1003,103 @@ public sealed class InstanceManager
         await _adb.RunAsync(record.AdbSerial, new[] { "shell", "input", "keyevent", code }, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         return new JsonObject { ["name"] = name, ["key"] = code };
+    }
+
+    /// <summary>
+    /// Sets the simulated GPS position of a running guest through the emulator
+    /// console and returns the value the guest reports back.
+    /// </summary>
+    public async Task<JsonObject> GeoFixAsync(
+        string name, double longitude, double latitude, double? altitude, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
+        {
+            throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{name}' is not running.");
+        }
+
+        var command = new List<string> { "geo", "fix" };
+        command.Add(longitude.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+        command.Add(latitude.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+        if (altitude.HasValue)
+        {
+            command.Add(altitude.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var output = await _adb.EmulatorConsoleAsync(record.AdbSerial, command, cancellationToken)
+            .ConfigureAwait(false);
+        var reported = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "dumpsys", "location" },
+                cancellationToken)
+            .ConfigureAwait(false);
+        var applied = reported.Contains(
+            longitude.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture),
+            StringComparison.Ordinal);
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["longitude"] = longitude,
+            ["latitude"] = latitude,
+            ["altitude"] = altitude,
+            ["console"] = output,
+            ["applied"] = applied,
+        };
+    }
+
+    /// <summary>Sets the simulated battery level and charger state of a running guest.</summary>
+    public async Task<JsonObject> BatteryAsync(
+        string name, int level, bool charging, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
+        {
+            throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{name}' is not running.");
+        }
+
+        if (level is < 0 or > 100)
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "The battery level must be 0-100.");
+        }
+
+        await _adb.EmulatorConsoleAsync(
+                record.AdbSerial,
+                new[] { "power", "capacity", level.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+                cancellationToken)
+            .ConfigureAwait(false);
+        await _adb.EmulatorConsoleAsync(
+                record.AdbSerial,
+                new[] { "power", "ac", charging ? "on" : "off" },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var state = await _adb.ShellAsync(record.AdbSerial, new[] { "dumpsys", "battery" }, cancellationToken)
+            .ConfigureAwait(false);
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["level"] = level,
+            ["charging"] = charging,
+            ["reportedLevel"] = ExtractBatteryValue(state, "level"),
+            ["reportedStatus"] = ExtractBatteryValue(state, "status"),
+            ["reportedAc"] = ExtractBatteryValue(state, "AC powered"),
+        };
+    }
+
+    private static string ExtractBatteryValue(string dumpsys, string key)
+    {
+        foreach (var line in dumpsys.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(key, StringComparison.OrdinalIgnoreCase)
+                && trimmed.Contains(':'))
+            {
+                return trimmed[(trimmed.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim();
+            }
+        }
+
+        return "";
     }
 
     public async Task<JsonObject> RotateAsync(string name, int rotation, CancellationToken cancellationToken)

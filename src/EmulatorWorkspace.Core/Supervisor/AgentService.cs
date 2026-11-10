@@ -43,6 +43,7 @@ public sealed class AgentService
     private readonly ConcurrentQueue<JsonObject> _events = new();
     private long _eventSequence;
     private readonly string _artifactRoot;
+    private readonly InputGate _inputGate = new();
 
     public AgentService(
         WorkspacePaths paths,
@@ -59,6 +60,56 @@ public sealed class AgentService
     }
 
     public AgentStore Store => _store;
+
+    /// <summary>Per-instance input barrier used by the acceptance harness.</summary>
+    public InputGate Input => _inputGate;
+
+    /// <summary>Parks or releases agent input for one guest (operator only).</summary>
+    public JsonObject SetInputHold(string instance, bool held)
+    {
+        if (held)
+        {
+            var since = _inputGate.Hold(instance);
+            return new JsonObject
+            {
+                ["instance"] = instance,
+                ["held"] = true,
+                ["heldSinceUtc"] = since.ToString("O"),
+                ["waiting"] = _inputGate.WaitingCount(instance),
+            };
+        }
+
+        var released = _inputGate.Release(instance);
+        return new JsonObject
+        {
+            ["instance"] = instance,
+            ["held"] = false,
+            ["releasedWaiters"] = released,
+        };
+    }
+
+    public JsonObject DescribeInputHold(string instance)
+    {
+        var waiters = _inputGate.Waiters(instance);
+        var array = new JsonArray();
+        foreach (var waiter in waiters)
+        {
+            array.Add(new JsonObject
+            {
+                ["requestId"] = waiter.RequestId,
+                ["queuedUtc"] = waiter.QueuedUtc.ToString("O"),
+            });
+        }
+
+        return new JsonObject
+        {
+            ["instance"] = instance,
+            ["held"] = _inputGate.IsHeld(instance),
+            ["heldSinceUtc"] = _inputGate.HeldSinceUtc(instance)?.ToString("O"),
+            ["waiting"] = waiters.Count,
+            ["waiters"] = array,
+        };
+    }
 
     public int Generation(string instance) =>
         _generations.TryGetValue(instance, out var value) ? value : 0;
@@ -409,6 +460,9 @@ public sealed class AgentService
     public async Task<JsonObject> TapAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        var queued = await _inputGate.WaitAsync(
+            session.Instance, "tap-" + Guid.NewGuid().ToString("N")[..8], cancellationToken)
+            .ConfigureAwait(false);
         session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         int x;
@@ -466,6 +520,7 @@ public sealed class AgentService
         {
             ["instance"] = record.Name,
             ["dispatchedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+            ["queuedUtc"] = queued.QueuedUtc.ToString("O"),
             ["x"] = x,
             ["y"] = y,
             ["selectorText"] = selectorText,
@@ -475,6 +530,9 @@ public sealed class AgentService
     public async Task<JsonObject> TypeAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        await _inputGate.WaitAsync(
+            session.Instance, "type-" + Guid.NewGuid().ToString("N")[..8], cancellationToken)
+            .ConfigureAwait(false);
         session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         var text = JsonArgs.String(args, "text")
@@ -1009,6 +1067,24 @@ public sealed class AgentService
             .Select(l => l.Trim())
             .FirstOrDefault(l => l.StartsWith("mCurrentFocus=", StringComparison.Ordinal));
         return line?["mCurrentFocus=".Length..].Trim();
+    }
+
+    /// <summary>
+    /// Invalidates cached frame observations for one guest. Used after a
+    /// restore, reset, duplicate or delete so a stale frame id can never be
+    /// replayed against a changed guest.
+    /// </summary>
+    public void InvalidateObservations(string instance)
+    {
+        foreach (var key in _observations
+                     .Where(pair => pair.Value.Instance.Equals(instance, StringComparison.OrdinalIgnoreCase))
+                     .Select(pair => pair.Key)
+                     .ToList())
+        {
+            _observations.TryRemove(key, out _);
+        }
+
+        BumpGeneration(instance);
     }
 
     private void PruneObservations()

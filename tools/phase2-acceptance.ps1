@@ -44,6 +44,8 @@ $pythonClient = Join-Path $repo "clients\mcp-python\client.py"
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 $adb = Join-Path $sdk "platform-tools\adb.exe"
+$env:ANDROID_HOME = $sdk
+$env:ANDROID_SDK_ROOT = $sdk
 
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
@@ -241,6 +243,26 @@ try {
     $approvalJson = Parse-Json $approval.Text
     $restore = CliStep "snapshot.load" ("{`"tag`":`"phase2-cli-baseline`",`"approval`":`"$($approvalJson.code)`"}")
     Add-Check "cli.snapshot.restore" ($restore.Code -eq 0) $restore.Text
+    # A snapshot load restarts the guest, so the harness waits for interactive
+    # readiness again, relaunches the fixture and re-checks the precondition.
+    $bootDeadline = (Get-Date).AddSeconds(360)
+    $booted = $false
+    while ((Get-Date) -lt $bootDeadline) {
+        $state = (& $adb -s $serial get-state 2>&1 | Out-String).Trim()
+        $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Out-String).Trim()
+        if ($state -eq "device" -and $boot -eq "1") { $booted = $true; break }
+        Start-Sleep -Seconds 3
+    }
+    Add-Check "cli.snapshot.restore.readiness" $booted "sys.boot_completed=1 after the snapshot load"
+    Invoke-Ws @("launch", "--name", $instance, "--package", "dev.emulatorworkspace.sample", "--token-file", $TokenFile, "--root", $Root) | Out-Null
+    $appForeground = $false
+    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+        Start-Sleep -Seconds 3
+        $afterRestore = Call "observation.tree" "{}"
+        $appForeground = @($afterRestore.Json.nodes | Where-Object { $_.contentDescription -eq "login_button" }).Count -eq 1
+        if ($appForeground) { break }
+    }
+    Add-Check "cli.snapshot.restore.fixture-ready" $appForeground "the fixture is in the foreground after the restore"
     Add-Check "adb.ready.post-restore" (Wait-Adb $serial 120) "get-state=device"
     $cliSteps | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out "cli-transcript.json") -Encoding UTF8
 

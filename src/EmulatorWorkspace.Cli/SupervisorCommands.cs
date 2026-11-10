@@ -288,6 +288,46 @@ internal static class SupervisorCommands
                 requestArgs["x"] = args.RequiredInt("x");
                 requestArgs["y"] = args.RequiredInt("y");
                 break;
+            case "duplicate":
+                op = OperationNames.InstanceDuplicate;
+                requestArgs["name"] = name;
+                requestArgs["target"] = args.Optional("target") ?? throw new ArgumentException("--target is required.");
+                deadline = TimeSpan.FromMinutes(5);
+                break;
+            case "reset":
+                op = OperationNames.InstanceReset;
+                requestArgs["name"] = name;
+                break;
+            case "profile-export":
+                op = OperationNames.InstanceProfileExport;
+                requestArgs["name"] = name;
+                break;
+            case "presets":
+                op = OperationNames.InstancePresets;
+                break;
+            case "adb-identity":
+                op = OperationNames.InstanceAdbIdentity;
+                requestArgs["name"] = name;
+                break;
+            case "input-hold":
+                op = OperationNames.InstanceInputHold;
+                requestArgs["name"] = name;
+                requestArgs["held"] = !args.Has("release");
+                break;
+            case "input-gate":
+                op = OperationNames.InstanceInputGate;
+                requestArgs["name"] = name;
+                break;
+            case "snapshots":
+                op = OperationNames.SnapshotList;
+                requestArgs["name"] = name;
+                break;
+            case "snapshot-delete":
+                op = OperationNames.SnapshotDelete;
+                requestArgs["name"] = name;
+                requestArgs["tag"] = args.Optional("tag") ?? throw new ArgumentException("--tag is required.");
+                requestArgs["force"] = args.Has("force");
+                break;
             case "snapshot-save":
             case "snapshot-load":
                 op = command == "snapshot-save" ? OperationNames.SnapshotSave : OperationNames.SnapshotLoad;

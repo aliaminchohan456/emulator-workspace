@@ -28,6 +28,7 @@ public sealed class OperationDispatcher
     private readonly InstanceManager _manager;
     private readonly Journal _journal;
     private readonly AgentService _agents;
+    private readonly DeviceLibraryService _library;
     private readonly Action _requestShutdown;
     private readonly DateTimeOffset _startedUtc = DateTimeOffset.UtcNow;
 
@@ -38,6 +39,7 @@ public sealed class OperationDispatcher
         InstanceManager manager,
         Journal journal,
         AgentService agents,
+        DeviceLibraryService library,
         Action requestShutdown)
     {
         _paths = paths;
@@ -46,6 +48,7 @@ public sealed class OperationDispatcher
         _manager = manager;
         _journal = journal;
         _agents = agents;
+        _library = library;
         _requestShutdown = requestShutdown;
     }
 
@@ -238,7 +241,8 @@ public sealed class OperationDispatcher
     {
         if (op is OperationNames.AgentPairApprove or OperationNames.AgentSessionList
             or OperationNames.AgentSessionRevoke or OperationNames.AgentTakeover
-            or OperationNames.AgentApproveAction)
+            or OperationNames.AgentApproveAction or OperationNames.InstanceInputHold
+            or OperationNames.InstanceInputGate)
         {
             throw new SupervisorOperationException(
                 ErrorCodes.ForbiddenScope, "This operation is reserved for the local operator.");
@@ -262,7 +266,8 @@ public sealed class OperationDispatcher
     {
         OperationNames.InstanceStatus or OperationNames.ObservationScreenshot
             or OperationNames.ObservationTree or OperationNames.LogsRead
-            or OperationNames.EventPoll or OperationNames.ArtifactRead or OperationNames.UiAssert => AgentService.ScopeObserve,
+            or OperationNames.EventPoll or OperationNames.ArtifactRead or OperationNames.UiAssert
+            or OperationNames.InstanceAdbIdentity => AgentService.ScopeObserve,
         OperationNames.InputTap or OperationNames.InputText or OperationNames.InputKey
             or OperationNames.InputSwipe => AgentService.ScopeInput,
         OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground =>
@@ -523,12 +528,14 @@ public sealed class OperationDispatcher
             }
 
             case OperationNames.SnapshotSave:
-                return await _manager.SnapshotAsync(
-                    name,
-                    JsonArgs.String(args, "tag") ?? throw new SupervisorOperationException(
-                        ErrorCodes.InvalidRequest, "tag is required."),
-                    save: true,
-                    cancellationToken).ConfigureAwait(false);
+            {
+                var tag = JsonArgs.String(args, "tag") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "tag is required.");
+                var saved = await _manager.SnapshotAsync(name, tag, save: true, cancellationToken)
+                    .ConfigureAwait(false);
+                _library.WriteSnapshotMetadata(_manager.Get(name), tag);
+                return saved;
+            }
 
             case OperationNames.SnapshotLoad:
                 if (session is not null)
@@ -543,6 +550,116 @@ public sealed class OperationDispatcher
                         ErrorCodes.InvalidRequest, "tag is required."),
                     save: false,
                     cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.InstanceDuplicate:
+            {
+                var source = name;
+                var target = JsonArgs.String(args, "target") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "target is required.");
+                var result = await _library.DuplicateAsync(_manager.Get(source), target, cancellationToken)
+                    .ConfigureAwait(false);
+                _agents.InvalidateObservations(source);
+                return result;
+            }
+
+            case OperationNames.InstanceReset:
+            {
+                var record = _manager.Get(name);
+                var result = _library.Reset(record);
+                _agents.InvalidateObservations(name);
+                return result;
+            }
+
+            case OperationNames.InstanceProfileExport:
+                return _library.ExportProfile(_manager.Get(name));
+
+            case OperationNames.InstanceProfileImport:
+            {
+                var profileNode = args?["profile"] as JsonObject ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "profile is required.");
+                var profile = DeviceLibraryService.ParseProfile(profileNode);
+                var targetName = JsonArgs.String(args, "name") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "name is required.");
+                var created = await _manager.CreateAsync(
+                    targetName,
+                    profile.ImagePackage,
+                    profile.DeviceId,
+                    null,
+                    null,
+                    profile.GpuMode,
+                    profile.Headless,
+                    cancellationToken).ConfigureAwait(false);
+                var exported = _library.ExportProfile(created);
+                return new JsonObject
+                {
+                    ["created"] = created.Name,
+                    ["profile"] = exported["profile"]!.DeepClone(),
+                    ["importedFrom"] = profile.LineageId,
+                    ["schemaVersion"] = profile.SchemaVersion,
+                };
+            }
+
+            case OperationNames.InstancePresets:
+                return new JsonObject
+                {
+                    ["presets"] = DeviceLibraryService.Presets(),
+                    ["estimate"] = _library.DiskEstimate("2048M"),
+                };
+
+            case OperationNames.InstanceDiskEstimate:
+                return _library.DiskEstimate(
+                    JsonArgs.String(args, "dataPartition") ?? "2048M");
+
+            case OperationNames.SnapshotList:
+                return _library.ListSnapshots(_manager.Get(name));
+
+            case OperationNames.SnapshotDelete:
+            {
+                var tag = JsonArgs.String(args, "tag") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "tag is required.");
+                var force = JsonArgs.Bool(args, "force", false);
+                var result = _library.DeleteSnapshot(_manager.Get(name), tag, force);
+                _agents.InvalidateObservations(name);
+                return result;
+            }
+
+            case OperationNames.SimulationGeoFix:
+            {
+                var latitude = JsonArgs.Double(args, "latitude") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "latitude is required.");
+                var longitude = JsonArgs.Double(args, "longitude") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "longitude is required.");
+                return await _manager.GeoFixAsync(
+                    name, longitude, latitude, JsonArgs.Double(args, "altitude"), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            case OperationNames.SimulationBattery:
+            {
+                var level = JsonArgs.Int(args, "level") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "level is required.");
+                var charging = JsonArgs.Bool(args, "charging", false);
+                return await _manager.BatteryAsync(name, level, charging, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            case OperationNames.InstanceAdbIdentity:
+                return await _manager.AdbIdentityAsync(name, cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.InstanceInputHold:
+            {
+                var target = JsonArgs.String(args, "name") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "name is required.");
+                var held = JsonArgs.Bool(args, "held", true);
+                return _agents.SetInputHold(target, held);
+            }
+
+            case OperationNames.InstanceInputGate:
+            {
+                var target = JsonArgs.String(args, "name") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "name is required.");
+                return _agents.DescribeInputHold(target);
+            }
 
             case OperationNames.AgentPairRequest:
                 return _agents.RequestPairing(

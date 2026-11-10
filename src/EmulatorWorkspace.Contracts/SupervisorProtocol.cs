@@ -123,6 +123,15 @@ public static class OperationNames
     public const string InstanceStatus = "instance.status";
     public const string InstanceWait = "instance.wait";
     public const string InstanceDelete = "instance.delete";
+    public const string InstanceAdbIdentity = "instance.adbIdentity";
+    public const string InstanceDuplicate = "instance.duplicate";
+    public const string InstanceReset = "instance.reset";
+    public const string InstanceProfileExport = "instance.profileExport";
+    public const string InstanceProfileImport = "instance.profileImport";
+    public const string InstancePresets = "instance.presets";
+    public const string InstanceDiskEstimate = "instance.diskEstimate";
+    public const string InstanceInputHold = "instance.inputHold";
+    public const string InstanceInputGate = "instance.inputGate";
 
     public const string FrameSubscribe = "frame.subscribe";
     public const string FrameUnsubscribe = "frame.unsubscribe";
@@ -133,6 +142,8 @@ public static class OperationNames
     public const string InputSwipe = "input.swipe";
     public const string InputKey = "input.key";
     public const string DisplayRotate = "display.rotate";
+    public const string SimulationGeoFix = "sim.geoFix";
+    public const string SimulationBattery = "sim.battery";
 
     public const string AppInstall = "app.install";
     public const string AppLaunch = "app.launch";
@@ -143,6 +154,8 @@ public static class OperationNames
 
     public const string SnapshotSave = "snapshot.save";
     public const string SnapshotLoad = "snapshot.load";
+    public const string SnapshotList = "snapshot.list";
+    public const string SnapshotDelete = "snapshot.delete";
 
     public const string DiagnosticsSummary = "diagnostics.summary";
 

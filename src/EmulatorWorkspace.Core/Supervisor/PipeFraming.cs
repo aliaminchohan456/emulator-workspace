@@ -81,6 +81,31 @@ public static class JsonArgs
         return node.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : node.ToString();
     }
 
+    public static double? Double(JsonObject? args, string name)
+    {
+        if (args?[name] is not { } node)
+        {
+            return null;
+        }
+
+        if (node.GetValueKind() == System.Text.Json.JsonValueKind.Number)
+        {
+            return node.GetValue<double>();
+        }
+
+        if (node.GetValueKind() == System.Text.Json.JsonValueKind.String
+            && double.TryParse(
+                node.GetValue<string>(),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed))
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
     public static int? Int(JsonObject? args, string name)
     {
         var text = String(args, name);

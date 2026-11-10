@@ -61,6 +61,21 @@ public sealed class AdbClient
         return result.StandardOutput.Trim();
     }
 
+    /// <summary>
+    /// Read-only listing of every transport the pinned server can see. It never
+    /// changes server state and is used to prove which transport a managed
+    /// serial resolves to; no global ADB control is performed.
+    /// </summary>
+    public async Task<string> ListDevicesAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await ProcessRunner.RunAsync(
+            _adbPath,
+            new[] { "devices", "-l" },
+            timeout: TimeSpan.FromSeconds(20),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        return result.StandardOutput + result.StandardError;
+    }
+
     public async Task<string> GetPropAsync(string serial, string key, CancellationToken cancellationToken = default) =>
         await ShellAsync(serial, new[] { "getprop", key }, cancellationToken).ConfigureAwait(false);
 
