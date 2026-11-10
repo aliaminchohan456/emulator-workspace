@@ -138,6 +138,49 @@ public sealed class EmulatorControlChannel : IDisposable
             CreateOptions(TimeSpan.FromSeconds(20), cancellationToken)).ResponseAsync.ConfigureAwait(false);
     }
 
+    public async Task SwipeAsync(
+        int fromX,
+        int fromY,
+        int toX,
+        int toY,
+        int durationMs,
+        CancellationToken cancellationToken = default)
+    {
+        var steps = Math.Clamp(durationMs / 16, 4, 40);
+        var delay = Math.Max(1, durationMs / steps);
+
+        async Task SendAsync(int x, int y, int pressure)
+        {
+            var touch = new Touch
+            {
+                X = x,
+                Y = y,
+                Identifier = 2,
+                Pressure = pressure,
+                TouchMajor = 8,
+                TouchMinor = 8,
+                Expiration = Touch.Types.EventExpiration.NeverExpire,
+            };
+            await _controller.sendTouchAsync(
+                new TouchEvent { Touches = { touch } },
+                CreateOptions(TimeSpan.FromSeconds(20), cancellationToken)).ResponseAsync.ConfigureAwait(false);
+        }
+
+        await SendAsync(fromX, fromY, 1024).ConfigureAwait(false);
+        for (var step = 1; step < steps; step++)
+        {
+            var fraction = step / (double)steps;
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            await SendAsync(
+                (int)Math.Round(fromX + (toX - fromX) * fraction),
+                (int)Math.Round(fromY + (toY - fromY) * fraction),
+                1024).ConfigureAwait(false);
+        }
+
+        await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+        await SendAsync(toX, toY, 0).ConfigureAwait(false);
+    }
+
     public async Task<SnapshotResult> SaveSnapshotAsync(
         string snapshotId,
         CancellationToken cancellationToken = default)

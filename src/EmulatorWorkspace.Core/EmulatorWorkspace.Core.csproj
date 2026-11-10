@@ -1,6 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>EmulatorWorkspace.Core</RootNamespace>
     <AssemblyName>EmulatorWorkspace.Core</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EmulatorWorkspace.Contracts\EmulatorWorkspace.Contracts.csproj" />
+    <ProjectReference Include="..\EmulatorWorkspace.Controller\EmulatorWorkspace.Controller.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+  </ItemGroup>
 </Project>

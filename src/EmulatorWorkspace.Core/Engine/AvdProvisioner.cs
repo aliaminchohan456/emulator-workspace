@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace EmulatorWorkspace.Core.Engine;
 
@@ -18,8 +18,8 @@ public sealed class AvdProvisioner
         ("hw.gpu.enabled", "yes"),
         ("hw.gpu.mode", "swiftshader_indirect"),
         ("userdata.useQcow2", "yes"),
-        ("hw.cpu.ncore", "2"),
-        ("hw.ramSize", "2048"),
+        ("hw.cpu.ncore", "4"),
+        ("hw.ramSize", "3072"),
         ("hw.audioInput", "no"),
         ("hw.audioOutput", "no"),
         ("fastboot.forceColdBoot", "yes"),

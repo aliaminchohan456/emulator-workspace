@@ -1,4 +1,4 @@
-# Tools
+﻿# Tools
 
 ## `host-baseline.ps1`
 
@@ -61,3 +61,19 @@ stock input with `--ramdisk stock`.
 Known constraints: every LZ4 frame must be preserved, cpio data offsets must be
 4-byte aligned after the name, and the engine appends its own bootconfig to the
 per-AVD `initrd` (do not patch that generated file; it is rebuilt each launch).
+
+## `phase1-acceptance.ps1`
+
+Runs the Phase 1 non-visual gate on a fresh root: supervisor, doctor, create,
+boot, exact ADB target, controller auth, continuous frame trace, APK install and
+launch, screenshot, tap marker in Logcat, agent denial, snapshot round trip, a
+second guest, port-conflict error, and supervisor restart reattachment.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\phase1-acceptance.ps1
+```
+
+Artifacts: `artifacts/phase1/<run-id>/` with `summary.json`, `transcript.txt`,
+`doctor.json`, `frame-trace.json`, `screenshot.png`, and `logcat-marker.txt`.
+Exit code 2 means at least one check failed; failures stay visible in the
+summary instead of being retried away.

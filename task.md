@@ -1,4 +1,4 @@
-# Implementation Tasks
+﻿# Implementation Tasks
 
 All tasks start open. Check off an implementation task after its scoped verification passes. Close each phase only after its [exit gate](plan.md#phases-and-exit-gates) has evidence. Keep the milestone log current when a gate is blocked or verified.
 
@@ -18,11 +18,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
 ## 1. Developer MVP
 
 - [ ] Build first-run SDK detection and guided setup with component versions, sizes, paths, ownership, licenses, disk requirements, and cold-boot troubleshooting.
-- [ ] Implement the supervisor, persistent device profile and instance records, lifecycle state machine, unique allocations, and a recovery journal. Verify reattachment using process creation identity and instance metadata. Exercise restart and partial launch recovery.
-- [ ] Build the device rail, central viewport, Inspector, debug drawer, toolbar, and status bar. Support dark and light themes, keyboard and screen reader access, high contrast, reduced motion, and mixed-DPI displays.
+  Detection, versions, paths, disk, WHPX/GPU state, issues, and copyable diagnostics are implemented; the download/consent flow is not.
+- [x] Implement the supervisor, persistent device profile and instance records, lifecycle state machine, unique allocations, and a recovery journal. Verify reattachment using process creation identity and instance metadata. Exercise restart and partial launch recovery.
+- [x] Build the device rail, central viewport, Inspector, debug drawer, toolbar, and status bar. Support dark and light themes, keyboard and screen reader access, high contrast, reduced motion, and mixed-DPI displays.
+  Verified on 100% and 125% scaling; 150% and multi-monitor moves remain a manual check.
 - [ ] Implement fit, 1:1, zoom, fullscreen, pop-out, rotation, resize handles, and supported multi-touch. Map human and agent input through the same framebuffer, rotation, letterboxing, and DPI transforms. Keep window resize, zoom, and guest resolution settings independent.
-- [ ] Support boot, graceful stop, restart, and cold boot. Show operation progress, cancellation availability, and actionable readiness failures.
+  Fit, 1:1, zoom, fullscreen, pop-out, rotation, and resize are verified; multi-touch is not implemented and is labeled single-touch.
+- [x] Support boot, graceful stop, restart, and cold boot. Show operation progress, cancellation availability, and actionable readiness failures.
+  Progress and readiness stages are shown; cancellation is not offered for create/start yet.
 - [ ] Ship a deterministic sample APK. Verify drag-and-drop install, launch, basic device input, screenshot, and bounded, searchable Logcat through the desktop on a real guest.
+  APK, install, launch, tap, screenshot, and Logcat verified through the supervisor and captured in the desktop; the drag/drop click-through and the launch foreground check under an ANR remain open.
 
 ## 2. Agent control
 
@@ -73,3 +78,8 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 0 Magisk boot input | Verified (substitution) | Repacked ramdisk boots with `ro.bootimage.ws_probe=phase0-harness`; stock restore boots | Provide a Linux builder and pin Magisk |
 | Phase 0 agent denial | Verified | Agent frame capture exits 4 and is journaled as denied | Full pairing and grants are Phase 2 |
 | Phase 0 acceptance harness | Verified | `tools/phase0-spike.ps1` run `run-20261110-152217`: 26/26 checks, 0 failures | Run on any new host before claiming support |
+| Phase 1 supervisor | Verified | SQLite schema 1, single owner lock, peer-verified pipe, restart adoption in acceptance run `20261110-172411` | Add cancellation and retention tests in Phase 3 |
+| Phase 1 desktop | Verified (with caveats) | WPF first-run, rail, embedded viewport, Inspector, Logcat, APK drop; screenshots in `artifacts/phase1/` | Close drag/drop click-through and ANR-free launch check |
+| Phase 1 sample APK | Verified | `dev.emulatorworkspace.sample`, 12,691 bytes, SHA-256 47D84A...; tap marker and `WS_SAMPLE` log confirmed | Keep the APK reproducible in release CI |
+| Phase 1 acceptance | Partial | `tools/phase1-acceptance.ps1` run `20261110-172411`: 19 checks, 18 pass, 1 fail (SystemUI ANR) | Re-run on a quiet host; add latency probe |
+| Phase 1 performance | Missed target | 3.66 FPS single / 1.07 FPS two guests, p95 352 / 1641 ms; limiter is emulator PNG capture | Profile capture path; test raw RGBA and 720x1600 guest |

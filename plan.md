@@ -1,4 +1,4 @@
-# Android Emulator Workspace Plan
+﻿# Android Emulator Workspace Plan
 
 ## Goal and baseline
 
@@ -11,6 +11,15 @@ proven on the reference host. Pinned for testing: Android Emulator 37.2.12
 (build_id 16428233), `system-images;android-35;default;x86_64` revision 2, and
 the engine's own gRPC controller protos. Evidence, deviations, and remaining
 measurements are in [docs/phase0-evidence.md](docs/phase0-evidence.md).
+
+Phase 1 status (2026-11-10): the developer MVP runs on real Windows hardware.
+A persistent per-user supervisor owns lifecycle, SQLite state, ports,
+credentials, and a versioned named-pipe contract; the WPF desktop embeds the
+live guest with input, Inspector, Logcat, and APK drop. The deterministic sample
+APK installs, launches, and answers taps. Acceptance run `20261110-172411`
+passed 18 of 19 checks; the one failure is a SystemUI ANR overlay on the launch
+foreground check. Evidence, measurements, and open gates are in
+[docs/phase1-evidence.md](docs/phase1-evidence.md).
 
 ## Initial architecture decisions
 
@@ -76,14 +85,43 @@ Deviations recorded during the spike:
 5. The desktop app, sample APK, and frame-pacing measurements remain Phase 1
    work.
 
+## Phase 1 outcomes and deviations
+
+Verified in [docs/phase1-evidence.md](docs/phase1-evidence.md), acceptance run
+`20261110-172411` (19 checks, 18 pass):
+
+- A persistent supervisor owns one canonical root (exclusive lock file,
+  final-path canonicalization), stores state in SQLite schema 1 with a
+  transactional legacy-JSON import, and serves a versioned bounded pipe that
+  verifies the peer's user SID and logon session.
+- Guests survive supervisor death and are re-adopted only after PID + creation
+  time and engine-advertised AVD/ports match.
+- The WPF desktop embeds continuous real frames, maps input through the rendered
+  image rectangle, installs/launches the sample APK, and shows bounded Logcat.
+- Measured on this host: one guest delivered 3.66 FPS (p50 239 ms, p95 352 ms);
+  two guests 1.07 FPS (p50 882 ms, p95 1641 ms). The guest scene renders at
+  ~57 FPS, so the limiter is the emulator's PNG screenshot path plus host CPU,
+  not WPF decode or the pipe. The 60 FPS / p95 100 ms targets are missed and the
+  open gate is capture-path profiling.
+- The sample APK's launch foreground check failed once because SystemUI raised an
+  ANR overlay; the package installed, answered a tap, and logged `WS_SAMPLE`.
+- The engine ignores `ImageFormat.width` for PNG; host-side decode uses
+  `DecodePixelWidth=540` while input remains in guest pixels.
+- WPF requires real globalization: the desktop project overrides the repo-wide
+  `InvariantGlobalization=true`.
+- The desktop viewport uses a clipped grid instead of a `ScrollViewer` around an
+  auto-sized image; zoom beyond the viewport is clipped rather than pannable.
+- Input latency (20 samples per GPU mode), low-space forcing, multi-touch, and
+  software-renderer re-measurement remain open.
+
 ## Initial compatibility matrix
 
 Each verified run must record the host architecture and CPU, Windows build, engine and image revisions, guest API and ABI, GPU and driver, backend, graphics and snapshot support, root mode, and Magisk version where applicable. Record Intel, AMD, and software-rendering results separately when the tested configurations differ.
 
 | Candidate | Windows host | Engine and image | Guest | Graphics and snapshots | Root workflow | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| First developer profile | Windows 11 26H2 26300.9818, i5-8265U, 31.8 GiB, UHD 620 | Emulator 37.2.12 (16428233); `system-images;android-35;default;x86_64` rev 2 | API 35, x86_64, userdebug | Host GPU verified; swiftshader verified; save 5.7 s, load 5.5 s | `adb root` uid 0 and `adb unroot` uid 2000 verified | Verified (Phase 0) |
-| Second developer profile | Same host | Same engine and image, second AVD | API 35, x86_64 | Own ports, token, and data; concurrent boot verified | Same image | Verified concurrently |
+| First developer profile | Windows 11 26H2 26300.9818, i5-8265U, 31.8 GiB, UHD 620 | Emulator 37.2.12 (16428233); `system-images;android-35;default;x86_64` rev 2 | API 35, x86_64, userdebug | Host GPU verified; swiftshader verified; save 5.7 s, load 5.5 s | `adb root` uid 0 and `adb unroot` uid 2000 verified | Verified (Phase 0 + desktop MVP) |
+| Second developer profile | Same host | Same engine and image, second AVD | API 35, x86_64 | Own ports, token, and data; concurrent boot verified | Same image | Verified concurrently; desktop viewport on this profile |
 | Google Play profile | Windows 11 x64 with WHPX | Official unmodified Google Play image; installed but not yet booted | API 35/36, x86_64 | Pending | Unmodified compatibility profile | Planned |
 | Magisk Lab | Windows 11 x64 with WHPX | Emulator pinned; ramdisk substitution proven; Magisk build pending on Linux | API 35, x86_64 | `-ramdisk` override boots a modified archive | App-level `su` pending; stock restore verified | In progress |
 
@@ -103,3 +141,9 @@ Declare the reference host, Windows build, CPU, GPU and driver, RAM, storage, WH
 | Stability | 30 start/stop cycles and a four-hour two-guest soak. Track crashes, process and port leaks, handles, and memory growth |
 
 Compare completed workflows with Android Studio agent integration, the raw Emulator CLI, and an existing mobile MCP server. Use measured results, reproducible steps, and documented limitations in release claims.
+
+Measured Phase 1 (host GPU, acceptance `20261110-172411`): one guest 3.66
+delivered FPS (p50 239 ms, p95 352 ms frame interval); two guests 1.07 FPS
+(p50 882 ms, p95 1641 ms). Guest-side rendering was ~57 FPS, identifying the
+emulator screenshot encoder as the limiter. Targets are not met on this host;
+software fallback and 20-sample input latency remain open.

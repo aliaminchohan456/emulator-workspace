@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>EmulatorWorkspace.Desktop</RootNamespace>
+    <AssemblyName>EmulatorWorkspace.Desktop</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
+    <ProjectReference Include="..\EmulatorWorkspace.Contracts\EmulatorWorkspace.Contracts.csproj" />
+    <ProjectReference Include="..\EmulatorWorkspace.Controller\EmulatorWorkspace.Controller.csproj" />
+  </ItemGroup>
+</Project>

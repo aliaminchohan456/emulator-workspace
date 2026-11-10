@@ -1,4 +1,4 @@
-# Emulator Workspace
+﻿# Emulator Workspace
 
 Windows-first Android emulator workspace. Phase 0 proves the runtime: two real
 WHPX x86_64 AOSP guests, exact ADB targeting, an authenticated loopback
@@ -8,14 +8,18 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 
 | Piece | Location | Status |
 | --- | --- | --- |
-| Supervisor core (instances, ports, journal, policy, engine adapter) | `src/EmulatorWorkspace.Core` | Phase 0 vertical slice |
+| Persistent per-user supervisor (SQLite, pipe, lifecycle, adoption) | `src/EmulatorWorkspace.Supervisor` | Phase 1, verified |
+| Versioned local contract | `src/EmulatorWorkspace.Contracts` | Protocol 1 |
+| Supervisor core (instances, ports, journal, policy, engine adapter) | `src/EmulatorWorkspace.Core` | Phase 1 |
 | Authenticated gRPC controller client (vendored engine protos) | `src/EmulatorWorkspace.Controller` | Verified against 37.2.12 |
-| `wsctl` command line | `src/EmulatorWorkspace.Cli` | Verified |
-| Host baseline + Phase 0 acceptance harness | `tools/host-baseline.ps1`, `tools/phase0-spike.ps1` | Verified, 28/28 checks |
-| Ramdisk probe/repack for the Magisk boot path | `tools/probe_ramdisk.py`, `tools/repack_ramdisk.py` | Verified |
+| `wsctl` command line (supervisor client, `--direct` diagnostic fallback) | `src/EmulatorWorkspace.Cli` | Verified |
+| WPF desktop (rail, embedded viewport, Inspector, Logcat, APK drop) | `src/EmulatorWorkspace.Desktop` | Phase 1 MVP |
+| Deterministic sample APK | `sample/` + `artifacts/phase1/sample/ws-sample.apk` | Verified |
+| Host baseline + Phase 0 harness | `tools/host-baseline.ps1`, `tools/phase0-spike.ps1` | 26/26 checks (run `run-20261110-152217`) |
+| Phase 1 acceptance harness | `tools/phase1-acceptance.ps1` | 19 checks, 18 pass (run `20261110-172411`) |
 | Unit tests | `tests/EmulatorWorkspace.Tests` | 21 passing |
 
-The WPF desktop, sample APK, MCP server, and root lab UI are Phase 1+ work.
+The MCP server and root lab UI remain Phase 2 and Phase 4 work.
 
 ## Prerequisites
 
@@ -40,7 +44,7 @@ dotnet test
 
 ## Run
 
-Runtime state (AVDs, instance records, logs, journal) defaults to
+Runtime state (AVDs, instance records, logs, journal, SQLite) defaults to
 `%LOCALAPPDATA%\EmulatorWorkspace`. Override it with `EMULATOR_WORKSPACE_HOME`
 or `--root`. On this host it was relocated to `D:\EmulatorWorkspace` because the
 system volume has limited free space:
@@ -49,32 +53,41 @@ system volume has limited free space:
 [Environment]::SetEnvironmentVariable('EMULATOR_WORKSPACE_HOME','D:\EmulatorWorkspace','User')
 ```
 
-Two guests, end to end:
+The desktop starts the supervisor on demand; the CLI does the same:
+
+```powershell
+src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe --root D:\Phase1Root
+```
+
+Two guests, end to end (all commands route through the supervisor):
 
 ```powershell
 $ws = "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 
-& $ws doctor --json artifacts\host-baseline.json
-& $ws create --name a
-& $ws start --name a
-& $ws wait --name a
-& $ws verify-target --name a
-& $ws controller-probe --name a
-& $ws frame --name a --via controller --out artifacts\a.png
-& $ws tap --name a --x 332 --y 1820 --via controller
-& $ws snapshot-save --name a --tag baseline
-& $ws snapshot-load --name a --tag baseline
-& $ws stop --name a
+& $ws doctor --json artifacts\host-baseline.json --root D:\Phase1Root
+& $ws create --name a --root D:\Phase1Root
+& $ws start --name a --root D:\Phase1Root
+& $ws wait --name a --root D:\Phase1Root
+& $ws verify-target --name a --root D:\Phase1Root
+& $ws controller-probe --name a --root D:\Phase1Root
+& $ws frame --name a --via controller --out artifacts\a.png --root D:\Phase1Root
+& $ws tap --name a --x 540 --y 720 --root D:\Phase1Root
+& $ws snapshot-save --name a --tag baseline --root D:\Phase1Root
+& $ws snapshot-load --name a --tag baseline --root D:\Phase1Root
+& $ws stop --name a --root D:\Phase1Root
 ```
 
-Second guest: `create --name b`, then start/wait it. Ports and controller ports
-are allocated automatically and recorded per instance.
+Supervisor diagnostics: `wsctl supervisor-status`, `wsctl supervisor-stop`.
+`wsctl --direct <command>` keeps the pre-supervisor path for diagnostics only.
 
-Full acceptance run (boots two guests, measures everything, writes artifacts):
+Sample APK and acceptance:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\phase0-spike.ps1 -Root D:\EmulatorWorkspace
+powershell -ExecutionPolicy Bypass -File sample\build-sample-apk.ps1
+powershell -ExecutionPolicy Bypass -File tools\phase1-acceptance.ps1
 ```
+
+Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 
 ## Safety model
 
@@ -91,6 +104,7 @@ powershell -ExecutionPolicy Bypass -File tools\phase0-spike.ps1 -Root D:\Emulato
 ## Documentation
 
 - [Phase 0 evidence](docs/phase0-evidence.md)
+- [Phase 1 evidence](docs/phase1-evidence.md)
 - [Tools](tools/README.md)
 - [Plan](plan.md)
 - [Task checklist](task.md)

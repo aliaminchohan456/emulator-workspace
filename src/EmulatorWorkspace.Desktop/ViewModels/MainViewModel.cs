@@ -1,0 +1,1615 @@
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json.Nodes;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using EmulatorWorkspace.Contracts;
+using EmulatorWorkspace.Core.Supervisor;
+using EmulatorWorkspace.Core.Workspace;
+using EmulatorWorkspace.Desktop.Services;
+using Microsoft.Win32;
+
+namespace EmulatorWorkspace.Desktop.ViewModels;
+
+public sealed class MainViewModel : ObservableObject, IAsyncDisposable
+{
+    private readonly WorkspacePaths _paths;
+    private readonly Dispatcher _dispatcher;
+    private readonly DispatcherTimer _statusTimer;
+    private readonly DispatcherTimer _logTimer;
+    private readonly ConcurrentQueue<LogEntryViewModel> _logInbox = new();
+    private readonly List<double> _frameIntervals = new();
+    private readonly List<double> _inputLatencies = new();
+    private readonly SemaphoreSlim _frameSignal = new(0, 1);
+    private readonly SemaphoreSlim _subscribeGate = new(1, 1);
+    private readonly CancellationTokenSource _lifetime = new();
+
+    private SupervisorConnection? _connection;
+    private string? _framePath;
+    private int _frameSequence;
+    private string? _frameSubscription;
+    private string? _logcatSubscription;
+    private bool _frameLoopRunning;
+    private PendingInput? _pendingInput;
+    private string ViewportWidthHint = "n/a";
+    private int? _lastMarkerColor;
+    private DateTimeOffset _lastFramePresented;
+    private int _droppedFrames;
+    private int _presentedFrames;
+    private bool _initialized;
+
+    public MainViewModel()
+    {
+        _paths = WorkspacePaths.Resolve();
+        _dispatcher = Application.Current.Dispatcher;
+
+        PrimaryActionCommand = new AsyncRelayCommand(PrimaryActionAsync, () => !IsBusy);
+        CreateDeviceCommand = new AsyncRelayCommand(CreateAndStartAsync, () => !IsBusy && !HasBlockingIssue);
+        StartCommand = new AsyncRelayCommand(() => StartDeviceAsync(), () => SelectedDevice is not null && !IsBusy);
+        StopCommand = new AsyncRelayCommand(() => StopDeviceAsync(), () => SelectedDevice?.IsRunning == true && !IsBusy);
+        RestartCommand = new AsyncRelayCommand(RestartAsync, () => SelectedDevice is not null && !IsBusy);
+        ColdBootCommand = new AsyncRelayCommand(ColdBootAsync, () => SelectedDevice is not null && !IsBusy);
+        BackCommand = new AsyncRelayCommand(() => KeyAsync("BACK"), () => CanSendInput);
+        HomeCommand = new AsyncRelayCommand(() => KeyAsync("HOME"), () => CanSendInput);
+        RecentsCommand = new AsyncRelayCommand(() => KeyAsync("RECENTS"), () => CanSendInput);
+        ScreenshotCommand = new AsyncRelayCommand(ScreenshotAsync, () => SelectedDevice?.IsRunning == true);
+        InstallApkCommand = new AsyncRelayCommand(InstallApkDialogAsync, () => SelectedDevice?.IsRunning == true && !IsBusy);
+        LaunchSampleCommand = new AsyncRelayCommand(
+            () => LaunchAsync("dev.emulatorworkspace.sample"),
+            () => SelectedDevice?.IsRunning == true);
+        RotateCommand = new AsyncRelayCommand(ToggleRotationAsync, () => CanSendInput);
+        RefreshCommand = new AsyncRelayCommand(InitializeAsync);
+        ToggleLogcatCommand = new RelayCommand(() => IsLogcatOpen = !IsLogcatOpen);
+        ClearLogCommand = new RelayCommand(ClearLog);
+        ExportLogCommand = new AsyncRelayCommand(ExportLogAsync);
+        CopyDiagnosticsCommand = new AsyncRelayCommand(CopyDiagnosticsAsync);
+        ToggleThemeCommand = new RelayCommand(ToggleTheme);
+
+        LogView = CollectionViewSource.GetDefaultView(LogEntries);
+        LogView.Filter = FilterLog;
+
+        _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
+        _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
+        _logTimer.Start();
+    }
+
+    public ObservableCollection<DeviceItemViewModel> Devices { get; } = new();
+
+    public ObservableCollection<LogEntryViewModel> LogEntries { get; } = new();
+
+    public ObservableCollection<string> SetupIssues { get; } = new();
+
+    public ICollectionView LogView { get; }
+
+    public AsyncRelayCommand PrimaryActionCommand { get; }
+
+    public AsyncRelayCommand CreateDeviceCommand { get; }
+
+    public AsyncRelayCommand StartCommand { get; }
+
+    public AsyncRelayCommand StopCommand { get; }
+
+    public AsyncRelayCommand RestartCommand { get; }
+
+    public AsyncRelayCommand ColdBootCommand { get; }
+
+    public AsyncRelayCommand BackCommand { get; }
+
+    public AsyncRelayCommand HomeCommand { get; }
+
+    public AsyncRelayCommand RecentsCommand { get; }
+
+    public AsyncRelayCommand ScreenshotCommand { get; }
+
+    public AsyncRelayCommand InstallApkCommand { get; }
+
+    public AsyncRelayCommand LaunchSampleCommand { get; }
+
+    public AsyncRelayCommand RotateCommand { get; }
+
+    public AsyncRelayCommand RefreshCommand { get; }
+
+    public RelayCommand ToggleLogcatCommand { get; }
+
+    public RelayCommand ClearLogCommand { get; }
+
+    public AsyncRelayCommand ExportLogCommand { get; }
+
+    public AsyncRelayCommand CopyDiagnosticsCommand { get; }
+
+    public RelayCommand ToggleThemeCommand { get; }
+
+    private DeviceItemViewModel? _selectedDevice;
+
+    public DeviceItemViewModel? SelectedDevice
+    {
+        get => _selectedDevice;
+        set
+        {
+            if (SetProperty(ref _selectedDevice, value))
+            {
+                OnPropertyChanged(nameof(HasSelection));
+                OnPropertyChanged(nameof(PrimaryActionText));
+                OnPropertyChanged(nameof(CanSendInput));
+                OnPropertyChanged(nameof(PortsText));
+                OnPropertyChanged(nameof(AbiApiText));
+                RaiseCommandStates();
+                _ = OnDeviceSelectedAsync(value);
+            }
+        }
+    }
+
+    public bool HasSelection => SelectedDevice is not null;
+
+    public bool CanSendInput => SelectedDevice?.IsRunning == true;
+
+    private bool _isConnected;
+
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set => SetProperty(ref _isConnected, value);
+    }
+
+    private bool _isBusy;
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        private set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                OnPropertyChanged(nameof(PrimaryActionText));
+                RaiseCommandStates();
+            }
+        }
+    }
+
+    private string _busyText = "";
+
+    public string BusyText
+    {
+        get => _busyText;
+        private set => SetProperty(ref _busyText, value);
+    }
+
+    private string _statusMessage = "Starting desktop...";
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
+    }
+
+    private string _errorMessage = "";
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (SetProperty(ref _errorMessage, value))
+            {
+                OnPropertyChanged(nameof(HasError));
+            }
+        }
+    }
+
+    public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    private bool _hasBlockingIssue;
+
+    public bool HasBlockingIssue
+    {
+        get => _hasBlockingIssue;
+        private set
+        {
+            if (SetProperty(ref _hasBlockingIssue, value))
+            {
+                CreateDeviceCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    private bool _showSetup = true;
+
+    public bool ShowSetup
+    {
+        get => _showSetup;
+        private set => SetProperty(ref _showSetup, value);
+    }
+
+    private string _setupSummary = "";
+
+    public string SetupSummary
+    {
+        get => _setupSummary;
+        private set => SetProperty(ref _setupSummary, value);
+    }
+
+    private string _doctorText = "";
+
+    public string DoctorText
+    {
+        get => _doctorText;
+        private set => SetProperty(ref _doctorText, value);
+    }
+
+    private BitmapSource? _frame;
+
+    public BitmapSource? Frame
+    {
+        get => _frame;
+        private set
+        {
+            if (SetProperty(ref _frame, value))
+            {
+                OnPropertyChanged(nameof(HasFrame));
+            }
+        }
+    }
+
+    public bool HasFrame => Frame is not null;
+
+    public int GuestWidth { get; private set; }
+
+    public int GuestHeight { get; private set; }
+
+    private int _frameWidth;
+
+    public int FrameWidth
+    {
+        get => _frameWidth;
+        private set => SetProperty(ref _frameWidth, value);
+    }
+
+    private int _frameHeight;
+
+    public int FrameHeight
+    {
+        get => _frameHeight;
+        private set => SetProperty(ref _frameHeight, value);
+    }
+
+    private double _framesPerSecond;
+
+    public double FramesPerSecond
+    {
+        get => _framesPerSecond;
+        private set
+        {
+            if (SetProperty(ref _framesPerSecond, value))
+            {
+                OnPropertyChanged(nameof(FrameInfo));
+            }
+        }
+    }
+
+    public string FrameInfo => Frame is null
+        ? "no frame"
+        : $"{FrameWidth}x{FrameHeight}  -  {FramesPerSecond:N1} fps  -  {_droppedFrames} dropped";
+
+    private double _lastInputLatency = double.NaN;
+
+    public string InputLatencyText => double.IsNaN(_lastInputLatency)
+        ? "not measured"
+        : $"{_lastInputLatency:N0} ms (p95 {Percentile(_inputLatencies, 0.95):N0} ms / {_inputLatencies.Count} taps)";
+
+    public string ReadinessText
+    {
+        get
+        {
+            var readiness = SelectedDevice?.Readiness;
+            if (readiness is null)
+            {
+                return "not measured this session";
+            }
+
+            return $"boot {readiness["launchedToBootSeconds"]}s  -  interactive {readiness["launchedToInteractiveSeconds"]}s";
+        }
+    }
+
+    public string ZoomMode
+    {
+        get => _zoomMode;
+        set
+        {
+            if (SetProperty(ref _zoomMode, value))
+            {
+                OnPropertyChanged(nameof(ZoomStatus));
+            }
+        }
+    }
+
+    private string _zoomMode = "Fit";
+
+    private double _zoomFactor = 1.0;
+
+    public double ZoomFactor
+    {
+        get => _zoomFactor;
+        set
+        {
+            if (SetProperty(ref _zoomFactor, value))
+            {
+                OnPropertyChanged(nameof(ZoomStatus));
+            }
+        }
+    }
+
+    public string PortsText => SelectedDevice is null
+        ? ""
+        : $"{SelectedDevice.ConsolePort} / {SelectedDevice.GrpcPort}";
+
+    public string AbiApiText => SelectedDevice is null
+        ? ""
+        : $"{SelectedDevice.Abi} / {SelectedDevice.SdkLevel}";
+    public string ZoomStatus => ZoomMode switch
+    {
+        "Fit" => "Fit",
+        "Actual" => "1:1",
+        _ => $"{ZoomFactor * 100:N0}%",
+    };
+
+    private bool _isLogcatOpen = true;
+
+    public bool IsLogcatOpen
+    {
+        get => _isLogcatOpen;
+        set
+        {
+            if (SetProperty(ref _isLogcatOpen, value))
+            {
+                OnPropertyChanged(nameof(LogcatDrawerHeight));
+                if (value)
+                {
+                    _ = EnsureLogcatAsync();
+                }
+                else
+                {
+                    _ = StopLogcatAsync();
+                }
+            }
+        }
+    }
+
+    public GridLength LogcatDrawerHeight => IsLogcatOpen ? new GridLength(230) : new GridLength(0);
+
+    private string _logSearch = "";
+
+    public string LogSearch
+    {
+        get => _logSearch;
+        set
+        {
+            if (SetProperty(ref _logSearch, value))
+            {
+                LogView.Refresh();
+            }
+        }
+    }
+
+    private string _logTag = "";
+
+    public string LogTag
+    {
+        get => _logTag;
+        set
+        {
+            if (SetProperty(ref _logTag, value))
+            {
+                LogView.Refresh();
+            }
+        }
+    }
+
+    private string _logLevel = "All";
+
+    public string LogLevel
+    {
+        get => _logLevel;
+        set
+        {
+            if (SetProperty(ref _logLevel, value))
+            {
+                LogView.Refresh();
+            }
+        }
+    }
+
+    public string[] LogLevels { get; } = { "All", "V", "D", "I", "W", "E" };
+
+    private bool _logPaused;
+
+    public bool LogPaused
+    {
+        get => _logPaused;
+        set => SetProperty(ref _logPaused, value);
+    }
+
+    private string _screenshotPath = "";
+
+    public string ScreenshotPath
+    {
+        get => _screenshotPath;
+        private set => SetProperty(ref _screenshotPath, value);
+    }
+
+    private string _apkPath = "";
+
+    public string ApkPath
+    {
+        get => _apkPath;
+        private set => SetProperty(ref _apkPath, value);
+    }
+
+    public string WorkspaceRoot => _paths.Root;
+
+    public string PrimaryActionText => SelectedDevice switch
+    {
+        null => "Create device",
+        { IsRunning: true } => "Stop",
+        { State: "Starting" or "Stopping" } => "Working...",
+        _ => "Start",
+    };
+
+    public async Task InitializeAsync()
+    {
+        IsBusy = true;
+        BusyText = "Connecting to the local supervisor...";
+        ErrorMessage = "";
+
+        try
+        {
+            _connection ??= await SupervisorConnection.ConnectAsync(_paths.Root, TimeSpan.FromSeconds(25))
+                .ConfigureAwait(true);
+            _connection.EventReceived -= OnSupervisorEvent;
+            _connection.EventReceived += OnSupervisorEvent;
+            _connection.Trace = DesktopLog.Write;
+
+            IsConnected = true;
+            DesktopLog.Write("supervisor connected");
+            StatusMessage = "Supervisor connected.";
+
+            var doctor = await RequestAsync(OperationNames.Doctor, null, TimeSpan.FromMinutes(2)).ConfigureAwait(true);
+            ApplyDoctor(doctor);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+            DesktopLog.Write($"devices={Devices.Count} blocking={HasBlockingIssue}");
+
+            if (Devices.Count == 0)
+            {
+                ShowSetup = true;
+                SetupSummary = HasBlockingIssue
+                    ? "Fix the blocking prerequisite below before creating a device."
+                    : "No managed device yet. Create the pinned AOSP API 35 profile to begin.";
+            }
+            else
+            {
+                ShowSetup = false;
+                SelectedDevice = Devices[0];
+            }
+
+            if (_initialized)
+            {
+                StatusMessage = "Refreshed.";
+            }
+
+            _initialized = true;
+            _statusTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            IsConnected = false;
+            ErrorMessage = ex.Message;
+            StatusMessage = "Supervisor unavailable.";
+        }
+        finally
+        {
+            IsBusy = false;
+            BusyText = "";
+        }
+    }
+
+    private void ApplyDoctor(JsonObject doctor)
+    {
+        var sdk = doctor["androidSdk"]!.AsObject();
+        var gpu = doctor["gpu"]!.AsObject();
+        var images = sdk["images"]!.AsArray();
+        var pinned = "system-images;android-35;default;x86_64";
+        var pinnedImage = images.FirstOrDefault(i => i!["packageId"]!.GetValue<string>() == pinned);
+
+        SetupIssues.Clear();
+        var acceleration = doctor["accelerationVerdict"]?.GetValue<string>() ?? "unknown";
+        if (!acceleration.Contains("usable", StringComparison.OrdinalIgnoreCase))
+        {
+            SetupIssues.Add("WHPX is not usable. Enable Windows Hypervisor Platform, then reboot.");
+        }
+
+        if (pinnedImage is null)
+        {
+            SetupIssues.Add($"The pinned image {pinned} is not installed. Install it with sdkmanager.");
+        }
+
+        var freeGiB = doctor["workspaceDriveFreeGiB"]?.GetValue<double>() ?? 0;
+        if (freeGiB < 12)
+        {
+            SetupIssues.Add($"Only {freeGiB:N1} GiB free on the workspace volume; a guest and one snapshot need about 6 GiB.");
+        }
+
+        HasBlockingIssue = SetupIssues.Count > 0;
+        DoctorText = string.Join(Environment.NewLine, new[]
+        {
+            $"SDK: {sdk["root"]}",
+            $"Emulator: {sdk["emulatorVersion"]} (pinned 37.2.12.0 / 16428233)",
+            $"Image: {pinned} rev {pinnedImage?["revision"] ?? "missing"}",
+            $"ADB: {sdk["adbVersion"]}",
+            $"Acceleration: {acceleration}",
+            $"GPU: {gpu["name"]} driver {gpu["driverVersion"]}",
+            $"Workspace: {doctor["workspaceRoot"]} ({freeGiB:N1} GiB free)",
+        });
+    }
+
+    private async Task RefreshDevicesAsync()
+    {
+        var data = await RequestAsync(OperationNames.InstanceList, null, TimeSpan.FromSeconds(30))
+            .ConfigureAwait(true);
+
+        var selectedName = SelectedDevice?.Name;
+        var incoming = data["instances"]!.AsArray()
+            .Select(node => DeviceItemViewModel.From(node!.AsObject()))
+            .ToList();
+
+        Devices.Clear();
+        foreach (var device in incoming)
+        {
+            Devices.Add(device);
+        }
+
+        if (selectedName is not null)
+        {
+            SelectedDevice = Devices.FirstOrDefault(d => d.Name == selectedName);
+        }
+    }
+
+    private async Task OnDeviceSelectedAsync(DeviceItemViewModel? device)
+    {
+        DesktopLog.Write($"select {device?.Name}");
+        await StopLogcatAsync().ConfigureAwait(true);
+        await UnsubscribeFramesAsync().ConfigureAwait(true);
+        Frame = null;
+        FrameWidth = 0;
+        FrameHeight = 0;
+        _lastMarkerColor = null;
+        _pendingInput = null;
+        ErrorMessage = "";
+
+        if (device is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var status = await RequestAsync(
+                OperationNames.InstanceStatus,
+                new JsonObject { ["name"] = device.Name },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+            DesktopLog.Write($"selected status {device.State}");
+            device.ApplyStatus(status);
+            DesktopLog.Write($"applied status {device.State}");
+            OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(PrimaryActionText));
+
+            if (device.IsRunning)
+            {
+                await SubscribeFramesAsync(device).ConfigureAwait(true);
+                if (IsLogcatOpen)
+                {
+                    await EnsureLogcatAsync().ConfigureAwait(true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task RefreshStatusAsync()
+    {
+        DesktopLog.Write("refresh tick");
+        if (SelectedDevice is null || _connection is null || IsBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var status = await RequestAsync(
+                OperationNames.InstanceStatus,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+            SelectedDevice.ApplyStatus(status);
+            OnPropertyChanged(nameof(PrimaryActionText));
+            OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(AbiApiText));
+            if (SelectedDevice.IsRunning && _frameSubscription is null)
+            {
+                await SubscribeFramesAsync(SelectedDevice).ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Status refresh failed: " + ex.Message;
+        }
+    }
+
+    private async Task PrimaryActionAsync()
+    {
+        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        {
+            if (SelectedDevice is null)
+            {
+                await CreateAndStartAsync().ConfigureAwait(true);
+            }
+            else
+            {
+                await StartDeviceAsync().ConfigureAwait(true);
+            }
+
+            return;
+        }
+
+        await StopDeviceAsync().ConfigureAwait(true);
+    }
+
+    private async Task CreateAndStartAsync()
+    {
+        if (HasBlockingIssue)
+        {
+            return;
+        }
+
+        var name = "dev";
+        var index = 1;
+        while (Devices.Any(d => d.Name == name))
+        {
+            index++;
+            name = "dev" + index;
+        }
+
+        await RunBusyAsync("Creating the AVD from the pinned AOSP API 35 image...", async () =>
+        {
+            await RequestAsync(OperationNames.InstanceCreate, new JsonObject { ["name"] = name }, TimeSpan.FromMinutes(5))
+                .ConfigureAwait(true);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+            SelectedDevice = Devices.FirstOrDefault(d => d.Name == name);
+            ShowSetup = false;
+        }).ConfigureAwait(true);
+
+        await StartDeviceAsync().ConfigureAwait(true);
+    }
+
+    private async Task StartDeviceAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync("Starting engine...", async () =>
+        {
+            await RequestAsync(
+                OperationNames.InstanceStart,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["coldBoot"] = true },
+                TimeSpan.FromMinutes(2)).ConfigureAwait(true);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+        }).ConfigureAwait(true);
+
+        await RunBusyAsync("Waiting for Android to reach interactive readiness...", async () =>
+        {
+            var readiness = await RequestAsync(
+                OperationNames.InstanceWait,
+                new JsonObject { ["name"] = SelectedDevice!.Name, ["timeoutSeconds"] = 600 },
+                TimeSpan.FromMinutes(11)).ConfigureAwait(true);
+            SelectedDevice!.Readiness = readiness;
+            OnPropertyChanged(nameof(ReadinessText));
+            var status = await RequestAsync(
+                OperationNames.InstanceStatus,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+            SelectedDevice.ApplyStatus(status);
+            await SubscribeFramesAsync(SelectedDevice).ConfigureAwait(true);
+            if (IsLogcatOpen)
+            {
+                await EnsureLogcatAsync().ConfigureAwait(true);
+            }
+        }).ConfigureAwait(true);
+    }
+
+    private async Task StopDeviceAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync("Stopping guest...", async () =>
+        {
+            await RequestAsync(
+                OperationNames.InstanceStop,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromMinutes(2)).ConfigureAwait(true);
+            await UnsubscribeFramesAsync().ConfigureAwait(true);
+            await StopLogcatAsync().ConfigureAwait(true);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+            Frame = null;
+        }).ConfigureAwait(true);
+    }
+
+    private async Task RestartAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync("Restarting guest...", async () =>
+        {
+            await RequestAsync(
+                OperationNames.InstanceRestart,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromMinutes(3)).ConfigureAwait(true);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+        }).ConfigureAwait(true);
+        await StartDeviceAsync().ConfigureAwait(true);
+    }
+
+    private async Task ColdBootAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync("Cold booting guest...", async () =>
+        {
+            await RequestAsync(
+                OperationNames.InstanceStop,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromMinutes(2)).ConfigureAwait(true);
+            await RefreshDevicesAsync().ConfigureAwait(true);
+        }).ConfigureAwait(true);
+        await StartDeviceAsync().ConfigureAwait(true);
+    }
+
+    private async Task KeyAsync(string key)
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await RequestAsync(
+                OperationNames.InputKey,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["key"] = key },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    public async Task SendTapAsync(int x, int y)
+    {
+        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        {
+            return;
+        }
+
+        var baseline = SampleMarkerColor();
+        _pendingInput = new PendingInput(DateTimeOffset.UtcNow, baseline);
+        try
+        {
+            await RequestAsync(
+                OperationNames.InputTap,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["x"] = x, ["y"] = y },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _pendingInput = null;
+            ErrorMessage = "Input failed: " + ex.Message;
+        }
+    }
+
+    public async Task SendSwipeAsync(int x1, int y1, int x2, int y2)
+    {
+        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        {
+            return;
+        }
+
+        try
+        {
+            await RequestAsync(
+                OperationNames.InputSwipe,
+                new JsonObject
+                {
+                    ["name"] = SelectedDevice.Name,
+                    ["x1"] = x1,
+                    ["y1"] = y1,
+                    ["x2"] = x2,
+                    ["y2"] = y2,
+                    ["durationMs"] = 280,
+                },
+                TimeSpan.FromSeconds(40)).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Swipe failed: " + ex.Message;
+        }
+    }
+
+    private async Task ToggleRotationAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        var next = SelectedDevice.Rotation == 1 ? 0 : 1;
+        try
+        {
+            await RequestAsync(
+                OperationNames.DisplayRotate,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["rotation"] = next },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+            SelectedDevice.Rotation = next;
+            StatusMessage = next == 1 ? "Rotation: landscape." : "Rotation: portrait.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task ScreenshotAsync()
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var data = await RequestAsync(
+                OperationNames.FrameSnapshot,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["width"] = 1080 },
+                TimeSpan.FromSeconds(60)).ConfigureAwait(true);
+            var bytes = Convert.FromBase64String(data["pngBase64"]!.GetValue<string>());
+            var directory = Path.Combine(_paths.Root, "screenshots");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, $"{SelectedDevice.Name}-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(true);
+            ScreenshotPath = path;
+            StatusMessage = "Screenshot saved: " + path;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Screenshot failed: " + ex.Message;
+        }
+    }
+
+    private async Task InstallApkDialogAsync()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Install an APK on the selected guest",
+            Filter = "Android packages (*.apk)|*.apk",
+            CheckFileExists = true,
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            await InstallApkAsync(dialog.FileName).ConfigureAwait(true);
+        }
+    }
+
+    public async Task InstallApkAsync(string path)
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        ApkPath = path;
+        await RunBusyAsync("Installing " + Path.GetFileName(path) + "...", async () =>
+        {
+            var install = await RequestAsync(
+                OperationNames.AppInstall,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["path"] = path },
+                TimeSpan.FromMinutes(10)).ConfigureAwait(true);
+            var package = ResolvePackageName(path);
+            if (package is not null)
+            {
+                await RequestAsync(
+                    OperationNames.AppLaunch,
+                    new JsonObject { ["name"] = SelectedDevice!.Name, ["package"] = package },
+                    TimeSpan.FromSeconds(60)).ConfigureAwait(true);
+                StatusMessage = $"Installed and launched {package}.";
+            }
+            else
+            {
+                StatusMessage = "Installed " + Path.GetFileName(path) + "; launch it from the guest.";
+            }
+
+            if (IsLogcatOpen)
+            {
+                await EnsureLogcatAsync().ConfigureAwait(true);
+            }
+        }).ConfigureAwait(true);
+    }
+
+    private async Task LaunchAsync(string package)
+    {
+        if (SelectedDevice is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await RequestAsync(
+                OperationNames.AppLaunch,
+                new JsonObject { ["name"] = SelectedDevice.Name, ["package"] = package },
+                TimeSpan.FromSeconds(60)).ConfigureAwait(true);
+            StatusMessage = "Launched " + package;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private static string? ResolvePackageName(string apkPath)
+    {
+        try
+        {
+            var sdk = Core.Engine.SdkLocator.Resolve();
+            var aapt2 = Path.Combine(sdk.SdkRoot, "build-tools", "35.0.0", "aapt2.exe");
+            if (!File.Exists(aapt2))
+            {
+                return null;
+            }
+
+            var start = new ProcessStartInfo(aapt2)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+            start.ArgumentList.Add("dump");
+            start.ArgumentList.Add("badging");
+            start.ArgumentList.Add(apkPath);
+            using var process = Process.Start(start);
+            if (process is null)
+            {
+                return null;
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(10000);
+            var line = output.Split('\n').FirstOrDefault(l => l.StartsWith("package: name=", StringComparison.Ordinal));
+            if (line is null)
+            {
+                return null;
+            }
+
+            var startQuote = line.IndexOf('\'');
+            var endQuote = line.IndexOf('\'', startQuote + 1);
+            return startQuote >= 0 && endQuote > startQuote
+                ? line.Substring(startQuote + 1, endQuote - startQuote - 1)
+                : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private async Task CopyDiagnosticsAsync()
+    {
+        try
+        {
+            var data = await RequestAsync(OperationNames.DiagnosticsSummary, null, TimeSpan.FromMinutes(2))
+                .ConfigureAwait(true);
+            Clipboard.SetText(data["summary"]!.GetValue<string>());
+            StatusMessage = "Redacted diagnostics copied to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Could not copy diagnostics: " + ex.Message;
+        }
+    }
+
+    private void ToggleTheme()
+    {
+        ThemeManager.Apply(ThemeManager.IsDark ? Services.ThemeMode.Light : Services.ThemeMode.Dark);
+    }
+
+    private void ClearLog()
+    {
+        LogEntries.Clear();
+        _logInbox.Clear();
+    }
+
+    private async Task ExportLogAsync()
+    {
+        var directory = Path.Combine(_paths.Root, "logs");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, $"logcat-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+        await File.WriteAllLinesAsync(path, LogEntries.Select(e => e.Raw)).ConfigureAwait(true);
+        StatusMessage = "Logcat exported: " + path;
+    }
+
+    private async Task SubscribeFramesAsync(DeviceItemViewModel device)
+    {
+        await _subscribeGate.WaitAsync().ConfigureAwait(true);
+        try
+        {
+            if (_frameSubscription is not null || !device.IsRunning)
+            {
+                return;
+            }
+            DesktopLog.Write("subscribe request");
+            var data = await RequestAsync(
+                OperationNames.FrameSubscribe,
+                new JsonObject { ["name"] = device.Name, ["width"] = 540 },
+                TimeSpan.FromSeconds(60)).ConfigureAwait(true);
+            _frameSubscription = data["subscription"]!.GetValue<string>();
+            _framePath = data["path"]?.GetValue<string>();
+            DesktopLog.Write($"frame subscribed {device.Name} sub={_frameSubscription} path={_framePath}");
+            StartFrameLoop();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Frame stream unavailable: " + ex.Message;
+        }
+        finally
+        {
+            _subscribeGate.Release();
+        }
+    }
+
+    private async Task UnsubscribeFramesAsync()
+    {
+        if (_frameSubscription is null)
+        {
+            return;
+        }
+
+        var subscription = _frameSubscription;
+        _frameSubscription = null;
+        try
+        {
+            await RequestAsync(
+                OperationNames.FrameUnsubscribe,
+                new JsonObject { ["subscription"] = subscription },
+                TimeSpan.FromSeconds(15)).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private async Task EnsureLogcatAsync()
+    {
+        if (_logcatSubscription is not null || SelectedDevice is null || !SelectedDevice.IsRunning)
+        {
+            return;
+        }
+
+        try
+        {
+            var data = await RequestAsync(
+                OperationNames.LogcatSubscribe,
+                new JsonObject { ["name"] = SelectedDevice.Name },
+                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+            _logcatSubscription = data["subscription"]!.GetValue<string>();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Logcat unavailable: " + ex.Message;
+        }
+    }
+
+    private async Task StopLogcatAsync()
+    {
+        if (_logcatSubscription is null)
+        {
+            return;
+        }
+
+        var subscription = _logcatSubscription;
+        _logcatSubscription = null;
+        try
+        {
+            await RequestAsync(
+                OperationNames.LogcatUnsubscribe,
+                new JsonObject { ["subscription"] = subscription },
+                TimeSpan.FromSeconds(10)).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private void OnSupervisorEvent(EventEnvelope envelope)
+    {
+        switch (envelope.Event)
+        {
+            case EventNames.Frame:
+                if (envelope.Data is JsonObject frame)
+                {
+                    var path = frame["path"]?.GetValue<string>();
+                    GuestWidth = frame["width"]?.GetValue<int>() ?? GuestWidth;
+                    GuestHeight = frame["height"]?.GetValue<int>() ?? GuestHeight;
+                    var dropped = frame["dropped"]?.GetValue<int>() ?? 0;
+                    _dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
+                    {
+                        _droppedFrames += dropped;
+                        _frameSequence = frame["seq"]?.GetValue<int>() ?? _frameSequence;
+                        if (path is not null)
+                        {
+                            _framePath = path;
+                            QueueFrame(path);
+                        }
+                    });
+                }
+
+                break;
+
+            case EventNames.Logcat:
+                if (envelope.Data is JsonObject entry && !LogPaused)
+                {
+                    _logInbox.Enqueue(LogEntryViewModel.From(entry));
+                }
+
+                break;
+
+            case EventNames.SubscriptionClosed:
+                _dispatcher.BeginInvoke(() =>
+                {
+                    var reason = envelope.Data?["reason"]?.GetValue<string>() ?? "closed";
+                    StatusMessage = "Subscription closed: " + reason;
+                });
+                break;
+
+            case EventNames.Progress:
+                _dispatcher.BeginInvoke(() =>
+                {
+                    var phase = envelope.Data?["stage"]?.GetValue<string>()
+                                ?? envelope.Data?["phase"]?.GetValue<string>()
+                                ?? "progress";
+                    StatusMessage = phase;
+                });
+                break;
+        }
+    }
+
+    private void QueueFrame(string path)
+    {
+        Interlocked.Exchange(ref _framePath, path);
+        if (_frameSignal.CurrentCount == 0)
+        {
+            _frameSignal.Release();
+        }
+    }
+
+    private void StartFrameLoop()
+    {
+        if (_frameLoopRunning)
+        {
+            return;
+        }
+
+        _frameLoopRunning = true;
+        _ = Task.Run(FrameLoopAsync);
+    }
+
+    private async Task FrameLoopAsync()
+    {
+        while (!_lifetime.IsCancellationRequested)
+        {
+            await _frameSignal.WaitAsync(_lifetime.Token).ConfigureAwait(false);
+            var path = Interlocked.Exchange(ref _framePath, null);
+            if (path is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                var bitmap = LoadBitmap(path);
+                if (bitmap.PixelWidth > 0)
+                {
+                    DesktopLog.Write($"decoded {bitmap.PixelWidth}x{bitmap.PixelHeight}");
+                }
+                var now = DateTimeOffset.UtcNow;
+                await _dispatcher.InvokeAsync(() => PresentFrame(bitmap, now));
+            }
+            catch (Exception ex)
+            {
+                DesktopLog.Write("decode failed: " + ex.GetType().Name + ": " + ex.Message);
+                // A replaced file or a transient decode failure must not stop the
+                // pipeline; the next frame is already on its way.
+            }
+        }
+    }
+
+    private static BitmapSource LoadBitmap(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.DecodePixelWidth = 540;
+        image.StreamSource = stream;
+        image.EndInit();
+        image.Freeze();
+        return image;
+    }
+
+    private void PresentFrame(BitmapSource bitmap, DateTimeOffset received)
+    {
+        if (_frameSequence % 60 == 0)
+        {
+
+        }
+        Frame = bitmap;
+        var widthChanged = FrameWidth != bitmap.PixelWidth || FrameHeight != bitmap.PixelHeight;
+        FrameWidth = bitmap.PixelWidth;
+        FrameHeight = bitmap.PixelHeight;
+
+        if (_lastFramePresented != default)
+        {
+            var interval = (received - _lastFramePresented).TotalMilliseconds;
+            if (interval > 0 && interval < 5000)
+            {
+                _frameIntervals.Add(interval);
+                while (_frameIntervals.Count > 120)
+                {
+                    _frameIntervals.RemoveAt(0);
+                }
+
+                var average = _frameIntervals.Average();
+                FramesPerSecond = average > 0 ? 1000.0 / average : 0;
+            }
+        }
+
+        _lastFramePresented = received;
+        OnPropertyChanged(nameof(FrameInfo));
+
+        if (widthChanged)
+        {
+            OnPropertyChanged(nameof(HasFrame));
+        }
+
+        if (_pendingInput is { } pending)
+        {
+            var color = SampleMarkerColor();
+            if (pending.BaselineColor is int baseline && color is int current && current != baseline)
+            {
+                var latency = (DateTimeOffset.UtcNow - pending.DispatchedUtc).TotalMilliseconds;
+                _lastInputLatency = latency;
+                _inputLatencies.Add(latency);
+                _pendingInput = null;
+                OnPropertyChanged(nameof(InputLatencyText));
+            }
+        }
+
+        _lastMarkerColor = SampleMarkerColor();
+
+        if (!HasFrame)
+        {
+            OnPropertyChanged(nameof(HasFrame));
+        }
+    }
+
+    /// <summary>Colour of the sample app marker at (w/2, h*0.30), BGRA packed.</summary>
+    private int? SampleMarkerColor()
+    {
+        var frame = Frame;
+        if (frame is null || frame.PixelWidth < 4 || frame.PixelHeight < 4)
+        {
+            return null;
+        }
+
+        try
+        {
+            var x = frame.PixelWidth / 2;
+            var y = (int)(frame.PixelHeight * 0.30);
+            x = Math.Clamp(x, 0, frame.PixelWidth - 1);
+            y = Math.Clamp(y, 0, frame.PixelHeight - 1);
+
+            BitmapSource source = frame.Format == PixelFormats.Bgra32
+                ? frame
+                : new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            var pixel = new byte[4];
+            source.CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+            return (pixel[2] << 16) | (pixel[1] << 8) | pixel[0];
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private void DrainLog()
+    {
+        var added = 0;
+        while (added < 300 && _logInbox.TryDequeue(out var entry))
+        {
+            LogEntries.Add(entry);
+            added++;
+        }
+
+        while (LogEntries.Count > 2500)
+        {
+            LogEntries.RemoveAt(0);
+        }
+    }
+
+    private bool FilterLog(object item)
+    {
+        if (item is not LogEntryViewModel entry)
+        {
+            return false;
+        }
+
+        if (LogLevel != "All")
+        {
+            var order = "VDIWEA";
+            var min = order.IndexOf(LogLevel[0]);
+            var current = entry.Level.Length > 0 ? order.IndexOf(entry.Level[0]) : 0;
+            if (min >= 0 && (current < min || current < 0))
+            {
+                return false;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(LogTag)
+            && !entry.Tag.Contains(LogTag, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(LogSearch)
+            && !entry.Message.Contains(LogSearch, StringComparison.OrdinalIgnoreCase)
+            && !entry.Tag.Contains(LogSearch, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task RunBusyAsync(string busyText, Func<Task> action)
+    {
+        IsBusy = true;
+        BusyText = busyText;
+        ErrorMessage = "";
+        try
+        {
+            await action().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            StatusMessage = "Operation failed.";
+        }
+        finally
+        {
+            IsBusy = false;
+            BusyText = "";
+        }
+    }
+
+    private async Task<JsonObject> RequestAsync(string op, JsonObject? args, TimeSpan deadline)
+    {
+        if (_connection is null)
+        {
+            throw new InvalidOperationException("The supervisor is not connected.");
+        }
+
+        var response = await _connection.RequestAsync(op, args, deadline).ConfigureAwait(true);
+        if (!response.Ok)
+        {
+            throw new SupervisorRequestException(response.Code, response.Message);
+        }
+
+        return response.Data as JsonObject ?? new JsonObject();
+    }
+
+    private void RaiseCommandStates()
+    {
+        PrimaryActionCommand.RaiseCanExecuteChanged();
+        CreateDeviceCommand.RaiseCanExecuteChanged();
+        StartCommand.RaiseCanExecuteChanged();
+        StopCommand.RaiseCanExecuteChanged();
+        RestartCommand.RaiseCanExecuteChanged();
+        ColdBootCommand.RaiseCanExecuteChanged();
+        BackCommand.RaiseCanExecuteChanged();
+        HomeCommand.RaiseCanExecuteChanged();
+        RecentsCommand.RaiseCanExecuteChanged();
+        ScreenshotCommand.RaiseCanExecuteChanged();
+        InstallApkCommand.RaiseCanExecuteChanged();
+        LaunchSampleCommand.RaiseCanExecuteChanged();
+        RotateCommand.RaiseCanExecuteChanged();
+    }
+
+    private static double Percentile(List<double> values, double fraction)
+    {
+        if (values.Count == 0)
+        {
+            return 0;
+        }
+
+        var sorted = values.OrderBy(v => v).ToList();
+        var index = Math.Clamp((int)Math.Ceiling(fraction * sorted.Count) - 1, 0, sorted.Count - 1);
+        return sorted[index];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _statusTimer.Stop();
+        _logTimer.Stop();
+        _lifetime.Cancel();
+        await UnsubscribeFramesAsync().ConfigureAwait(false);
+        await StopLogcatAsync().ConfigureAwait(false);
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private sealed record PendingInput(DateTimeOffset DispatchedUtc, int? BaselineColor);
+}
+
+public sealed class SupervisorRequestException(string code, string message) : Exception(message)
+{
+    public string Code { get; } = code;
+}
+
+public sealed class DeviceItemViewModel : ObservableObject
+{
+    public required string Name { get; init; }
+
+    public required string Serial { get; init; }
+
+    public string ImagePackage { get; init; } = "";
+
+    public int ConsolePort { get; init; }
+
+    public int GrpcPort { get; init; }
+
+    public string Gpu { get; init; } = "";
+
+    private string _state = "Defined";
+
+    public string State
+    {
+        get => _state;
+        private set
+        {
+            if (SetProperty(ref _state, value))
+            {
+                OnPropertyChanged(nameof(IsRunning));
+                OnPropertyChanged(nameof(StateLabel));
+            }
+        }
+    }
+
+    public string StateLabel => State;
+
+    public bool IsRunning => State is "Running" or "Starting";
+
+    private string _foreground = "";
+
+    public string Foreground
+    {
+        get => _foreground;
+        private set => SetProperty(ref _foreground, value);
+    }
+
+    private string _abi = "";
+
+    public string Abi
+    {
+        get => _abi;
+        private set => SetProperty(ref _abi, value);
+    }
+
+    private string _sdkLevel = "";
+
+    public string SdkLevel
+    {
+        get => _sdkLevel;
+        private set => SetProperty(ref _sdkLevel, value);
+    }
+
+    private string _lastError = "";
+
+    public string LastError
+    {
+        get => _lastError;
+        private set => SetProperty(ref _lastError, value);
+    }
+
+    public JsonObject? Readiness { get; set; }
+
+    public int Rotation { get; set; }
+
+    public static DeviceItemViewModel From(JsonObject node) => new()
+    {
+        Name = node["name"]!.GetValue<string>(),
+        Serial = node["serial"]!.GetValue<string>(),
+        ImagePackage = node["imagePackage"]?.GetValue<string>() ?? "",
+        ConsolePort = node["consolePort"]?.GetValue<int>() ?? 0,
+        GrpcPort = node["grpcPort"]?.GetValue<int>() ?? 0,
+        Gpu = node["gpu"]?.GetValue<string>() ?? "",
+        State = node["state"]?.GetValue<string>() ?? "Unknown",
+    };
+
+    public void ApplyStatus(JsonObject status)
+    {
+        State = status["state"]?.GetValue<string>() ?? State;
+        Foreground = status["foreground"]?.GetValue<string>() ?? "";
+        Abi = status["abi"]?.GetValue<string>() ?? "";
+        SdkLevel = status["sdkLevel"]?.GetValue<string>() ?? "";
+        LastError = status["lastError"]?.GetValue<string>() ?? "";
+        if (status["readiness"] is JsonObject readiness)
+        {
+            Readiness = readiness;
+        }
+    }
+}
+
+public sealed class LogEntryViewModel
+{
+    public required string Time { get; init; }
+
+    public required string Level { get; init; }
+
+    public required string Tag { get; init; }
+
+    public required string Message { get; init; }
+
+    public required string Raw { get; init; }
+
+    public static LogEntryViewModel From(JsonObject node)
+    {
+        var received = node["receivedUtc"]?.GetValue<string>();
+        var time = DateTimeOffset.TryParse(received, out var parsed) ? parsed.ToLocalTime().ToString("HH:mm:ss.fff") : "";
+        return new LogEntryViewModel
+        {
+            Time = time,
+            Level = node["level"]?.GetValue<string>() ?? "I",
+            Tag = node["tag"]?.GetValue<string>() ?? "",
+            Message = node["message"]?.GetValue<string>() ?? "",
+            Raw = node["raw"]?.GetValue<string>() ?? "",
+        };
+    }
+}

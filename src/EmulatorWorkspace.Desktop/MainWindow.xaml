@@ -1,0 +1,350 @@
+﻿<Window x:Class="EmulatorWorkspace.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:EmulatorWorkspace.Desktop.Views"
+        Title="Emulator Workspace"
+        Width="1180" Height="820" MinWidth="980" MinHeight="620"
+        Background="{DynamicResource WindowBg}"
+        AllowDrop="True"
+        Drop="OnFileDrop" DragOver="OnDragOver"
+        Closing="OnClosing" KeyDown="OnKeyDown">
+
+    <Window.Resources>
+        <views:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <views:BoolToVisibilityConverter x:Key="InverseBoolToVis" Invert="True" />
+        <views:NullToVisibilityConverter x:Key="NullToVis" />
+        <views:NullToVisibilityConverter x:Key="NotNullToVis" Invert="True" />
+        <views:InverseBoolConverter x:Key="InverseBool" />
+        <views:StateToBrushConverter x:Key="StateBrush" />
+        <views:SeverityToBrushConverter x:Key="SeverityBrush" />
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Margin" Value="0,0,8,4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="FieldValue" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="{Binding LogcatDrawerHeight}" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource Accent}"
+                            VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="Emulator Workspace" Style="{StaticResource H1}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SelectedDevice.Name}" Style="{StaticResource Caption}"
+                               VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="{Binding PrimaryActionText}" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding PrimaryActionCommand}" MinWidth="96"
+                            AutomationProperties.Name="Primary device action" />
+                    <Button Content="Restart" Style="{StaticResource ToolButton}" Command="{Binding RestartCommand}"
+                            AutomationProperties.Name="Restart device" />
+                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
+                    <Button Content="Back" Style="{StaticResource ToolButton}" Command="{Binding BackCommand}" ToolTip="Back" AutomationProperties.Name="Back" />
+                    <Button Content="Home" Style="{StaticResource ToolButton}" Command="{Binding HomeCommand}" ToolTip="Home" AutomationProperties.Name="Home" />
+                    <Button Content="Recents" Style="{StaticResource ToolButton}" Command="{Binding RecentsCommand}" ToolTip="Recents" AutomationProperties.Name="Recents" />
+                    <Button Content="Screenshot" Style="{StaticResource ToolButton}" Command="{Binding ScreenshotCommand}" />
+                    <Button Content="Install APK" Style="{StaticResource ToolButton}" Command="{Binding InstallApkCommand}" />
+                    <Button Content="Launch sample" Style="{StaticResource ToolButton}" Command="{Binding LaunchSampleCommand}" />
+                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
+                    <Button Content="Fit" Style="{StaticResource ToolButton}" Click="OnFit" />
+                    <Button Content="1:1" Style="{StaticResource ToolButton}" Click="OnActualSize" />
+                    <Button Content="+" Style="{StaticResource ToolButton}" Click="OnZoomIn" AutomationProperties.Name="Zoom in" />
+                    <Button Content="--'" Style="{StaticResource ToolButton}" Click="OnZoomOut" AutomationProperties.Name="Zoom out" />
+                    <Button Content="Rotate" Style="{StaticResource ToolButton}" Command="{Binding RotateCommand}" />
+                    <Button Content="Pop-out" Style="{StaticResource ToolButton}" Click="OnPopOut" />
+                    <Button Content="Fullscreen" Style="{StaticResource ToolButton}" Click="OnFullscreen" />
+                </WrapPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Logcat" Style="{StaticResource ToolButton}" Command="{Binding ToggleLogcatCommand}" />
+                    <Button Content="Theme" Style="{StaticResource ToolButton}" Command="{Binding ToggleThemeCommand}" />
+                    <Button Content="Refresh" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Body -->
+        <Grid x:Name="BodyGrid" Grid.Row="1" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="238" MinWidth="180" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="318" MinWidth="250" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Device rail -->
+            <Border Grid.Column="0" Style="{StaticResource Panel}" Padding="8">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="4,4,4,8">
+                        <TextBlock Text="Devices" Style="{StaticResource H1}" />
+                        <TextBlock Text="Managed instances in this workspace" Style="{StaticResource Caption}"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+                    <Button DockPanel.Dock="Bottom" Content="Create device" Style="{StaticResource ToolButton}"
+                            Command="{Binding CreateDeviceCommand}" Margin="0,8,0,0"
+                            AutomationProperties.Name="Create device" />
+                    <ListBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"
+                             AutomationProperties.Name="Device list">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Grid.Column="0" Width="9" Height="9" Margin="0,4,8,0"
+                                             VerticalAlignment="Top"
+                                             Fill="{Binding State, Converter={StaticResource StateBrush}}" />
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Serial}" Style="{StaticResource Caption}" />
+                                        <TextBlock Text="{Binding State}" Style="{StaticResource Caption}"
+                                                   Foreground="{Binding State, Converter={StaticResource StateBrush}}" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="Transparent" />
+
+            <!-- Viewport -->
+            <Border Grid.Column="2" Style="{StaticResource Panel}" Background="{DynamicResource LogBg}" ClipToBounds="True">
+                <Grid>
+                    <Grid x:Name="ViewportScroll" ClipToBounds="True" Margin="12">
+                        <Grid x:Name="ViewportCanvas" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Image x:Name="ViewportImage" Stretch="Fill"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   MouseLeftButtonDown="OnViewportMouseDown"
+                                   MouseLeftButtonUp="OnViewportMouseUp"
+                                   MouseMove="OnViewportMouseMove"
+                                   AutomationProperties.Name="Embedded Android viewport"
+                                   Source="{Binding Frame}" />
+                        </Grid>
+                    </Grid>
+
+                    <!-- Waiting for a frame -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
+                                Visibility="{Binding HasFrame, Converter={StaticResource InverseBoolToVis}}">
+                        <TextBlock Text="Waiting for the first frame" Style="{StaticResource H1}"
+                                   HorizontalAlignment="Center"
+                                   Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="Start the device to stream the guest display."
+                                   Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,8,0,0"
+                                   Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="No device selected" Style="{StaticResource H1}"
+                                   Visibility="{Binding HasSelection, Converter={StaticResource InverseBoolToVis}}" />
+                    </StackPanel>
+
+                    <!-- First-run setup -->
+                    <Border Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10" Padding="24" MaxWidth="640"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="{Binding ShowSetup, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Set up your first device" Style="{StaticResource H1}" />
+                            <TextBlock Text="{Binding SetupSummary}" Style="{StaticResource Caption}" Margin="0,6,0,12"
+                                       TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{Binding SetupIssues}" Margin="0,0,0,10">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" Foreground="{DynamicResource Warning}"
+                                                   TextWrapping="Wrap" Margin="0,2" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Style="{StaticResource Panel}" Padding="10" Margin="0,0,0,14">
+                                <TextBlock Text="{Binding DoctorText}" Style="{StaticResource Mono}"
+                                           TextWrapping="Wrap" />
+                            </Border>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Create AOSP API 35 device" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding CreateDeviceCommand}" />
+                                <Button Content="Copy diagnostics" Style="{StaticResource ToolButton}"
+                                        Command="{Binding CopyDiagnosticsCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Busy -->
+                    <Border Background="#99000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                        <Border Background="{DynamicResource PanelBg}" CornerRadius="8" Padding="20"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                            <StackPanel>
+                                <TextBlock Text="{Binding BusyText}" TextWrapping="Wrap" />
+                                <ProgressBar IsIndeterminate="True" Height="4" Margin="0,12,0,0" />
+                                <TextBlock Text="The supervisor owns the operation; closing this window will not stop the guest."
+                                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="3" Width="6" HorizontalAlignment="Stretch" Background="Transparent" />
+
+            <!-- Inspector -->
+            <Border x:Name="InspectorPanel" Grid.Column="4" Style="{StaticResource Panel}" Padding="12">                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Inspector" Style="{StaticResource H1}" />
+                        <TextBlock Text="Selected guest and capture pipeline" Style="{StaticResource Caption}"
+                                   Margin="0,2,0,12" />
+
+                        <TextBlock Text="Serial" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        <TextBlock Text="{Binding SelectedDevice.Serial}" Style="{StaticResource Mono}" />
+                        <TextBlock Text="State" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SelectedDevice.State}" Style="{StaticResource Mono}"
+                                   Foreground="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                        <TextBlock Text="Ports (console / controller)" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding PortsText}" Style="{StaticResource Mono}" />
+                        <TextBlock Text="Image" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SelectedDevice.ImagePackage}" Style="{StaticResource Mono}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="GPU" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SelectedDevice.Gpu}" Style="{StaticResource Mono}" />
+                        <TextBlock Text="ABI / API" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding AbiApiText}" Style="{StaticResource Mono}" />
+                        <TextBlock Text="Foreground" Style="{StaticResource Caption}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding SelectedDevice.Foreground}" Style="{StaticResource Mono}"
+                                   TextWrapping="Wrap" />
+
+                        <Separator />
+
+                        <TextBlock Text="Capture" Style="{StaticResource H1}" FontSize="14" />
+                        <TextBlock Text="{Binding FrameInfo}" Style="{StaticResource Mono}" Margin="0,4,0,2" />
+                        <TextBlock Text="{Binding InputLatencyText}" Style="{StaticResource Mono}" Margin="0,0,0,2" />
+                        <TextBlock Text="{Binding ReadinessText}" Style="{StaticResource Caption}" Margin="0,0,0,2" />
+                        <TextBlock Text="{Binding ZoomStatus}" Style="{StaticResource Caption}" />
+                        <TextBlock Text="{Binding ScreenshotPath}" Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                        <TextBlock Text="Capability: single-touch tap and drag; multi-touch is not enabled in Phase 1."
+                                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                        <Separator />
+
+                        <TextBlock Text="Diagnostics" Style="{StaticResource H1}" FontSize="14" />
+                        <TextBlock Text="{Binding DoctorText}" Style="{StaticResource Mono}" TextWrapping="Wrap"
+                                   FontSize="11" Margin="0,4,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Copy" Style="{StaticResource ToolButton}"
+                                    Command="{Binding CopyDiagnosticsCommand}" />
+                            <Button Content="Cold boot" Style="{StaticResource ToolButton}"
+                                    Command="{Binding ColdBootCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding SelectedDevice.LastError}" Foreground="{DynamicResource Danger}"
+                                   TextWrapping="Wrap" Margin="0,8,0,0" />
+                    </StackPanel>
+                </ScrollViewer></Border>
+        </Grid>
+
+        <!-- Logcat drawer -->
+        <Border Grid.Row="2" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0" Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}">
+            <DockPanel Margin="8">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Logcat" Style="{StaticResource H1}" FontSize="14" VerticalAlignment="Center"
+                                   Margin="0,0,12,0" />
+                        <TextBox Width="220" Text="{Binding LogSearch, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Search message or tag" AutomationProperties.Name="Search logcat" />
+                        <TextBox Width="130" Margin="6,0,0,0" Text="{Binding LogTag, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Filter by tag" AutomationProperties.Name="Filter logcat by tag" />
+                        <ComboBox Width="76" Margin="6,0,0,0" ItemsSource="{Binding LogLevels}"
+                                  SelectedItem="{Binding LogLevel}" AutomationProperties.Name="Minimum log level" />
+                        <CheckBox Content="Pause" Margin="10,0,0,0" IsChecked="{Binding LogPaused}"
+                                  VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding LogEntries.Count, StringFormat={}{0} lines retained}"
+                               Style="{StaticResource Caption}" VerticalAlignment="Center" HorizontalAlignment="Right"
+                               Margin="0,0,12,0" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button Content="Clear" Style="{StaticResource ToolButton}" Command="{Binding ClearLogCommand}" />
+                        <Button Content="Export" Style="{StaticResource ToolButton}" Command="{Binding ExportLogCommand}" />
+                    </StackPanel>
+                </Grid>
+                <ListView ItemsSource="{Binding LogView}" Background="{DynamicResource LogBg}"
+                          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Time" Width="90" DisplayMemberBinding="{Binding Time}" />
+                            <GridViewColumn Header="Lvl" Width="36">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Level}" FontFamily="{StaticResource MonoFont}"
+                                                   Foreground="{Binding Level, Converter={StaticResource SeverityBrush}}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Tag" Width="150" DisplayMemberBinding="{Binding Tag}" />
+                            <GridViewColumn Header="Message" Width="620" DisplayMemberBinding="{Binding Message}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </DockPanel>
+        </Border>
+
+        <!-- Status bar -->
+        <Border Grid.Row="3" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0" Padding="12,5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{DynamicResource Danger}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Fill" Value="{DynamicResource Success}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource Danger}"
+                               Style="{StaticResource Caption}" Margin="12,0,0,0" VerticalAlignment="Center"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding WorkspaceRoot, StringFormat=workspace: {0}}"
+                           Style="{StaticResource Caption}" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

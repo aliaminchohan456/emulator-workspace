@@ -19,6 +19,21 @@ internal static class Program
             return args.Length == 0 ? 2 : 0;
         }
 
+        var parsed = Arguments.Parse(args);
+        if (!parsed.Has("direct") && parsed.Command != "engine-host")
+        {
+            try
+            {
+                return await SupervisorCommands.RunAsync(parsed).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is SupervisorUnavailableException or IOException
+                                           )
+            {
+                Console.Error.WriteLine("ERROR " + ex.Message);
+                return 3;
+            }
+        }
+
         try
         {
             return await CliRunner.RunAsync(args).ConfigureAwait(false);
@@ -44,7 +59,8 @@ internal static class Program
 }
 
 internal sealed class CliRunner
-{    private readonly WorkspacePaths _paths;
+{
+    private readonly WorkspacePaths _paths;
     private readonly SdkLocator _sdk;
     private readonly InstanceStore _store;
     private readonly EmulatorEngine _engine;

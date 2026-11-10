@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>EmulatorWorkspace.Supervisor</RootNamespace>
+    <AssemblyName>EmulatorWorkspace.Supervisor</AssemblyName>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
+    <ProjectReference Include="..\EmulatorWorkspace.Contracts\EmulatorWorkspace.Contracts.csproj" />
+  </ItemGroup>
+</Project>
