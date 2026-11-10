@@ -104,6 +104,8 @@ public static class ErrorCodes
     public const string ApprovalRequired = "approval_required";
     public const string IdempotencyConflict = "idempotency_conflict";
     public const string UnknownOutcome = "unknown_outcome";
+    public const string CapabilityUnavailable = "capability_unavailable";
+    public const string InstanceUnavailable = "instance_unavailable";
 }
 
 public static class OperationNames

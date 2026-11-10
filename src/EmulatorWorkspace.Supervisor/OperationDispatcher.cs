@@ -140,6 +140,10 @@ public sealed class OperationDispatcher
 
             if (session is not null)
             {
+                // Re-read durable session state immediately before dispatch so
+                // a takeover/revocation that landed while this request was
+                // queued cannot authorize input or a mutation.
+                session = _agents.EnsureActive(session);
                 AuthorizeAgent(session, request.Op, request.Args);
             }
 
@@ -586,12 +590,34 @@ public sealed class OperationDispatcher
                         ["pairingId"] = item.Id,
                         ["clientName"] = item.ClientName,
                         ["status"] = item.Status,
+                        ["template"] = item.Template,
                         ["instance"] = item.Instance,
+                        ["scopes"] = item.Scopes,
                         ["expiresUtc"] = item.ExpiresUtc.ToString("O"),
                     });
                 }
 
-                return new JsonObject { ["sessions"] = sessions, ["pairings"] = pairings };
+                var operations = new JsonArray();
+                foreach (var item in _store.ListRecentAgentOperations(25))
+                {
+                    operations.Add(new JsonObject
+                    {
+                        ["id"] = item.Id,
+                        ["operation"] = item.Name,
+                        ["caller"] = item.CallerName,
+                        ["outcome"] = item.Outcome,
+                        ["code"] = item.Code,
+                        ["startedUtc"] = item.StartedUtc.ToString("O"),
+                        ["durationMs"] = item.DurationMs,
+                    });
+                }
+
+                return new JsonObject
+                {
+                    ["sessions"] = sessions,
+                    ["pairings"] = pairings,
+                    ["recentOperations"] = operations,
+                };
             }
 
             case OperationNames.AgentSessionRevoke:

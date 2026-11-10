@@ -193,7 +193,7 @@ internal static class Program
             }
 
             var content = new JsonArray();
-            if (name == "screen_capture" && data["previewBase64"] is JsonValue preview && !data.ContainsKey("secure"))
+            if (name == "screen_capture" && data["previewBase64"] is JsonValue preview)
             {
                 var base64 = preview.GetValue<string>();
                 data.Remove("previewBase64");
@@ -397,7 +397,7 @@ internal static class Program
                     ["type"] = "object",
                     ["properties"] = new JsonObject { ["cursor"] = new JsonObject { ["type"] = "integer" } },
                 }),
-            Tool("network_set_profile", "Apply a guest-only network delay/speed profile.",
+            Tool("network_set_profile", "Apply a guest-only delay profile (tc netem via 'su 0' on the disposable lab guest).", 
                 new JsonObject
                 {
                     ["type"] = "object",
@@ -405,6 +405,13 @@ internal static class Program
                     {
                         ["delay"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("none", "gprs", "edge", "umts") },
                         ["speed"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("full", "gsm", "hscsd", "gprs", "edge", "umts", "hsdpa") },
+                        ["latencyMs"] = new JsonObject
+                        {
+                            ["type"] = "integer",
+                            ["minimum"] = 0,
+                            ["maximum"] = 5000,
+                            ["description"] = "Guest egress delay; 0 removes shaping. Defaults to the delay profile.",
+                        },
                     },
                 }),
             Tool("snapshot_save", "Save a named snapshot on the bound guest.",

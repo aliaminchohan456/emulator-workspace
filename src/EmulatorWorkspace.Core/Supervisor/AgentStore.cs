@@ -210,7 +210,7 @@ public sealed class AgentStore : IDisposable
             command.CommandText = """
                 INSERT INTO agent_sessions
                     (id, client_name, instance, scopes, token_hash, created_utc, expires_utc, revoked)
-                VALUES ($id, $client, $instance, $scopes, $token, $created, $expires, 0);
+                VALUES ($id, $client, $instance, $scopes, $token, $created, $expires, $revoked);
                 """;
             command.Parameters.AddWithValue("$id", session.Id);
             command.Parameters.AddWithValue("$client", session.ClientName);
@@ -219,6 +219,7 @@ public sealed class AgentStore : IDisposable
             command.Parameters.AddWithValue("$token", session.TokenHash);
             command.Parameters.AddWithValue("$created", session.CreatedUtc.ToString("O"));
             command.Parameters.AddWithValue("$expires", session.ExpiresUtc.ToString("O"));
+            command.Parameters.AddWithValue("$revoked", session.Revoked ? 1 : 0);
             command.ExecuteNonQuery();
         }
     }

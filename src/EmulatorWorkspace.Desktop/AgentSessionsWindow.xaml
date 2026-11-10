@@ -1,0 +1,114 @@
+<Window x:Class="EmulatorWorkspace.Desktop.AgentSessionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Agent Sessions"
+        Width="1060" Height="780" MinWidth="860" MinHeight="600"
+        Background="{DynamicResource WindowBg}"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="170" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="150" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="Agent Sessions" Style="{StaticResource H1}" />
+                <TextBlock Text="Local clients bound to disposable lab guests"
+                           Style="{StaticResource Caption}" Margin="0,2,0,0" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock x:Name="StatusText" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                           Margin="0,0,12,0" />
+                <Button x:Name="RefreshButton" Content="Refresh" Style="{StaticResource ToolButton}"
+                        Click="OnRefresh" AutomationProperties.Name="Refresh agent sessions" />
+            </StackPanel>
+        </DockPanel>
+
+        <GroupBox Grid.Row="1" Header="Paired sessions" Padding="6">
+            <DataGrid x:Name="SessionsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      SelectionMode="Single" HeadersVisibility="Column"
+                      AutomationProperties.Name="Paired agent sessions">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Client" Binding="{Binding Client}" Width="130" />
+                    <DataGridTextColumn Header="Session" Binding="{Binding Session}" Width="150" />
+                    <DataGridTextColumn Header="Guest" Binding="{Binding Instance}" Width="110" />
+                    <DataGridTextColumn Header="Scopes" Binding="{Binding Scopes}" Width="*" />
+                    <DataGridTextColumn Header="Expires" Binding="{Binding Expires}" Width="140" />
+                    <DataGridTextColumn Header="State" Binding="{Binding State}" Width="80" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,8">
+            <Button x:Name="RevokeButton" Content="Revoke session" Style="{StaticResource ToolButton}"
+                    Click="OnRevoke" AutomationProperties.Name="Revoke selected agent session" />
+            <Button x:Name="TakeoverButton" Content="Human takeover" Style="{StaticResource ToolButton}"
+                    Click="OnTakeover" Margin="8,0,0,0"
+                    AutomationProperties.Name="Take over selected agent guest" />
+            <TextBlock Text="Takeover revokes every agent session on the guest and cancels new input."
+                       Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </StackPanel>
+
+        <GroupBox Grid.Row="3" Header="Pairing requests" Padding="6">
+            <DataGrid x:Name="PairingsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      SelectionMode="Single" HeadersVisibility="Column"
+                      AutomationProperties.Name="Agent pairing requests">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Client" Binding="{Binding Client}" Width="160" />
+                    <DataGridTextColumn Header="Pairing" Binding="{Binding Pairing}" Width="150" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                    <DataGridTextColumn Header="Template" Binding="{Binding Template}" Width="110" />
+                    <DataGridTextColumn Header="Guest" Binding="{Binding Instance}" Width="110" />
+                    <DataGridTextColumn Header="Expires" Binding="{Binding Expires}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <Grid Grid.Row="4" Margin="0,8,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Template" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+            <ComboBox x:Name="TemplateBox" Grid.Column="1" Margin="0,0,12,0"
+                      DisplayMemberPath="Display"
+                      AutomationProperties.Name="Approval template" />
+            <TextBlock Grid.Column="2" Text="Scopes" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+            <TextBox x:Name="ScopesBox" Grid.Column="3" VerticalContentAlignment="Center"
+                     ToolTip="Comma-separated scopes granted to the paired client."
+                     AutomationProperties.Name="Approval scopes" />
+            <Button x:Name="ApproveButton" Grid.Column="4" Content="Approve selected pairing"
+                    Style="{StaticResource PrimaryButton}" Margin="12,0,0,0"
+                    Click="OnApprove" AutomationProperties.Name="Approve selected pairing" />
+        </Grid>
+
+        <GroupBox Grid.Row="5" Header="Recent agent operations" Padding="6">
+            <DataGrid x:Name="OperationsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      HeadersVisibility="Column" AutomationProperties.Name="Recent agent operations">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="150" />
+                    <DataGridTextColumn Header="Operation" Binding="{Binding Operation}" Width="180" />
+                    <DataGridTextColumn Header="Caller" Binding="{Binding Caller}" Width="240" />
+                    <DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="100" />
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="150" />
+                    <DataGridTextColumn Header="ms" Binding="{Binding Duration}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+    </Grid>
+</Window>

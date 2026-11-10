@@ -12,15 +12,19 @@ proven on the reference host. Pinned for testing: Android Emulator 37.2.12
 the engine's own gRPC controller protos. Evidence, deviations, and remaining
 measurements are in [docs/phase0-evidence.md](docs/phase0-evidence.md).
 
-Phase 2 status (2026-11-10): a local-only agent integration is implemented on
-the supervisor. Pairing creates a revocable, expiring, scoped session bound to
-one disposable AVD; a real MCP TypeScript SDK client and wsctl completed the same
-login/observe/assert/logs/snapshot/restore workflow on WHPX. Unpaired, wrong
-guest, stale frame, ambiguous selector and revoked credentials are denied with
-typed errors; cleanup removed the clone and kept the template. The phase is not
-closed: FLAG_SECURE observation is unverified (blocker), guest network shaping
-did not take effect, the WPF Agent Sessions surface and a second MCP client are
-missing. Evidence: [docs/phase2-evidence.md](docs/phase2-evidence.md).
+Phase 2 status (2026-11-10, closure pass): the local-only agent integration is
+implemented and verified on WHPX. Pairing creates a revocable, expiring, scoped
+session bound to one disposable AVD; TypeScript and Python MCP clients and wsctl
+use the same supervisor registry. FLAG_SECURE observations return redacted typed
+results, guest-only shaping via `tc netem` reproduces a bounded login timeout,
+the WPF Agent Sessions surface lists/approves/revokes/takes over sessions, and
+cleanup is approval-bound. The clean run `20261110-212427` passed 41/41 checks;
+the final-code run `20261110-213845` passed 41/42 (the only failure was a
+state-dependent test selector, corrected and re-verified separately) with 32
+unit tests. Remaining verification gaps are the two-running-guest/external
+transport cross-check and a live queued-input takeover race; Phase 1's desktop
+click-through and performance targets remain separate open items. Evidence:
+[docs/phase2-evidence.md](docs/phase2-evidence.md).
 
 Phase 1 status (2026-11-10, stabilization pass): the developer MVP runs on real
 Windows hardware. A persistent per-user supervisor owns lifecycle, SQLite state,
@@ -138,11 +142,27 @@ Verified in [docs/phase1-evidence.md](docs/phase1-evidence.md), acceptance run
   supervisor, and supports revocation and takeover.
 - MCP stdio tools map to the same operation registry as wsctl; stdout is
   protocol-only and the token comes from a file.
-- Verified: MCP and CLI login/assert/logs/screenshot/snapshot save+restore,
-  cleanup with approval, unpaired/wrong-instance/stale/ambiguous/revoked denials.
-- Open blockers: FLAG_SECURE capture was not detected on the first attempt and
-  the tightened detector is unverified; guest network shaping had no measurable
-  effect; WPF Agent Sessions approval surface and a second MCP client are absent.
+- FLAG_SECURE is detected from the window's symbolic `fl=... SECURE ...` flags
+  (Android 15 does not print `mSecure=true` here). Screenshot/tree return a
+  redacted `secure_window` result, selector input is denied, and probe errors
+  fail closed. The emulator framebuffer path is never exposed while secure.
+- Guest-only shaping uses `tc netem` on `wlan0`/`eth0` through `su 0` while the
+  ADB daemon stays at UID 2000; a 2,500 ms delay produces `NETWORK TIMEOUT` and
+  removal restores `WELCOME`. The emulator console delay/speed settings are
+  recorded but do not shape virtio traffic on this image.
+- The WPF Agent Sessions surface is implemented and probed; the Python MCP
+  client negotiates `2024-11-05` and lists 19 tools.
+- Active-session state is re-read immediately before dispatch and before input
+  or mutation, so takeover/revocation cannot authorize a queued request.
+- Verified live: MCP/CLI login/assert/logs/screenshot/snapshot save+restore,
+  network timeout and recovery, secure redaction, cleanup with approval,
+  unpaired/wrong-instance/stale/ambiguous/revoked denials, idempotent replay
+  and conflict. Unit coverage adds expiry, event overflow/resync, restart
+  reconciliation and active-session rechecks.
+- Remaining verification gaps: two running managed guests plus an external ADB
+  transport, and a live queued-input takeover race (implementation and unit test
+  are in place; a scheduled race is not). Phase 1 desktop click-through and
+  performance remain separately open.
 
 ## Initial compatibility matrix
 

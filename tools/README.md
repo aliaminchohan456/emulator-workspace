@@ -77,3 +77,36 @@ Artifacts: `artifacts/phase1/<run-id>/` with `summary.json`, `transcript.txt`,
 `doctor.json`, `frame-trace.json`, `screenshot.png`, and `logcat-marker.txt`.
 Exit code 2 means at least one check failed; failures stay visible in the
 summary instead of being retried away.
+
+## `phase2-acceptance.ps1`
+
+Runs the Phase 2 agent gate against a paired root: build/test, disposable clone
+boot, CLI and TypeScript/Python MCP workflows, guest network shaping, FLAG_SECURE
+redaction and recovery, WPF Agent Sessions probe, authorization failures,
+idempotent replay, approved cleanup, and the revoked-credential check.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\phase2-acceptance.ps1 `
+  -Root D:\Phase2Root -TokenFile D:\Phase2Root\agent.json -Template tpl
+```
+
+Options: `-Root`, `-TokenFile`, `-Template`, `-OutDir`, `-FixtureBytes`,
+`-SkipBuild`, `-SkipMcp`, `-SkipDesktop`, `-KeepRunning`. The script starts the
+fixture if needed; a running supervisor locks its binaries, so build before
+starting it or pass `-SkipBuild`.
+
+Artifacts: `artifacts/phase2/<run-id>/` with `summary.json`, `versions.json`,
+`build.txt`, `tests.txt`, `cli-transcript.json`, `mcp/`, `network.json`,
+`secure-cli.json`, `agent-sessions-probe.json`, `security.json`, `cleanup.txt`
+and the fixture request log. Exit code 2 means at least one check failed.
+
+## `fixtures/login_fixture.py`
+
+Isolated HTTP fixture for the login workflow. Listens on `0.0.0.0:8765` by
+default and returns a 64 KiB `/login` body. Environment: `FIXTURE_PORT`,
+`FIXTURE_BODY_BYTES`, `FIXTURE_LOG`. It logs request timestamps and response
+sizes so the shaped path can be distinguished from the baseline.
+
+```powershell
+py -3 tools\fixtures\login_fixture.py
+```

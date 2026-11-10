@@ -39,6 +39,32 @@ public partial class App : Application
             return;
         }
 
+        if (e.Args.Contains("--agent-sessions-probe", StringComparer.OrdinalIgnoreCase))
+        {
+            var output = Path.Combine(
+                Environment.GetEnvironmentVariable("EMULATOR_WORKSPACE_HOME") ?? ".",
+                "agent-sessions-probe.json");
+            for (var index = 0; index < e.Args.Length - 1; index++)
+            {
+                if (e.Args[index].Equals("--out", StringComparison.OrdinalIgnoreCase))
+                {
+                    output = Path.GetFullPath(e.Args[index + 1]);
+                }
+            }
+
+            var probeWindow = new AgentSessionsWindow();
+            MainWindow = probeWindow;
+            probeWindow.Loaded += async (_, _) =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+                await File.WriteAllTextAsync(output, probeWindow.ProbeSummary());
+                Shutdown(0);
+            };
+            probeWindow.Show();
+            return;
+        }
+
         if (e.Args.Contains("--smoke", StringComparer.OrdinalIgnoreCase))
         {
             var smoke = new Window

@@ -252,6 +252,12 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnAgents(object sender, RoutedEventArgs e)
+    {
+        var window = new AgentSessionsWindow { Owner = this };
+        window.ShowDialog();
+    }
+
     private void OnFit(object sender, RoutedEventArgs e)
     {
         _viewModel.ZoomMode = "Fit";

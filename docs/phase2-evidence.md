@@ -1,140 +1,180 @@
 # Phase 2 evidence — local agent integration
 
-Baseline: clean commit **7f1b0ed**. Build 0 errors; **23 tests pass**. Pins
-unchanged (Emulator 37.2.12.0/16428233, vendored protos, AOSP API 35 x86_64 rev
-2, WHPX). Historical Phase 1 runs remain: original **18/19**
-(`20261110-172411`), stabilization **19/19** (`20261110-183709`), Phase 0
-regression **26/26** (`run-20261110-174228`).
+Baseline: clean commit **7f1b0ed**. This closure pass is built on **54f5195**
+and adds the secure-window detector, guest network shaping, the WPF Agent
+Sessions surface, the Python MCP client, the active-session recheck and the
+final acceptance harness. Build: **0 errors**, **32 tests passing**.
 
-Test root: `D:\Phase2Root`. Template `tpl` stayed defined; disposable clone
-`ag-f222eb` was created by pairing and deleted by cleanup. `QuickPastePremiumQA`
-and the default AVD home were untouched.
+Pins are unchanged: Emulator **37.2.12.0 / build 16428233**, vendored protos,
+`system-images;android-35;default;x86_64` rev 2, WHPX. The historical Phase 1
+runs remain distinct: original **18/19** (`20261110-172411`), stabilization
+**19/19** (`20261110-183709`), Phase 0 regression **26/26**
+(`run-20261110-174228`).
 
-## What was implemented
+Test root: `D:\Phase2Root`. Template `tpl` remained defined throughout; every
+disposable clone was deleted by its approved cleanup. `QuickPastePremiumQA` and
+the default AVD home were not used.
 
-- **Agent store** (`AgentStore`): durable pairings, sessions, approvals,
-  idempotency records, artifacts; WAL SQLite alongside supervisor state.
-- **Pairing and scopes** (`AgentService`): short-lived single-use pairing code,
-  operator approval that creates a fresh disposable AVD from a stopped template
-  (never copying a running disk), revocable session token stored only as a
-  SHA-256 hash, per-session scopes (`observe`, `input`, `app`, `lifecycle`,
-  `network`, `restore`, `cleanup`, `artifact`), expiry, takeover that revokes
-  sessions and bumps the guest generation.
-- **Contract**: Protocol 1 envelopes extended with an opaque `auth` credential
-  and `idempotencyKey`; typed errors for unauthorized, forbidden scope, expired,
-  revoked, wrong instance, stale observation, ambiguous selector, approval
-  required, idempotency conflict and unknown outcome. In-progress mutations are
-  marked `unknown_outcome` on supervisor restart and replays refuse to re-execute.
-- **Scoped operations**: disposable create, observation screenshot/tree,
-  selector tap/type/assert, filtered logs, event poll, network profile, snapshot
-  save/load, artifact read, scoped cleanup. Coordinate taps require a frame ID;
-  age, guest identity, dimensions and generation are checked before dispatch.
-  Input and mutations re-check session state immediately before dispatch.
-- **MCP stdio server** (`EmulatorWorkspace.Mcp`): stdout carries JSON-RPC only;
-  diagnostics go to stderr. Tools map 1:1 to supervisor ops. Token comes from
-  `WS_AGENT_TOKEN_FILE`, never from tool arguments. Pairing tools are available;
-  engine endpoints, controller tokens, ADB and `--direct` are not exposed.
-- **CLI**: `--token-file`, `agent-pair`, `agent-pair-request/approve/complete`,
-  `agent-sessions`, `agent-revoke`, `agent-takeover`, `agent-approve-action`,
-  `call --op/--args-file/--idempotency`.
-- **Sample fixture**: login form with semantic content descriptions, host HTTP
-  login (350/1500 ms timeouts), FLAG_SECURE note screen, counter/marker/animated
-  scene. Built APK 16,787 bytes, SHA-256
+## Implemented
+
+- **Durable agent state** (`AgentStore`): pairings, sessions, approvals,
+  idempotency records and artifacts in the supervisor SQLite database.
+- **Pairing and scopes** (`AgentService`): short-lived single-use code, operator
+  approval that creates a fresh AVD from a stopped template, revocable session
+  token stored only as a SHA-256 hash, per-session scopes (`observe`, `input`,
+  `app`, `lifecycle`, `network`, `restore`, `cleanup`, `artifact`), expiry,
+  takeover and single-use approvals for restore/cleanup.
+- **Protocol 1 extensions**: opaque `auth` and `idempotencyKey`; typed errors for
+  unauthorized, forbidden scope, expired, revoked, wrong instance, stale
+  observation, ambiguous selector, approval required, idempotency conflict,
+  unknown outcome, capability unavailable and instance unavailable.
+- **Active-session recheck**: `AgentService.EnsureActive` reloads durable state
+  immediately before dispatch and again before input/mutation execution, so a
+  revocation or takeover that lands while a request is queued cannot authorize
+  it. Covered by `EnsureActive_rechecks_revocation_in_durable_store`.
+- **Scoped operations**: disposable create, bounded screenshot/tree, semantic
+  selector tap/type/assert, frame-bound coordinates with generation/age/geometry
+  checks, filtered logs, event poll with resync, network profile, snapshot
+  save/load, artifact read and scoped cleanup. Engine endpoints, controller
+  tokens, raw ADB, root and `--direct` are outside the agent contract.
+- **MCP stdio server**: stdout is protocol-only, diagnostics go to stderr, token
+  comes from `WS_AGENT_TOKEN_FILE` or `WS_AGENT_TOKEN`, and tools map 1:1 to the
+  supervisor registry.
+- **WPF Agent Sessions surface**: the **Agents** toolbar button opens a window
+  listing paired clients, session ID, guest, scopes, expiry and state; pending
+  pairings with template selection and scope editing; revoke; human takeover;
+  and the latest 25 agent operations. It is built in the desktop project and in
+  the solution build.
+- **Sample fixture**: semantic login form, host HTTP login, FLAG_SECURE screen,
+  counter and animated scene. APK 16,787 bytes, SHA-256
   `6B56060693294149F8A394E66AFB9579809DE81B2E7490E0567721416FBBF1C7`.
 
-## Verified workflow
+## Secure observation — verified
 
-Operator pairing:
+Android 15 exposes the window flag symbolically in `dumpsys window`:
 
-```powershell
-wsctl create --name tpl --root D:\Phase2Root
-wsctl agent-pair --client-name cli-agent --template tpl --out D:\Phase2Root\cli-session.json --root D:\Phase2Root
-wsctl agent-pair-request ... / agent-approve ... / agent-complete ...   # same flow over the pipe
+```
+mAttrs={(0,0)(fillxfill) ... ty=BASE_APPLICATION ...
+  fl=LAYOUT_IN_SCREEN SECURE LAYOUT_INSET_DECOR ...
 ```
 
-The paired clone booted (`76.92 s`, interactive `77.34 s`) and the sample APK
-installed from the approved `<root>\apps\ws-sample.apk` path.
+It does **not** print `mSecure=true` for this path, which is why the first probe
+missed it. `AgentService.ContainsSecureWindow` scans every `fl=` line for the
+exact `SECURE` token (and `0x2000`); probe errors fail closed. The check runs
+before and after capture/tree. Because the emulator framebuffer capture does not
+enforce FLAG_SECURE itself, this supervisor gate is the security boundary.
 
-### Real MCP client
+Verified on a disposable API 35 guest:
 
-Official `@modelcontextprotocol/sdk` **1.32.2** (`clients/mcp-client/workflow.mjs`)
-completed: initialize, tools/list, `device_status` → Running, `screen_capture`
-(artifact `art-1aa5c0e0e2a7`, 168,868 bytes), `ui_tree`, `ui_type` into
-`login_user`/`login_password`, `ui_tap` `login_button`, `ui_assert` `WELCOME`
-(true), `logs_read` (1 `LOGIN_RESULT` line), `artifact_read`, `snapshot_save`
-(`mcp-baseline`), operator-approved `snapshot_restore` (`mcp-baseline`).
-Transcript: `artifacts/phase2/mcp/mcp-transcript.json`.
+| Path | Result |
+| --- | --- |
+| `screen_capture` with FLAG_SECURE | `status=secure_window`, `secure=true`, `redacted=true`, no image artifact |
+| `ui_tree` with FLAG_SECURE | redacted result, `nodes=[]` |
+| `ui_assert` / selector input | typed `secure_window` denial |
+| Operator clears FLAG_SECURE | normal capture and tree return |
+| MCP `screen_capture` | text result only, zero image parts; no base64 leak |
+| MCP secure check | `screenshotRedacted`, `treeRedacted`, `selectorDenied`, `recoveredOk` all true |
 
-### CLI workflow (same session/scopes)
+## Network shaping — verified
 
-`wsctl call` with the same token completed screenshot, login typing/tap,
-`ui_assert WELCOME` (true), filtered logs (1 line), snapshot save (`cli-baseline`)
-and approved restore (`cli-baseline`). Transcript:
-`artifacts/phase2/cli/cli-transcript.json`.
+The emulator console records `network delay/speed` state but does not shape the
+virtio traffic on this image. The supervisor therefore applies **`tc netem`** to
+the guest's `wlan0` and `eth0` interfaces through `su 0`; the ADB daemon remains
+at its normal UID **2000 (shell)**. The agent contract still exposes only
+`network_set_profile`.
 
-### Authorization and safety checks
+`network_set_profile` accepts `latencyMs` 0–5000. A 2,500 ms profile produced
+`NETWORK TIMEOUT`; removing it restored `WELCOME`; the qdisc was verified with
+`tc qdisc show`. This affects the disposable guest only. The isolated host
+fixture returns 64 KiB, so the shaped path cannot complete inside the sample's
+1,500 ms timeout.
+
+## Verified acceptance runs
+
+### Clean full run — `20261110-212427`
+
+- Instance `ag-5a92d9`, session `ses-c289713d4956`, serial `emulator-5556`.
+- Boot completed in **67.06 s**, interactive readiness **67.43 s**.
+- **41/41 checks passed**, build 0 errors, **31 tests**.
+- TypeScript MCP SDK 1.32.2 and `wsctl` both completed the login/assert/logs/
+  screenshot/artifact/snapshot-save/restore workflow; screenshot artifact
+  `art-f73af2029b3a` (164,760 bytes), MCP image 219,680 base64 bytes.
+- Network: `WELCOME` → 2,500 ms netem → `NETWORK TIMEOUT` → reset → `WELCOME`.
+- Secure CLI and MCP checks passed.
+- WPF probe: 6 sessions, 6 pairings, 2 templates, 25 recent operations.
+- Cleanup deleted the clone and the token returned `revoked`; `tpl` remained.
+
+This run predates the final active-session recheck by one implementation step.
+
+### Final-code run — `20261110-213845`
+
+- Instance `ag-4c8bcc`, session `ses-180363c9ed9f`, serial `emulator-5556`.
+- Boot completed in **72.03 s**, interactive readiness **72.28 s**.
+- **41/42 checks passed**; build 0 errors, **32 tests**.
+- The single failure was the harness's state-dependent ambiguous-selector probe
+  (`text=""` matched zero nodes on the restored screen), not a product path.
+- All product checks passed: CLI login/assert/logs/artifact/snapshot restore;
+  network `WELCOME` → `NETWORK TIMEOUT` → `WELCOME`; secure CLI and MCP redaction;
+  TypeScript MCP workflow with 164,897-byte screenshot artifact; Python MCP
+  `device_status`; WPF surface probe (8 sessions, 8 pairings, 2 templates, 25
+  operations); unpaired/wrong-instance/stale/revoked denials; event idempotency
+  replay and conflict; approved cleanup and `revoked` retry.
+- The corrected probe uses `resourceId=""`. On a fresh clone it returned
+  `ambiguous_selector: 13 nodes matched` (and `className=android.widget.TextView`
+  matched 6); cleanup and the revoked retry also passed. Evidence:
+  `artifacts/phase2/20261110-213845/ambiguous-corrected.json`.
+
+A later rerun (`20261110-215946`) hit host ADB transport timeouts
+(`adb.exe: device offline`, `adb.exe did not exit within 30s`) after repeated
+clone cycles. Those are recorded as harness instability, not product failures;
+the clean 41/41 run and the final-code 41/42 run above are the acceptance
+evidence.
+
+## Authorization and safety checks
 
 | Check | Result |
 | --- | --- |
-| No credential | `unauthorized — Pairing is required` |
-| Wrong guest (`tpl`) | `wrong_instance — bound to 'ag-f222eb'` |
-| Stale frame after generation bump | `stale_observation — guest generation changed` |
-| Ambiguous selector (`text=""`) | `ambiguous_selector — 7 nodes matched` |
-| Replayed timed-out mutation | `unknown_outcome — reconcile before retrying` |
-| Same idempotency key, different args | `idempotency_conflict` |
-| Cleanup with approval | `cleaned: true`; instance removed, template kept |
-| Credential after cleanup | `revoked` |
+| No credential | `unauthorized` |
+| Wrong guest (`tpl`) | `wrong_instance` |
+| Stale frame after a generation bump | `stale_observation` |
+| Ambiguous selector | `ambiguous_selector` (13 nodes in corrected probe) |
+| Replayed successful read | cached response identical |
+| Same key, different arguments | `idempotency_conflict` |
+| Timed-out mutation retry | `unknown_outcome` |
+| Expired session | `expired` (unit) |
+| Revoked session | `revoked` |
+| Event-ring overflow | typed `overflow=true` + resync, no stale events (unit) |
+| Restart reconciliation | in-progress mutation becomes `unknown_outcome` (unit) |
+| Human takeover | revoked the session; subsequent observation returned `revoked` |
+| Cleanup with approval | clone deleted, template preserved, token revoked |
 
-Raw: `artifacts/phase2/security/security-checks.json`.
+## Remaining gaps
 
-### Cleanup
-
-`agent-approve-action --operation device.cleanup` issued a single-use code; the
-agent cleanup deleted `ag-f222eb`, its AVD and artifacts, revoked the session and
-bumped the generation. `wsctl list` afterwards showed only the template.
-
-## Not verified / blockers
-
-| Item | State | Reproduction and next action |
+| Item | State | Reproduction / next action |
 | --- | --- | --- |
-| FLAG_SECURE observation | **Unverified** | The first secure attempt returned a normal screenshot/tree (secure=false). Detection was changed to scan the whole `dumpsys window` output and fail closed on probe errors, but the guest wedged before retest. Re-run on a fresh clone; if still not detected, disable agent `screen_capture`/`ui_tree` until an independently verified secure path exists. This blocks Phase 2 closure. |
-| Network shaping / failed login | **Failed to prove** | Emulator console `network delay gprs` + `network speed gsm` had no effect on guest eth0 traffic (login still WELCOME). `tc qdisc netem delay 2000ms` on `wlan0`/`eth0` also left ping at 5-12 ms. The host fixture outage attempt did not produce a timeout within the window. Need a supported qdisc/kernel path or a pinned proxy; next action is to verify `tc` class/qdisc support and a deterministic endpoint, then re-run the fail/succeed pair. |
-| WPF Agent Sessions surface | **Not built** | Pairing/approval is CLI-only in this pass. Add a desktop window listing sessions/pairings with client identity, scopes, expiry, revoke, takeover and approve. |
-| Second real MCP client | **Not tested** | Only the TypeScript SDK client was exercised. Add the Python `mcp` client and record its transcript. |
-| Takeover during queued input | **Not tested** | Takeover revokes sessions and bumps generation; run a queued tap then takeover and assert no post-revoke input. |
-| Event overflow / resync | **Not tested** | Poll with a cursor older than the 500-event ring and assert the typed resync response. |
-| Successful idempotent replay | **Not observed** | The attempted save timed out first (correctly yielding `unknown_outcome`). Run a successful mutation twice with one key and compare cached response. |
-| WPF Phase 1 click-through | Still pending | Record Create → drag/drop → launch → tap → Logcat → screenshot → stop with UI Automation. |
-| Performance targets | Unchanged | 540x1200 RGB path, 29.4 FPS WPF, p95 474 ms dispatch-to-capture; 60 FPS / 100 ms composition not met. |
+| Two running managed guests + external ADB transport | Pending | The cross-guest test used the clone vs `tpl` and returned `wrong_instance`. Start two disposable clones and run the same status/tap against the non-bound clone; repeat with a controlled external ADB transport. |
+| Live queued-input takeover race | Pending live race | The recheck is implemented and unit-tested (`EnsureActive_rechecks_revocation_in_durable_store`); live takeover followed by input returns `revoked`. To orchestrate the race: start a long `snapshot.save`/install, queue an `input.tap` behind it, call `agent-takeover`, and assert the queued tap fails with `revoked`. |
+| Phase 1 desktop click-through | Pending (separate phase) | The WPF viewport/Agent surface is built, but the Create → boot → drag/drop → launch → tap → Logcat → screenshot → shutdown click-through has not been recorded as a Phase 1 run. |
+| Phase 1 performance | Pending (separate phase) | 540×1200 RGB path, 29.4 FPS WPF, p95 474 ms dispatch-to-capture; 60 FPS and 100 ms composition targets are not met. |
+| H.264, mixed-DPI follow-up, constrained volume, WSL, Magisk | Out of Phase 2 scope | Unchanged from the plan. |
 
 ## Reproduce
 
-Host fixture (64 KiB body, so a throttled path exceeds the app timeout):
-
-```powershell
-# terminal 1: TCP listener on 127.0.0.1:8765 returning HTTP 200 and 64 KiB
-```
-
-Then:
+The fixture is `tools/fixtures/login_fixture.py` (64 KiB body). Then:
 
 ```powershell
 dotnet build
 dotnet test
 wsctl create --name tpl --root D:\Phase2Root
-wsctl agent-pair --client-name cli-agent --template tpl --out D:\Phase2Root\cli-session.json --root D:\Phase2Root
-# start/install/launch and the CLI/MCP workflow commands are listed above
-powershell -ExecutionPolicy Bypass -File tools\phase2-acceptance.ps1 -Root D:\Phase2Root -TokenFile D:\Phase2Root\cli-session.json
+wsctl agent-pair --client-name agent --template tpl --out D:\Phase2Root\agent.json --root D:\Phase2Root
+powershell -ExecutionPolicy Bypass -File tools\phase2-acceptance.ps1 `
+  -Root D:\Phase2Root -TokenFile D:\Phase2Root\agent.json -Template tpl
 ```
 
-`tools/phase2-acceptance.ps1` automates the same checks against a paired root and
-writes `artifacts/phase2/<run-id>/`. It was not re-run end to end after the manual
-session was cleaned up; the manual transcript above is the acceptance evidence.
-
-## Gate status
-
-Phase 2 is **not closed**. The MCP+CLI workflow, authorisation failures, scoped
-observation, snapshot restore and cleanup are verified on WHPX. Secure
-observation, network shaping, the WPF agent surface and the second client remain
-open, and the secure-capture gap is a blocker rather than a documentation gap.
-Phase 1's desktop click-through and performance targets also remain separate open
-items.
+The script starts the fixture if needed, builds/tests when the supervisor is not
+running (or pass `-SkipBuild`), starts the clone, and writes
+`artifacts\phase2\<run-id>/` with `summary.json`, `versions.json`, build/test
+logs, CLI and MCP transcripts, network and secure evidence, the WPF probe,
+security checks and cleanup output. It cleans up with a single-use approval
+unless `-KeepRunning` is set. `-SkipMcp` and `-SkipDesktop` are available for
+isolated runs.

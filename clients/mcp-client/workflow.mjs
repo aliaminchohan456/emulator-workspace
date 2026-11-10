@@ -77,14 +77,27 @@ const tree = await call("ui_tree");
 const users = (tree.parsed.nodes ?? []).filter((n) => n.contentDescription === "login_user").length;
 if (users !== 1) throw new Error("login_user selector is not unique");
 
-await call("ui_type", { text: "mcp-user", selector: { contentDescription: "login_user" } });
-await call("ui_type", { text: "mcp-pass", selector: { contentDescription: "login_password" } });
-await call("ui_tap", { selector: { contentDescription: "login_button" } });
+const userType = await call("ui_type", { text: "mcp-user", selector: { contentDescription: "login_user" } });
+if (userType.isError) throw new Error("could not type the login user: " + userType.parsed.message);
+const passType = await call("ui_type", { text: "mcp-pass", selector: { contentDescription: "login_password" } });
+if (passType.isError) throw new Error("could not type the login password: " + passType.parsed.message);
+const firstTap = await call("ui_tap", { selector: { contentDescription: "login_button" } });
+if (firstTap.isError) throw new Error("could not tap the login button: " + firstTap.parsed.message);
 await new Promise((resolve) => setTimeout(resolve, 2500));
-const assert = await call("ui_assert", {
+let assert = await call("ui_assert", {
   selector: { contentDescription: "login_status", text: "WELCOME" },
 });
-if (!assert.parsed.pass) throw new Error("login did not reach WELCOME");
+if (!assert.parsed.pass) {
+  // A transient guest/ADB hiccup is common on a cold disposable clone; retry
+  // once against a fresh tree before failing the workflow.
+  const retryTap = await call("ui_tap", { selector: { contentDescription: "login_button" } });
+  if (retryTap.isError) throw new Error("could not retry the login button: " + retryTap.parsed.message);
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  assert = await call("ui_assert", {
+    selector: { contentDescription: "login_status", text: "WELCOME" },
+  });
+}
+if (!assert.parsed.pass) throw new Error("login did not reach WELCOME: " + JSON.stringify(assert.parsed));
 
 const logs = await call("logs_read", { lines: 200, contains: "LOGIN_RESULT" });
 const artifact = await call("artifact_read", { artifactId: shot.parsed.artifactId });

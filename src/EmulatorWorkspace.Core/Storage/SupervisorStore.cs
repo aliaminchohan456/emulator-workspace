@@ -12,6 +12,15 @@ namespace EmulatorWorkspace.Core.Storage;
 /// JSON instance records are imported once and preserved untouched as a
 /// fallback if the import fails.
 /// </summary>
+public sealed record RecentOperation(
+    string Id,
+    string Name,
+    string CallerName,
+    string Outcome,
+    string Code,
+    DateTimeOffset StartedUtc,
+    long? DurationMs);
+
 public sealed class SupervisorStore : IDisposable
 {
     private const int SchemaVersion = 1;
@@ -444,6 +453,37 @@ public sealed class SupervisorStore : IDisposable
         using var command = _connection.CreateCommand();
         command.CommandText = sql;
         command.ExecuteNonQuery();
+    }
+
+    public IReadOnlyList<RecentOperation> ListRecentAgentOperations(int limit)
+    {
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = """
+                SELECT id, name, caller_name, outcome, code, started_utc, duration_ms
+                FROM operations
+                WHERE caller_kind = 'agent'
+                ORDER BY started_utc DESC
+                LIMIT $limit;
+                """;
+            command.Parameters.AddWithValue("$limit", Math.Clamp(limit, 1, 200));
+            using var reader = command.ExecuteReader();
+            var list = new List<RecentOperation>();
+            while (reader.Read())
+            {
+                list.Add(new RecentOperation(
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    DateTimeOffset.Parse(reader.GetString(5), CultureInfo.InvariantCulture),
+                    reader.IsDBNull(6) ? null : reader.GetInt64(6)));
+            }
+
+            return list;
+        }
     }
 
     public void Dispose()

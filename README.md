@@ -13,15 +13,18 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | Supervisor core (instances, ports, journal, policy, engine adapter) | `src/EmulatorWorkspace.Core` | Phase 1 |
 | Authenticated gRPC controller client (vendored engine protos) | `src/EmulatorWorkspace.Controller` | Verified against 37.2.12 |
 | `wsctl` command line (supervisor client, `--direct` diagnostic fallback) | `src/EmulatorWorkspace.Cli` | Verified |
-| WPF desktop (rail, embedded viewport, Inspector, Logcat, APK drop) | `src/EmulatorWorkspace.Desktop` | Phase 1 MVP |
+| WPF desktop (rail, embedded viewport, Inspector, Logcat, APK drop, Agent Sessions) | `src/EmulatorWorkspace.Desktop` | Phase 1 MVP + Phase 2 |
 | Deterministic sample APK | `sample/` + `artifacts/phase1/sample/ws-sample.apk` | Verified |
 | Host baseline + Phase 0 harness | `tools/host-baseline.ps1`, `tools/phase0-spike.ps1` | 26/26 checks (run `run-20261110-152217`) |
 | Phase 1 acceptance harness | `tools/phase1-acceptance.ps1` | 19/19 (run `20261110-183709`); original 18/19 preserved |
 | MCP stdio server | `src/EmulatorWorkspace.Mcp` | Phase 2, typed tools |
-| TypeScript MCP client | `clients/mcp-client` | Workflow verified (SDK 1.32.2) |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 23 passing |
+| TypeScript MCP client | `clients/mcp-client` | Full workflow + secure check (SDK 1.32.2) |
+| Python MCP client | `clients/mcp-python` | Discovery + `device_status` (mcp 2.3.0) |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 32 passing |
 
-The MCP server and root lab UI remain Phase 2 and Phase 4 work.
+The root-lab UI remains Phase 4 work. Phase 2 closure evidence is in
+`docs/phase2-evidence.md`; Phase 1's desktop click-through and performance
+targets remain separate open items.
 
 ## Prerequisites
 
@@ -113,8 +116,15 @@ src\EmulatorWorkspace.Mcp\bin\Debug\net10.0\EmulatorWorkspace.Mcp.exe
 
 Agent access is off until a local operator approves a pairing; sessions carry
 explicit scopes, expire, are revocable, and are bound to one disposable guest.
-Phase 2 is not closed: secure capture, network shaping, the WPF Agent Sessions
-surface and a second MCP client remain open. See `docs/phase2-evidence.md`.
+The desktop **Agents** button opens the operator surface for approval, revocation,
+human takeover and the latest agent operations. FLAG_SECURE observations return
+a redacted typed result; the emulator framebuffer path is not exposed. Guest-only
+network shaping uses `tc netem` through `su 0` and accepts `latencyMs` 0-5000.
+
+The clean acceptance run `20261110-212427` passed 41/41 checks; the final-code
+run `20261110-213845` passed 41/42 (the only failure was a state-dependent
+test selector, corrected and re-verified separately) with 32 unit tests. See
+`docs/phase2-evidence.md` for exact commands and remaining verification gaps.
 
 Build output paths: CLI `net10.0`, supervisor and desktop `net10.0-windows`.
 

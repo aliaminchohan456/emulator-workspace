@@ -67,6 +67,8 @@
                     <Button Content="Screenshot" Style="{StaticResource ToolButton}" Command="{Binding ScreenshotCommand}" />
                     <Button Content="Install APK" Style="{StaticResource ToolButton}" Command="{Binding InstallApkCommand}" />
                     <Button Content="Launch sample" Style="{StaticResource ToolButton}" Command="{Binding LaunchSampleCommand}" />
+                    <Button Content="Agents" Style="{StaticResource ToolButton}" Click="OnAgents"
+                            AutomationProperties.Name="Agent sessions" />
                     <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
                     <Button Content="Fit" Style="{StaticResource ToolButton}" Click="OnFit" />
                     <Button Content="1:1" Style="{StaticResource ToolButton}" Click="OnActualSize" />

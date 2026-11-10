@@ -263,6 +263,28 @@ public sealed class AgentService
         }
     }
 
+    /// <summary>
+    /// Re-reads the session from durable state immediately before a queued
+    /// request or mutation is dispatched. Revocation and expiry are therefore
+    /// enforced even if the request was accepted before takeover.
+    /// </summary>
+    public AgentSession EnsureActive(AgentSession session)
+    {
+        var current = _store.GetSession(session.Id)
+                      ?? throw new SupervisorOperationException(ErrorCodes.Unauthorized, "Unknown agent session.");
+        if (current.Revoked)
+        {
+            throw new SupervisorOperationException(ErrorCodes.Revoked, "The agent session has been revoked.");
+        }
+
+        if (current.ExpiresUtc < DateTimeOffset.UtcNow)
+        {
+            throw new SupervisorOperationException(ErrorCodes.Expired, "The agent session has expired.");
+        }
+
+        return current;
+    }
+
     public void BindInstance(AgentSession session, JsonObject? args)
     {
         var requested = JsonArgs.String(args, "name");
@@ -308,23 +330,22 @@ public sealed class AgentService
 
     public async Task<JsonObject> ScreenshotAsync(AgentSession session, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         var secure = await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false);
         var generation = Generation(record.Name);
         if (secure)
         {
-            return new JsonObject
-            {
-                ["status"] = "secure_window",
-                ["redacted"] = true,
-                ["instance"] = record.Name,
-                ["generation"] = generation,
-                ["message"] = "The focused window is FLAG_SECURE; no pixels or tree are exposed.",
-            };
+            return SecureObservation(record);
         }
 
         var png = await _manager.CapturePngAsync(record.Name, 1080, "controller", cancellationToken)
             .ConfigureAwait(false);
+        if (await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false))
+        {
+            return SecureObservation(record);
+        }
+
         var frameId = "obs-" + Guid.NewGuid().ToString("N")[..12];
         var captured = DateTimeOffset.UtcNow;
         var artifactId = StoreArtifact(session, "screenshot", ".png", png);
@@ -350,15 +371,11 @@ public sealed class AgentService
 
     public async Task<JsonObject> UiTreeAsync(AgentSession session, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         if (await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false))
         {
-            return new JsonObject
-            {
-                ["status"] = "secure_window",
-                ["redacted"] = true,
-                ["nodes"] = new JsonArray(),
-            };
+            return SecureObservation(record);
         }
 
         var adb = new AdbClient(_sdk.AdbExe);
@@ -368,6 +385,10 @@ public sealed class AgentService
         var xml = await adb.RunAsync(record.AdbSerial,
             new[] { "shell", "cat", "/sdcard/ws-ui.xml" },
             TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
+        if (await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false))
+        {
+            return SecureObservation(record);
+        }
 
         var nodes = ParseUiNodes(xml.StandardOutput);
         var array = new JsonArray();
@@ -388,6 +409,7 @@ public sealed class AgentService
     public async Task<JsonObject> TapAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         int x;
         int y;
@@ -435,6 +457,9 @@ public sealed class AgentService
             }
         }
 
+        session = EnsureActive(session);
+        await EnsureNotSecureAsync(record, cancellationToken).ConfigureAwait(false);
+
         await _manager.TapAsync(record.Name, x, y, cancellationToken).ConfigureAwait(false);
         BumpGeneration(record.Name);
         return new JsonObject
@@ -450,6 +475,7 @@ public sealed class AgentService
     public async Task<JsonObject> TypeAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         var text = JsonArgs.String(args, "text")
                    ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "text is required.");
@@ -461,10 +487,14 @@ public sealed class AgentService
         if (args["selector"] is JsonObject selector)
         {
             var node = await ResolveSelectorAsync(record, selector, cancellationToken).ConfigureAwait(false);
+            session = EnsureActive(session);
+            await EnsureNotSecureAsync(record, cancellationToken).ConfigureAwait(false);
             await _manager.TapAsync(record.Name, node.X, node.Y, cancellationToken).ConfigureAwait(false);
             await Task.Delay(200, cancellationToken).ConfigureAwait(false);
         }
 
+        session = EnsureActive(session);
+        await EnsureNotSecureAsync(record, cancellationToken).ConfigureAwait(false);
         var escaped = Uri.EscapeDataString(text).Replace("%20", "%s", StringComparison.Ordinal);
         var adb = new AdbClient(_sdk.AdbExe);
         await adb.RunAsync(record.AdbSerial,
@@ -477,6 +507,7 @@ public sealed class AgentService
     public async Task<JsonObject> AssertAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         if (args["selector"] is not JsonObject selector)
         {
@@ -507,6 +538,7 @@ public sealed class AgentService
     public async Task<JsonObject> LogsAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         var lines = Math.Clamp(JsonArgs.Int(args, "lines") ?? 200, 1, 2000);
         var adb = new AdbClient(_sdk.AdbExe);
@@ -538,9 +570,11 @@ public sealed class AgentService
     public async Task<JsonObject> NetworkAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         var record = _manager.Get(session.Instance);
         var delay = JsonArgs.String(args, "delay") ?? "none";
         var speed = JsonArgs.String(args, "speed") ?? "full";
+        var requestedLatency = JsonArgs.Int(args, "latencyMs") ?? 0;
         var allowedDelay = new[] { "none", "gprs", "edge", "umts" };
         var allowedSpeed = new[] { "full", "gsm", "hscsd", "gprs", "edge", "umts", "hsdpa" };
         if (!allowedDelay.Contains(delay) || !allowedSpeed.Contains(speed))
@@ -548,22 +582,195 @@ public sealed class AgentService
             throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Unsupported delay/speed profile.");
         }
 
+        if (requestedLatency is < 0 or > 5000)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest, "latencyMs must be between 0 and 5000.");
+        }
+
+        // The emulator console records delay/speed but does not shape virtio
+        // traffic on this image. The lab profile therefore applies tc netem to
+        // the guest's active interfaces; the console profile is kept as
+        // metadata and remains available for engines that do enforce it.
+        var latencyMs = requestedLatency > 0
+            ? requestedLatency
+            : delay switch
+            {
+                "gprs" => 2500,
+                "edge" => 1200,
+                "umts" => 600,
+                _ => 0,
+            };
+
         var adb = new AdbClient(_sdk.AdbExe);
         await adb.EmulatorConsoleAsync(record.AdbSerial, new[] { "network", "delay", delay }, cancellationToken)
             .ConfigureAwait(false);
         await adb.EmulatorConsoleAsync(record.AdbSerial, new[] { "network", "speed", speed }, cancellationToken)
             .ConfigureAwait(false);
-        return new JsonObject { ["instance"] = record.Name, ["delay"] = delay, ["speed"] = speed };
+
+        var interfaces = new JsonArray();
+        if (latencyMs > 0)
+        {
+            var adbUid = await ReadAdbUidAsync(adb, record, cancellationToken).ConfigureAwait(false);
+            var viaSu = false;
+            if (!adbUid.StartsWith("uid=0(", StringComparison.Ordinal))
+            {
+                var su = await adb.RunAsync(
+                        record.AdbSerial,
+                        new[] { "shell", "su", "0", "id" },
+                        TimeSpan.FromSeconds(15),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                viaSu = su.ExitCode == 0
+                        && (su.StandardOutput + su.StandardError).Contains("uid=0(", StringComparison.Ordinal);
+            }
+
+            if (!adbUid.StartsWith("uid=0(", StringComparison.Ordinal) && !viaSu)
+            {
+                throw new SupervisorOperationException(
+                    ErrorCodes.CapabilityUnavailable,
+                    "Guest network shaping needs a root shell. This disposable lab image provides 'su 0'; "
+                    + "the ADB daemon itself stays at its original UID.");
+            }
+
+            foreach (var iface in new[] { "wlan0", "eth0" })
+            {
+                var exists = await adb.RunAsync(
+                        record.AdbSerial,
+                        new[] { "shell", "su", "0", "ip", "link", "show", "dev", iface },
+                        TimeSpan.FromSeconds(15),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (exists.ExitCode != 0)
+                {
+                    continue;
+                }
+
+                var apply = await adb.RunAsync(
+                        record.AdbSerial,
+                        new[]
+                        {
+                            "shell", "su", "0", "tc", "qdisc", "replace", "dev", iface,
+                            "root", "netem", "delay", latencyMs + "ms",
+                        },
+                        TimeSpan.FromSeconds(20),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (apply.ExitCode != 0)
+                {
+                    continue;
+                }
+
+                var show = await adb.RunAsync(
+                        record.AdbSerial,
+                        new[] { "shell", "su", "0", "tc", "qdisc", "show", "dev", iface },
+                        TimeSpan.FromSeconds(15),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (!show.StandardOutput.Contains("netem", StringComparison.Ordinal)
+                    || !show.StandardOutput.Contains("delay", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                interfaces.Add(iface);
+            }
+
+            if (interfaces.Count == 0)
+            {
+                throw new SupervisorOperationException(
+                    ErrorCodes.CapabilityUnavailable,
+                    "No guest interface accepted the network shaping profile; baseline traffic is unchanged.");
+            }
+        }
+        else
+        {
+            await ClearShapingAsync(adb, record, cancellationToken).ConfigureAwait(false);
+        }
+
+        return new JsonObject
+        {
+            ["instance"] = record.Name,
+            ["delay"] = delay,
+            ["speed"] = speed,
+            ["latencyMs"] = latencyMs,
+            ["interfaces"] = interfaces,
+            ["mechanism"] = latencyMs > 0 ? "tc-netem" : "none",
+            ["adbUid"] = await ReadAdbUidAsync(adb, record, cancellationToken).ConfigureAwait(false),
+            ["verified"] = true,
+        };
+    }
+
+    private static async Task<string> ReadAdbUidAsync(
+        AdbClient adb, InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var uid = await adb.RunAsync(
+                record.AdbSerial,
+                new[] { "shell", "id" },
+                TimeSpan.FromSeconds(15),
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (uid.ExitCode != 0)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                "The managed ADB transport is not ready: " + (uid.StandardError + uid.StandardOutput).Trim());
+        }
+
+        return (uid.StandardOutput + uid.StandardError).Trim();
+    }
+
+    private static async Task ClearShapingAsync(
+        AdbClient adb, InstanceRecord record, CancellationToken cancellationToken)
+    {
+        foreach (var iface in new[] { "wlan0", "eth0" })
+        {
+            try
+            {
+                await adb.RunAsync(
+                        record.AdbSerial,
+                        new[] { "shell", "su", "0", "tc", "qdisc", "del", "dev", iface, "root" },
+                        TimeSpan.FromSeconds(15),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Best effort: the interface may not exist or carry no qdisc.
+            }
+        }
     }
 
     public async Task<JsonObject> RestoreAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         ConsumeApproval(session, "snapshot.load", args);
         var tag = JsonArgs.String(args, "tag")
                   ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "tag is required.");
         var result = await _manager.SnapshotAsync(session.Instance, tag, save: false, cancellationToken)
             .ConfigureAwait(false);
+        try
+        {
+            var adb = new AdbClient(_sdk.AdbExe);
+            var restored = _manager.Get(session.Instance);
+            await ClearShapingAsync(adb, restored, cancellationToken).ConfigureAwait(false);
+            await adb.EmulatorConsoleAsync(
+                    restored.AdbSerial,
+                    new[] { "network", "delay", "none" },
+                    cancellationToken)
+                .ConfigureAwait(false);
+            await adb.EmulatorConsoleAsync(
+                    restored.AdbSerial,
+                    new[] { "network", "speed", "full" },
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Restoring the guest is authoritative; shaping reset is best effort.
+        }
+
         BumpGeneration(session.Instance);
         _observations.Clear();
         RecordEvent(session.Instance, "restored", new JsonObject { ["tag"] = tag });
@@ -573,6 +780,7 @@ public sealed class AgentService
     public async Task<JsonObject> CleanupAsync(
         AgentSession session, JsonObject args, CancellationToken cancellationToken)
     {
+        session = EnsureActive(session);
         ConsumeApproval(session, "device.cleanup", args);
         var instance = session.Instance;
         await _manager.DeleteAsync(instance, cancellationToken).ConfigureAwait(false);
@@ -584,6 +792,7 @@ public sealed class AgentService
 
     public JsonObject ReadArtifact(AgentSession session, string artifactId)
     {
+        session = EnsureActive(session);
         var artifact = _store.GetArtifact(artifactId)
                        ?? throw new SupervisorOperationException(ErrorCodes.NotFound, "Unknown artifact ID.");
         if (!artifact.SessionId.Equals(session.Id, StringComparison.Ordinal))
@@ -628,7 +837,9 @@ public sealed class AgentService
     private async Task<UiNode> ResolveSelectorAsync(
         InstanceRecord record, JsonObject selector, CancellationToken cancellationToken)
     {
+        await EnsureNotSecureAsync(record, cancellationToken).ConfigureAwait(false);
         var tree = await UiTreeAsyncForRecord(record, cancellationToken).ConfigureAwait(false);
+        await EnsureNotSecureAsync(record, cancellationToken).ConfigureAwait(false);
         var resourceId = JsonArgs.String(selector, "resourceId");
         var text = JsonArgs.String(selector, "text");
         var description = JsonArgs.String(selector, "contentDescription");
@@ -711,6 +922,64 @@ public sealed class AgentService
         return nodes;
     }
 
+    /// <summary>
+    /// Detects a FLAG_SECURE window from <c>dumpsys window</c> output. Android 15
+    /// prints the flag symbolically in the window's attribute block
+    /// (<c>fl=... SECURE ...</c>), not as <c>mSecure=true</c>. Any secure window
+    /// blocks observation: the capture path is framebuffer-level and does not
+    /// enforce FLAG_SECURE itself.
+    /// </summary>
+    public static bool ContainsSecureWindow(string? dumpsys)
+    {
+        if (string.IsNullOrEmpty(dumpsys))
+        {
+            return false;
+        }
+
+        foreach (var raw in dumpsys.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (!line.StartsWith("fl=", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach (var token in line[3..].Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (token == "SECURE" || token == "0x2000" || token == "0x00002000")
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static JsonObject SecureObservation(InstanceRecord record, int generation) => new()
+    {
+        ["status"] = "secure_window",
+        ["redacted"] = true,
+        ["secure"] = true,
+        ["instance"] = record.Name,
+        ["generation"] = generation,
+        ["nodes"] = new JsonArray(),
+        ["message"] = "A FLAG_SECURE window is present; no pixels, tree or selectors are exposed.",
+    };
+
+    private JsonObject SecureObservation(InstanceRecord record) =>
+        SecureObservation(record, Generation(record.Name));
+
+    private async Task EnsureNotSecureAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        if (await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.SecureWindow,
+                "A FLAG_SECURE window is present; agent observation and selector input are disabled for this guest.");
+        }
+    }
+
     private async Task<bool> IsSecureWindowAsync(InstanceRecord record, CancellationToken cancellationToken)
     {
         try
@@ -719,10 +988,7 @@ public sealed class AgentService
             var dump = await adb.RunAsync(record.AdbSerial,
                 new[] { "shell", "dumpsys", "window" },
                 TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
-            var text = dump.StandardOutput;
-            return text.Contains("mSecure=true", StringComparison.Ordinal)
-                   || text.Contains("isSecure=true", StringComparison.Ordinal)
-                   || text.Contains("mSecure=1", StringComparison.Ordinal);
+            return ContainsSecureWindow(dump.StandardOutput);
         }
         catch (Exception)
         {
