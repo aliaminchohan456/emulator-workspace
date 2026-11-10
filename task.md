@@ -82,4 +82,5 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 1 desktop | Verified (with caveats) | WPF first-run, rail, embedded viewport, Inspector, Logcat, APK drop; screenshots in `artifacts/phase1/` | Close drag/drop click-through and ANR-free launch check |
 | Phase 1 sample APK | Verified | `dev.emulatorworkspace.sample`, 12,691 bytes, SHA-256 47D84A...; tap marker and `WS_SAMPLE` log confirmed | Keep the APK reproducible in release CI |
 | Phase 1 acceptance | Partial | `tools/phase1-acceptance.ps1` run `20261110-172411`: 19 checks, 18 pass, 1 fail (SystemUI ANR) | Re-run on a quiet host; add latency probe |
+| Phase 0 regression via supervisor | Verified | `tools/phase0-spike.ps1` run `run-20261110-174228`: 26/26 checks, two guests, snapshots 5.61/5.86 s | Keep in release CI |
 | Phase 1 performance | Missed target | 3.66 FPS single / 1.07 FPS two guests, p95 352 / 1641 ms; limiter is emulator PNG capture | Profile capture path; test raw RGBA and 720x1600 guest |

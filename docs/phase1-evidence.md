@@ -1,4 +1,4 @@
-# Phase 1 evidence
+﻿# Phase 1 evidence
 
 Windows-first developer MVP: persistent supervisor, SQLite state, authenticated
 local pipe, WPF desktop with embedded guest viewport, deterministic sample APK,
@@ -57,7 +57,7 @@ global ADB shutdown is ever issued.
   `legacy_import_v1_error` records the failure.
 - One versioned contract (`EmulatorWorkspace.Contracts`) over a named pipe named
   from the canonical root hash. The server uses `PipeOptions.CurrentUserOnly`;
-  after accept it verifies the client PID → logon session and token user SID,
+  after accept it verifies the client PID â†’ logon session and token user SID,
   rejecting remote or cross-session peers before reading a request.
   Length-prefixed JSON frames are bounded (1 MiB request, 4 MiB response), with
   per-request deadlines, cancellation messages, typed error codes, and ordered
@@ -202,12 +202,12 @@ Screenshots (not committed; under `artifacts/phase1/`):
 
 Manual WPF sequence (repeatable):
 
-1. `EmulatorWorkspace.Desktop.exe --root D:\Phase1Empty` → setup panel.
-2. Create device → supervisor creates `ws_dev` from the pinned image and boots;
+1. `EmulatorWorkspace.Desktop.exe --root D:\Phase1Empty` â†’ setup panel.
+2. Create device â†’ supervisor creates `ws_dev` from the pinned image and boots;
    progress and readiness are shown; Cancel is not yet offered for create.
 3. The viewport shows live frames; clicking the marker changes `TAPS: N` and the
    Inspector records the input latency when a frame with the new colour arrives.
-4. Drag `ws-sample.apk` onto the window → install progress → automatic launch →
+4. Drag `ws-sample.apk` onto the window â†’ install progress â†’ automatic launch â†’
    Logcat shows `WS_SAMPLE` lines.
 5. Search/tag/severity filters, Pause, Clear, Export in the Logcat drawer.
 6. Fit / 1:1 / +/- / Ctrl+wheel; Rotate; Pop-out; Fullscreen; resize the window
@@ -246,6 +246,15 @@ Deviations and limits found while verifying the desktop:
 | Snapshot | qa-baseline save/load under two-guest load |
 | Low disk | the guard exists (`low_disk` with free/required bytes) but was not forced on the 398 GiB volume; open check |
 
+## Phase 0 regression through the supervisor
+
+`tools/phase0-spike.ps1 -Root D:\EmulatorWorkspace` was re-run after the CLI was
+routed through the supervisor: run `run-20261110-174228` completed **26/26
+checks, 0 failures**. Two guests booted on WHPX (52.72 s and 58.96 s), exact
+targeting and controller auth passed for both, input changed the foreground,
+snapshot save/load took 5.61 s / 5.86 s, agent access exited 4, the ramdisk
+substitution booted with its marker and stock restore booted again. This
+confirms the Phase 0 CLI surface and exit behavior are preserved.
 ## Open gates
 
 | Gate | State | Next action |
