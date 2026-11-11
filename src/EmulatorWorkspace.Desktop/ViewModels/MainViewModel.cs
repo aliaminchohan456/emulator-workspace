@@ -72,9 +72,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ExportLogCommand = new AsyncRelayCommand(ExportLogAsync);
         CopyDiagnosticsCommand = new AsyncRelayCommand(CopyDiagnosticsAsync);
         ToggleThemeCommand = new RelayCommand(ToggleTheme);
+        AdbRootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(true), () => SelectedDevice is not null && !IsBusy);
+        AdbUnrootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(false), () => SelectedDevice is not null && !IsBusy);
+        RefreshAdbStateCommand = new AsyncRelayCommand(RefreshAdbStateAsync, () => SelectedDevice is not null && !IsBusy);
 
         LogView = CollectionViewSource.GetDefaultView(LogEntries);
         LogView.Filter = FilterLog;
+
+        Palette.Add(new PaletteEntryViewModel("Create device", "Create a new managed guest", CreateDeviceCommand));
+        Palette.Add(new PaletteEntryViewModel("Start device", "Start the selected guest", StartCommand));
+        Palette.Add(new PaletteEntryViewModel("Stop device", "Stop the selected guest", StopCommand));
+        Palette.Add(new PaletteEntryViewModel("Restart device", "Restart the selected guest", RestartCommand));
+        Palette.Add(new PaletteEntryViewModel("Cold boot", "Cold boot the selected guest", ColdBootCommand));
+        Palette.Add(new PaletteEntryViewModel("Install APK", "Install an APK on the selected guest", InstallApkCommand));
+        Palette.Add(new PaletteEntryViewModel("Launch sample", "Launch the sample application", LaunchSampleCommand));
+        Palette.Add(new PaletteEntryViewModel("Screenshot", "Capture a PNG of the selected guest", ScreenshotCommand));
+        Palette.Add(new PaletteEntryViewModel("Toggle Logcat", "Show or hide the Logcat drawer", ToggleLogcatCommand));
+        Palette.Add(new PaletteEntryViewModel("ADB root", "Run the guest ADB daemon as root", AdbRootCommand));
+        Palette.Add(new PaletteEntryViewModel("ADB unroot", "Return the guest ADB daemon to the shell user", AdbUnrootCommand));
+        Palette.Add(new PaletteEntryViewModel("Refresh ADB state", "Re-read the ADB daemon identity", RefreshAdbStateCommand));
+        Palette.Add(new PaletteEntryViewModel("Export diagnostics", "Write the diagnostic bundle", CopyDiagnosticsCommand));
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
         _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
@@ -86,6 +103,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<LogEntryViewModel> LogEntries { get; } = new();
 
     public ObservableCollection<string> SetupIssues { get; } = new();
+
+    /// <summary>Commands offered by the Ctrl+K palette.</summary>
+    public ObservableCollection<PaletteEntryViewModel> Palette { get; } = new();
 
     public ICollectionView LogView { get; }
 
@@ -126,6 +146,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncRelayCommand CopyDiagnosticsCommand { get; }
 
     public RelayCommand ToggleThemeCommand { get; }
+
+    public AsyncRelayCommand AdbRootCommand { get; }
+
+    public AsyncRelayCommand AdbUnrootCommand { get; }
+
+    public AsyncRelayCommand RefreshAdbStateCommand { get; }
+
+    /// <summary>Effective ADB daemon user of the selected guest ("n/a" when unknown).</summary>
+    public string AdbUid { get; private set; } = "n/a";
+
+    /// <summary>Whether the image of the selected guest can run adbd as root.</summary>
+    public bool AdbRootCapable { get; private set; }
+
+    public string AdbBuildType { get; private set; } = "";
+
+    public string AdbTransportId { get; private set; } = "";
+
+    public string AdbRootState => AdbRootCapable
+        ? $"adb daemon uid {AdbUid} (build {AdbBuildType}, transport {AdbTransportId})"
+        : $"adb daemon uid {AdbUid} - this image cannot run adbd as root (build {AdbBuildType})";
 
     private DeviceItemViewModel? _selectedDevice;
 
@@ -1563,6 +1603,71 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Refreshes the ADB daemon identity of the selected guest so the Root Lab
+    /// panel shows the effective user and the transport the daemon runs on.
+    /// </summary>
+    public async Task RefreshAdbStateAsync()
+    {
+        var device = SelectedDevice;
+        if (device is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var state = await RequestAsync(
+                    OperationNames.InstanceAdbRootState,
+                    new JsonObject { ["name"] = device.Name },
+                    TimeSpan.FromSeconds(60))
+                .ConfigureAwait(true);
+            AdbUid = state["uid"]?.GetValue<string>() ?? "n/a";
+            AdbRootCapable = state["rootCapable"]?.GetValue<bool>() ?? false;
+            AdbBuildType = state["buildType"]?.GetValue<string>() ?? "";
+            AdbTransportId = state["transportId"]?.GetValue<string>() ?? "";
+        }
+        catch (SupervisorRequestException ex)
+        {
+            AdbUid = "n/a";
+            AdbRootCapable = false;
+            AdbBuildType = "";
+            AdbTransportId = "";
+            DesktopLog.Write($"ADB daemon state unavailable: {ex.Message}");
+        }
+
+        OnPropertyChanged(nameof(AdbUid));
+        OnPropertyChanged(nameof(AdbRootCapable));
+        OnPropertyChanged(nameof(AdbBuildType));
+        OnPropertyChanged(nameof(AdbTransportId));
+        OnPropertyChanged(nameof(AdbRootState));
+    }
+
+    private async Task SetAdbRootAsync(bool root)
+    {
+        var device = SelectedDevice;
+        if (device is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await RequestAsync(
+                    OperationNames.InstanceAdbRoot,
+                    new JsonObject { ["name"] = device.Name, ["root"] = root },
+                    TimeSpan.FromMinutes(3))
+                .ConfigureAwait(true);
+            DesktopLog.Write($"ADB daemon uid {result["uidBefore"]} -> {result["uidAfter"]} (transport {result["transportId"]})");
+        }
+        catch (SupervisorRequestException ex)
+        {
+            DesktopLog.Write($"ADB {(root ? "root" : "unroot")} refused: {ex.Code} {ex.Message}");
+        }
+
+        await RefreshAdbStateAsync().ConfigureAwait(true);
+    }
+
     private async Task<JsonObject> RequestAsync(string op, JsonObject? args, TimeSpan deadline)
     {
         if (_connection is null)
@@ -1723,6 +1828,31 @@ public sealed class DeviceItemViewModel : ObservableObject
         if (status["readiness"] is JsonObject readiness)
         {
             Readiness = readiness;
+        }
+    }
+}
+
+/// <summary>One command palette entry.</summary>
+public sealed class PaletteEntryViewModel
+{
+    public PaletteEntryViewModel(string label, string hint, System.Windows.Input.ICommand command)
+    {
+        Label = label;
+        Hint = hint;
+        Command = command;
+    }
+
+    public string Label { get; }
+
+    public string Hint { get; }
+
+    public System.Windows.Input.ICommand Command { get; }
+
+    public void Invoke()
+    {
+        if (Command.CanExecute(null))
+        {
+            Command.Execute(null);
         }
     }
 }

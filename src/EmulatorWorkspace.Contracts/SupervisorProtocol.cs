@@ -88,6 +88,7 @@ public static class ErrorCodes
     public const string Cancelled = "cancelled";
     public const string SnapshotFailed = "snapshot_failed";
     public const string InstallFailed = "install_failed";
+    public const string AppLaunchFailed = "app_launch_failed";
     public const string AdbFailure = "adb_failure";
     public const string ControllerFailure = "controller_failure";
     public const string SupervisorUnavailable = "supervisor_unavailable";
@@ -164,6 +165,12 @@ public static class OperationNames
     public const string AppLaunch = "app.launch";
     public const string AppPackageInfo = "app.packageInfo";
     public const string AppForeground = "app.foreground";
+    public const string AppPackagePermissions = "app.packagePermissions";
+    public const string AppDeepLink = "app.deepLink";
+    public const string AppInstrumentation = "app.instrumentation";
+    public const string LogcatExport = "logcat.export";
+    public const string DiagnosticsCrash = "diagnostics.crash";
+    public const string DiagnosticsBugreport = "diagnostics.bugreport";
 
     public const string LogcatSubscribe = "logcat.subscribe";
     public const string LogcatUnsubscribe = "logcat.unsubscribe";

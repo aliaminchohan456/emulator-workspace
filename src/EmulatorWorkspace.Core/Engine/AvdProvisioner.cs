@@ -134,6 +134,11 @@ public sealed class AvdProvisioner
         File.WriteAllLines(configPath, lines);
     }
 
+    /// <summary>
+    /// Removes an AVD. The engine keeps a few files (for example the
+    /// persistent-store image) open for a short moment after it was stopped,
+    /// so the removal is retried for a bounded time before it fails.
+    /// </summary>
     public void Delete(string avdName, string avdHome)
     {
         foreach (var path in new[]
@@ -142,14 +147,63 @@ public sealed class AvdProvisioner
                      Path.Combine(avdHome, avdName + ".avd"),
                  })
         {
-            if (Directory.Exists(path))
+            DeleteWithRetry(path);
+        }
+    }
+
+    private static void DeleteWithRetry(string path)
+    {
+        for (var attempt = 0; attempt < 12; attempt++)
+        {
+            try
             {
-                Directory.Delete(path, recursive: true);
+                if (Directory.Exists(path))
+                {
+                    ClearReadOnly(path);
+                    Directory.Delete(path, recursive: true);
+                }
+                else if (File.Exists(path))
+                {
+                    File.SetAttributes(path, FileAttributes.Normal);
+                    File.Delete(path);
+                }
+
+                return;
             }
-            else if (File.Exists(path))
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                File.Delete(path);
+                // The engine is still releasing its files.
+                Thread.Sleep(500);
             }
+        }
+
+        if (Directory.Exists(path))
+        {
+            ClearReadOnly(path);
+            Directory.Delete(path, recursive: true);
+        }
+        else if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static void ClearReadOnly(string directory)
+    {
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+            {
+                var attributes = File.GetAttributes(file);
+                if (attributes.HasFlag(FileAttributes.ReadOnly))
+                {
+                    File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // The attributes are best effort; the retry decides the outcome.
         }
     }
 }

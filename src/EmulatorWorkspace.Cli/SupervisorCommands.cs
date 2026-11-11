@@ -309,6 +309,46 @@ internal static class SupervisorCommands
                 op = OperationNames.InstanceAdbRootState;
                 requestArgs["name"] = name;
                 break;
+            case "package-permissions":
+                op = OperationNames.AppPackagePermissions;
+                requestArgs["name"] = name;
+                requestArgs["package"] = args.Optional("package")
+                    ?? throw new ArgumentException("--package is required.");
+                break;
+            case "deep-link":
+                op = OperationNames.AppDeepLink;
+                requestArgs["name"] = name;
+                requestArgs["uri"] = args.Optional("uri")
+                    ?? throw new ArgumentException("--uri is required.");
+                break;
+            case "instrumentation":
+                op = OperationNames.AppInstrumentation;
+                requestArgs["name"] = name;
+                requestArgs["package"] = args.Optional("package")
+                    ?? throw new ArgumentException("--package is required.");
+                requestArgs["runner"] = args.Optional("runner") ?? "";
+                deadline = TimeSpan.FromMinutes(5);
+                break;
+            case "logcat-export":
+                op = OperationNames.LogcatExport;
+                requestArgs["name"] = name;
+                requestArgs["lines"] = int.TryParse(args.Optional("lines"), out var exportLines)
+                    ? exportLines
+                    : 500;
+                requestArgs["tag"] = args.Optional("tag") ?? "";
+                deadline = TimeSpan.FromMinutes(3);
+                break;
+            case "crash-report":
+                op = OperationNames.DiagnosticsCrash;
+                requestArgs["name"] = name;
+                requestArgs["package"] = args.Optional("package") ?? "";
+                deadline = TimeSpan.FromMinutes(3);
+                break;
+            case "bugreport":
+                op = OperationNames.DiagnosticsBugreport;
+                requestArgs["name"] = name;
+                deadline = TimeSpan.FromMinutes(15);
+                break;
             case "install-apks":
             {
                 // A targeted APK-set deployment: the device is resolved from a

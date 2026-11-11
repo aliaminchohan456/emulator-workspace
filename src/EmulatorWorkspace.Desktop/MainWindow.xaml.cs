@@ -375,6 +375,12 @@ public partial class MainWindow : Window
             ToggleFullscreen();
             e.Handled = true;
         }
+        else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
+        {
+            var palette = new CommandPaletteWindow(_viewModel) { Owner = this };
+            palette.ShowDialog();
+            e.Handled = true;
+        }
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)

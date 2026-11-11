@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Emulator Workspace"
+           Manufacturer="Emulator Workspace"
+           Version="$(ProductVersion)"
+           UpgradeCode="7C0B4F0E-9E1A-4A2E-9F41-6C9D4B2E5A11"
+           Scope="perMachine"
+           Compressed="yes"
+           InstallerVersion="500">
+    <SummaryInformation Description="Emulator Workspace $(ProductVersion)" Manufacturer="Emulator Workspace" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Emulator Workspace is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Launch Condition="Installed OR VersionNT >= 603" Message="Emulator Workspace requires Windows 10 version 1809 or newer." />
+
+    <Property Id="ARPPRODUCTICON" Value="EmulatorWorkspace.exe" />
+    <Property Id="ARPURLINFOABOUT" Value="https://localhost/emulator-workspace" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+    <!-- The workspace state lives in the user profile, so an uninstall or an
+         upgrade never touches the profiles of the operator. -->
+    <Property Id="EMULATORWORKSPACEHOME" Secure="yes" />
+
+    <Feature Id="Main" Title="Emulator Workspace" Level="1" AllowAbsent="no">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="Shortcuts" />
+    </Feature>
+
+    <ui:WixUI xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui" Id="WixUI_FeatureTree" />
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Emulator Workspace" />
+    </StandardDirectory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(StageDir)\payload\**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="Emulator Workspace" />
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder" />
+    <ComponentGroup Id="Shortcuts" Directory="ShortcutFolder">
+      <Component Id="StartMenuShortcut" Guid="1B0B8C3A-8E3C-4F1E-9C2C-2E3C6D9A44F1">
+        <Shortcut Id="DesktopShortcut"
+                  Name="Emulator Workspace"
+                  Description="Android emulator workspace"
+                  Target="[INSTALLFOLDER]EmulatorWorkspace.Desktop.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\Emulator Workspace"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

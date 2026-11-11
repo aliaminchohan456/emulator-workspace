@@ -1411,7 +1411,8 @@ public sealed class InstanceManager
         return null;
     }
 
-    public async Task<JsonObject> LaunchAsync(string name, string package, CancellationToken cancellationToken)
+    public async Task<JsonObject> LaunchAsync(
+        string name, string package, CancellationToken cancellationToken, int focusWaitSeconds = 20)
     {
         var record = RuntimeFor(name).Record;
 
@@ -1445,12 +1446,63 @@ public sealed class InstanceManager
                 cancellationToken).ConfigureAwait(false);
         }
 
+        // The launch is only useful once the activity is the focused window.
+        // The guest is asked for its focus and its process so a caller can tell
+        // "started but not foreground" from "started and foreground".
+        var focused = "";
+        var processId = "";
+        for (var attempt = 0; attempt < Math.Max(1, focusWaitSeconds); attempt++)
+        {
+            try
+            {
+                focused = await ForegroundAsync(record, cancellationToken).ConfigureAwait(false) ?? "";
+            }
+            catch (Exception)
+            {
+                focused = "";
+            }
+
+            if (focused.Contains(package, StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            try
+            {
+                processId = await _adb.ShellAsync(
+                        record.AdbSerial,
+                        new[] { "pidof", package },
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                processId = processId.Trim();
+            }
+            catch (Exception)
+            {
+                processId = "";
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+
+        var focusedMatches = focused.Contains(package, StringComparison.Ordinal);
+        if (!focusedMatches)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.AppLaunchFailed,
+                $"The application '{package}' started but did not become the focused window "
+                + $"(focused: '{focused}', pid: '{processId}').");
+        }
+
         return new JsonObject
         {
             ["name"] = name,
             ["package"] = package,
             ["component"] = component,
             ["output"] = output,
+            ["started"] = true,
+            ["focused"] = focused,
+            ["focusedMatches"] = focusedMatches,
+            ["pid"] = processId,
         };
     }
 
@@ -1502,6 +1554,369 @@ public sealed class InstanceManager
             ["codePath"] = apkPath,
             ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
         };
+    }
+
+// ------------------------------------------------ developer tooling
+
+    /// <summary>
+    /// Reports the permissions a package requests and holds. The information
+    /// comes from the guest package manager, so it always describes the image
+    /// that is actually running.
+    /// </summary>
+    public async Task<JsonObject> PackagePermissionsAsync(
+        string name, string package, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var dump = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "dumpsys", "package", package },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var requested = new JsonArray();
+        var granted = new JsonArray();
+        var inBlock = string.Empty;
+        foreach (var raw in dump.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.StartsWith("requested permissions:", StringComparison.OrdinalIgnoreCase))
+            {
+                inBlock = "requested";
+                continue;
+            }
+
+            if (line.StartsWith("install permissions:", StringComparison.OrdinalIgnoreCase))
+            {
+                inBlock = "install";
+                continue;
+            }
+
+            if (line.StartsWith("runtime permissions:", StringComparison.OrdinalIgnoreCase))
+            {
+                inBlock = "runtime";
+                continue;
+            }
+
+            if (line.Length == 0)
+            {
+                inBlock = string.Empty;
+                continue;
+            }
+
+            var permission = line.TrimEnd(':', ' ').Trim();
+            if (permission.Length == 0 || !permission.Contains('.', StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var isGranted = line.Contains(": granted=true", StringComparison.OrdinalIgnoreCase);
+            if (isGranted)
+            {
+                granted.Add(permission);
+            }
+
+            if (inBlock is "requested" or "runtime")
+            {
+                requested.Add(permission);
+            }
+        }
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["package"] = package,
+            ["requested"] = requested,
+            ["granted"] = granted,
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Starts a deep link on the guest. The URI is validated first so a
+    /// malformed value never reaches the guest's intent parser.
+    /// </summary>
+    public async Task<JsonObject> DeepLinkAsync(
+        string name, string uri, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(uri))
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "uri is required.");
+        }
+
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest, $"'{uri}' is not an absolute URI.");
+        }
+
+        var record = RuntimeFor(name).Record;
+        var output = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", parsed.AbsoluteUri },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var started = output.Contains("Status: ok", StringComparison.OrdinalIgnoreCase)
+                      || output.Contains("Starting:", StringComparison.OrdinalIgnoreCase);
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["uri"] = parsed.AbsoluteUri,
+            ["scheme"] = parsed.Scheme,
+            ["host"] = parsed.Host,
+            ["started"] = started,
+            ["output"] = output.Trim(),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Runs an instrumentation test on the guest and reports its result. The
+    /// runner is optional; the guest default runner is used when it is omitted.
+    /// </summary>
+    public async Task<JsonObject> InstrumentationAsync(
+        string name, string package, string? runner, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var arguments = new List<string> { "am", "instrument", "-w" };
+        if (!string.IsNullOrWhiteSpace(runner))
+        {
+            arguments.Add(runner);
+        }
+        else
+        {
+            arguments.Add(package);
+        }
+
+        var output = await _adb.ShellAsync(record.AdbSerial, arguments.ToArray(), cancellationToken)
+            .ConfigureAwait(false);
+
+        var failures = 0;
+        var tests = 0;
+        foreach (var line in output.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("INSTRUMENTATION_RESULT:", StringComparison.OrdinalIgnoreCase))
+            {
+                var value = trimmed["INSTRUMENTATION_RESULT:".Length..].Trim();
+                foreach (var token in value.Split(','))
+                {
+                    var pair = token.Split('=', 2);
+                    if (pair.Length != 2)
+                    {
+                        continue;
+                    }
+
+                    if (pair[0].Trim().Equals("numtests", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _ = int.TryParse(pair[1].Trim(), out tests);
+                    }
+                    else if (pair[0].Trim().Equals("numfailures", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _ = int.TryParse(pair[1].Trim(), out failures);
+                    }
+                }
+            }
+        }
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["package"] = package,
+            ["runner"] = runner ?? string.Empty,
+            ["tests"] = tests,
+            ["failures"] = failures,
+            ["passed"] = failures == 0 && tests > 0,
+            ["output"] = output.Trim(),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Exports the guest logcat to a workspace evidence file. The file is
+    /// written under the workspace evidence directory so it never lands in an
+    /// unrelated location.
+    /// </summary>
+    public async Task<JsonObject> LogcatExportAsync(
+        string name, string? tag, int lines, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var arguments = new List<string> { "logcat", "-d" };
+        if (lines > 0)
+        {
+            arguments.Add("-t");
+            arguments.Add(lines.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        if (!string.IsNullOrWhiteSpace(tag))
+        {
+            arguments.Add(tag);
+        }
+
+        var output = await _adb.ShellAsync(record.AdbSerial, arguments.ToArray(), cancellationToken)
+            .ConfigureAwait(false);
+
+        var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var file = Path.Combine(
+            _paths.EvidenceDirectory,
+            $"logcat-{name}-{stamp}.txt");
+        Directory.CreateDirectory(_paths.EvidenceDirectory);
+        await File.WriteAllTextAsync(file, output, cancellationToken).ConfigureAwait(false);
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["artifactPath"] = file,
+            ["bytes"] = new FileInfo(file).Length,
+            ["lines"] = lines,
+            ["tag"] = tag ?? string.Empty,
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Collects the crash and ANR evidence of the guest: the tombstone
+    /// directory, the dropbox crash entries and the ANR traces.
+    /// </summary>
+    public async Task<JsonObject> CrashReportAsync(
+        string name, string? package, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var crashes = new JsonArray();
+        var anrs = new JsonArray();
+
+        var dropbox = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "dumpsys", "dropbox", "--print" },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var current = string.Empty;
+        var buffer = new System.Text.StringBuilder();
+        foreach (var raw in dropbox.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r');
+            if (line.StartsWith("Drop box entry '", StringComparison.Ordinal))
+            {
+                FlushDropbox(buffer, current, package, crashes, anrs);
+                current = line["Drop box entry '".Length..].Split('\'')[0];
+                buffer.Clear();
+                continue;
+            }
+
+            buffer.AppendLine(line);
+        }
+
+        FlushDropbox(buffer, current, package, crashes, anrs);
+
+        var traces = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "ls", "/data/anr" },
+                cancellationToken)
+            .ConfigureAwait(false);
+        foreach (var line in traces.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.Length > 0 && !trimmed.StartsWith("/", StringComparison.Ordinal))
+            {
+                anrs.Add(trimmed);
+            }
+        }
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["package"] = package ?? string.Empty,
+            ["crashes"] = crashes,
+            ["anrs"] = anrs,
+            ["crashCount"] = crashes.Count,
+            ["anrCount"] = anrs.Count,
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    private static void FlushDropbox(
+        System.Text.StringBuilder buffer,
+        string entry,
+        string? package,
+        JsonArray crashes,
+        JsonArray anrs)
+    {
+        if (entry.Length == 0)
+        {
+            return;
+        }
+
+        var kind = entry.Split('_')[0].ToLowerInvariant();
+        if (kind is "crash" or "anr")
+        {
+            var body = buffer.ToString();
+            if (package is null || body.Contains(package, StringComparison.Ordinal)
+                              || entry.Contains(package, StringComparison.OrdinalIgnoreCase))
+            {
+                var item = new JsonObject
+                {
+                    ["entry"] = entry,
+                    ["kind"] = kind,
+                    ["bytes"] = body.Length,
+                    ["excerpt"] = body.Length > 2000 ? body[..2000] : body,
+                };
+                if (kind == "crash")
+                {
+                    crashes.Add(item);
+                }
+                else
+                {
+                    anrs.Add(item);
+                }
+            }
+        }
+
+        buffer.Clear();
+    }
+
+    /// <summary>
+    /// Writes a full bug report of the guest into the workspace evidence
+    /// directory and returns its path and digest.
+    /// </summary>
+    public async Task<JsonObject> BugReportAsync(
+        string name, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        Directory.CreateDirectory(_paths.EvidenceDirectory);
+        var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var file = Path.Combine(_paths.EvidenceDirectory, $"bugreport-{name}-{stamp}.txt");
+
+        var result = await _adb.RunAsync(
+                record.AdbSerial,
+                new[] { "bugreport", file },
+                TimeSpan.FromMinutes(10),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!File.Exists(file))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.Internal,
+                "The bug report was not produced: " + (result.StandardError + result.StandardOutput).Trim());
+        }
+
+        var info = new FileInfo(file);
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["artifactPath"] = file,
+            ["bytes"] = info.Length,
+            ["sha256"] = HashFile(file),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    private static string HashFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
     }
 
     public async Task<JsonObject> ForegroundStatusAsync(string name, CancellationToken cancellationToken)

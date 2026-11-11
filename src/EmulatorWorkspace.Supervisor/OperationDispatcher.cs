@@ -282,11 +282,13 @@ public sealed class OperationDispatcher
             or OperationNames.ObservationTree or OperationNames.LogsRead
             or OperationNames.EventPoll or OperationNames.ArtifactRead or OperationNames.UiAssert
             or OperationNames.InstanceAdbIdentity or OperationNames.RecipeValidate
-            or OperationNames.RecipeExport => AgentService.ScopeObserve,
+            or OperationNames.RecipeExport or OperationNames.LogcatExport
+            or OperationNames.DiagnosticsCrash => AgentService.ScopeObserve,
         OperationNames.InputTap or OperationNames.InputText or OperationNames.InputKey
             or OperationNames.InputSwipe => AgentService.ScopeInput,
         OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground
-        or OperationNames.AppPackageInfo =>
+        or OperationNames.AppPackageInfo or OperationNames.AppPackagePermissions
+        or OperationNames.AppDeepLink or OperationNames.AppInstrumentation =>
             AgentService.ScopeApp,
         OperationNames.InstanceStart or OperationNames.InstanceWait or OperationNames.InstanceStop
             or OperationNames.InstanceRestart or OperationNames.DeviceCreateDisposable =>
@@ -307,7 +309,10 @@ public sealed class OperationDispatcher
         or OperationNames.SnapshotLoad or OperationNames.DeviceCleanup or OperationNames.ArtifactRead
         or OperationNames.DeviceCreateDisposable or OperationNames.InstanceAdbIdentity
         or OperationNames.RecipeReplay or OperationNames.InstanceAdbRoot
-        or OperationNames.InstanceAdbRootState;
+        or OperationNames.InstanceAdbRootState or OperationNames.AppPackagePermissions
+        or OperationNames.AppDeepLink or OperationNames.AppInstrumentation
+        or OperationNames.LogcatExport or OperationNames.DiagnosticsCrash
+        or OperationNames.DiagnosticsBugreport;
 
     private string? TryApprovedApkHash()
     {
@@ -657,20 +662,44 @@ public sealed class OperationDispatcher
                                 {
                                     await DispatchAsync(
                                             OperationNames.AppLaunch,
-                                            new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                            new JsonObject
+                                            {
+                                                ["name"] = session.Instance,
+                                                ["package"] = package,
+                                                ["focusWaitSeconds"] = 45,
+                                            },
                                             sink,
                                             cancellationToken,
                                             session)
                                         .ConfigureAwait(false);
                                 }
-                                catch (SupervisorOperationException)
+                                catch (SupervisorOperationException ex)
                                 {
-                                    // The guest may still be rebooting.
+                                    stepReport["baselineAppLaunchError"] = ex.Code;
                                 }
                             }
 
 
-                            uiReady = await WaitForGuestUiAsync(session, sink, cancellationToken, package, 4)
+                            // The restored guest is relaunched until the fixture
+                            // is the focused window and a fresh hierarchy
+                            // contains its controls.
+                            uiReady = await WaitForGuestUiAsync(
+                                    session,
+                                    sink,
+                                    cancellationToken,
+                                    package,
+                                    30,
+                                    relaunch: () => DispatchAsync(
+                                        OperationNames.AppLaunch,
+                                        new JsonObject
+                                        {
+                                            ["name"] = session.Instance,
+                                            ["package"] = package,
+                                            ["focusWaitSeconds"] = 45,
+                                        },
+                                        sink,
+                                        cancellationToken,
+                                        session))
                                 .ConfigureAwait(false);
                         }
 
@@ -905,7 +934,8 @@ public sealed class OperationDispatcher
         IEventSink sink,
         CancellationToken cancellationToken,
         string? package = null,
-        int attempts = 30)
+        int attempts = 30,
+        Func<Task>? relaunch = null)
     {
         for (var attempt = 0; attempt < attempts; attempt++)
         {
@@ -921,6 +951,20 @@ public sealed class OperationDispatcher
                 var window = foreground?["foreground"]?.GetValue<string>() ?? "";
                 if (!window.Contains(package, StringComparison.Ordinal))
                 {
+                    // A guest that came back from a restore can lose the
+                    // foreground again, so the application is relaunched
+                    // periodically while the wait continues.
+                    if (relaunch is not null && attempt % 10 == 9)
+                    {
+                        try
+                        {
+                            await relaunch().ConfigureAwait(false);
+                        }
+                        catch (SupervisorOperationException)
+                        {
+                        }
+                    }
+
                     await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
@@ -1034,6 +1078,12 @@ public sealed class OperationDispatcher
         {
             var package = expectation["package"]?.GetValue<string>();
             if (string.IsNullOrEmpty(package))
+            {
+                return true;
+            }
+
+            // The launch operation already waited for the resumed state.
+            if (data?["focusedMatches"] is { } matched && matched.GetValue<bool>())
             {
                 return true;
             }
@@ -1303,14 +1353,63 @@ public sealed class OperationDispatcher
             }
 
             case OperationNames.AppLaunch:
+            {
+                var focusWait = Math.Clamp(JsonArgs.Int(args, "focusWaitSeconds") ?? 20, 1, 180);
                 return await _manager.LaunchAsync(
                     name,
                     JsonArgs.String(args, "package") ?? throw new SupervisorOperationException(
                         ErrorCodes.InvalidRequest, "package is required."),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken,
+                    focusWait).ConfigureAwait(false);
+            }
 
             case OperationNames.AppForeground:
                 return await _manager.ForegroundStatusAsync(name, cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.AppPackagePermissions:
+            {
+                var package = JsonArgs.String(args, "package") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "package is required.");
+                return await _manager.PackagePermissionsAsync(name, package, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            case OperationNames.AppDeepLink:
+            {
+                var uri = JsonArgs.String(args, "uri") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "uri is required.");
+                return await _manager.DeepLinkAsync(name, uri, cancellationToken).ConfigureAwait(false);
+            }
+
+            case OperationNames.AppInstrumentation:
+            {
+                var package = JsonArgs.String(args, "package") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "package is required.");
+                return await _manager.InstrumentationAsync(
+                    name,
+                    package,
+                    JsonArgs.String(args, "runner"),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            case OperationNames.LogcatExport:
+            {
+                var lines = JsonArgs.Int(args, "lines") ?? 500;
+                return await _manager.LogcatExportAsync(
+                    name,
+                    JsonArgs.String(args, "tag"),
+                    Math.Clamp(lines, 1, 20000),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            case OperationNames.DiagnosticsCrash:
+                return await _manager.CrashReportAsync(
+                    name,
+                    JsonArgs.String(args, "package"),
+                    cancellationToken).ConfigureAwait(false);
+
+            case OperationNames.DiagnosticsBugreport:
+                return await _manager.BugReportAsync(name, cancellationToken).ConfigureAwait(false);
 
             case OperationNames.LogcatSubscribe:
             {

@@ -259,6 +259,26 @@
                                     Command="{Binding ColdBootCommand}" />
                         </StackPanel>
 
+
+                        <Separator />
+
+                        <TextBlock Text="Root Lab" Style="{StaticResource H1}" FontSize="14" />
+                        <TextBlock Text="{Binding AdbRootState}" Style="{StaticResource Mono}" TextWrapping="Wrap"
+                                   Margin="0,4,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="ADB root" Style="{StaticResource ToolButton}"
+                                    Command="{Binding AdbRootCommand}"
+                                    AutomationProperties.Name="ADB root" />
+                            <Button Content="ADB unroot" Style="{StaticResource ToolButton}" Margin="6,0,0,0"
+                                    Command="{Binding AdbUnrootCommand}"
+                                    AutomationProperties.Name="ADB unroot" />
+                            <Button Content="Refresh" Style="{StaticResource ToolButton}" Margin="6,0,0,0"
+                                    Command="{Binding RefreshAdbStateCommand}"
+                                    AutomationProperties.Name="Refresh ADB daemon state" />
+                        </StackPanel>
+                        <TextBlock Text="ADB root and unroot apply to the selected lab guest only."
+                                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
                         <TextBlock Text="{Binding SelectedDevice.LastError}" Foreground="{DynamicResource Danger}"
                                    TextWrapping="Wrap" Margin="0,8,0,0" />
                     </StackPanel>
