@@ -309,6 +309,12 @@ internal static class SupervisorCommands
                 op = OperationNames.InstanceAdbRootState;
                 requestArgs["name"] = name;
                 break;
+            case "package-info":
+                op = OperationNames.AppPackageInfo;
+                requestArgs["name"] = name;
+                requestArgs["package"] = args.Optional("package")
+                    ?? throw new ArgumentException("--package is required.");
+                break;
             case "package-permissions":
                 op = OperationNames.AppPackagePermissions;
                 requestArgs["name"] = name;
@@ -506,7 +512,9 @@ internal static class SupervisorCommands
 
                 var approvalCode = args.Optional("approval");
                 if (!string.IsNullOrEmpty(approvalCode)) { requestArgs["approval"] = approvalCode; }
-                deadline = TimeSpan.FromMinutes(15);
+                // A replay restores a baseline, which can fall back to a cold
+                // boot, so the client deadline is generous.
+                deadline = TimeSpan.FromMinutes(30);
                 break;
             case "snapshot-save":
             case "snapshot-load":

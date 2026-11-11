@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Emulator Workspace"
            Manufacturer="Emulator Workspace"
            Version="$(ProductVersion)"
@@ -28,7 +29,7 @@
       <ComponentGroupRef Id="Shortcuts" />
     </Feature>
 
-    <ui:WixUI xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui" Id="WixUI_FeatureTree" />
+    <ui:WixUI Id="WixUI_FeatureTree" />
   </Package>
 
   <Fragment>
@@ -39,7 +40,7 @@
 
   <Fragment>
     <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
-      <Files Include="$(StageDir)\payload\**" />
+      <Files Include="payload\**" />
     </ComponentGroup>
   </Fragment>
 

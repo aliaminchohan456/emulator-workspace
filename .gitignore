@@ -13,3 +13,7 @@ TestResults/
 __pycache__/
 *.pyc
 node_modules/
+
+packaging/payload/
+packaging/obj/
+packaging/bin/

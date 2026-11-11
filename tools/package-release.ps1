@@ -53,7 +53,8 @@ Write-Host "  commit  : $commit"
 Write-Host "  stage   : $StageDir"
 Write-Host "  release : $releaseDir"
 
-function Publish-App([string]$project, [string]$assembly, [bool]$selfContained) {
+function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfContained) {
+    $project = Join-Path $repo $projectDirectory
     $arguments = @(
         "publish", $project,
         "-c", $Configuration,
@@ -69,17 +70,34 @@ function Publish-App([string]$project, [string]$assembly, [bool]$selfContained) 
     Write-Host "  publishing $assembly"
     & dotnet @arguments
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $project" }
-    $source = Join-Path $repo "src\$project\bin\$Configuration\$Runtime\$assembly"
-    if (-not (Test-Path $source)) {
-        $source = Join-Path $repo "src\$project\bin\$Configuration\$Runtime\$($assembly -replace '\.exe$','.dll')"
+    # The publish output is in the runtime-specific publish directory. The
+    # target framework is part of the path, so the directory is discovered
+    # instead of being assumed.
+    $candidates = New-Object System.Collections.ArrayList
+    foreach ($pattern in @(
+            "bin\$Configuration\*\$Runtime\publish",
+            "bin\$Configuration\$Runtime\publish",
+            "bin\$Configuration\$Runtime",
+            "bin\$Configuration")) {
+        foreach ($found in (Get-ChildItem -Path (Join-Path $project $pattern) -Directory -ErrorAction SilentlyContinue)) {
+            [void]$candidates.Add($found.FullName)
+        }
     }
-    if (-not (Test-Path $source)) { throw "The publish output for $assembly was not found." }
+
+    $source = $null
+    foreach ($candidate in $candidates) {
+        if (Test-Path (Join-Path $candidate $assembly)) {
+            $source = $candidate
+            break
+        }
+    }
+    if (-not $source) { throw "The publish output for $assembly was not found." }
     Copy-Item (Join-Path $source "*") $payload -Recurse -Force
 }
 
-Publish-App "src\EmulatorWorkspace.Desktop\EmulatorWorkspace.Desktop.csproj" "EmulatorWorkspace.Desktop.exe" $true
-Publish-App "src\EmulatorWorkspace.Supervisor\EmulatorWorkspace.Supervisor.csproj" "EmulatorWorkspace.Supervisor.exe" $true
-Publish-App "src\EmulatorWorkspace.Cli\EmulatorWorkspace.Cli.csproj" "wsctl.exe" $false
+Publish-App "src\EmulatorWorkspace.Desktop" "EmulatorWorkspace.Desktop.exe" $true
+Publish-App "src\EmulatorWorkspace.Supervisor" "EmulatorWorkspace.Supervisor.exe" $true
+Publish-App "src\EmulatorWorkspace.Cli" "wsctl.exe" $true
 
 # The sample fixture belongs to the product: the desktop installs it as the
 # approved package.
@@ -218,17 +236,29 @@ if (-not $SkipInstaller) {
     }
     if ($wix) {
         Write-Host "  building the MSI"
+        # The installer harvests the payload from a directory next to the
+        # project, so the harvest is relative and always resolves.
+        $harvest = Join-Path $repo "packaging\payload"
+        Remove-Item $harvest -Recurse -Force -ErrorAction SilentlyContinue
+        Copy-Item $payload $harvest -Recurse -Force
+        # The harvest is an input to the installer, so the previous build is
+        # discarded; otherwise MSBuild would reuse the old package.
+        Remove-Item (Join-Path $repo "packaging\obj") -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $repo "packaging\bin") -Recurse -Force -ErrorAction SilentlyContinue
+        # The WiX project is built through MSBuild, which carries the version
+        # and the output directory as properties.
         $wixArgs = @(
             "build",
             (Join-Path $repo "packaging\Product.wixproj"),
-            "-arch", "x64",
-            "-d", "StageDir=$StageDir",
-            "-d", "VersionPrefix=$Version",
-            "-o", (Join-Path $releaseDir "EmulatorWorkspace-$Version.msi")
+            "-c", "Release",
+            "-p:PkgVersion=$Version",
+            "-p:OutputDir=$releaseDir\"
         )
-        & $wix.Source @wixArgs
-        if ($LASTEXITCODE -ne 0) { throw "wix build failed with exit code $LASTEXITCODE" }
+        & dotnet @wixArgs
+        if ($LASTEXITCODE -ne 0) { throw "the installer build failed with exit code $LASTEXITCODE" }
+        $built = Join-Path $releaseDir "EmulatorWorkspace.msi"
         $msiPath = Join-Path $releaseDir "EmulatorWorkspace-$Version.msi"
+        if (Test-Path $built) { Move-Item $built $msiPath -Force }
     }
     else {
         Write-Warning "wix was not found; the installer was not built."

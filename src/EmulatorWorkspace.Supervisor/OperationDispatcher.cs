@@ -547,155 +547,83 @@ public sealed class OperationDispatcher
                         // to the recorded state and must be brought back here.
                         var relaunchNeeded = RecipeService.NeedsFixtureRelaunch(steps, stepIndex);
                         var uiReady = !relaunchNeeded;
-                        for (var attempt = 0; relaunchNeeded && attempt < 10 && !uiReady; attempt++)
+                        if (relaunchNeeded)
                         {
-                            if (!string.IsNullOrEmpty(package))
+                            // A restore can revert the guest's userdata, so the
+                            // fixture recorded before the baseline may no longer
+                            // be installed. The recipe's own install step is
+                            // re-executed once, honouring the recorded order.
+                            var installStep = steps
+                                .Take(stepIndex)
+                                .OfType<JsonObject>()
+                                .LastOrDefault(step => step["op"]?.GetValue<string>() == "app.install");
+                            if (installStep is not null && !string.IsNullOrEmpty(package))
                             {
-                                // A restore can revert the guest's userdata, so
-                                // the fixture recorded before the baseline may no
-                                // longer be installed. The recipe's own install
-                                // step is re-executed before the readiness check,
-                                // honouring the recorded ordering.
-                                var installStep = steps
-                                    .Take(stepIndex)
-                                    .OfType<JsonObject>()
-                                    .LastOrDefault(step => step["op"]?.GetValue<string>() == "app.install");
-                                if (installStep is not null)
-                                {
-                                    // The package manager of a guest that just
-                                    // rebooted is not ready; the install waits
-                                    // for it instead of blocking on the device.
-                                    var packageManagerReady = false;
-                                    for (var probe = 0; probe < 20 && !packageManagerReady; probe++)
-                                    {
-                                        try
-                                        {
-                                            await DispatchAsync(
-                                                    OperationNames.AppPackageInfo,
-                                                    new JsonObject { ["name"] = session.Instance, ["package"] = package ?? "dev.emulatorworkspace.sample" },
-                                                    sink,
-                                                    cancellationToken,
-                                                    session)
-                                                .ConfigureAwait(false);
-                                            packageManagerReady = true;
-                                        }
-                                        catch (Exception)
-                                        {
-                                            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken)
-                                                .ConfigureAwait(false);
-                                        }
-                                    }
-
-                                    stepReport["packageManagerReady"] = packageManagerReady;
-                                    if (packageManagerReady)
-                                    {
-                                        var installArgs = RecipeService.ResolveRuntime(
-                                            installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
-                                        installArgs["name"] = session.Instance;
-                                        try
-                                        {
-                                            await DispatchAsync(
-                                                    OperationNames.AppInstall,
-                                                    installArgs,
-                                                    sink,
-                                                    cancellationToken,
-                                                    session)
-                                                .ConfigureAwait(false);
-                                            stepReport["baselineAppReinstalled"] = true;
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            stepReport["baselineAppReinstallError"] = ex.Message;
-                                        }
-                                    }
-                                }
-
-                                // The package manager of a restored guest needs a
-                                // moment, so the check is bounded instead of
-                                // asserted once.
-                                var installed = false;
-                                for (var probe = 0; probe < 20 && !installed; probe++)
+                                // The package manager of a guest that just
+                                // rebooted is not ready; the install waits for
+                                // it instead of blocking on the device.
+                                var packageManagerReady = false;
+                                for (var probe = 0; probe < 20 && !packageManagerReady; probe++)
                                 {
                                     try
                                     {
-                                        var info = await DispatchAsync(
+                                        await DispatchAsync(
                                                 OperationNames.AppPackageInfo,
                                                 new JsonObject { ["name"] = session.Instance, ["package"] = package },
                                                 sink,
                                                 cancellationToken,
                                                 session)
-                                            .ConfigureAwait(false) as JsonObject;
-                                        installed = info?["installed"] is { } flag && flag.GetValue<bool>();
+                                            .ConfigureAwait(false);
+                                        packageManagerReady = true;
                                     }
-                                    catch (SupervisorOperationException)
-                                    {
-                                        // The guest is still coming back.
-                                    }
-
-                                    if (!installed)
+                                    catch (Exception)
                                     {
                                         await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken)
                                             .ConfigureAwait(false);
                                     }
                                 }
 
-                                if (!installed)
+                                stepReport["packageManagerReady"] = packageManagerReady;
+                                if (packageManagerReady)
                                 {
-                                    stepReport["result"] = "baseline_not_verified";
-                                    stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
-                                    stepReport["message"] =
-                                        $"The fixture package '{package}' is not installed on the restored guest.";
-                                    stepReport["durationMs"] =
-                                        (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
-                                    stepReports.Add(stepReport);
-                                    failed = true;
-                                    report["steps"] = stepReports;
-                                    report["failed"] = failed;
-                                    report["baselineVerified"] = false;
-                                    report["recovery"] = recovery;
-                                    report["networkRestored"] = "not_required";
-                                    report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
-                                    return report;
-                                }
-
-                                try
-                                {
-                                    await DispatchAsync(
-                                            OperationNames.AppLaunch,
-                                            new JsonObject
-                                            {
-                                                ["name"] = session.Instance,
-                                                ["package"] = package,
-                                                ["focusWaitSeconds"] = 45,
-                                            },
-                                            sink,
-                                            cancellationToken,
-                                            session)
-                                        .ConfigureAwait(false);
-                                }
-                                catch (SupervisorOperationException ex)
-                                {
-                                    stepReport["baselineAppLaunchError"] = ex.Code;
+                                    var installArgs = RecipeService.ResolveRuntime(
+                                        installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
+                                    installArgs["name"] = session.Instance;
+                                    try
+                                    {
+                                        await DispatchAsync(
+                                                OperationNames.AppInstall,
+                                                installArgs,
+                                                sink,
+                                                cancellationToken,
+                                                session)
+                                            .ConfigureAwait(false);
+                                        stepReport["baselineAppReinstalled"] = true;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        stepReport["baselineAppReinstallError"] = ex.Message;
+                                    }
                                 }
                             }
 
-
                             // The restored guest is relaunched until the fixture
                             // is the focused window and a fresh hierarchy
-                            // contains its controls.
+                            // contains its controls. The whole wait has one
+                            // budget so a replay never exceeds the deadline.
                             uiReady = await WaitForGuestUiAsync(
                                     session,
                                     sink,
                                     cancellationToken,
                                     package,
-                                    30,
+                                    attempts: 20,
                                     relaunch: () => DispatchAsync(
                                         OperationNames.AppLaunch,
                                         new JsonObject
                                         {
                                             ["name"] = session.Instance,
                                             ["package"] = package,
-                                            ["focusWaitSeconds"] = 45,
+                                            ["focusWaitSeconds"] = 20,
                                         },
                                         sink,
                                         cancellationToken,

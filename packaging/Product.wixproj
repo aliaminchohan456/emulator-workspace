@@ -6,25 +6,23 @@
     <InstallerPlatform>x64</InstallerPlatform>
     <ProductName>Emulator Workspace</ProductName>
     <Manufacturer>Emulator Workspace</Manufacturer>
-    <Version Condition="$(VersionPrefix) != ''">$(VersionPrefix)</Version>
-    <Version Condition="$(VersionPrefix) == ''">0.1.0</Version>
     <Copyright>Copyright (c) Emulator Workspace contributors</Copyright>
     <PackageId>EmulatorWorkspace</PackageId>
-    <InstallerPlatform>x64</InstallerPlatform>
-    <DefineConstants>ProductVersion=$(Version);StageDir=$(StageDir)</DefineConstants>
     <SuppressIces>ICE61</SuppressIces>
-    <OutputPath>$(StageDir)\</OutputPath>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <OutputPath>$(OutputDir)\</OutputPath>
     <IntermediateOutputPath>$(StageDir)\obj\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(StageDir)\obj\</BaseIntermediateOutputPath>
-    <EnableDefaultItems>false</EnableDefaultItems>
+    <DefineConstants>ProductVersion=$(PkgVersion)</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <Payload Include="$(StageDir)\payload\**" />
+    <Compile Include="Product.wxs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Product.wxs" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
   </ItemGroup>
 
 </Project>

@@ -460,7 +460,7 @@ try {
     Set-Content -Path $runtimeFile -Value '{"login_user":"qa-user","login_pass":"qa-secret"}' -Encoding UTF8
     $approval = Invoke-Ws @("agent-approve-action", "--session", $replay.session, "--operation", "snapshot.load", "--root", $Root)
     $approvalCode = (Parse-Json $approval.Text).code
-    $replayRun = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", $approvalCode, "--root", $Root) -AllowFailure
+    $replayRun = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", $approvalCode, "--root", $Root) -AllowFailure -timeoutSeconds 2400
     Save-Text "recipe-replay.json" $replayRun.Text
     $replayJson = Parse-Json $replayRun.Text
     Add-Check "replay" "completed" ($replayRun.Code -eq 0 -and $replayJson.failed -eq $false) `
@@ -504,7 +504,7 @@ try {
     Add-Check "interrupt" "guest-reestablished" ($reboundIdentity.serial -eq $identityReplay.serial) "serial=$($reboundIdentity.serial)"
 
     $approval3 = Invoke-Ws @("agent-approve-action", "--session", $replay.session, "--operation", "snapshot.load", "--root", $Root)
-    $retry = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", (Parse-Json $approval3.Text).code, "--root", $Root) -AllowFailure
+    $retry = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", (Parse-Json $approval3.Text).code, "--root", $Root) -AllowFailure -timeoutSeconds 2400
     Save-Text "recipe-retry.json" $retry.Text
     $retryJson = Parse-Json $retry.Text
     Add-Check "interrupt" "safe-retry" ($retry.Code -eq 0 -and $retryJson.failed -eq $false) "the recipe replays cleanly after the interruption"
