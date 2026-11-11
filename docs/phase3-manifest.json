@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "a844bd2",
-  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M src/EmulatorWorkspace.Cli/SupervisorCommands.cs\n M src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs\n M src/EmulatorWorkspace.Core/Supervisor/RecipeService.cs\n M src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs\n M task.md\n M tests/EmulatorWorkspace.Tests/RecipeTests.cs",
+  "headCommit": "89a09c7",
+  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M src/EmulatorWorkspace.Cli/SupervisorCommands.cs\n M src/EmulatorWorkspace.Contracts/SupervisorProtocol.cs\n M src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs\n M src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs\n M tools/build-phase3-manifest.py\n?? tools/root-lab-acceptance.ps1",
   "runs": [
     {
       "kind": "phase3",
@@ -25323,6 +25323,387 @@
           "name": "transcript.txt",
           "bytes": 1064,
           "sha256": "7306b5b3c2eabd4c4f586aed447bedb420918a924b99f6c63431a09b667e7c90"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261111-222145",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222145",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 0,
+      "lanes": {},
+      "artifacts": [
+        {
+          "name": "transcript.txt",
+          "bytes": 195,
+          "sha256": "c70fd0c2175d115931ccdb468bbecb7cf18d3460a5abeb1af8b021ae50eadedf"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261111-222312",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222312",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 1,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The term 'Save-Text' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was inc",
+              "atUtc": "2026-11-11T17:24:16.6461997Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "transcript.txt",
+          "bytes": 441,
+          "sha256": "0fb0565b25e0fc7b519daaa81c6a755b6cb5930f0855ca3f7b4084a7d7f58299"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261111-222437",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222437",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 10,
+      "lanes": {
+        "state-initial": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-initial",
+              "passed": true,
+              "detail": "uid=2000 buildType=userdebug transport=295",
+              "atUtc": "2026-11-11T17:25:42.3581614Z"
+            }
+          ]
+        },
+        "root-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "root-transition",
+              "passed": true,
+              "detail": "uid 2000 -> 0",
+              "atUtc": "2026-11-11T17:25:45.1117843Z"
+            }
+          ]
+        },
+        "transport-reattached": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "transport-reattached",
+              "passed": true,
+              "detail": "transport 295 -> 296",
+              "atUtc": "2026-11-11T17:25:45.1225014Z"
+            }
+          ]
+        },
+        "state-after-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-root",
+              "passed": true,
+              "detail": "uid=0",
+              "atUtc": "2026-11-11T17:25:46.0569222Z"
+            }
+          ]
+        },
+        "unroot-transition": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "unroot-transition",
+              "passed": false,
+              "detail": "uid 0 -> ",
+              "atUtc": "2026-11-11T17:25:47.6559211Z"
+            }
+          ]
+        },
+        "state-after-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-boot",
+              "passed": true,
+              "detail": "uid=2000",
+              "atUtc": "2026-11-11T17:26:38.6513978Z"
+            }
+          ]
+        },
+        "snapshot-saved": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-saved",
+              "passed": true,
+              "detail": "snapshot save rootlab-5642 tag=rootlab-base via=adb in 3.58s",
+              "atUtc": "2026-11-11T17:26:42.8222988Z"
+            }
+          ]
+        },
+        "snapshot-restored": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-restored",
+              "passed": true,
+              "detail": "snapshot load rootlab-5642 tag=rootlab-base via=adb in 4.46s",
+              "atUtc": "2026-11-11T17:26:47.9814526Z"
+            }
+          ]
+        },
+        "state-after-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-restore",
+              "passed": true,
+              "detail": "uid=2000 transport=300",
+              "atUtc": "2026-11-11T17:26:48.9614441Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-11T17:26:59.9072003Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "root.json",
+          "bytes": 338,
+          "sha256": "2397478dac526194267f251035d7d0c45b6a416cf2a5fdcd5f0a50c8778155f9"
+        },
+        {
+          "name": "state-initial.json",
+          "bytes": 267,
+          "sha256": "3460ec0f0dbe39a8e24e902ad57cf95bc97b1ed4a3ea16f4c79abc0f03862dba"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 813,
+          "sha256": "c0dd745161d6a92f3975b3a64671583597df24ba3b6447e0af0bca3b4f23995e"
+        },
+        {
+          "name": "unroot.json",
+          "bytes": 354,
+          "sha256": "e7031759f0a860492198e55798cf81fcfe076e391e90418d9d005c7a50694f4d"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261111-222756",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222756",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 10,
+      "lanes": {
+        "state-initial": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-initial",
+              "passed": true,
+              "detail": "uid=2000 buildType=userdebug transport=301",
+              "atUtc": "2026-11-11T17:29:22.9825948Z"
+            }
+          ]
+        },
+        "root-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "root-transition",
+              "passed": true,
+              "detail": "uid 2000 -> 0",
+              "atUtc": "2026-11-11T17:29:26.0357064Z"
+            }
+          ]
+        },
+        "transport-reattached": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "transport-reattached",
+              "passed": true,
+              "detail": "transport 301 -> 302",
+              "atUtc": "2026-11-11T17:29:26.0448415Z"
+            }
+          ]
+        },
+        "state-after-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-root",
+              "passed": true,
+              "detail": "uid=0",
+              "atUtc": "2026-11-11T17:29:26.8810192Z"
+            }
+          ]
+        },
+        "unroot-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "unroot-transition",
+              "passed": true,
+              "detail": "uid 0 -> 2000",
+              "atUtc": "2026-11-11T17:29:29.0082588Z"
+            }
+          ]
+        },
+        "state-after-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-boot",
+              "passed": true,
+              "detail": "uid=2000",
+              "atUtc": "2026-11-11T17:30:20.6989785Z"
+            }
+          ]
+        },
+        "snapshot-saved": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-saved",
+              "passed": true,
+              "detail": "snapshot save rootlab-3600 tag=rootlab-base via=adb in 3.42s",
+              "atUtc": "2026-11-11T17:30:24.6824590Z"
+            }
+          ]
+        },
+        "snapshot-restored": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-restored",
+              "passed": true,
+              "detail": "snapshot load rootlab-3600 tag=rootlab-base via=adb in 4.23s",
+              "atUtc": "2026-11-11T17:30:33.3128729Z"
+            }
+          ]
+        },
+        "state-after-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-restore",
+              "passed": true,
+              "detail": "uid=2000 transport=306",
+              "atUtc": "2026-11-11T17:30:34.9247880Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-11T17:30:45.7766331Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "root.json",
+          "bytes": 315,
+          "sha256": "80ad8ec1b1452fbd018b9bdd44d7ff181923b1f9fd23216da7be546609b53725"
+        },
+        {
+          "name": "state-initial.json",
+          "bytes": 267,
+          "sha256": "0c052cff2abe03ca76f01aca9644b42790f15374f9cec0000b3914106e8c7508"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 817,
+          "sha256": "36119e5abf5d99cc1c22e95faf1285f87a2a99816fb6131886e33404b27de4f7"
+        },
+        {
+          "name": "unroot.json",
+          "bytes": 345,
+          "sha256": "38889b0a97f14c54178bb192ae59d9c17cb2548eb351bb7e45b0ede466a8fca5"
         }
       ]
     }

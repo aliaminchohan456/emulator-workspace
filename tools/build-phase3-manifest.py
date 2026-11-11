@@ -99,7 +99,7 @@ def main() -> int:
         if entry is not None:
             runs.append(entry)
 
-    for kind, folder in (("recipe", "recipe"), ("import", "import")):
+    for kind, folder in (("recipe", "recipe"), ("import", "import"), ("rootlab", "rootlab")):
         root = artifacts / folder
         if not root.exists():
             continue

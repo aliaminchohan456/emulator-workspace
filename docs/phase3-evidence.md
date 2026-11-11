@@ -345,6 +345,34 @@ Validation refuses a source that already belongs to the workspace, a source
 without `config.ini`, a missing source, and a source that contains links or
 Windows reparse points; five unit tests cover those paths.
 
+### Root Lab: ADB daemon workflow — `tools/root-lab-acceptance.ps1`
+
+Run `20261111-222756`: **12 checks, 0 failures**.
+
+| Check | Result |
+| --- | --- |
+| state-initial | `uid=2000`, `ro.build.type=userdebug`, transport 301 |
+| root-transition | `uid 2000 -> 0` on the exact managed guest |
+| transport-reattached | the transport id changed 301 -> 302 because adbd restarted |
+| state-after-root | the state refresh reports `uid=0` |
+| unroot-transition | `uid 0 -> 2000` |
+| state-after-boot | after a restart the daemon is unprivileged again (`uid=2000`) |
+| snapshot-saved / snapshot-restored | the named snapshot round-trips on the lab guest |
+| state-after-restore | the state refresh reports `uid=2000`, transport 306 |
+| cleanup | the lab guest is removed |
+
+The operations are `wsctl adb-root`, `wsctl adb-unroot` and
+`wsctl adb-root-state` (supervisor ops `instance.adbRoot`,
+`instance.adbRootState`). They are scoped to one managed guest by its exact ADB
+serial, refuse an image that cannot run adbd as root with the typed
+`capability_unavailable` error, and re-read the effective user instead of
+trusting the command output.
+
+Magisk itself is still blocked on an external prerequisite: a Linux builder for
+the pinned AOSP/Magisk sources, or a stock Magisk ramdisk proven compatible with
+the pinned image. The Phase 0 probe already demonstrated ramdisk substitution on
+this host, so the workflow exists; only the source-built profile is missing.
+
 ## Remaining gaps
 
 | Item | State | Next action |

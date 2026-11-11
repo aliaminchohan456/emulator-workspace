@@ -1269,6 +1269,148 @@ public sealed class InstanceManager
         }
     }
 
+/// <summary>
+    /// Switches the ADB daemon of a lab guest between the unprivileged and the
+    /// root user and reports the effective UID before and after. The transport
+    /// is re-verified because "adb root" restarts adbd.
+    /// </summary>
+    public async Task<JsonObject> SetAdbRootAsync(
+        string name, bool root, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var buildType = (await _adb.GetPropAsync(record.AdbSerial, "ro.build.type", cancellationToken)
+            .ConfigureAwait(false)).Trim();
+        var state = await AdbRootStateAsync(name, cancellationToken).ConfigureAwait(false);
+        if (!state["rootCapable"]!.GetValue<bool>())
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.CapabilityUnavailable,
+                $"The image '{record.ImagePackage}' (ro.build.type={buildType}) is not a userdebug build, "
+                + "so the ADB daemon cannot run as root.");
+        }
+
+        var before = state["uid"]!.GetValue<string>();
+        var output = await _adb.RunAsync(
+                record.AdbSerial,
+                new[] { root ? "root" : "unroot" },
+                TimeSpan.FromSeconds(60),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        // adbd restarts, so the transport is re-acquired and the effective UID
+        // is read again before the result is reported.
+        string? after = null;
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            after = await ReadAdbUidAsync(record, cancellationToken).ConfigureAwait(false);
+            if (after is not null
+                && (!after.Equals(before, StringComparison.Ordinal)
+                    || after.Equals(root ? "0" : "2000", StringComparison.Ordinal)))
+            {
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+
+        after ??= before;
+
+        var refreshed = await AdbRootStateAsync(name, cancellationToken).ConfigureAwait(false);
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["serial"] = record.AdbSerial,
+            ["requested"] = root ? "root" : "unroot",
+            ["buildType"] = buildType,
+            ["uidBefore"] = before,
+            ["uidAfter"] = refreshed["uid"]!.DeepClone(),
+            ["effectiveRoot"] = refreshed["uid"]!.GetValue<string>() == "0",
+            ["transportId"] = refreshed["transportId"]?.DeepClone(),
+            ["output"] = (output.StandardOutput + output.StandardError).Trim(),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>Reports the ADB daemon identity of a managed guest.</summary>
+    public async Task<JsonObject> AdbRootStateAsync(string name, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var buildType = (await _adb.GetPropAsync(record.AdbSerial, "ro.build.type", cancellationToken)
+            .ConfigureAwait(false)).Trim();
+        var uid = await ReadAdbUidAsync(record, cancellationToken).ConfigureAwait(false);
+        if (uid is null)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                $"The ADB transport of '{name}' did not report an effective user.");
+        }
+
+        var listing = await _adb.ListDevicesAsync(cancellationToken).ConfigureAwait(false);
+        string? transportId = null;
+        foreach (var line in listing.Split('\n'))
+        {
+            var parts = line.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2 || !parts[0].Equals(record.AdbSerial, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach (var token in parts.Skip(2))
+            {
+                if (token.StartsWith("transport_id:", StringComparison.OrdinalIgnoreCase))
+                {
+                    transportId = token["transport_id:".Length..];
+                }
+            }
+
+            break;
+        }
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["serial"] = record.AdbSerial,
+            ["uid"] = uid,
+            ["effectiveRoot"] = uid == "0",
+            ["rootCapable"] = buildType.Contains("userdebug", StringComparison.OrdinalIgnoreCase)
+                               || buildType.Contains("eng", StringComparison.OrdinalIgnoreCase),
+            ["buildType"] = buildType,
+            ["transportId"] = transportId,
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Reads the effective ADB daemon user. A response that cannot be parsed
+    /// (the daemon is restarting) returns null instead of a wrong value.
+    /// </summary>
+    private async Task<string?> ReadAdbUidAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        string output;
+        try
+        {
+            output = await _adb.ShellAsync(record.AdbSerial, new[] { "id" }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        foreach (var token in output.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (!token.StartsWith("uid=", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var value = token[4..].Split('(')[0];
+            return int.TryParse(value, out _) ? value : null;
+        }
+
+        return null;
+    }
+
     public async Task<JsonObject> LaunchAsync(string name, string package, CancellationToken cancellationToken)
     {
         var record = RuntimeFor(name).Record;

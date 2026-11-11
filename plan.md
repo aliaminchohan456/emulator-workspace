@@ -188,6 +188,13 @@ manager and re-runs the recorded install, and the baseline is verified against
 the recipe's first targeted control. The one open check is the retry after an
 interrupted replay.
 
+The Root Lab ADB daemon workflow is implemented and verified on the pinned
+userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 12 of 12 checks):
+the targeted UID transition 2000 → 0 → 2000, the transport reattachment after
+adbd restarts, and the state refresh after a boot and after a snapshot restore.
+The WPF Root Lab surface and the Magisk profile remain; the Magisk profile needs
+a Linux builder (or a stock ramdisk proven compatible with the pinned image).
+
 ## Phase 2 outcomes and blockers
 
 - Protocol 1 envelopes gained an opaque session credential and idempotency key;

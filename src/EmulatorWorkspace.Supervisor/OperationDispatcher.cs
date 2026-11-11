@@ -306,7 +306,8 @@ public sealed class OperationDispatcher
         or OperationNames.EventPoll or OperationNames.NetworkProfile or OperationNames.SnapshotSave
         or OperationNames.SnapshotLoad or OperationNames.DeviceCleanup or OperationNames.ArtifactRead
         or OperationNames.DeviceCreateDisposable or OperationNames.InstanceAdbIdentity
-        or OperationNames.RecipeReplay;
+        or OperationNames.RecipeReplay or OperationNames.InstanceAdbRoot
+        or OperationNames.InstanceAdbRootState;
 
     private string? TryApprovedApkHash()
     {
@@ -1528,6 +1529,15 @@ public sealed class OperationDispatcher
                 return await _manager.BatteryAsync(name, level, charging, cancellationToken)
                     .ConfigureAwait(false);
             }
+
+            case OperationNames.InstanceAdbRoot:
+            {
+                var root = JsonArgs.Bool(args, "root", true);
+                return await _manager.SetAdbRootAsync(name, root, cancellationToken).ConfigureAwait(false);
+            }
+
+            case OperationNames.InstanceAdbRootState:
+                return await _manager.AdbRootStateAsync(name, cancellationToken).ConfigureAwait(false);
 
             case OperationNames.InstanceAdbIdentity:
                 return await _manager.AdbIdentityAsync(name, cancellationToken).ConfigureAwait(false);

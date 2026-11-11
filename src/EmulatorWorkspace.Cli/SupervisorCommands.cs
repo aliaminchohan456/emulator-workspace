@@ -298,6 +298,17 @@ internal static class SupervisorCommands
                 op = OperationNames.InstanceReset;
                 requestArgs["name"] = name;
                 break;
+            case "adb-root":
+            case "adb-unroot":
+                op = OperationNames.InstanceAdbRoot;
+                requestArgs["name"] = name;
+                requestArgs["root"] = command == "adb-root";
+                deadline = TimeSpan.FromMinutes(3);
+                break;
+            case "adb-root-state":
+                op = OperationNames.InstanceAdbRootState;
+                requestArgs["name"] = name;
+                break;
             case "install-apks":
             {
                 // A targeted APK-set deployment: the device is resolved from a

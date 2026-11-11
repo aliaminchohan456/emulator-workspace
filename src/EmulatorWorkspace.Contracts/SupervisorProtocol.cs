@@ -130,6 +130,8 @@ public static class OperationNames
     public const string InstanceWait = "instance.wait";
     public const string InstanceDelete = "instance.delete";
     public const string InstanceAdbIdentity = "instance.adbIdentity";
+    public const string InstanceAdbRoot = "instance.adbRoot";
+    public const string InstanceAdbRootState = "instance.adbRootState";
     public const string InstanceDuplicate = "instance.duplicate";
     public const string InstanceReset = "instance.reset";
     public const string InstanceProfileExport = "instance.profileExport";
