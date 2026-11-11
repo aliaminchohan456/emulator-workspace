@@ -85,28 +85,29 @@ def main() -> int:
 
     for kind, folder in (("recipe", "recipe"), ("import", "import")):
         recipe_root = artifacts / folder
-    if recipe_root.exists():
-        for directory in sorted([p for p in recipe_root.iterdir() if p.is_dir()]):
-            summary_path = directory / "summary.json"
-            if not summary_path.exists():
-                continue
-            summary = read_json(summary_path)
-            versions_path = directory / "versions.json"
-            versions = read_json(versions_path) if versions_path.exists() else {}
-            runs.append({
-                "kind": kind,
-                "runId": summary.get("runId"),
-                "rawArtifactRoot": str(directory),
-                "rawArtifactsAreGitignored": True,
-                "commit": versions.get("commit"),
-                "pins": {"dotnet": versions.get("dotnet")},
-                "root": versions.get("root"),
-                "freeBytesAtStart": versions.get("freeBytes"),
-                "failedChecks": summary.get("failed"),
-                "totalChecks": len(summary.get("checks", [])),
-                "lanes": lanes_of(summary),
-                "artifacts": files_of(directory),
-            })
+        if not recipe_root.exists():
+            continue
+            for directory in sorted([p for p in recipe_root.iterdir() if p.is_dir()]):
+                summary_path = directory / "summary.json"
+                if not summary_path.exists():
+                    continue
+                summary = read_json(summary_path)
+                versions_path = directory / "versions.json"
+                versions = read_json(versions_path) if versions_path.exists() else {}
+                runs.append({
+                    "kind": kind,
+                    "runId": summary.get("runId"),
+                    "rawArtifactRoot": str(directory),
+                    "rawArtifactsAreGitignored": True,
+                    "commit": versions.get("commit"),
+                    "pins": {"dotnet": versions.get("dotnet")},
+                    "root": versions.get("root"),
+                    "freeBytesAtStart": versions.get("freeBytes"),
+                    "failedChecks": summary.get("failed"),
+                    "totalChecks": len(summary.get("checks", [])),
+                    "lanes": lanes_of(summary),
+                    "artifacts": files_of(directory),
+                })
 
     if not runs:
         print("no phase 3 runs found", file=sys.stderr)
