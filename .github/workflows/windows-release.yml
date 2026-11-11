@@ -1,0 +1,182 @@
+name: windows-release
+
+# The release candidate is built and tested on Windows, because the product is a
+# WPF application that binds to a named pipe, to WHPX and to the Windows
+# hypervisor platform. The hardware job is a separate workflow so that the
+# build job stays fast and reproducible.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (for example 0.1.0)"
+        required: true
+        default: "0.1.0"
+      package:
+        description: "Build the installer"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  build-test-package:
+    name: Build, test and package
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install the pinned .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore EmulatorWorkspace.slnx
+
+      - name: Build
+        run: dotnet build EmulatorWorkspace.slnx -c Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test EmulatorWorkspace.slnx -c Release --no-build --logger "trx;LogFileName=tests.trx"
+
+      - name: Upload the test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/tests.trx"
+          if-no-files-found: ignore
+
+      - name: Resolve the version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -like "v*") { $version = $tag.Substring(1) }
+          elseif ("${{ inputs.version }}" -ne "") { $version = "${{ inputs.version }}" }
+          else {
+            $props = Get-Content Directory.Build.props -Raw
+            $version = ([regex]::Match($props, '<VersionPrefix>([^<]+)</VersionPrefix>')).Groups[1].Value
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Install the WiX toolset
+        run: dotnet tool install --global wix --version 5.0.2
+
+      - name: Package the release candidate
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $out = Join-Path $env:GITHUB_WORKSPACE "release"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $arguments = @(
+            "-ExecutionPolicy", "Bypass",
+            "-File", "tools\package-release.ps1",
+            "-Version", $version,
+            "-OutDir", $out
+          )
+          if ("${{ inputs.package }}" -ne "true") { $arguments += "-SkipInstaller" }
+          & powershell @arguments
+          if ($LASTEXITCODE -ne 0) { throw "the packaging job failed" }
+
+      - name: Verify the release candidate
+        shell: pwsh
+        run: |
+          $release = Get-ChildItem "release" -Recurse -Filter "release.json" | Select-Object -First 1
+          if (-not $release) { throw "no release.json was produced" }
+          $record = Get-Content $release.FullName -Raw | ConvertFrom-Json
+          if (-not $record.installer) { throw "no installer was produced" }
+          $actual = (Get-FileHash $record.installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $record.installerSha256) { throw "the installer hash does not match the release record" }
+          Write-Host "installer $($record.installer)"
+          Write-Host "sha256   $($record.installerSha256)"
+          Write-Host "signing  $($record.signingStatus)"
+
+      - name: Upload the release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-workspace-${{ steps.version.outputs.version }}
+          path: "release/**"
+          if-no-files-found: error
+
+  wiphx-hardware:
+    name: WHPX hardware validation
+    # The hardware job needs a self-hosted runner with WHPX and the pinned
+    # Android SDK. It is intentionally not part of the hosted build job, which
+    # has no hypervisor.
+    runs-on: [self-hosted, windows, x64, wipx]
+    timeout-minutes: 180
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install the pinned .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify the acceleration
+        shell: pwsh
+        run: |
+          $emulator = Join-Path $env:ANDROID_HOME "emulator\emulator.exe"
+          & $emulator -accel-check
+          if ($LASTEXITCODE -ne 0) { throw "the emulator reports no usable acceleration" }
+
+      - name: Build and test
+        run: |
+          dotnet build EmulatorWorkspace.slnx -c Release
+          dotnet test EmulatorWorkspace.slnx -c Release --no-build
+
+      - name: Phase 2 regression
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\phase2-acceptance.ps1 -Root D:\HwPhase2Root
+
+      - name: Phase 3 acceptance
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\phase3-acceptance.ps1 -Root D:\HwPhase3Root
+
+      - name: Recipe acceptance (launcher-visible)
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\recipe-acceptance.ps1 -Root D:\HwRecipeRoot -Baseline LauncherVisible
+
+      - name: Recipe acceptance (fixture-foreground)
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\recipe-acceptance.ps1 -Root D:\HwRecipeRoot2 -Baseline FixtureForeground
+
+      - name: Root Lab acceptance
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\root-lab-acceptance.ps1 -Root D:\HwRootLabRoot
+
+      - name: AVD import acceptance
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\avd-import-acceptance.ps1 -Root D:\HwImportRoot
+
+      - name: WPF click-through
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\wpf-clickthrough-acceptance.ps1 -Root D:\HwWpfRoot
+
+      - name: Benchmark
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\benchmark.ps1 -Root D:\HwBenchRoot -Samples 20 -Cycles 30
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardware-evidence
+          path: "artifacts/**"
+          if-no-files-found: ignore
