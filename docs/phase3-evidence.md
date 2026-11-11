@@ -347,7 +347,7 @@ Windows reparse points; five unit tests cover those paths.
 
 ### Root Lab: ADB daemon workflow — `tools/root-lab-acceptance.ps1`
 
-Run `20261111-222756`: **12 checks, 0 failures**.
+Run `20261111-222756`: **10 checks, 0 failures**.
 
 | Check | Result |
 | --- | --- |
