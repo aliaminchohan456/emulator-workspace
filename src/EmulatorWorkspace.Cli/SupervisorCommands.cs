@@ -298,6 +298,85 @@ internal static class SupervisorCommands
                 op = OperationNames.InstanceReset;
                 requestArgs["name"] = name;
                 break;
+            case "install-apks":
+            {
+                // A targeted APK-set deployment: the device is resolved from a
+                // managed instance so the external tool can never address an
+                // unrelated target.
+                var apksPath = args.Optional("apks") ?? throw new ArgumentException("--apks is required.");
+                if (!File.Exists(apksPath))
+                {
+                    throw new ArgumentException($"The APK set '{apksPath}' does not exist.");
+                }
+
+                var targetName = args.Optional("name") ?? throw new ArgumentException("--name is required.");
+                var status = await client.RequestAsync(
+                        OperationNames.InstanceStatus,
+                        new JsonObject { ["name"] = targetName },
+                        TimeSpan.FromSeconds(60))
+                    .ConfigureAwait(false);
+                if (!status.Ok)
+                {
+                    Console.Error.WriteLine($"FAILED [{status.Code}] {status.Message}");
+                    return 5;
+                }
+
+                var serial = status.Data?["serial"]?.GetValue<string>() ?? "";
+                if (serial.Length == 0)
+                {
+                    Console.Error.WriteLine("FAILED [instance_not_found] The instance has no ADB serial.");
+                    return 5;
+                }
+
+                var bundletool = args.Optional("bundletool")
+                                  ?? Environment.GetEnvironmentVariable("WS_BUNDLETOOL")
+                                  ?? @"D:\Phase3Tools\bundletool-1.18.1.jar";
+                if (!File.Exists(bundletool))
+                {
+                    Console.Error.WriteLine(
+                        $"FAILED [capability_unavailable] bundletool was not found at '{bundletool}'. "
+                        + "Pass --bundletool or set WS_BUNDLETOOL.");
+                    return 5;
+                }
+
+                var info = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "java",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                };
+                info.ArgumentList.Add("-jar");
+                info.ArgumentList.Add(bundletool);
+                info.ArgumentList.Add("install-apks");
+                info.ArgumentList.Add($"--apks={Path.GetFullPath(apksPath)}");
+                info.ArgumentList.Add($"--device-id={serial}");
+
+                using var process = System.Diagnostics.Process.Start(info)!;
+                var stdout = process.StandardOutput.ReadToEnd();
+                var stderr = process.StandardError.ReadToEnd();
+                process.WaitForExit(300000);
+                var exit = process.ExitCode;
+                var output = (stdout + stderr).Trim();
+                if (exit != 0)
+                {
+                    Console.Error.WriteLine($"FAILED [install_failed] bundletool exited with {exit}");
+                    Console.Error.WriteLine(output);
+                    return 5;
+                }
+
+                Console.WriteLine(JsonSerializer.Serialize(new JsonObject
+                {
+                    ["instance"] = targetName,
+                    ["serial"] = serial,
+                    ["apks"] = Path.GetFullPath(apksPath),
+                    ["bundletool"] = bundletool,
+                    ["installed"] = true,
+                }, new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine(output);
+                return 0;
+            }
             case "import-avd":
                 op = OperationNames.InstanceImportAvd;
                 requestArgs["source"] = args.Optional("source") ?? throw new ArgumentException("--source is required.");

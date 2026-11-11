@@ -201,4 +201,36 @@ public sealed class RecipeServiceTests
         Assert.False(RecipeService.IsSupportedOperation("host.exec"));
         Assert.True(RecipeService.IsSupportedOperation("input.tap"));
     }
+
+    [Fact]
+    public void First_app_selector_is_the_readiness_contract_after_the_baseline()
+    {
+        var steps = new JsonArray(
+            new JsonObject { ["op"] = "snapshot.save", ["args"] = new JsonObject { ["tag"] = "b" } },
+            new JsonObject { ["op"] = "network.profile", ["args"] = new JsonObject { ["delay"] = "none" } },
+            new JsonObject
+            {
+                ["op"] = "input.text",
+                ["args"] = new JsonObject
+                {
+                    ["text"] = "x",
+                    ["selector"] = new JsonObject { ["contentDescription"] = "login_user" },
+                },
+            });
+
+        var selector = RecipeService.FirstAppSelector(steps, 0);
+
+        Assert.NotNull(selector);
+        Assert.Equal("login_user", selector!["contentDescription"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void A_recipe_without_app_steps_has_no_readiness_selector()
+    {
+        var steps = new JsonArray(
+            new JsonObject { ["op"] = "snapshot.save", ["args"] = new JsonObject { ["tag"] = "b" } },
+            new JsonObject { ["op"] = "logs.read", ["args"] = new JsonObject() });
+
+        Assert.Null(RecipeService.FirstAppSelector(steps, 0));
+    }
 }

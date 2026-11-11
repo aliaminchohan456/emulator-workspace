@@ -556,23 +556,51 @@ public sealed class OperationDispatcher
                                     .LastOrDefault(step => step["op"]?.GetValue<string>() == "app.install");
                                 if (installStep is not null)
                                 {
-                                    var installArgs = RecipeService.ResolveRuntime(
-                                        installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
-                                    installArgs["name"] = session.Instance;
-                                    try
+                                    // The package manager of a guest that just
+                                    // rebooted is not ready; the install waits
+                                    // for it instead of blocking on the device.
+                                    var packageManagerReady = false;
+                                    for (var probe = 0; probe < 20 && !packageManagerReady; probe++)
                                     {
-                                        await DispatchAsync(
-                                                OperationNames.AppInstall,
-                                                installArgs,
-                                                sink,
-                                                cancellationToken,
-                                                session)
-                                            .ConfigureAwait(false);
-                                        stepReport["baselineAppReinstalled"] = true;
+                                        try
+                                        {
+                                            await DispatchAsync(
+                                                    OperationNames.AppPackageInfo,
+                                                    new JsonObject { ["name"] = session.Instance, ["package"] = package ?? "dev.emulatorworkspace.sample" },
+                                                    sink,
+                                                    cancellationToken,
+                                                    session)
+                                                .ConfigureAwait(false);
+                                            packageManagerReady = true;
+                                        }
+                                        catch (Exception)
+                                        {
+                                            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken)
+                                                .ConfigureAwait(false);
+                                        }
                                     }
-                                    catch (SupervisorOperationException ex)
+
+                                    stepReport["packageManagerReady"] = packageManagerReady;
+                                    if (packageManagerReady)
                                     {
-                                        stepReport["baselineAppReinstallError"] = ex.Code;
+                                        var installArgs = RecipeService.ResolveRuntime(
+                                            installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
+                                        installArgs["name"] = session.Instance;
+                                        try
+                                        {
+                                            await DispatchAsync(
+                                                    OperationNames.AppInstall,
+                                                    installArgs,
+                                                    sink,
+                                                    cancellationToken,
+                                                    session)
+                                                .ConfigureAwait(false);
+                                            stepReport["baselineAppReinstalled"] = true;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            stepReport["baselineAppReinstallError"] = ex.Message;
+                                        }
                                     }
                                 }
 
@@ -679,6 +707,67 @@ public sealed class OperationDispatcher
                                 cancellationToken)
                             .ConfigureAwait(false);
                         stepReport["baselineVerified"] = baselineVerified;
+
+                        // The generic marker is not enough: the fixture's first
+                        // targeted control must resolve before any app-targeted
+                        // step runs, otherwise the step races the activity.
+                        var readinessSelector = RecipeService.FirstAppSelector(steps, stepIndex);
+                        if (baselineVerified && readinessSelector is not null)
+                        {
+                            var ready = false;
+                            for (var attempt = 0; attempt < 30 && !ready; attempt++)
+                            {
+                                var probe = await DispatchAsync(
+                                        OperationNames.UiAssert,
+                                        new JsonObject { ["name"] = session.Instance, ["selector"] = readinessSelector },
+                                        sink,
+                                        cancellationToken,
+                                        session)
+                                    .ConfigureAwait(false) as JsonObject;
+                                ready = probe?["pass"]?.GetValue<bool>() ?? false;
+                                if (!ready)
+                                {
+                                    if (attempt % 8 == 7 && !string.IsNullOrEmpty(package))
+                                    {
+                                        try
+                                        {
+                                            await DispatchAsync(
+                                                    OperationNames.AppLaunch,
+                                                    new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                                    sink,
+                                                    cancellationToken,
+                                                    session)
+                                                .ConfigureAwait(false);
+                                        }
+                                        catch (SupervisorOperationException)
+                                        {
+                                        }
+                                    }
+
+                                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+                                }
+                            }
+
+                            stepReport["fixtureReady"] = ready;
+                            if (!ready)
+                            {
+                                stepReport["result"] = "baseline_not_verified";
+                                stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
+                                stepReport["message"] =
+                                    "The restored guest did not expose the recipe's first targeted control in time.";
+                                stepReport["durationMs"] =
+                                    (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                                stepReports.Add(stepReport);
+                                failed = true;
+                                report["steps"] = stepReports;
+                                report["failed"] = failed;
+                                report["baselineVerified"] = false;
+                                report["recovery"] = recovery;
+                                report["networkRestored"] = "not_required";
+                                report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                                return report;
+                            }
+                        }
                         if (!baselineVerified)
                         {
                             stepReport["result"] = "baseline_not_verified";

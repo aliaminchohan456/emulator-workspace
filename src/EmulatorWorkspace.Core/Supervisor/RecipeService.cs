@@ -592,5 +592,35 @@ public sealed class RecipeService
         return true;
     }
 
+/// <summary>
+    /// Returns the selector of the first application-targeted step after the
+    /// baseline. It is the readiness contract of the recipe: after a restore
+    /// the fixture is only usable when that control resolves.
+    /// </summary>
+    public static JsonObject? FirstAppSelector(JsonArray steps, int baselineIndex)
+    {
+        for (var index = baselineIndex + 1; index < steps.Count; index++)
+        {
+            if (steps[index] is not JsonObject step)
+            {
+                continue;
+            }
+
+            var op = step["op"]?.GetValue<string>() ?? "";
+            if (op is not ("input.text" or "input.tap" or "ui.assert"))
+            {
+                continue;
+            }
+
+            var selector = step["args"]?["selector"] as JsonObject;
+            if (selector is not null)
+            {
+                return selector.DeepClone().AsObject();
+            }
+        }
+
+        return null;
+    }
+
     public static bool IsSupportedOperation(string op) => SupportedOperations.ContainsKey(op);
 }

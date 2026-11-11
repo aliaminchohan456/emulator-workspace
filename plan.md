@@ -181,6 +181,13 @@ external SDK AVD outside the workspace, previews it, imports an independent
 managed copy and proves the source configuration and writable disks are
 unchanged.
 
+The fixture-foreground baseline variant now runs end to end as well
+(`artifacts/phase3/recipe/20261111-215921`, 38 of 39 checks): the launch
+operation dismisses the keyguard, the baseline branch waits for the package
+manager and re-runs the recorded install, and the baseline is verified against
+the recipe's first targeted control. The one open check is the retry after an
+interrupted replay.
+
 ## Phase 2 outcomes and blockers
 
 - Protocol 1 envelopes gained an opaque session credential and idempotency key;

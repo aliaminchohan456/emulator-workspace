@@ -1246,9 +1246,38 @@ public sealed class InstanceManager
         };
     }
 
+/// <summary>
+    /// Dismisses the keyguard of a headless guest. Failures are ignored: a
+    /// guest without a keyguard simply has nothing to dismiss.
+    /// </summary>
+    private async Task DismissKeyguardAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        foreach (var command in new[]
+                 {
+                     new[] { "wm", "dismiss-keyguard" },
+                     new[] { "input", "keyevent", "82" },
+                 })
+        {
+            try
+            {
+                await _adb.ShellAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+    }
+
     public async Task<JsonObject> LaunchAsync(string name, string package, CancellationToken cancellationToken)
     {
         var record = RuntimeFor(name).Record;
+
+        // A headless guest boots with the keyguard up, which hides the
+        // launched activity from every observer. The keyguard is dismissed
+        // before the launch so the application really reaches the foreground.
+        await DismissKeyguardAsync(record, cancellationToken).ConfigureAwait(false);
+
         var resolved = await _adb.ShellAsync(
             record.AdbSerial,
             new[] { "cmd", "package", "resolve-activity", "--brief", package },

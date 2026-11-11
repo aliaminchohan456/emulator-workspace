@@ -244,7 +244,7 @@ The two baseline variants are separate runs:
 | Variant | Baseline content | Run | Result |
 | --- | --- | --- | --- |
 | `LauncherVisible` | the baseline is saved before the fixture is installed, so the restored guest shows the launcher | `20261111-184156` | **39/39 checks passed** |
-| `FixtureForeground` | the baseline is saved with the fixture in the foreground | `20261111-195359` | the restore, the cold-boot recovery, the recorded install re-execution and the independent baseline verification all work (`baseline=created`, `recovery=cold_boot`, `verified=true`); the first login assertion after the cold-boot relaunch still ends in `expectation_failed` |
+| `FixtureForeground` | the baseline is saved with the fixture in the foreground | `20261111-215921` | **38 of 39**: the restore, the cold-boot recovery (`recovery=cold_boot`), the recorded install re-execution, the package-manager readiness wait, the independent baseline verification (`verified=true`) and all 15 replayed steps are green (`WELCOME` → `NETWORK TIMEOUT` → `WELCOME`). The remaining failure is the retry after an interrupted replay: the launch step on the re-established guest does not reach the foreground within the bounded wait |
 
 The `LauncherVisible` run is fully green: the recipe is recorded and exported
 redacted, the clone creates and restores its own baseline, all 15 replayed steps
@@ -253,6 +253,20 @@ bystander keeps `DUP_TAPS=2` and its network profile, the interrupted run is
 visible in the operation store and the retry replays cleanly after the guest is
 re-established, the negative cases return their typed errors, and the
 disposables are removed.
+
+### What the fixture-foreground run needed
+
+Three product defects were fixed for that variant:
+
+1. The launch operation now dismisses the keyguard. A headless guest boots with
+   the keyguard up, so the launched activity was never the focused window and
+   every foreground assertion failed.
+2. The baseline branch waits for the guest's package manager before re-running
+   the recorded install step, because a restore reverts userdata and an install
+   against a package manager that is still starting blocks on the device.
+3. The baseline is verified against the recipe's *first targeted control*
+   (`RecipeService.FirstAppSelector`), not only against a generic marker, so a
+   step can no longer race the activity that owns the control.
 
 ### Host hygiene note
 
