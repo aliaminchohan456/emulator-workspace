@@ -285,7 +285,8 @@ public sealed class OperationDispatcher
             or OperationNames.RecipeExport => AgentService.ScopeObserve,
         OperationNames.InputTap or OperationNames.InputText or OperationNames.InputKey
             or OperationNames.InputSwipe => AgentService.ScopeInput,
-        OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground =>
+        OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground
+        or OperationNames.AppPackageInfo =>
             AgentService.ScopeApp,
         OperationNames.InstanceStart or OperationNames.InstanceWait or OperationNames.InstanceStop
             or OperationNames.InstanceRestart or OperationNames.DeviceCreateDisposable =>
@@ -414,6 +415,35 @@ public sealed class OperationDispatcher
         var baselineVerified = false;
         var recovery = "none";
 
+        // A previous run that was cancelled may have left guest network
+        // shaping behind. The recorded original profile is applied first so a
+        // replay after an interruption starts from a known network state.
+        var recordedOriginal = recipe["network"]?["original"] as JsonObject;
+        if (recordedOriginal is not null)
+        {
+            try
+            {
+                await DispatchAsync(
+                        OperationNames.NetworkProfile,
+                        new JsonObject
+                        {
+                            ["name"] = session.Instance,
+                            ["delay"] = recordedOriginal["delay"]?.GetValue<string>() ?? "none",
+                            ["speed"] = recordedOriginal["speed"]?.GetValue<string>() ?? "full",
+                            ["latencyMs"] = recordedOriginal["latencyMs"]?.GetValue<int>() ?? 0,
+                        },
+                        sink,
+                        cancellationToken,
+                        session)
+                    .ConfigureAwait(false);
+                report["networkRestored"] = "restored";
+            }
+            catch (SupervisorOperationException ex)
+            {
+                report["networkRestored"] = "failed: " + ex.Code;
+            }
+        }
+
         var steps = recipe["steps"] as JsonArray ?? new JsonArray();
         var stepReports = new JsonArray();
         var failed = false;
@@ -501,18 +531,53 @@ public sealed class OperationDispatcher
                         // guest is back or the bound is exhausted.
                         var package = recipe["app"]?["package"]?.GetValue<string>();
 
-                        // When the recipe installs or launches the fixture after
-                        // the baseline, the guest only has to be interactive
-                        // again; otherwise the fixture is relaunched here.
-                        var remainingOps = steps.Skip(stepIndex + 1)
-                            .Select(node => node?["op"]?.GetValue<string>() ?? "")
-                            .ToList();
-                        var relaunchNeeded = !remainingOps.Any(op => op is "app.launch" or "app.install");
-                        var uiReady = true;
+                        // A baseline that is followed by install/launch steps
+                        // carries those steps in the recipe, so the guest only has
+                        // to be interactive again. Otherwise the fixture belonged
+                        // to the recorded state and must be brought back here.
+                        // A baseline that is followed by install/launch steps
+                        // carries those steps in the recipe, so the guest only has
+                        // to be interactive again. Otherwise the fixture belonged
+                        // to the recorded state and must be brought back here.
+                        var relaunchNeeded = RecipeService.NeedsFixtureRelaunch(steps, stepIndex);
+                        var uiReady = !relaunchNeeded;
                         for (var attempt = 0; relaunchNeeded && attempt < 10 && !uiReady; attempt++)
                         {
                             if (!string.IsNullOrEmpty(package))
                             {
+                                try
+                                {
+                                    var info = await DispatchAsync(
+                                            OperationNames.AppPackageInfo,
+                                            new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                            sink,
+                                            cancellationToken,
+                                            session)
+                                        .ConfigureAwait(false) as JsonObject;
+                                    if (info?["installed"] is not { } installed || !installed.GetValue<bool>())
+                                    {
+                                        stepReport["result"] = "baseline_not_verified";
+                                        stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
+                                        stepReport["message"] =
+                                            $"The fixture package '{package}' is not installed on the restored guest.";
+                                        stepReport["durationMs"] =
+                                            (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                                        stepReports.Add(stepReport);
+                                        failed = true;
+                                        report["steps"] = stepReports;
+                                        report["failed"] = failed;
+                                        report["baselineVerified"] = false;
+                                        report["recovery"] = recovery;
+                                        report["networkRestored"] = "not_required";
+                                        report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                                        return report;
+                                    }
+                                }
+                                catch (SupervisorOperationException)
+                                {
+                                    // Fall through to the bounded launch retry.
+                                }
+
                                 try
                                 {
                                     await DispatchAsync(
@@ -536,6 +601,56 @@ public sealed class OperationDispatcher
 
                         stepReport["baselineAppRelaunched"] = package;
                         stepReport["guestUiReady"] = uiReady;
+
+                        // Baseline verification: a recovered guest proceeds only
+                        // when the recipe's required state is independently
+                        // confirmed (the fixture package is focused and a fresh
+                        // hierarchy contains its stable marker). Otherwise the
+                        // recipe stops with a typed result.
+                        if (!uiReady)
+                        {
+                            stepReport["result"] = "baseline_not_verified";
+                            stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
+                            stepReport["message"] =
+                                "The restored guest did not expose the recipe's fixture within the bounded wait.";
+                            stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                            stepReports.Add(stepReport);
+                            failed = true;
+                            report["steps"] = stepReports;
+                            report["failed"] = failed;
+                            report["baselineVerified"] = false;
+                            report["recovery"] = recovery;
+                            report["networkRestored"] = "not_required";
+                            report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                            return report;
+                        }
+
+                        baselineVerified = await VerifyBaselineStateAsync(
+                                session,
+                                sink,
+                                recipe,
+                                relaunchNeeded ? package : null,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                        stepReport["baselineVerified"] = baselineVerified;
+                        if (!baselineVerified)
+                        {
+                            stepReport["result"] = "baseline_not_verified";
+                            stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
+                            stepReport["message"] =
+                                "The restored guest did not reach the recipe's baseline state "
+                                + "(fixture focused with a stable hierarchy marker).";
+                            stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                            stepReports.Add(stepReport);
+                            failed = true;
+                            report["steps"] = stepReports;
+                            report["failed"] = failed;
+                            report["baselineVerified"] = false;
+                            report["recovery"] = recovery;
+                            report["networkRestored"] = "not_required";
+                            report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                            return report;
+                        }
                         stepReport["result"] = "baseline_restored";
                         stepReport["baselineOutcome"] = baselineOutcome;
                         stepReport["recovery"] = recovery;
@@ -690,6 +805,72 @@ public sealed class OperationDispatcher
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+
+        return false;
+    }
+
+
+    /// <summary>
+    /// Confirms that the fixture package is focused and that a fresh hierarchy
+    /// contains one of the recipe's stable markers. The hierarchy must come from
+    /// a fresh observation taken after the restore.
+    /// </summary>
+    private async Task<bool> VerifyBaselineStateAsync(
+        AgentSession session,
+        IEventSink sink,
+        JsonObject recipe,
+        string? package,
+        CancellationToken cancellationToken)
+    {
+        // When the recipe installs or launches the fixture after the baseline,
+        // the required state at this point is an interactive guest; the fixture
+        // is verified by its own recorded steps.
+        // Bounded by the caller's deadline: the guest may still be settling
+        // after the restore, so the required state is polled rather than
+        // asserted once.
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (!string.IsNullOrEmpty(package))
+            {
+                var foreground = await DispatchAsync(
+                        OperationNames.AppForeground,
+                        new JsonObject { ["name"] = session.Instance },
+                        sink,
+                        cancellationToken,
+                        session)
+                    .ConfigureAwait(false) as JsonObject;
+                var window = foreground?["foreground"]?.GetValue<string>() ?? "";
+                if (!window.Contains(package, StringComparison.Ordinal))
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+            }
+
+            var tree = await DispatchAsync(
+                    OperationNames.ObservationTree,
+                    new JsonObject { ["name"] = session.Instance },
+                    sink,
+                    cancellationToken,
+                    session)
+                .ConfigureAwait(false) as JsonObject;
+            var nodes = tree?["nodes"] as JsonArray;
+            if (nodes is not null && nodes.Count > 0)
+            {
+                foreach (var node in nodes)
+                {
+                    var description = node?["contentDescription"]?.GetValue<string>() ?? "";
+                    var text = node?["text"]?.GetValue<string>() ?? "";
+                    if (description.Length > 0 || text.Length > 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
         }
 
         return false;
@@ -956,6 +1137,14 @@ public sealed class OperationDispatcher
                     name,
                     path ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "path is required."),
                     cancellationToken).ConfigureAwait(false);
+            }
+
+            case OperationNames.AppPackageInfo:
+            {
+                var package = JsonArgs.String(args, "package") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "package is required.");
+                return await _manager.PackageInfoAsync(name, package, cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             case OperationNames.AppLaunch:

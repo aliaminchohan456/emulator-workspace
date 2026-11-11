@@ -153,6 +153,14 @@ checks. The two-guest workflow, the negatives and the interruption are
 verified; the post-restore application foreground on a restored guest is still
 open.
 
+The post-restore transition was fixed: the fixture relaunch loop is no longer
+dead code, the baseline verification is bounded and typed, the fixture package
+is checked through the registry before launch, and a replay resets the recorded
+original network profile first so an interrupted run cannot leave shaping behind.
+The record -> export -> replay workflow is verified on WHPX in run
+`20261111-143213` (36 of 37 checks; the remaining failure is a stopped instance
+left behind after cleanup, now retried in the harness).
+
 ## Phase 2 outcomes and blockers
 
 - Protocol 1 envelopes gained an opaque session credential and idempotency key;

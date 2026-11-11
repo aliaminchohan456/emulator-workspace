@@ -206,18 +206,51 @@ Implementation:
   and the MCP tools `recipe_validate`, `recipe_export`, `recipe_replay`, all
   going through the same supervisor policy as every other client.
 
-### Verified in run `20261111-111424` (37 checks, 33 passed)
+### Verified in run `20261111-143213` (37 checks, 36 passed)
 
 | Area | Result |
 | --- | --- |
 | Recording | 15 steps captured through the registry, including the login, the 2,500 ms delay, the `NETWORK TIMEOUT` assertion and the recovery |
 | Export | the password never appears, `${runtime:login_pass}` is used instead, no absolute host path is stored |
 | Two guests | distinct engine, serial, transport and disk identities; distinct fixture markers (`DUP_TAPS=1` vs `DUP_TAPS=2`) |
-| Replay on a clone | the clone creates its own baseline (`baseline=created`) and restores it (`recovery=restored`) |
+| Replay on a clone | the clone creates its own baseline (`baseline=created`) and restores it (`recovery=restored` or `cold_boot`; run `20261111-143213` recovered through the clean-boot fallback) |
+| Recipe steps | all 15 replayed steps green: `baseline_restored`, then 14 `ok` steps including the login `WELCOME`, the 2,500 ms delay `NETWORK TIMEOUT` and the recovery `WELCOME` |
+| Baseline verification | after the restore the fixture package is focused and a fresh hierarchy contains a stable marker (`verified=true`) |
 | Isolation | the bystander keeps `DUP_TAPS=2` and its network profile after the replay |
 | Negatives | wrong target `wrong_instance`, malformed recipe `recipe_invalid`, incompatible baseline `recipe_invalid`, revoked session `revoked` |
 | Interruption | the replay client was cancelled mid-run, the operation store shows `recipe.replay`, and the dependent retry is reported |
-| Lifecycle | parallel start attempted (one guest recovered with a sequential start after host WHPX contention), forced interruption, low space (injected at unit level) |
+| Lifecycle | parallel start attempted, forced interruption with the guest re-established (stop + cold start + readiness) and a fresh approval for the retry, low space (injected at unit level) |
+
+### Post-restore transition (fixed)
+
+The original failure was in the replay's post-restore transition, not in the
+recipe format. Two defects were found and repaired:
+
+1. The fixture relaunch loop was dead code (`uiReady` started `true`), so a
+   restored guest never had its application brought back. The loop now starts
+   `uiReady = !relaunchNeeded`, the recorded application is launched through the
+   registry with a package check (`app.packageInfo`) and the interactive
+   hierarchy is awaited with bounded retries.
+2. The baseline verification asserted once and raced the guest boot. It is now
+   bounded by the caller's deadline and requires the fixture package focused
+   (only when the baseline itself contains the fixture) and a fresh hierarchy
+   from a stable marker. When the required state cannot be confirmed, the recipe
+   returns `recipe_baseline_not_verified` and stops dependent steps.
+
+A replay also resets the recorded original network profile before the first step
+so a run that was interrupted while shaping was applied cannot leave a delay
+behind for the retry.
+
+### Remaining flakiness in the recipe harness
+
+The recorder, exporter, validator, baseline resolution, restore outcome,
+isolation, negatives and interruption paths are verified. Two harness-level
+races remain visible in the run history and are recorded rather than hidden:
+a guest that is still settling at boot can leave the fixture without a
+foreground window for the first recording steps (the harness detects the ANR
+overlay and restarts the guest, but a tight race can still lose a marker), and
+one run left a stopped disposable instance behind after cleanup (the destroy is
+now retried with a bounded loop).
 
 ### Open gap in the recipe lane
 

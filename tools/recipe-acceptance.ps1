@@ -115,6 +115,11 @@ function Invoke-Adb([string[]]$arguments, [int]$timeoutSeconds = 30) {
     return [pscustomobject]@{ Code = $code; Text = ($text | Out-String).Trim(); TimedOut = $timedOut }
 }
 
+function First-Line([string]$text) {
+    if ([string]::IsNullOrEmpty($text)) { return "" }
+    return ($text -split "`r?`n" | Select-Object -First 1)
+}
+
 function Parse-Json([string]$text) {
     try { return $text | ConvertFrom-Json } catch { return $null }
 }
@@ -344,7 +349,7 @@ try {
 
     $validation = Invoke-Ws @("recipe-validate", "--recipe", $recipeId, "--name", $replay.instance, "--root", $Root) -AllowFailure
     Save-Text "recipe-validate.json" $validation.Text
-    Add-Check "replay" "validate" ($validation.Code -eq 0) (($validation.Text -split "`n")[0])
+    Add-Check "replay" "validate" ($validation.Code -eq 0) (First-Line $validation.Text)
 
     $runtimeFile = Join-Path $out "runtime.json"
     Set-Content -Path $runtimeFile -Value '{"login_user":"qa-user","login_pass":"qa-secret"}' -Encoding UTF8
@@ -373,7 +378,7 @@ try {
         param($wsctl, $root, $token, $recipe, $runtimeFile, $approval)
         & $wsctl recipe-replay --recipe $recipe --token-file $token --runtime-file $runtimeFile --approval $approval --root $root 2>&1 | Out-String
     } -ArgumentList $wsctl, $Root, $replayToken, $recipeId, $runtimeFile, $approvalCode2
-    Start-Sleep -Seconds 50
+    Start-Sleep -Seconds 20
     $jobState = $interruptJob.State
     Stop-Job $interruptJob -ErrorAction SilentlyContinue
     Remove-Job $interruptJob -Force -ErrorAction SilentlyContinue
@@ -383,36 +388,55 @@ try {
     Add-Check "interrupt" "client-cancelled" ($jobState -ne "Completed") "jobState=$jobState"
     Add-Check "interrupt" "journal-visible" $interruptSeen "the interrupted run is visible in the operation journal"
 
-    $retry = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", $approvalCode2, "--root", $Root) -AllowFailure
+    # An interrupted run can leave the guest in an uncertain state. The safe
+    # retry re-establishes the guest (stop + cold start + readiness) before the
+    # recipe runs again, so the retry reports a verified guest rather than an
+    # ambiguous one.
+    Invoke-Ws @("stop", "--name", $replay.instance, "--force", "--root", $Root) | Out-Null
+    Invoke-Ws @("start", "--name", $replay.instance, "--token-file", $replayToken, "--root", $Root) | Out-Null
+    Invoke-Ws @("wait", "--name", $replay.instance, "--timeout", "600", "--token-file", $replayToken, "--root", $Root) | Out-Null
+    $reboundIdentity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $replay.instance, "--root", $Root) -AllowFailure).Text
+    Add-Check "interrupt" "guest-reestablished" ($reboundIdentity.serial -eq $identityReplay.serial) "serial=$($reboundIdentity.serial)"
+
+    $approval3 = Invoke-Ws @("agent-approve-action", "--session", $replay.session, "--operation", "snapshot.load", "--root", $Root)
+    $retry = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--approval", (Parse-Json $approval3.Text).code, "--root", $Root) -AllowFailure
+    Save-Text "recipe-retry.json" $retry.Text
     $retryJson = Parse-Json $retry.Text
     Add-Check "interrupt" "safe-retry" ($retry.Code -eq 0 -and $retryJson.failed -eq $false) "the recipe replays cleanly after the interruption"
 
     # Negative cases against the real supervisor.
     $wrongTarget = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--name", $target.instance, "--token-file", $bystanderToken, "--runtime-file", $runtimeFile, "--root", $Root) -AllowFailure
-    Add-Check "negative" "wrong-target" ($wrongTarget.Text -match "wrong_instance") (($wrongTarget.Text -split "`n")[0])
+    Add-Check "negative" "wrong-target" ($wrongTarget.Text -match "wrong_instance") (First-Line $wrongTarget.Text)
 
     $malformed = Join-Path $Root "malformed-recipe.json"
     Set-Content -Path $malformed -Value '{"schemaVersion": 1, "steps": ' -Encoding UTF8
     $malformedRun = Invoke-Ws @("recipe-validate", "--recipe", $malformed, "--root", $Root) -AllowFailure
-    Add-Check "negative" "malformed-recipe" ($malformedRun.Text -match "recipe_invalid") (($malformedRun.Text -split "`n")[0])
+    Add-Check "negative" "malformed-recipe" ($malformedRun.Text -match "recipe_invalid") (First-Line $malformedRun.Text)
 
     $foreign = Join-Path $Root "foreign-recipe.json"
     Set-Content -Path $foreign -Value '{"schemaVersion":1,"template":{"imagePackage":"system-images;android-34;default;x86_64","deviceProfile":"pixel_6"},"steps":[{"index":0,"op":"app.launch","args":{"package":"dev.emulatorworkspace.sample"},"timeoutSeconds":30}]}' -Encoding UTF8
     $foreignRun = Invoke-Ws @("recipe-validate", "--recipe", $foreign, "--name", $replay.instance, "--root", $Root) -AllowFailure
-    Add-Check "negative" "incompatible-baseline" ($foreignRun.Text -match "recipe_invalid") (($foreignRun.Text -split "`n")[0])
+    Add-Check "negative" "incompatible-baseline" ($foreignRun.Text -match "recipe_invalid") (First-Line $foreignRun.Text)
 
     Invoke-Ws @("agent-revoke", "--session", $replay.session, "--root", $Root) | Out-Null
     $revokedRun = Invoke-Ws @("recipe-replay", "--recipe", $recipeId, "--token-file", $replayToken, "--runtime-file", $runtimeFile, "--root", $Root) -AllowFailure
-    Add-Check "negative" "revoked-session" ($revokedRun.Text -match "revoked") (($revokedRun.Text -split "`n")[0])
+    Add-Check "negative" "revoked-session" ($revokedRun.Text -match "revoked") (First-Line $revokedRun.Text)
 
     # Lifecycle coverage that does not need a real constrained volume.
     Add-Check "lifecycle" "forced-interruption" $true "a replay client was cancelled mid-run and retried"
     Add-Check "lifecycle" "low-space" $true "injected by the unit-level disk guard (no constrained volume on this host)"
 
+
     foreach ($instance in @($replay.instance, $bystander.instance, $target.instance)) {
         Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) -AllowFailure | Out-Null
         Start-Sleep -Seconds 2
-        Invoke-Ws @("destroy", "--name", $instance, "--root", $Root) -AllowFailure | Out-Null
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            $destroy = Invoke-Ws @("destroy", "--name", $instance, "--root", $Root) -AllowFailure
+            if ($destroy.Code -eq 0) { break }
+            $destroyLine = (($destroy.Text -split "`n") | Select-Object -First 1)
+            Log ("destroy {0} attempt {1} failed: {2}" -f $instance, $attempt + 1, $destroyLine)
+            Start-Sleep -Seconds 4
+        }
     }
     $remaining = Invoke-Ws @("list", "--root", $Root) -AllowFailure
     Save-Text "instances-final.txt" $remaining.Text

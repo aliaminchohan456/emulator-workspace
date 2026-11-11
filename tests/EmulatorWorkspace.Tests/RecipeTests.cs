@@ -169,4 +169,36 @@ public sealed class RecipeServiceTests
         Assert.False(incompatible.Valid);
         Assert.Contains(incompatible.Errors, error => error.Contains("system image", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Baseline_needs_relaunch_when_the_recipe_does_not_install_the_fixture()
+    {
+        var steps = new JsonArray(
+            new JsonObject { ["op"] = "app.install", ["args"] = new JsonObject { ["path"] = "sample" } },
+            new JsonObject { ["op"] = "app.launch", ["args"] = new JsonObject { ["package"] = "dev.emulatorworkspace.sample" } },
+            new JsonObject { ["op"] = "snapshot.save", ["args"] = new JsonObject { ["tag"] = "recipe-baseline" } },
+            new JsonObject { ["op"] = "input.text", ["args"] = new JsonObject { ["text"] = "x" } });
+
+        // The baseline contains the fixture, and no later step installs or
+        // launches it, so the runner must bring it back.
+        Assert.True(RecipeService.NeedsFixtureRelaunch(steps, 2));
+    }
+
+    [Fact]
+    public void Baseline_does_not_need_relaunch_when_the_recipe_installs_the_fixture_afterwards()
+    {
+        var steps = new JsonArray(
+            new JsonObject { ["op"] = "snapshot.save", ["args"] = new JsonObject { ["tag"] = "recipe-baseline" } },
+            new JsonObject { ["op"] = "app.install", ["args"] = new JsonObject { ["path"] = "sample" } },
+            new JsonObject { ["op"] = "app.launch", ["args"] = new JsonObject { ["package"] = "dev.emulatorworkspace.sample" } });
+
+        Assert.False(RecipeService.NeedsFixtureRelaunch(steps, 0));
+    }
+
+    [Fact]
+    public void Unsupported_operations_are_rejected_as_recipe_steps()
+    {
+        Assert.False(RecipeService.IsSupportedOperation("host.exec"));
+        Assert.True(RecipeService.IsSupportedOperation("input.tap"));
+    }
 }

@@ -23,7 +23,7 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | Device library, snapshots, transport identity | `src/EmulatorWorkspace.Core/Supervisor/DeviceLibraryService.cs` | Phase 3, verified |
 | Phase 3 acceptance harness | `tools/phase3-acceptance.ps1` | Lifecycle, transport, race, simulation, deployment lanes |
 | Recipe record/replay | `tools/recipe-acceptance.ps1` | Record, export, replay on a clone, isolation, negatives |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 39 passing |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 49 passing |
 
 The root-lab UI remains Phase 4 work. Phase 2 closure evidence is in
 `docs/phase2-evidence.md`; Phase 1's desktop click-through and performance

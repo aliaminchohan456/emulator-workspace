@@ -1283,6 +1283,56 @@ public sealed class InstanceManager
         };
     }
 
+    /// <summary>
+    /// Reports the installed fixture package through the guest package
+    /// manager, so a recipe can verify a baseline that already contains the
+    /// application before it tries to launch it.
+    /// </summary>
+    public async Task<JsonObject> PackageInfoAsync(
+        string name, string package, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var list = await _adb.ShellAsync(
+                record.AdbSerial,
+                new[] { "pm", "list", "packages", "-f", package },
+                cancellationToken)
+            .ConfigureAwait(false);
+        var installed = list.Contains(package, StringComparison.Ordinal);
+
+        var versionName = "";
+        var apkPath = "";
+        if (installed)
+        {
+            var dump = await _adb.ShellAsync(
+                    record.AdbSerial,
+                    new[] { "dumpsys", "package", package },
+                    cancellationToken)
+                .ConfigureAwait(false);
+            foreach (var line in dump.Split('\n'))
+            {
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith("versionName=", StringComparison.Ordinal))
+                {
+                    versionName = trimmed["versionName=".Length..].Trim();
+                }
+                else if (trimmed.StartsWith("codePath=", StringComparison.Ordinal))
+                {
+                    apkPath = trimmed["codePath=".Length..].Trim();
+                }
+            }
+        }
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["package"] = package,
+            ["installed"] = installed,
+            ["versionName"] = versionName,
+            ["codePath"] = apkPath,
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
     public async Task<JsonObject> ForegroundStatusAsync(string name, CancellationToken cancellationToken)
     {
         var record = RuntimeFor(name).Record;

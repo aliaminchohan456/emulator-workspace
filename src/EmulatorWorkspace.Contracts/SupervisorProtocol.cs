@@ -111,6 +111,7 @@ public static class ErrorCodes
     public const string RecipeUnsupportedOperation = "recipe_unsupported_operation";
     public const string RecipeIncompatibleBaseline = "recipe_incompatible_baseline";
     public const string RecipeMissingRuntimeValue = "recipe_missing_runtime_value";
+    public const string RecipeBaselineNotVerified = "recipe_baseline_not_verified";
 }
 
 public static class OperationNames
@@ -158,6 +159,7 @@ public static class OperationNames
 
     public const string AppInstall = "app.install";
     public const string AppLaunch = "app.launch";
+    public const string AppPackageInfo = "app.packageInfo";
     public const string AppForeground = "app.foreground";
 
     public const string LogcatSubscribe = "logcat.subscribe";
