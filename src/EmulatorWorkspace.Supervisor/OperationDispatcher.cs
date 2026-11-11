@@ -563,18 +563,20 @@ public sealed class OperationDispatcher
                                 // rebooted is not ready; the install waits for
                                 // it instead of blocking on the device.
                                 var packageManagerReady = false;
+                                var alreadyInstalled = false;
                                 for (var probe = 0; probe < 20 && !packageManagerReady; probe++)
                                 {
                                     try
                                     {
-                                        await DispatchAsync(
+                                        var info = await DispatchAsync(
                                                 OperationNames.AppPackageInfo,
                                                 new JsonObject { ["name"] = session.Instance, ["package"] = package },
                                                 sink,
                                                 cancellationToken,
                                                 session)
-                                            .ConfigureAwait(false);
+                                            .ConfigureAwait(false) as JsonObject;
                                         packageManagerReady = true;
+                                        alreadyInstalled = info?["installed"] is { } flag && flag.GetValue<bool>();
                                     }
                                     catch (Exception)
                                     {
@@ -584,7 +586,13 @@ public sealed class OperationDispatcher
                                 }
 
                                 stepReport["packageManagerReady"] = packageManagerReady;
-                                if (packageManagerReady)
+                                stepReport["baselineAppAlreadyInstalled"] = alreadyInstalled;
+
+                                // The install is only repeated when the restore
+                                // actually removed the package. Reinstalling a
+                                // package that is present blocks the ADB client
+                                // on a guest that is still settling.
+                                if (packageManagerReady && !alreadyInstalled)
                                 {
                                     var installArgs = RecipeService.ResolveRuntime(
                                         installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
