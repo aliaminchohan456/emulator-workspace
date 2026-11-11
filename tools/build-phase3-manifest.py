@@ -29,13 +29,14 @@ def read_json(path: pathlib.Path):
 def lanes_of(summary: dict) -> dict:
     lanes: dict[str, dict] = {}
     for check in summary.get("checks", []):
-        lane = lanes.setdefault(check["Lane"], {"passed": 0, "failed": 0, "checks": []})
-        lane["passed" if check["Passed"] else "failed"] += 1
+        lane_name = check.get("Lane") or check.get("Check") or "check"
+        lane = lanes.setdefault(lane_name, {"passed": 0, "failed": 0, "checks": []})
+        lane["passed" if check.get("Passed") else "failed"] += 1
         lane["checks"].append({
-            "check": check["Check"],
-            "passed": check["Passed"],
-            "detail": check["Detail"][:160],
-            "atUtc": check["AtUtc"],
+            "check": check.get("Check"),
+            "passed": check.get("Passed"),
+            "detail": (check.get("Detail") or "")[:160],
+            "atUtc": check.get("AtUtc"),
         })
     return lanes
 
