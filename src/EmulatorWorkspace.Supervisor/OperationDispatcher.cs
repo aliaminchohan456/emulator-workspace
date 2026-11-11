@@ -29,8 +29,10 @@ public sealed class OperationDispatcher
     private readonly Journal _journal;
     private readonly AgentService _agents;
     private readonly DeviceLibraryService _library;
+    private readonly RecipeService _recipes;
     private readonly Action _requestShutdown;
     private readonly DateTimeOffset _startedUtc = DateTimeOffset.UtcNow;
+    private bool _replaying;
 
     public OperationDispatcher(
         WorkspacePaths paths,
@@ -40,6 +42,7 @@ public sealed class OperationDispatcher
         Journal journal,
         AgentService agents,
         DeviceLibraryService library,
+        RecipeService recipes,
         Action requestShutdown)
     {
         _paths = paths;
@@ -49,6 +52,7 @@ public sealed class OperationDispatcher
         _journal = journal;
         _agents = agents;
         _library = library;
+        _recipes = recipes;
         _requestShutdown = requestShutdown;
     }
 
@@ -170,6 +174,15 @@ public sealed class OperationDispatcher
             _store.RecordOperation(
                 request.Id, request.Op, callerKind, callerName, argsJson,
                 startedUtc, DateTimeOffset.UtcNow, "ok", ErrorCodes.Ok, "ok", (long)stopwatch.ElapsedMilliseconds);
+            if (!_replaying)
+            {
+                var capturedInstance = session?.Instance ?? JsonArgs.String(request.Args, "name") ?? "";
+                if (capturedInstance.Length > 0)
+                {
+                    _recipes.Capture(capturedInstance, request.Op, request.Args, data);
+                }
+            }
+
             return response;
         }
         catch (SupervisorOperationException ex)
@@ -264,10 +277,12 @@ public sealed class OperationDispatcher
 
     private static string? RequiredScope(string op) => op switch
     {
+        OperationNames.RecipeReplay => AgentService.ScopeInput,
         OperationNames.InstanceStatus or OperationNames.ObservationScreenshot
             or OperationNames.ObservationTree or OperationNames.LogsRead
             or OperationNames.EventPoll or OperationNames.ArtifactRead or OperationNames.UiAssert
-            or OperationNames.InstanceAdbIdentity => AgentService.ScopeObserve,
+            or OperationNames.InstanceAdbIdentity or OperationNames.RecipeValidate
+            or OperationNames.RecipeExport => AgentService.ScopeObserve,
         OperationNames.InputTap or OperationNames.InputText or OperationNames.InputKey
             or OperationNames.InputSwipe => AgentService.ScopeInput,
         OperationNames.AppInstall or OperationNames.AppLaunch or OperationNames.AppForeground =>
@@ -289,7 +304,450 @@ public sealed class OperationDispatcher
         or OperationNames.AppLaunch or OperationNames.AppForeground or OperationNames.LogsRead
         or OperationNames.EventPoll or OperationNames.NetworkProfile or OperationNames.SnapshotSave
         or OperationNames.SnapshotLoad or OperationNames.DeviceCleanup or OperationNames.ArtifactRead
-        or OperationNames.DeviceCreateDisposable;
+        or OperationNames.DeviceCreateDisposable or OperationNames.InstanceAdbIdentity
+        or OperationNames.RecipeReplay;
+
+    private string? TryApprovedApkHash()
+    {
+        var approved = Path.Combine(_paths.Root, "apps", "ws-sample.apk");
+        if (!File.Exists(approved))
+        {
+            return null;
+        }
+
+        using var stream = File.OpenRead(approved);
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
+    }
+
+    private static Dictionary<string, string> ParseRuntime(JsonObject? node)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (node is null)
+        {
+            return values;
+        }
+
+        foreach (var property in node)
+        {
+            if (property.Value is JsonValue value && value.TryGetValue<string>(out var text))
+            {
+                values[property.Key] = text;
+            }
+        }
+
+        return values;
+    }
+
+    /// <summary>
+    /// Replays a recorded recipe against the caller's own guest. Every step
+    /// goes through the same scope, approval and lease checks as a live
+    /// operation, and the report records per-step timings, artifact ids and the
+    /// baseline restore outcome.
+    /// </summary>
+    private async Task<JsonObject> ReplayAsync(
+        JsonObject? args,
+        AgentSession? session,
+        IEventSink sink,
+        CancellationToken cancellationToken)
+    {
+        var recipe = _recipes.LoadRecipe(
+            JsonArgs.String(args, "recipe") ?? throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest, "recipe is required."));
+        var runtimeValues = ParseRuntime(args?["runtime"] as JsonObject);
+
+        if (session is null)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.ForbiddenScope, "A recipe replay needs a paired agent session.");
+        }
+
+        session = _agents.EnsureActive(session);
+        var record = _manager.Get(session.Instance);
+        var guest = _library.GuestInfo(record);
+        var validation = _recipes.Validate(recipe, guest);
+        if (!validation.Valid)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.RecipeInvalid, string.Join("; ", validation.Errors));
+        }
+
+        var report = new JsonObject
+        {
+            ["recipeId"] = recipe["recipeId"]?.GetValue<string>(),
+            ["schemaVersion"] = recipe["schemaVersion"]?.GetValue<int>(),
+            ["instance"] = session.Instance,
+            ["startedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+
+        // Baseline resolution: an existing compatible snapshot of this guest is
+        // reused; a fresh clone gets its own baseline with the same tag.
+        var baselineTag = recipe["baseline"]?["snapshotTag"]?.GetValue<string>();
+        var baselineOutcome = "not_required";
+        if (!string.IsNullOrEmpty(baselineTag))
+        {
+            var snapshots = _library.ListSnapshots(record);
+            var match = snapshots["snapshots"]!.AsArray()
+                .Select(node => node!.AsObject())
+                .FirstOrDefault(node => node["tag"]!.GetValue<string>() == baselineTag);
+            if (match is null)
+            {
+                await _manager.SnapshotAsync(record.Name, baselineTag, save: true, cancellationToken)
+                    .ConfigureAwait(false);
+                _library.WriteSnapshotMetadata(record, baselineTag);
+                baselineOutcome = "created";
+            }
+            else if (!match["compatible"]!.GetValue<bool>())
+            {
+                throw new SupervisorOperationException(
+                    ErrorCodes.RecipeIncompatibleBaseline,
+                    $"The baseline snapshot '{baselineTag}' is not compatible with this guest: "
+                    + match["incompatibleReason"]?.GetValue<string>());
+            }
+            else
+            {
+                baselineOutcome = "resolved";
+            }
+        }
+
+        report["baselineOutcome"] = baselineOutcome;
+        var baselineVerified = false;
+        var recovery = "none";
+
+        var steps = recipe["steps"] as JsonArray ?? new JsonArray();
+        var stepReports = new JsonArray();
+        var failed = false;
+        var networkRestored = "not_required";
+        var originalNetwork = recipe["network"] as JsonObject;
+        _replaying = true;
+        try
+        {
+            var stepIndex = -1;
+            foreach (var node in steps)
+            {
+                stepIndex++;
+                if (node is not JsonObject step)
+                {
+                    continue;
+                }
+
+                var stepOp = step["op"]?.GetValue<string>() ?? "";
+                var stepArgs = step["args"] as JsonObject ?? new JsonObject();
+                var started = DateTimeOffset.UtcNow;
+                var stepReport = new JsonObject
+                {
+                    ["index"] = step["index"]?.DeepClone(),
+                    ["op"] = stepOp,
+                    ["startedUtc"] = started.ToString("O"),
+                };
+
+                if (failed)
+                {
+                    stepReport["result"] = "skipped";
+                    stepReports.Add(stepReport);
+                    continue;
+                }
+
+                try
+                {
+                    if (stepOp == "snapshot.save")
+                    {
+                        // A recorded snapshot save defines the baseline. The
+                        // replay resolves or creates that snapshot on this
+                        // guest, restores it and reports the recovery mode
+                        // instead of re-saving over the baseline.
+                        var tag = stepArgs["tag"]?.GetValue<string>() ?? baselineTag;
+                        if (string.IsNullOrEmpty(tag))
+                        {
+                            throw new SupervisorOperationException(
+                                ErrorCodes.RecipeInvalid, "The baseline snapshot step has no tag.");
+                        }
+
+                        var snapshots = _library.ListSnapshots(record);
+                        var existing = snapshots["snapshots"]!.AsArray()
+                            .Select(node => node!.AsObject())
+                            .FirstOrDefault(node => node["tag"]!.GetValue<string>() == tag);
+                        if (existing is null)
+                        {
+                            await _manager.SnapshotAsync(record.Name, tag, save: true, cancellationToken)
+                                .ConfigureAwait(false);
+                            _library.WriteSnapshotMetadata(record, tag);
+                            baselineOutcome = "created";
+                        }
+                        else if (!existing["compatible"]!.GetValue<bool>())
+                        {
+                            throw new SupervisorOperationException(
+                                ErrorCodes.RecipeIncompatibleBaseline,
+                                $"The baseline snapshot '{tag}' is not compatible with this guest.");
+                        }
+
+                        var restoreArgs = new JsonObject { ["tag"] = tag };
+                        var approval = JsonArgs.String(args, "approval");
+                        if (!string.IsNullOrEmpty(approval))
+                        {
+                            restoreArgs["approval"] = approval;
+                        }
+
+                        var restored = await DispatchAsync(
+                                OperationNames.SnapshotLoad, restoreArgs, sink, cancellationToken, session)
+                            .ConfigureAwait(false) as JsonObject;
+                        recovery = restored?["recovery"]?.GetValue<string>() ?? "unknown";
+
+                        // A restored guest may come back without the fixture in
+                        // the foreground, so the recorded application is
+                        // relaunched and the hierarchy is awaited again.
+                        // A restored guest reboots: the fixture is relaunched
+                        // and the hierarchy is awaited, both retried until the
+                        // guest is back or the bound is exhausted.
+                        var package = recipe["app"]?["package"]?.GetValue<string>();
+
+                        // When the recipe installs or launches the fixture after
+                        // the baseline, the guest only has to be interactive
+                        // again; otherwise the fixture is relaunched here.
+                        var remainingOps = steps.Skip(stepIndex + 1)
+                            .Select(node => node?["op"]?.GetValue<string>() ?? "")
+                            .ToList();
+                        var relaunchNeeded = !remainingOps.Any(op => op is "app.launch" or "app.install");
+                        var uiReady = true;
+                        for (var attempt = 0; relaunchNeeded && attempt < 10 && !uiReady; attempt++)
+                        {
+                            if (!string.IsNullOrEmpty(package))
+                            {
+                                try
+                                {
+                                    await DispatchAsync(
+                                            OperationNames.AppLaunch,
+                                            new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                            sink,
+                                            cancellationToken,
+                                            session)
+                                        .ConfigureAwait(false);
+                                }
+                                catch (SupervisorOperationException)
+                                {
+                                    // The guest may still be rebooting.
+                                }
+                            }
+
+
+                            uiReady = await WaitForGuestUiAsync(session, sink, cancellationToken, package, 4)
+                                .ConfigureAwait(false);
+                        }
+
+                        stepReport["baselineAppRelaunched"] = package;
+                        stepReport["guestUiReady"] = uiReady;
+                        stepReport["result"] = "baseline_restored";
+                        stepReport["baselineOutcome"] = baselineOutcome;
+                        stepReport["recovery"] = recovery;
+                        stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                        stepReports.Add(stepReport);
+                        continue;
+                    }
+
+                    var resolved = RecipeService.ResolveRuntime(stepArgs, runtimeValues);
+                    if (IsInstanceBound(stepOp))
+                    {
+                        // Every step runs against the guest the session is bound
+                        // to; a recipe can never address another instance.
+                        resolved["name"] = session.Instance;
+                    }
+
+                    if (stepArgs["needsObservation"] is JsonValue needs && needs.GetValue<bool>())
+                    {
+                        var observation = await DispatchAsync(
+                                OperationNames.ObservationScreenshot,
+                                new JsonObject { ["name"] = session.Instance },
+                                sink,
+                                cancellationToken,
+                                session)
+                            .ConfigureAwait(false) as JsonObject;
+                        var frameId = observation?["frameId"]?.GetValue<string>()
+                                      ?? throw new SupervisorOperationException(
+                                          ErrorCodes.StaleObservation, "A fresh observation was not available.");
+                        resolved["frameId"] = frameId;
+                    }
+
+                    session = _agents.EnsureActive(session);
+                    AuthorizeAgent(session, stepOp, resolved);
+                    var data = await DispatchAsync(stepOp, resolved, sink, cancellationToken, session)
+                        .ConfigureAwait(false);
+                    var expectation = step["expect"] as JsonObject;
+                    var expectationOk = await EvaluateExpectationAsync(expectation, data, session, sink, cancellationToken)
+                        .ConfigureAwait(false);
+                    stepReport["result"] = expectationOk ? "ok" : "expectation_failed";
+                    if (expectationOk && stepOp == "ui.assert" && !baselineVerified)
+                    {
+                        baselineVerified = true;
+                    }
+                    stepReport["artifactId"] = data?["artifactId"]?.DeepClone();
+                    stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                    if (!expectationOk)
+                    {
+                        failed = true;
+                    }
+                }
+                catch (SupervisorOperationException ex)
+                {
+                    stepReport["result"] = "failed";
+                    stepReport["code"] = ex.Code;
+                    stepReport["message"] = ex.Message;
+                    stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                    failed = true;
+                }
+                catch (Exception ex)
+                {
+                    // A transport hiccup fails the step with a typed outcome
+                    // instead of aborting the replay without a report.
+                    stepReport["result"] = "failed";
+                    stepReport["code"] = ErrorCodes.Internal;
+                    stepReport["message"] = ex.Message;
+                    stepReport["durationMs"] = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                    failed = true;
+                }
+
+                stepReports.Add(stepReport);
+            }
+        }
+        finally
+        {
+            _replaying = false;
+        }
+
+        // The recorded network profile is restored so a replay never leaves
+        // shaping behind on the guest.
+        if (originalNetwork?["original"]?["latencyMs"]?.GetValue<int>() is > 0)
+        {
+            try
+            {
+                await DispatchAsync(
+                        OperationNames.NetworkProfile,
+                        new JsonObject { ["delay"] = "none", ["speed"] = "full", ["latencyMs"] = 0 },
+                        sink,
+                        cancellationToken,
+                        session)
+                    .ConfigureAwait(false);
+                networkRestored = "restored";
+            }
+            catch (SupervisorOperationException ex)
+            {
+                networkRestored = "failed: " + ex.Code;
+            }
+        }
+
+        report["steps"] = stepReports;
+        report["failed"] = failed;
+        report["baselineVerified"] = baselineVerified;
+        report["recovery"] = recovery;
+        report["networkRestored"] = networkRestored;
+        report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+        return report;
+    }
+
+
+    /// <summary>
+    /// Waits until the guest exposes an interactive hierarchy again after a
+    /// restore. A restored guest can be back at the launcher for a moment, and
+    /// a step that targets an application control must not race that window.
+    /// </summary>
+    private async Task<bool> WaitForGuestUiAsync(
+        AgentSession session,
+        IEventSink sink,
+        CancellationToken cancellationToken,
+        string? package = null,
+        int attempts = 30)
+    {
+        for (var attempt = 0; attempt < attempts; attempt++)
+        {
+            if (!string.IsNullOrEmpty(package))
+            {
+                var foreground = await DispatchAsync(
+                        OperationNames.AppForeground,
+                        new JsonObject { ["name"] = session.Instance },
+                        sink,
+                        cancellationToken,
+                        session)
+                    .ConfigureAwait(false) as JsonObject;
+                var window = foreground?["foreground"]?.GetValue<string>() ?? "";
+                if (!window.Contains(package, StringComparison.Ordinal))
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+            }
+
+            var tree = await DispatchAsync(
+                    OperationNames.ObservationTree,
+                    new JsonObject { ["name"] = session.Instance },
+                    sink,
+                    cancellationToken,
+                    session)
+                .ConfigureAwait(false) as JsonObject;
+            var nodes = tree?["nodes"] as JsonArray;
+            if (nodes is not null && nodes.Any(node =>
+                    node?["contentDescription"]?.GetValue<string>() is { Length: > 0 }))
+            {
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+
+        return false;
+    }
+
+    private async Task<bool> EvaluateExpectationAsync(
+        JsonObject? expectation,
+        JsonNode? data,
+        AgentSession session,
+        IEventSink sink,
+        CancellationToken cancellationToken)
+    {
+        if (expectation is null)
+        {
+            return true;
+        }
+
+        var type = expectation["type"]?.GetValue<string>() ?? "";
+        if (type == "selectorVisible")
+        {
+            return data?["pass"]?.GetValue<bool>() ?? false;
+        }
+
+        if (type == "packageForeground")
+        {
+            var package = expectation["package"]?.GetValue<string>();
+            if (string.IsNullOrEmpty(package))
+            {
+                return true;
+            }
+
+            // The launch is asynchronous, so the foreground window is polled for
+            // a short bounded time before the expectation fails.
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                var foreground = await DispatchAsync(
+                        OperationNames.AppForeground,
+                        new JsonObject { ["name"] = session.Instance },
+                        sink,
+                        cancellationToken,
+                        session)
+                    .ConfigureAwait(false) as JsonObject;
+                var window = foreground?["foreground"]?.GetValue<string>() ?? "";
+                var reported = foreground?["package"]?.GetValue<string>();
+                if (reported == package
+                    || window.Contains(package, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
+            }
+
+            return false;
+        }
+
+        return true;
+    }
 
     private async Task<JsonNode?> DispatchAsync(
         string op,
@@ -622,6 +1080,76 @@ public sealed class OperationDispatcher
                 _agents.InvalidateObservations(name);
                 return result;
             }
+
+            case OperationNames.RecipeRecordStart:
+            {
+                var target = JsonArgs.String(args, "name") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "name is required.");
+                var record = _manager.Get(target);
+                var recording = _recipes.StartRecording(
+                    JsonArgs.String(args, "recipe") ?? "recipe",
+                    target,
+                    JsonArgs.String(args, "template") ?? target,
+                    _library.GuestInfo(record));
+                return new JsonObject
+                {
+                    ["recipeId"] = recording.Id,
+                    ["instance"] = recording.Instance,
+                    ["guest"] = recording.Guest.DeepClone(),
+                    ["startedUtc"] = recording.StartedUtc.ToString("O"),
+                };
+            }
+
+            case OperationNames.RecipeRecordRuntime:
+            {
+                var recordingId = JsonArgs.String(args, "recipeId") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "recipeId is required.");
+                _recipes.RegisterRuntimeValue(
+                    recordingId,
+                    JsonArgs.String(args, "runtime") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "runtime is required."),
+                    JsonArgs.String(args, "value") ?? "");
+                return new JsonObject { ["recipeId"] = recordingId, ["registered"] = true };
+            }
+
+            case OperationNames.RecipeRecordStop:
+            {
+                var recordingId = JsonArgs.String(args, "recipeId") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "recipeId is required.");
+                var apkHash = TryApprovedApkHash();
+                return _recipes.StopRecording(recordingId, apkHash);
+            }
+
+            case OperationNames.RecipeExport:
+                return _recipes.ExportRecipe(
+                    JsonArgs.String(args, "recipeId") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "recipeId is required."));
+
+            case OperationNames.RecipeValidate:
+            {
+                var recipe = _recipes.LoadRecipe(
+                    JsonArgs.String(args, "recipe") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "recipe is required."));
+                var target = JsonArgs.String(args, "name");
+                JsonObject? guest = null;
+                if (!string.IsNullOrEmpty(target))
+                {
+                    guest = _library.GuestInfo(_manager.Get(target));
+                }
+
+                var validation = _recipes.Validate(recipe, guest);
+                if (!validation.Valid)
+                {
+                    throw new SupervisorOperationException(
+                        ErrorCodes.RecipeInvalid, string.Join("; ", validation.Errors));
+                }
+
+                return validation.Report;
+            }
+
+            case OperationNames.RecipeReplay:
+                return await ReplayAsync(args, session, sink, cancellationToken)
+                    .ConfigureAwait(false);
 
             case OperationNames.SimulationGeoFix:
             {

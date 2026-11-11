@@ -328,6 +328,49 @@ internal static class SupervisorCommands
                 requestArgs["tag"] = args.Optional("tag") ?? throw new ArgumentException("--tag is required.");
                 requestArgs["force"] = args.Has("force");
                 break;
+            case "recipe-start":
+                op = OperationNames.RecipeRecordStart;
+                requestArgs["name"] = name;
+                requestArgs["recipe"] = args.Optional("recipe") ?? "recipe";
+                break;
+            case "recipe-runtime":
+                op = OperationNames.RecipeRecordRuntime;
+                requestArgs["recipeId"] = args.Optional("recipe-id") ?? throw new ArgumentException("--recipe-id is required.");
+                requestArgs["runtime"] = args.Optional("runtime") ?? throw new ArgumentException("--runtime is required.");
+                requestArgs["value"] = args.Optional("value") ?? "";
+                break;
+            case "recipe-stop":
+                op = OperationNames.RecipeRecordStop;
+                requestArgs["recipeId"] = args.Optional("recipe-id") ?? throw new ArgumentException("--recipe-id is required.");
+                break;
+            case "recipe-export":
+                op = OperationNames.RecipeExport;
+                requestArgs["recipeId"] = args.Optional("recipe-id") ?? throw new ArgumentException("--recipe-id is required.");
+                break;
+            case "recipe-validate":
+                op = OperationNames.RecipeValidate;
+                requestArgs["recipe"] = args.Optional("recipe") ?? throw new ArgumentException("--recipe is required.");
+                if (!string.IsNullOrEmpty(name)) { requestArgs["name"] = name; }
+                break;
+            case "recipe-replay":
+                op = OperationNames.RecipeReplay;
+                requestArgs["recipe"] = args.Optional("recipe") ?? throw new ArgumentException("--recipe is required.");
+                if (!string.IsNullOrEmpty(name)) { requestArgs["name"] = name; }
+                var runtimeFile = args.Optional("runtime-file");
+                if (!string.IsNullOrEmpty(runtimeFile) && File.Exists(runtimeFile))
+                {
+                    requestArgs["runtime"] = JsonNode.Parse(File.ReadAllText(runtimeFile))?.AsObject();
+                }
+                else if (!string.IsNullOrEmpty(args.Optional("runtime")))
+                {
+                    var pair = args.Optional("runtime")!.Split('=', 2);
+                    requestArgs["runtime"] = new JsonObject { [pair[0]] = pair.Length > 1 ? pair[1] : "" };
+                }
+
+                var approvalCode = args.Optional("approval");
+                if (!string.IsNullOrEmpty(approvalCode)) { requestArgs["approval"] = approvalCode; }
+                deadline = TimeSpan.FromMinutes(15);
+                break;
             case "snapshot-save":
             case "snapshot-load":
                 op = command == "snapshot-save" ? OperationNames.SnapshotSave : OperationNames.SnapshotLoad;

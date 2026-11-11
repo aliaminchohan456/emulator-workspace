@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Builds the sanitized Phase 3 evidence manifest.
-
-The manifest is committed; the raw artifacts stay in the gitignored artifacts
-directory. It records run ids, commits, pins, commands, per-lane check counts
-and statuses, and the name plus SHA-256 of every artifact file so the raw
-evidence can be verified without committing it.
-"""
-
 import hashlib
 import json
 import pathlib
@@ -31,20 +22,11 @@ def git(*args: str) -> str:
         return ""
 
 
-def main() -> int:
-    repo = pathlib.Path(__file__).resolve().parent.parent
-    artifacts = repo / "artifacts" / "phase3"
-    runs = sorted([p for p in artifacts.iterdir() if p.is_dir()])
-    if not runs:
-        print("no phase 3 runs found", file=sys.stderr)
-        return 2
+def read_json(path: pathlib.Path):
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
-    selected = runs[-1] if len(sys.argv) < 2 else artifacts / sys.argv[1]
-    summary_path = selected / "summary.json"
-    summary = json.loads(summary_path.read_text(encoding="utf-8-sig"))
-    versions_path = selected / "versions.json"
-    versions = json.loads(versions_path.read_text(encoding="utf-8-sig")) if versions_path.exists() else {}
 
+def lanes_of(summary: dict) -> dict:
     lanes: dict[str, dict] = {}
     for check in summary.get("checks", []):
         lane = lanes.setdefault(check["Lane"], {"passed": 0, "failed": 0, "checks": []})
@@ -55,42 +37,91 @@ def main() -> int:
             "detail": check["Detail"][:160],
             "atUtc": check["AtUtc"],
         })
+    return lanes
 
+
+def files_of(directory: pathlib.Path) -> list:
     files = []
-    for path in sorted(selected.rglob("*")):
+    for path in sorted(directory.rglob("*")):
         if path.is_file() and path.name != "summary.json":
             files.append({
-                "name": str(path.relative_to(selected)).replace("\\", "/"),
+                "name": str(path.relative_to(directory)).replace("\\", "/"),
                 "bytes": path.stat().st_size,
                 "sha256": sha256(path),
             })
+    return files
+
+
+def main() -> int:
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    artifacts = repo / "artifacts" / "phase3"
+    runs = []
+    for directory in sorted([p for p in artifacts.iterdir() if p.is_dir()]):
+        summary_path = directory / "summary.json"
+        if not summary_path.exists():
+            continue
+        summary = read_json(summary_path)
+        versions_path = directory / "versions.json"
+        versions = read_json(versions_path) if versions_path.exists() else {}
+        runs.append({
+            "kind": "phase3",
+            "runId": summary.get("runId"),
+            "rawArtifactRoot": str(directory),
+            "rawArtifactsAreGitignored": True,
+            "commit": versions.get("commit"),
+            "pins": {
+                "emulator": versions.get("emulator"),
+                "imageRevision": versions.get("imageRevision"),
+                "dotnet": versions.get("dotnet"),
+            },
+            "root": versions.get("root"),
+            "freeBytesAtStart": versions.get("freeBytes"),
+            "failedChecks": summary.get("failed"),
+            "totalChecks": len(summary.get("checks", [])),
+            "lanes": lanes_of(summary),
+            "artifacts": files_of(directory),
+        })
+
+    recipe_root = artifacts / "recipe"
+    if recipe_root.exists():
+        for directory in sorted([p for p in recipe_root.iterdir() if p.is_dir()]):
+            summary_path = directory / "summary.json"
+            if not summary_path.exists():
+                continue
+            summary = read_json(summary_path)
+            versions_path = directory / "versions.json"
+            versions = read_json(versions_path) if versions_path.exists() else {}
+            runs.append({
+                "kind": "recipe",
+                "runId": summary.get("runId"),
+                "rawArtifactRoot": str(directory),
+                "rawArtifactsAreGitignored": True,
+                "commit": versions.get("commit"),
+                "pins": {"dotnet": versions.get("dotnet")},
+                "root": versions.get("root"),
+                "freeBytesAtStart": versions.get("freeBytes"),
+                "failedChecks": summary.get("failed"),
+                "totalChecks": len(summary.get("checks", [])),
+                "lanes": lanes_of(summary),
+                "artifacts": files_of(directory),
+            })
+
+    if not runs:
+        print("no phase 3 runs found", file=sys.stderr)
+        return 2
 
     manifest = {
         "schemaVersion": 1,
-        "generatedUtc": summary.get("finishedUtc"),
-        "runId": summary.get("runId"),
-        "rawArtifactRoot": str(selected),
-        "rawArtifactsAreGitignored": True,
-        "commit": versions.get("commit"),
+        "generatedUtc": runs[-1].get("finishedUtc"),
         "headCommit": git("rev-parse", "--short", "HEAD"),
         "workTree": git("status", "--porcelain") or "clean",
-        "pins": {
-            "emulator": versions.get("emulator"),
-            "imageRevision": versions.get("imageRevision"),
-            "dotnet": versions.get("dotnet"),
-        },
-        "root": versions.get("root"),
-        "freeBytesAtStart": versions.get("freeBytes"),
-        "failedChecks": summary.get("failed"),
-        "totalChecks": len(summary.get("checks", [])),
-        "lanes": lanes,
-        "artifacts": files,
+        "runs": runs,
     }
-
     out = repo / "docs" / "phase3-manifest.json"
     out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    print(f"{out} written for run {summary.get('runId')} "
-          f"({manifest['failedChecks']} failed / {manifest['totalChecks']} checks)")
+    for run in runs:
+        print(f"{run['kind']} {run['runId']}: {run['failedChecks']} failed / {run['totalChecks']} checks")
+    print(f"{out} written")
     return 0
 
 

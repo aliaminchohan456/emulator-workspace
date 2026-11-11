@@ -429,19 +429,13 @@ public sealed class AgentService
             return SecureObservation(record);
         }
 
-        var adb = new AdbClient(_sdk.AdbExe);
-        await adb.RunAsync(record.AdbSerial,
-            new[] { "shell", "uiautomator", "dump", "/sdcard/ws-ui.xml" },
-            TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
-        var xml = await adb.RunAsync(record.AdbSerial,
-            new[] { "shell", "cat", "/sdcard/ws-ui.xml" },
-            TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
+        var xml = await DumpHierarchyAsync(record, cancellationToken).ConfigureAwait(false);
         if (await IsSecureWindowAsync(record, cancellationToken).ConfigureAwait(false))
         {
             return SecureObservation(record);
         }
 
-        var nodes = ParseUiNodes(xml.StandardOutput);
+        var nodes = ParseUiNodes(xml);
         var array = new JsonArray();
         foreach (var node in nodes)
         {
@@ -928,17 +922,43 @@ public sealed class AgentService
         return matches[0];
     }
 
-    private async Task<List<UiNode>> UiTreeAsyncForRecord(
+
+    /// <summary>
+    /// Dumps the accessibility hierarchy. A single ADB timeout is retried once
+    /// because the guest may still be settling after a restore.
+    /// </summary>
+    private async Task<string> DumpHierarchyAsync(
         InstanceRecord record, CancellationToken cancellationToken)
     {
         var adb = new AdbClient(_sdk.AdbExe);
-        await adb.RunAsync(record.AdbSerial,
-            new[] { "shell", "uiautomator", "dump", "/sdcard/ws-ui.xml" },
-            TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
-        var xml = await adb.RunAsync(record.AdbSerial,
-            new[] { "shell", "cat", "/sdcard/ws-ui.xml" },
-            TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
-        var nodes = ParseUiNodes(xml.StandardOutput);
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                await adb.RunAsync(record.AdbSerial,
+                    new[] { "shell", "uiautomator", "dump", "/sdcard/ws-ui.xml" },
+                    TimeSpan.FromSeconds(45), cancellationToken).ConfigureAwait(false);
+                var xml = await adb.RunAsync(record.AdbSerial,
+                    new[] { "shell", "cat", "/sdcard/ws-ui.xml" },
+                    TimeSpan.FromSeconds(45), cancellationToken).ConfigureAwait(false);
+                return xml.StandardOutput;
+            }
+            catch (InvalidOperationException) when (attempt == 0)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        throw new SupervisorOperationException(
+            ErrorCodes.InstanceUnavailable,
+            "The guest did not return an accessibility hierarchy in time.");
+    }
+
+    private async Task<List<UiNode>> UiTreeAsyncForRecord(
+        InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var xml = await DumpHierarchyAsync(record, cancellationToken).ConfigureAwait(false);
+        var nodes = ParseUiNodes(xml);
         return nodes.Select(n => new UiNode(
                 n.ResourceId, n.Text, n.Description, n.ClassName,
                 n.Left, n.Top, n.Right, n.Bottom, n.Clickable))

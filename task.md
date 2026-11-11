@@ -55,7 +55,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
   Not started in this pass; bounded filtered Logcat export already exists in the agent contract.
 - [ ] Ship GPS, rotation, battery and charging, and documented network speed and latency controls. Probe routes, offline and packet loss, sensors, camera and microphone, locale and timezone, display settings, and telephony or SMS for the second pack. Show exact capability and host-integration limits.
 - [ ] Add bounded recipe recording and replay with preconditions, assertions, deadlines, stop conditions, baseline context, and artifacts. Verify clone and restore under two-guest load.
-  Not started; the reusable pieces (fingerprint, disk lineage, snapshot metadata, scoped approvals, event journal) now exist in the supervisor.
+  Implemented and mostly verified: recorder, redacted export, pre-mutation validation, baseline resolution and restore with a recovery mode, per-step timings and artifact ids, network reset, two-guest isolation, negatives and an interrupted run (`tools/recipe-acceptance.ps1`, run `20261111-111424`, 33 of 37 checks). Open: the sample application does not return to the foreground after the baseline restore on this image, so the first application step ends with `selector_not_found`.
 - [ ] Document opt-in external ADB interoperability and tested integrations. Verify a deployment through Gradle/ADB or Android Studio and a run through an external test runner. Add command palette shortcuts for common workflows.
 
 ## 4. Root Lab

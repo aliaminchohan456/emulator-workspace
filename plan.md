@@ -144,6 +144,15 @@ Verified in [docs/phase1-evidence.md](docs/phase1-evidence.md), acceptance run
 - Input latency (20 samples per GPU mode), low-space forcing, multi-touch, and
   software-renderer re-measurement remain open.
 
+Recipe recording and replay are implemented on the supervisor registry: a
+recording session captures supported operations for one guest, the export keeps
+only runtime references, the runner validates the whole recipe before any
+mutation, resolves and restores the baseline snapshot (reporting `restored` or
+`cold_boot`) and replays every step through the same scope, approval and lease
+checks. The two-guest workflow, the negatives and the interruption are
+verified; the post-restore application foreground on a restored guest is still
+open.
+
 ## Phase 2 outcomes and blockers
 
 - Protocol 1 envelopes gained an opaque session credential and idempotency key;

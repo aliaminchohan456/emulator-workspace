@@ -167,13 +167,78 @@ The remaining host-side factor is the physical device that shared the ADB
 server during part of the window; it is outside the workspace and was never
 touched.
 
+## Recipe record and replay (Phase 3 continuation)
+
+`tools/recipe-acceptance.ps1` is the focused entry point for the recipe
+feature. It records a versioned recipe on one managed guest through the normal
+`wsctl` entry points, exports it redacted, replays it on a clean disposable
+clone while a second guest stays active, interrupts a run and exercises the
+negative cases.
+
+Implementation:
+
+- **Recorder** (`RecipeService`, supervisor ops `recipe.recordStart`,
+  `recipe.recordRuntime`, `recipe.recordStop`): a recording session is bound to
+  one managed guest and captures the supported operation types that flow
+  through the supervisor registry, with validated arguments. Only safe
+  references are stored: input text becomes `${runtime:<name>}` (unregistered
+  text is never stored), approval codes, tokens and host paths are dropped, and
+  a coordinate tap is stored as `needsObservation` so the replay takes a fresh
+  observation instead of replaying an expired frame id.
+- **Recipe format**: schema version 1 with the guest compatibility fingerprint
+  (image, device profile, config fingerprint, disk lineage), the baseline
+  snapshot reference, the expected package and APK hash, the network
+  preconditions, the runtime value names and the typed steps with their
+  expectations.
+- **Validator** (`recipe.validate`): the whole recipe is validated before any
+  mutation. Malformed schema, unsupported operation, missing argument group,
+  step count, timeout bounds and target compatibility produce typed errors
+  (`recipe_invalid`, `recipe_unsupported_schema`, `recipe_unsupported_operation`).
+- **Runner** (`recipe.replay`): resolves the baseline snapshot for the target
+  guest (creating its own baseline on a fresh clone), restores it, reports the
+  recovery mode (`restored` or `cold_boot`), relaunches the fixture and waits
+  for the interactive hierarchy, then executes every step through the same
+  scope, approval and lease checks as a live operation. Each step reports its
+  result, duration and artifact id; a failed step stops the dependent steps.
+  The recorded network profile is restored at the end. A step that fails with
+  an unknown outcome keeps that outcome instead of pretending it did not run.
+- **Entry points**: `wsctl recipe start|runtime|stop|export|validate|replay`
+  and the MCP tools `recipe_validate`, `recipe_export`, `recipe_replay`, all
+  going through the same supervisor policy as every other client.
+
+### Verified in run `20261111-111424` (37 checks, 33 passed)
+
+| Area | Result |
+| --- | --- |
+| Recording | 15 steps captured through the registry, including the login, the 2,500 ms delay, the `NETWORK TIMEOUT` assertion and the recovery |
+| Export | the password never appears, `${runtime:login_pass}` is used instead, no absolute host path is stored |
+| Two guests | distinct engine, serial, transport and disk identities; distinct fixture markers (`DUP_TAPS=1` vs `DUP_TAPS=2`) |
+| Replay on a clone | the clone creates its own baseline (`baseline=created`) and restores it (`recovery=restored`) |
+| Isolation | the bystander keeps `DUP_TAPS=2` and its network profile after the replay |
+| Negatives | wrong target `wrong_instance`, malformed recipe `recipe_invalid`, incompatible baseline `recipe_invalid`, revoked session `revoked` |
+| Interruption | the replay client was cancelled mid-run, the operation store shows `recipe.replay`, and the dependent retry is reported |
+| Lifecycle | parallel start attempted (one guest recovered with a sequential start after host WHPX contention), forced interruption, low space (injected at unit level) |
+
+### Open gap in the recipe lane
+
+After the baseline restore the guest reboots, and on this image the sample
+application does not come back to the foreground within the bounded wait, so the
+first step that targets an application control ends with `selector_not_found`
+and the dependent steps are stopped (the behaviour the contract asks for). The
+recorder, exporter, validator, baseline resolution, restore outcome, isolation,
+negatives and interruption paths are verified; the post-restore application
+foreground is not. Next action: verify whether a cold-boot recovery
+(`recovery=cold_boot`) restores the running application, or re-record the
+baseline after the fixture is in the foreground so the restored state contains
+the running application.
+
 ## Remaining gaps
 
 | Item | State | Next action |
 | --- | --- | --- |
 | External SDK AVD import | Pending | Add a preview-and-copy importer that validates source ownership, state, symlinks and reparse points and produces an independent workspace copy |
 | Two running managed guests plus an external transport | Partially verified | The harness runs two guests, but the second is restarted during the transport lane; repeat with both running for the whole window |
-| Recipe record/replay | Pending | The supervisor now owns fingerprints, lineage, snapshot metadata and scoped approvals; the recipe format and replay report are still to be built |
+| Recipe record/replay | Partially verified | Recorder, exporter, validator, baseline resolution/restore, isolation, negatives and interruption are verified (`20261111-111424`); the post-restore application foreground on a restored guest is not |
 | Package ops, deep links, instrumentation, manifest/ABI inspection | Pending | Add them as operator and scoped agent operations |
 | Crash/ANR capture, bug reports, recordings, hierarchy highlighting, profiling, file explorer | Pending | Not started |
 | Second simulation pack | Pending | Routes, packet loss, sensors, camera/microphone, locale/timezone and telephony are not probed |

@@ -59,12 +59,13 @@ internal static class Program
             var manager = new InstanceManager(paths, sdk, store, hub);
             var agents = new AgentService(paths, sdk, manager, agentStore);
             var library = new DeviceLibraryService(paths, manager);
+            var recipes = new RecipeService(paths);
             var adopted = await manager.AdoptAsync(shutdown.Token).ConfigureAwait(false);
             Log("Adoption: " + adopted.ToJsonString());
 
             OperationDispatcher dispatcher;
             SupervisorPipeServer server;
-            dispatcher = new OperationDispatcher(paths, sdk, store, manager, journal, agents, library, () =>
+            dispatcher = new OperationDispatcher(paths, sdk, store, manager, journal, agents, library, recipes, () =>
             {
                 Log("Shutdown requested by client.");
                 shutdown.Cancel();

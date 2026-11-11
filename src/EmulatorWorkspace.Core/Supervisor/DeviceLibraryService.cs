@@ -68,6 +68,21 @@ public sealed class DeviceLibraryService
         string? ParentLineageId,
         string EngineVersion);
 
+    /// <summary>Compatibility information for one guest, used by recipes.</summary>
+    public JsonObject GuestInfo(InstanceRecord record)
+    {
+        var metadata = ReadMetadata(record);
+        return new JsonObject
+        {
+            ["instance"] = record.Name,
+            ["imagePackage"] = record.ImagePackage,
+            ["deviceProfile"] = record.DeviceProfile,
+            ["configFingerprint"] = ComputeConfigFingerprint(ReadConfig(record)),
+            ["instanceFingerprint"] = ComputeInstanceFingerprint(record),
+            ["lineageId"] = Str(metadata, "lineageId"),
+        };
+    }
+
     public JsonObject ExportProfile(InstanceRecord record)
     {
         var profile = ReadProfile(record);

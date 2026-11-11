@@ -254,6 +254,9 @@ internal static class Program
             "logs_read" => (OperationNames.LogsRead, mapped, false),
             "event_poll" => (OperationNames.EventPoll, mapped, false),
             "network_set_profile" => (OperationNames.NetworkProfile, mapped, false),
+            "recipe_validate" => (OperationNames.RecipeValidate, mapped, false),
+            "recipe_export" => (OperationNames.RecipeExport, mapped, false),
+            "recipe_replay" => (OperationNames.RecipeReplay, mapped, false),
             "snapshot_save" => (OperationNames.SnapshotSave, mapped, false),
             "snapshot_restore" => (OperationNames.SnapshotLoad, mapped, false),
             "artifact_read" => (OperationNames.ArtifactRead, mapped, false),
@@ -413,6 +416,38 @@ internal static class Program
                             ["description"] = "Guest egress delay; 0 removes shaping. Defaults to the delay profile.",
                         },
                     },
+                }),
+            Tool("recipe_validate", "Validate a recorded recipe against this guest before any mutation.",
+                new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["recipe"] = new JsonObject { ["type"] = "string" },
+                    },
+                    ["required"] = new JsonArray("recipe"),
+                }),
+            Tool("recipe_export", "Export a recorded recipe with its redacted steps.",
+                new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["recipeId"] = new JsonObject { ["type"] = "string" },
+                    },
+                    ["required"] = new JsonArray("recipeId"),
+                }),
+            Tool("recipe_replay", "Replay a recorded recipe on the bound guest; every step re-checks scope and approval.",
+                new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["recipe"] = new JsonObject { ["type"] = "string" },
+                        ["runtime"] = new JsonObject { ["type"] = "object" },
+                        ["approval"] = new JsonObject { ["type"] = "string" },
+                    },
+                    ["required"] = new JsonArray("recipe"),
                 }),
             Tool("snapshot_save", "Save a named snapshot on the bound guest.",
                 new JsonObject

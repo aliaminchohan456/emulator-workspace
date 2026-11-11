@@ -106,6 +106,11 @@ public static class ErrorCodes
     public const string UnknownOutcome = "unknown_outcome";
     public const string CapabilityUnavailable = "capability_unavailable";
     public const string InstanceUnavailable = "instance_unavailable";
+    public const string RecipeInvalid = "recipe_invalid";
+    public const string RecipeUnsupportedSchema = "recipe_unsupported_schema";
+    public const string RecipeUnsupportedOperation = "recipe_unsupported_operation";
+    public const string RecipeIncompatibleBaseline = "recipe_incompatible_baseline";
+    public const string RecipeMissingRuntimeValue = "recipe_missing_runtime_value";
 }
 
 public static class OperationNames
@@ -130,6 +135,12 @@ public static class OperationNames
     public const string InstanceProfileImport = "instance.profileImport";
     public const string InstancePresets = "instance.presets";
     public const string InstanceDiskEstimate = "instance.diskEstimate";
+    public const string RecipeRecordStart = "recipe.recordStart";
+    public const string RecipeRecordRuntime = "recipe.recordRuntime";
+    public const string RecipeRecordStop = "recipe.recordStop";
+    public const string RecipeExport = "recipe.export";
+    public const string RecipeValidate = "recipe.validate";
+    public const string RecipeReplay = "recipe.replay";
     public const string InstanceInputHold = "instance.inputHold";
     public const string InstanceInputGate = "instance.inputGate";
 
