@@ -176,6 +176,13 @@ public sealed class RecipeService
         var expectation = BuildExpectation(op, args, result);
         if (expectation is not null)
         {
+            // A recipe stores verified steps only: an assertion that did not
+            // hold is not part of a reproducible recipe.
+            if (expectation["pass"] is { } passed && !passed.GetValue<bool>())
+            {
+                return null;
+            }
+
             stored["expect"] = expectation;
         }
 
@@ -353,6 +360,7 @@ public sealed class RecipeService
             ["steps"] = new JsonArray(recording.Steps.Select(step => (JsonNode)step.DeepClone()).ToArray()),
         };
 
+        Directory.CreateDirectory(RecipeDirectory);
         var path = Path.Combine(RecipeDirectory, recording.Id + ".json");
         File.WriteAllText(
             path,

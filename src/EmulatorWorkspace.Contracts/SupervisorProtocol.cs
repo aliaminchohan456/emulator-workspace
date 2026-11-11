@@ -133,6 +133,7 @@ public static class OperationNames
     public const string InstanceDuplicate = "instance.duplicate";
     public const string InstanceReset = "instance.reset";
     public const string InstanceProfileExport = "instance.profileExport";
+    public const string InstanceImportAvd = "instance.importAvd";
     public const string InstanceProfileImport = "instance.profileImport";
     public const string InstancePresets = "instance.presets";
     public const string InstanceDiskEstimate = "instance.diskEstimate";

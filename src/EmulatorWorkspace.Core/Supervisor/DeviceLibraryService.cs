@@ -293,6 +293,260 @@ public sealed class DeviceLibraryService
         return total;
     }
 
+// ---------------------------------------------------------- AVD import
+
+    /// <summary>
+    /// Validates an external SDK AVD as an import source. The source is only
+    /// ever read: the import produces an independent workspace-owned copy.
+    /// </summary>
+    public JsonObject ValidateAvdImport(string sourcePath, string targetName)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "source is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(targetName))
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "name is required.");
+        }
+
+        var source = Path.GetFullPath(sourcePath);
+        var workspaceHome = Path.GetFullPath(_paths.AvdHome) + Path.DirectorySeparatorChar;
+        if (source.StartsWith(workspaceHome, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest,
+                "The source AVD already belongs to this workspace; duplicate the managed instance instead.");
+        }
+
+        if (!Directory.Exists(source))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.NotFound, $"The source AVD directory '{source}' does not exist.");
+        }
+
+        var configPath = Path.Combine(source, "config.ini");
+        if (!File.Exists(configPath))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest,
+                $"The source AVD has no config.ini; '{source}' is not an AVD directory.");
+        }
+
+        var reparse = new List<string>();
+        ValidateNoReparsePoints(source, reparse);
+        if (reparse.Count > 0)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest,
+                "The source AVD contains links or reparse points and cannot be imported: "
+                + string.Join(", ", reparse.Take(3)));
+        }
+
+        var config = ReadConfigFile(configPath);
+        var imagePackage = ImagePackageForConfig(config);
+        var disks = new JsonArray();
+        long diskBytes = 0;
+        foreach (var file in Directory.EnumerateFiles(source, "userdata*", SearchOption.TopDirectoryOnly))
+        {
+            var info = new FileInfo(file);
+            diskBytes += info.Length;
+            disks.Add(new JsonObject
+            {
+                ["name"] = Path.GetFileName(file),
+                ["bytes"] = info.Length,
+                ["sha256"] = HashFile(file),
+            });
+        }
+
+        var fingerprint = ComputeConfigFingerprint(config);
+        return new JsonObject
+        {
+            ["source"] = source,
+            ["sourceConfig"] = configPath,
+            ["sourceFingerprint"] = fingerprint,
+            ["sourceWritableDiskBytes"] = diskBytes,
+            ["sourceWritableDisks"] = disks,
+            ["sourceImage"] = imagePackage,
+            ["sourceDevice"] = config.GetValueOrDefault("hw.device.name", ""),
+            ["sourceRam"] = config.GetValueOrDefault("hw.ramSize", ""),
+            ["targetName"] = targetName,
+            ["readOnly"] = true,
+            ["validatedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    /// <summary>
+    /// Imports an external AVD as an independent workspace-owned instance. The
+    /// source is never written to; the copy is verified by comparing the source
+    /// fingerprint and writable disk hashes before and after.
+    /// </summary>
+    public async Task<JsonObject> ImportAvdAsync(
+        string sourcePath, string targetName, CancellationToken cancellationToken)
+    {
+        var plan = ValidateAvdImport(sourcePath, targetName);
+        var source = (string)plan["source"]!;
+        var before = SourceFingerprint(source);
+
+        var target = await _manager.CreateAsync(
+                targetName,
+                ImagePackageForImport(source),
+                DeviceProfileForImport(source),
+                null,
+                null,
+                null,
+                headless: true,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var sourceDirectory = source;
+        var targetDirectory = AvdDirectory(target);
+        Directory.CreateDirectory(targetDirectory);
+
+        var sourceConfig = ReadConfigFile(Path.Combine(sourceDirectory, "config.ini"));
+        var targetConfig = ReadConfig(target);
+        var targetAvdId = targetConfig.GetValueOrDefault("AvdId");
+        foreach (var (key, value) in sourceConfig)
+        {
+            targetConfig[key] = value;
+        }
+
+        if (!string.IsNullOrEmpty(targetAvdId))
+        {
+            targetConfig["AvdId"] = targetAvdId;
+        }
+
+        WriteConfig(target, targetConfig);
+
+        var copied = new JsonArray();
+        long copiedBytes = 0;
+        foreach (var file in Directory.EnumerateFiles(sourceDirectory, "userdata*", SearchOption.TopDirectoryOnly))
+        {
+            var destination = Path.Combine(targetDirectory, Path.GetFileName(file));
+            File.Copy(file, destination, overwrite: true);
+            copiedBytes += new FileInfo(destination).Length;
+            copied.Add(Path.GetFileName(file));
+        }
+
+        var lineage = Guid.NewGuid().ToString("N");
+        WriteMetadata(target, new JsonObject
+        {
+            ["lineageId"] = lineage,
+            ["parentLineageId"] = null,
+            ["importedFrom"] = source,
+            ["createdUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+            ["configFingerprint"] = ComputeConfigFingerprint(ReadConfig(target)),
+        });
+
+        var after = SourceFingerprint(source);
+        return new JsonObject
+        {
+            ["name"] = target.Name,
+            ["avdName"] = target.AvdName,
+            ["serial"] = target.AdbSerial,
+            ["consolePort"] = target.ConsolePort,
+            ["grpcPort"] = target.GrpcPort,
+            ["source"] = source,
+            ["copiedFiles"] = copied,
+            ["copiedBytes"] = copiedBytes,
+            ["sourceFingerprintBefore"] = before["fingerprint"]?.DeepClone(),
+            ["sourceFingerprintAfter"] = after["fingerprint"]?.DeepClone(),
+            ["sourceWritableDisksBefore"] = before["writableDisks"]?.DeepClone(),
+            ["sourceWritableDisksAfter"] = after["writableDisks"]?.DeepClone(),
+            ["sourceUnchanged"] = before["fingerprint"]!.GetValue<string>() == after["fingerprint"]!.GetValue<string>()
+                                 && before["writableDisks"]!.ToJsonString() == after["writableDisks"]!.ToJsonString(),
+            ["targetFingerprint"] = ComputeInstanceFingerprint(target),
+            ["lineageId"] = lineage,
+        };
+    }
+
+    private JsonObject SourceFingerprint(string source)
+    {
+        var configPath = Path.Combine(source, "config.ini");
+        var config = File.Exists(configPath) ? ReadConfigFile(configPath) : new Dictionary<string, string>();
+        var disks = new JsonArray();
+        if (Directory.Exists(source))
+        {
+            foreach (var file in Directory.EnumerateFiles(source, "userdata*", SearchOption.TopDirectoryOnly).OrderBy(f => f, StringComparer.Ordinal))
+            {
+                disks.Add(new JsonObject
+                {
+                    ["name"] = Path.GetFileName(file),
+                    ["bytes"] = new FileInfo(file).Length,
+                    ["sha256"] = HashFile(file),
+                });
+            }
+        }
+
+        return new JsonObject
+        {
+            ["fingerprint"] = ComputeConfigFingerprint(config),
+            ["writableDisks"] = disks,
+        };
+    }
+
+    private string ImagePackageForImport(string source) =>
+        ImagePackageForConfig(ReadConfigFile(Path.Combine(source, "config.ini")));
+
+    /// <summary>
+    /// Resolves the system image package of an AVD configuration. The value is
+    /// either the full package id or a relative system directory.
+    /// </summary>
+    private static string ImagePackageForConfig(Dictionary<string, string> config)
+    {
+        var value = config.GetValueOrDefault("image.sysdir.1", string.Empty).Trim();
+        if (value.Length == 0)
+        {
+            return "system-images;android-35;default;x86_64";
+        }
+
+        // The value is either a package id ("system-images;android-35;default;x86_64")
+        // or a relative system directory ("system-images\android-35\default\x86_64\").
+        var normalized = value.Replace('/', ';').Replace('\\', ';').Trim(';');
+        if (!normalized.StartsWith("system-images;", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = "system-images;" + normalized;
+        }
+
+        return normalized;
+    }
+
+    private string DeviceProfileForImport(string source)
+    {
+        var config = ReadConfigFile(Path.Combine(source, "config.ini"));
+        return config.GetValueOrDefault("hw.device.name", "pixel_6");
+    }
+
+    public Dictionary<string, string> ReadConfigFile(string path)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(path))
+        {
+            return values;
+        }
+
+        foreach (var line in File.ReadAllLines(path))
+        {
+            var separator = line.IndexOf('=');
+            if (separator <= 0)
+            {
+                continue;
+            }
+
+            values[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+        }
+
+        return values;
+    }
+
+    public static string HashFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
+    }
+
     // ------------------------------------------------------------- lifecycle
 
     /// <summary>

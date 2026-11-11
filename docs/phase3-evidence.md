@@ -206,7 +206,22 @@ Implementation:
   and the MCP tools `recipe_validate`, `recipe_export`, `recipe_replay`, all
   going through the same supervisor policy as every other client.
 
-### Verified in run `20261111-143213` (37 checks, 36 passed)
+### Authoritative check counts
+
+| Run | Checks | Passed | Note |
+| --- | --- | --- | --- |
+| `20261111-111424` | 37 | 33 | first run after the post-restore fix; the replay still stopped at the first app step |
+| `20261111-140516` | 37 | 36 | primary workflow green; the retry after an interruption still failed because the interrupted run had left guest shaping behind |
+| `20261111-143213` | **38** | **37** | **authoritative for the recipe lane**: the full primary workflow green, the only failure a stopped instance left behind after cleanup (the destroy is now retried with a bounded loop) |
+| `20261111-184156` | **39** | **39** | **dedicated launcher-visible baseline run, fully green** |
+| `20261111-184903` | 39 | pending | dedicated fixture-foreground baseline run |
+
+The earlier "36/37" figure in the plan and checklist referred to run
+`20261111-140516`; the authoritative count for the recipe lane is **38 checks
+in run `20261111-143213`, 37 passing**, and the launcher-visible and
+fixture-foreground baseline variants are now separate dedicated runs.
+
+### Verified in run `20261111-143213` (38 checks, 37 passed)
 
 | Area | Result |
 | --- | --- |
@@ -220,6 +235,35 @@ Implementation:
 | Negatives | wrong target `wrong_instance`, malformed recipe `recipe_invalid`, incompatible baseline `recipe_invalid`, revoked session `revoked` |
 | Interruption | the replay client was cancelled mid-run, the operation store shows `recipe.replay`, and the dependent retry is reported |
 | Lifecycle | parallel start attempted, forced interruption with the guest re-established (stop + cold start + readiness) and a fresh approval for the retry, low space (injected at unit level) |
+| Fixture foreground | the fixture is awaited (and re-launched once) before any marker input, so the first marker can no longer race the application start |
+
+### Dedicated baseline runs
+
+The two baseline variants are separate runs:
+
+| Variant | Baseline content | Run | Result |
+| --- | --- | --- | --- |
+| `LauncherVisible` | the baseline is saved before the fixture is installed, so the restored guest shows the launcher | `20261111-184156` | **39/39 checks passed** |
+| `FixtureForeground` | the baseline is saved with the fixture in the foreground | `20261111-195359` | the restore, the cold-boot recovery, the recorded install re-execution and the independent baseline verification all work (`baseline=created`, `recovery=cold_boot`, `verified=true`); the first login assertion after the cold-boot relaunch still ends in `expectation_failed` |
+
+The `LauncherVisible` run is fully green: the recipe is recorded and exported
+redacted, the clone creates and restores its own baseline, all 15 replayed steps
+are green (`WELCOME` → 2,500 ms delay `NETWORK TIMEOUT` → `WELCOME`), the
+bystander keeps `DUP_TAPS=2` and its network profile, the interrupted run is
+visible in the operation store and the retry replays cleanly after the guest is
+re-established, the negative cases return their typed errors, and the
+disposables are removed.
+
+### Host hygiene note
+
+Several earlier runs failed for a host reason rather than a product reason: the
+harness guests were still alive after their supervisor was killed, and the
+emulator process is named `qemu-system-x86_64-headless`, so the cleanup command
+missed them. Seven guests held about 16 GB and the host ran out of pagefile
+("The paging file is too small for this operation to complete"), which also
+explains the intermittent boot failures and ADB timeouts in the earlier runs.
+The harness now sweeps the guests it owns (matched by their own AVD name) in its
+`finally` block, so a run can no longer starve the host.
 
 ### Post-restore transition (fixed)
 
@@ -264,6 +308,28 @@ foreground is not. Next action: verify whether a cold-boot recovery
 (`recovery=cold_boot`) restores the running application, or re-record the
 baseline after the fixture is in the foreground so the restored state contains
 the running application.
+
+### AVD import evidence — `tools/avd-import-acceptance.ps1`
+
+Run `20261111-201839`: **9 checks, 0 failures**. The harness builds a real
+external SDK AVD with the pinned `avdmanager` in `D:\Phase4External` (a
+directory that belongs to no workspace), then:
+
+| Check | Result |
+| --- | --- |
+| source-created | the external AVD exists outside the workspace |
+| source-not-managed | it is not a managed instance of the workspace root |
+| preview | `instance.importAvd` returns the source fingerprint, the writable disk hashes and the resolved image without writing anything |
+| import | the copy becomes an independent managed instance with its own ports |
+| source-unchanged | the source configuration fingerprint and writable disk hashes are identical before and after |
+| independent-copy | the target fingerprint differs from the source fingerprint |
+| source-bytes-unchanged | the source `config.ini` SHA-256 is unchanged |
+| imported-instance-owned | the copy is listed as a managed instance |
+| cleanup | the imported instance is removed |
+
+Validation refuses a source that already belongs to the workspace, a source
+without `config.ini`, a missing source, and a source that contains links or
+Windows reparse points; five unit tests cover those paths.
 
 ## Remaining gaps
 

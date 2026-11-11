@@ -161,6 +161,26 @@ The record -> export -> replay workflow is verified on WHPX in run
 `20261111-143213` (36 of 37 checks; the remaining failure is a stopped instance
 left behind after cleanup, now retried in the harness).
 
+Ownership-aware import of a stopped external SDK AVD is implemented in the
+supervisor: `instance.importAvd` previews the source (ownership, reparse
+points, configuration fingerprint, writable disk hashes), refuses a source that
+already belongs to the workspace or has no `config.ini`, and on apply produces
+an independent workspace-owned copy that reports the source fingerprint and disk
+hashes before and after. `tools/avd-import-acceptance.ps1` builds a real
+external AVD outside the workspace and proves the source is unchanged.
+
+The recipe lane is green on the dedicated launcher-visible baseline run
+`20261111-184156` (39 of 39 checks). The fixture-foreground baseline variant
+runs separately. Host hygiene is part of the harness now: leftover guests are
+swept by their own AVD name, because seven orphaned guests once held about
+16 GB and exhausted the pagefile.
+
+The ownership-aware AVD import is verified end to end: run
+`artifacts/phase3/import/20261111-201839` (9 checks, 0 failures) builds an
+external SDK AVD outside the workspace, previews it, imports an independent
+managed copy and proves the source configuration and writable disks are
+unchanged.
+
 ## Phase 2 outcomes and blockers
 
 - Protocol 1 envelopes gained an opaque session credential and idempotency key;

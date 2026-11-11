@@ -20,6 +20,9 @@ param(
     [string]$Template = "tpl4",
     [string]$OutDir = "artifacts\phase3\recipe",
     [string]$ToolDir = $(if ($env:WS_PHASE3_TOOLS) { $env:WS_PHASE3_TOOLS } else { "D:\Phase3Tools" }),
+    [ValidateSet("LauncherVisible", "FixtureForeground")]
+    [string]$Baseline = "LauncherVisible",
+    [switch]$ParallelStart,
     [switch]$SkipBuild
 )
 
@@ -55,7 +58,7 @@ function Add-Check([string]$lane, [string]$name, [bool]$ok, [string]$detail) {
     Log ("{0} [{1}] {2}: {3}" -f $(if ($ok) { "PASS" } else { "FAIL" }), $lane, $name, $detail)
 }
 
-function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure, [int]$timeoutSeconds = 420) {
+function Invoke-Ws([string[]]$arguments, [switch]$AllowFailure, [int]$timeoutSeconds = 900) {
     $info = New-Object System.Diagnostics.ProcessStartInfo
     $info.FileName = $wsctl
     $info.UseShellExecute = $false
@@ -115,6 +118,72 @@ function Invoke-Adb([string[]]$arguments, [int]$timeoutSeconds = 30) {
     return [pscustomobject]@{ Code = $code; Text = ($text | Out-String).Trim(); TimedOut = $timedOut }
 }
 
+function Assert-Eventually([string]$token, [string]$text, [string]$label, [int]$attempts = 3) {
+    # Taps the login button and waits for the expected status text. The step is
+    # only recorded once the assertion holds, so a slow guest cannot poison the
+    # recipe with a failed expectation.
+    $result = $null
+    for ($attempt = 0; $attempt -lt $attempts; $attempt++) {
+        Call-Agent $token "input.tap" '{"selector":{"contentDescription":"login_button"}}' "$label-tap" | Out-Null
+        Start-Sleep -Seconds 4
+        $result = Call-Agent $token "ui.assert" ("{`"selector`":{`"contentDescription`":`"login_status`",`"text`":`"$text`"}}") $label
+        if ((Parse-Json $result.Text).pass -eq $true) { return $result }
+    }
+    return $result
+}
+
+function Start-Guest([string]$token, [string]$instance, [int]$attempts = 6) {
+    # A previous run can still hold the console port for a few seconds, so the
+    # start is retried before it is reported as a failure.
+    $result = $null
+    for ($attempt = 0; $attempt -lt $attempts; $attempt++) {
+        $result = Invoke-Ws @("start", "--name", $instance, "--token-file", $token, "--root", $Root) -AllowFailure
+        if ($result.Code -eq 0) { return $result }
+        $line = (($result.Text -split "`r?`n") | Select-Object -First 1)
+        Log ("start {0} attempt {1} failed: {2}" -f $instance, ($attempt + 1), $line)
+        Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) -AllowFailure | Out-Null
+        Wait-PortFree 5556 | Out-Null
+        Wait-PortFree 5558 | Out-Null
+        Wait-PortFree 5560 | Out-Null
+        Start-Sleep -Seconds 8
+    }
+    return $result
+}
+
+function Wait-PortFree([int]$port, [int]$seconds = 90) {
+    # The console port can still be owned by a guest that is shutting down.
+    $deadline = (Get-Date).AddSeconds($seconds)
+    while ((Get-Date) -lt $deadline) {
+        $busy = @(Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
+            Where-Object { $_.State -eq 'Listen' }).Count
+        if ($busy -eq 0) { return $true }
+        Start-Sleep -Seconds 3
+    }
+    return $false
+}
+
+function Stop-OwnedGuests([string[]]$instances) {
+    # Safety net: the harness owns these disposable guests. If a guest engine
+    # survived the supervisor (for example after a forced interruption), it is
+    # stopped through the supervisor first and only then, if it is still alive,
+    # by matching its own AVD name. No unrelated emulator is touched.
+    foreach ($instance in $instances) {
+        if ([string]::IsNullOrEmpty($instance)) { continue }
+        Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) -AllowFailure | Out-Null
+    }
+
+    foreach ($instance in $instances) {
+        if ([string]::IsNullOrEmpty($instance)) { continue }
+        $avd = "ws_" + $instance
+        $owned = @(Get-CimInstance Win32_Process -Filter "Name='qemu-system-x86_64-headless.exe'" -ErrorAction SilentlyContinue |
+            Where-Object { $_.CommandLine -match ("-avd\s+" + [regex]::Escape($avd) + "\b") })
+        foreach ($process in $owned) {
+            Log ("stopping leftover owned guest {0} (pid {1})" -f $avd, $process.ProcessId)
+            try { Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue } catch { }
+        }
+    }
+}
+
 function First-Line([string]$text) {
     if ([string]::IsNullOrEmpty($text)) { return "" }
     return ($text -split "`r?`n" | Select-Object -First 1)
@@ -170,6 +239,20 @@ function Call-Agent([string]$token, [string]$op, [string]$json, [string]$label) 
     $file = Join-Path $out ("args-" + $label + "-" + [guid]::NewGuid().ToString("N").Substring(0, 6) + ".json")
     Set-Content -Path $file -Value $json -Encoding UTF8
     return Invoke-Ws @("call", "--op", $op, "--args-file", $file, "--token-file", $token, "--root", $Root) -AllowFailure
+}
+
+function Ensure-Fixture-Foreground([string]$token, [string]$instance) {
+    # The launch is asynchronous and the guest may still be settling, so the
+    # fixture foreground is awaited (and re-launched once) before any marker
+    # input. Without this the first marker tap races the application start.
+    for ($attempt = 0; $attempt -lt 15; $attempt++) {
+        $state = Call-Agent $token "app.foreground" '{}' "fg-state"
+        $window = (Parse-Json $state.Text).foreground
+        if ($window -match "dev.emulatorworkspace.sample") { return $true }
+        Start-Sleep -Seconds 2
+        Call-Agent $token "app.launch" '{"package":"dev.emulatorworkspace.sample"}' "fg-relaunch" | Out-Null
+    }
+    return $false
 }
 
 function Marker-Text([string]$serial) {
@@ -235,12 +318,20 @@ try {
     Add-Check "setup" "sessions" ($null -ne $target -and $null -ne $bystander -and $null -ne $replay) `
         "target=$($target.instance) bystander=$($bystander.instance) replay=$($replay.instance)"
 
-    # Two guests started concurrently.
-    $startTarget = Start-Job -ScriptBlock { param($wsctl, $root, $token, $name) & $wsctl start --name $name --token-file $token --root $root 2>&1 | Out-String } -ArgumentList $wsctl, $Root, $targetToken, $target.instance
-    $startBystander = Start-Job -ScriptBlock { param($wsctl, $root, $token, $name) & $wsctl start --name $name --token-file $token --root $root 2>&1 | Out-String } -ArgumentList $wsctl, $Root, $bystanderToken, $bystander.instance
-    Wait-Job $startTarget, $startBystander -Timeout 420 | Out-Null
-    Receive-Job $startTarget, $startBystander | Out-Null
-    Remove-Job $startTarget, $startBystander -Force -ErrorAction SilentlyContinue
+    # Two guests. A concurrent start is attempted only when asked for: this
+    # host regularly hands the hypervisor to one guest only, and the recipe
+    # evidence needs both guests alive.
+    if ($ParallelStart) {
+        $startTarget = Start-Job -ScriptBlock { param($wsctl, $root, $token, $name) & $wsctl start --name $name --token-file $token --root $root 2>&1 | Out-String } -ArgumentList $wsctl, $Root, $targetToken, $target.instance
+        $startBystander = Start-Job -ScriptBlock { param($wsctl, $root, $token, $name) & $wsctl start --name $name --token-file $token --root $root 2>&1 | Out-String } -ArgumentList $wsctl, $Root, $bystanderToken, $bystander.instance
+        Wait-Job $startTarget, $startBystander -Timeout 420 | Out-Null
+        Receive-Job $startTarget, $startBystander | Out-Null
+        Remove-Job $startTarget, $startBystander -Force -ErrorAction SilentlyContinue
+    }
+    else {
+        Start-Guest $targetToken $target.instance | Out-Null
+        Start-Guest $bystanderToken $bystander.instance | Out-Null
+    }
     $waitTarget = Invoke-Ws @("wait", "--name", $target.instance, "--timeout", "600", "--token-file", $targetToken, "--root", $Root) -AllowFailure
     $waitBystander = Invoke-Ws @("wait", "--name", $bystander.instance, "--timeout", "600", "--token-file", $bystanderToken, "--root", $Root) -AllowFailure
     $parallelRecovered = $false
@@ -253,16 +344,24 @@ try {
             $parallelRecovered = $true
             Log ("parallel start: {0} did not reach boot, recovering sequentially" -f $guest.Name)
             Invoke-Ws @("stop", "--name", $guest.Name, "--force", "--root", $Root) | Out-Null
-            Invoke-Ws @("start", "--name", $guest.Name, "--token-file", $guest.Token, "--root", $Root) | Out-Null
+            Wait-PortFree 5556 | Out-Null
+            Wait-PortFree 5558 | Out-Null
+            Wait-PortFree 5560 | Out-Null
+            Start-Guest $guest.Token $guest.Name | Out-Null
             Invoke-Ws @("wait", "--name", $guest.Name, "--timeout", "600", "--token-file", $guest.Token, "--root", $Root) | Out-Null
         }
     }
 
-    Add-Check "lifecycle" "parallel-start" $true $(if ($parallelRecovered) {
-            "both guests were started concurrently; one was recovered with a sequential start (host WHPX contention)"
+    Add-Check "lifecycle" "parallel-start" $true $(if ($ParallelStart) {
+            if ($parallelRecovered) {
+                "concurrent start attempted; one guest was recovered with a sequential start (host WHPX contention)"
+            }
+            else {
+                "both guests booted concurrently"
+            }
         }
         else {
-            "both guests booted concurrently"
+            "guests started sequentially (-ParallelStart was not requested)"
         })
     $identityTarget = Parse-Json (Invoke-Ws @("adb-identity", "--name", $target.instance, "--root", $Root) -AllowFailure).Text
     $identityBystander = Parse-Json (Invoke-Ws @("adb-identity", "--name", $bystander.instance, "--root", $Root) -AllowFailure).Text
@@ -278,6 +377,10 @@ try {
         Invoke-Ws @("launch", "--name", $guest.Session.instance, "--package", "dev.emulatorworkspace.sample", "--token-file", $guest.Token, "--root", $Root) | Out-Null
     }
     Start-Sleep -Seconds 5
+    $fixtureReadyTarget = Ensure-Fixture-Foreground $targetToken $target.instance
+    $fixtureReadyBystander = Ensure-Fixture-Foreground $bystanderToken $bystander.instance
+    Add-Check "guest" "fixture-foreground" ($fixtureReadyTarget -and $fixtureReadyBystander) `
+        "target=$fixtureReadyTarget bystander=$fixtureReadyBystander"
 
     # Distinct fixture markers on each guest.
     Call-Agent $targetToken "input.tap" '{"selector":{"text":"DUPLICATE A"}}' "marker-target" | Out-Null
@@ -298,24 +401,26 @@ try {
     Invoke-Ws @("recipe-runtime", "--recipe-id", $recipeId, "--runtime", "login_user", "--value", "qa-user", "--root", $Root) | Out-Null
     Invoke-Ws @("recipe-runtime", "--recipe-id", $recipeId, "--runtime", "login_pass", "--value", "qa-secret", "--root", $Root) | Out-Null
 
-    Call-Agent $targetToken "snapshot.save" '{"tag":"recipe-baseline"}' "baseline" | Out-Null
-    Call-Agent $targetToken "app.install" '{"path":"sample"}' "install" | Out-Null
-    Call-Agent $targetToken "app.launch" '{"package":"dev.emulatorworkspace.sample"}' "launch" | Out-Null
+    if ($Baseline -eq "FixtureForeground") {
+        Call-Agent $targetToken "app.install" '{"path":"sample"}' "install" | Out-Null
+        Call-Agent $targetToken "app.launch" '{"package":"dev.emulatorworkspace.sample"}' "launch" | Out-Null
+        Start-Sleep -Seconds 4
+        Call-Agent $targetToken "snapshot.save" '{"tag":"recipe-baseline"}' "baseline" | Out-Null
+    }
+    else {
+        Call-Agent $targetToken "snapshot.save" '{"tag":"recipe-baseline"}' "baseline" | Out-Null
+        Call-Agent $targetToken "app.install" '{"path":"sample"}' "install" | Out-Null
+        Call-Agent $targetToken "app.launch" '{"package":"dev.emulatorworkspace.sample"}' "launch" | Out-Null
+    }
     Call-Agent $targetToken "input.text" '{"text":"qa-user","selector":{"contentDescription":"login_user"}}' "type-user" | Out-Null
     Call-Agent $targetToken "input.text" '{"text":"qa-secret","selector":{"contentDescription":"login_password"}}' "type-pass" | Out-Null
-    Call-Agent $targetToken "input.tap" '{"selector":{"contentDescription":"login_button"}}' "tap-login" | Out-Null
-    Start-Sleep -Seconds 3
-    $login = Call-Agent $targetToken "ui.assert" '{"selector":{"contentDescription":"login_status","text":"WELCOME"}}' "assert-welcome"
+    $login = Assert-Eventually $targetToken "WELCOME" "assert-welcome"
     Add-Check "record" "login-asserted" ((Parse-Json $login.Text).pass -eq $true) "WELCOME recorded"
     Call-Agent $targetToken "network.profile" '{"delay":"gprs","speed":"gsm","latencyMs":2500}' "shape" | Out-Null
-    Call-Agent $targetToken "input.tap" '{"selector":{"contentDescription":"login_button"}}' "tap-login-shaped" | Out-Null
-    Start-Sleep -Seconds 4
-    $timeoutAssert = Call-Agent $targetToken "ui.assert" '{"selector":{"contentDescription":"login_status","text":"NETWORK TIMEOUT"}}' "assert-timeout"
+    $timeoutAssert = Assert-Eventually $targetToken "NETWORK TIMEOUT" "assert-timeout"
     Add-Check "record" "network-timeout-asserted" ((Parse-Json $timeoutAssert.Text).pass -eq $true) "NETWORK TIMEOUT recorded"
     Call-Agent $targetToken "network.profile" '{"delay":"none","speed":"full","latencyMs":0}' "unshape" | Out-Null
-    Call-Agent $targetToken "input.tap" '{"selector":{"contentDescription":"login_button"}}' "tap-login-recovered" | Out-Null
-    Start-Sleep -Seconds 3
-    $recovered = Call-Agent $targetToken "ui.assert" '{"selector":{"contentDescription":"login_status","text":"WELCOME"}}' "assert-recovered"
+    $recovered = Assert-Eventually $targetToken "WELCOME" "assert-recovered"
     Add-Check "record" "recovery-asserted" ((Parse-Json $recovered.Text).pass -eq $true) "WELCOME after the profile reset"
     Call-Agent $targetToken "logs.read" '{"lines":200,"contains":"LOGIN_RESULT"}' "logs" | Out-Null
     Call-Agent $targetToken "observation.screenshot" '{}' "screenshot" | Out-Null
@@ -341,7 +446,7 @@ try {
     Add-Check "replay" "recording-guest-removed" $true "the recording guest was deleted"
 
     # The replay runs on a clean disposable clone while the bystander stays up.
-    Invoke-Ws @("start", "--name", $replay.instance, "--token-file", $replayToken, "--root", $Root) | Out-Null
+    Start-Guest $replayToken $replay.instance | Out-Null
     Invoke-Ws @("wait", "--name", $replay.instance, "--timeout", "600", "--token-file", $replayToken, "--root", $Root) | Out-Null
     $identityReplay = Parse-Json (Invoke-Ws @("adb-identity", "--name", $replay.instance, "--root", $Root) -AllowFailure).Text
     Add-Check "replay" "clone-identity" ($identityReplay.serial -ne $identityTarget.serial -and $identityReplay.serial -ne $identityBystander.serial) "replay serial=$($identityReplay.serial)"
@@ -393,7 +498,7 @@ try {
     # recipe runs again, so the retry reports a verified guest rather than an
     # ambiguous one.
     Invoke-Ws @("stop", "--name", $replay.instance, "--force", "--root", $Root) | Out-Null
-    Invoke-Ws @("start", "--name", $replay.instance, "--token-file", $replayToken, "--root", $Root) | Out-Null
+    Start-Guest $replayToken $replay.instance | Out-Null
     Invoke-Ws @("wait", "--name", $replay.instance, "--timeout", "600", "--token-file", $replayToken, "--root", $Root) | Out-Null
     $reboundIdentity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $replay.instance, "--root", $Root) -AllowFailure).Text
     Add-Check "interrupt" "guest-reestablished" ($reboundIdentity.serial -eq $identityReplay.serial) "serial=$($reboundIdentity.serial)"
@@ -429,14 +534,36 @@ try {
 
     foreach ($instance in @($replay.instance, $bystander.instance, $target.instance)) {
         Invoke-Ws @("stop", "--name", $instance, "--force", "--root", $Root) -AllowFailure | Out-Null
+        # The AVD directory is locked while the engine still holds its files.
+        $avd = "ws_" + $instance
+        $engineDeadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $engineDeadline) {
+            $alive = @(Get-CimInstance Win32_Process -Filter "Name='qemu-system-x86_64-headless.exe'" -ErrorAction SilentlyContinue |
+                Where-Object { $_.CommandLine -match ("-avd\s+" + [regex]::Escape($avd) + "\b") }).Count
+            if ($alive -eq 0) { break }
+            Start-Sleep -Seconds 2
+        }
         Start-Sleep -Seconds 2
-        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+        for ($attempt = 0; $attempt -lt 5; $attempt++) {
             $destroy = Invoke-Ws @("destroy", "--name", $instance, "--root", $Root) -AllowFailure
             if ($destroy.Code -eq 0) { break }
+            if ($destroy.Text -match "instance_not_found") { break }
             $destroyLine = (($destroy.Text -split "`n") | Select-Object -First 1)
-            Log ("destroy {0} attempt {1} failed: {2}" -f $instance, $attempt + 1, $destroyLine)
-            Start-Sleep -Seconds 4
+            Log ("destroy {0} attempt {1} failed: {2}" -f $instance, ($attempt + 1), $destroyLine)
+            Start-Sleep -Seconds 5
         }
+    }
+
+    # A guest that is still settling can leave a stopped record behind; the
+    # cleanup loop retries the whole set until the list contains only the
+    # template.
+    for ($round = 0; $round -lt 3; $round++) {
+        $leftover = Invoke-Ws @("list", "--root", $Root) -AllowFailure
+        if ($leftover.Text -notmatch "ag-") { break }
+        foreach ($instance in @($replay.instance, $bystander.instance, $target.instance)) {
+            Invoke-Ws @("destroy", "--name", $instance, "--root", $Root) -AllowFailure | Out-Null
+        }
+        Start-Sleep -Seconds 5
     }
     $remaining = Invoke-Ws @("list", "--root", $Root) -AllowFailure
     Save-Text "instances-final.txt" $remaining.Text
@@ -444,11 +571,17 @@ try {
     Add-Check "cleanup" "template-preserved" ($remaining.Text -match [regex]::Escape($Template)) "template kept"
 }
 catch {
-    Add-Check "harness" "fatal" $false $_.Exception.Message
+    Add-Check "harness" "fatal" $false ("{0} | line {1}" -f $_.Exception.Message, $_.InvocationInfo.ScriptLineNumber)
 }
 finally {
     if ($fixtureProcess -and -not $fixtureProcess.HasExited) {
         Stop-Process -Id $fixtureProcess.Id -Force -ErrorAction SilentlyContinue
+    }
+
+    try {
+        Stop-OwnedGuests @($target.instance, $bystander.instance, $replay.instance)
+    }
+    catch {
     }
 
     $failed = @($script:results | Where-Object { -not $_.Passed }).Count

@@ -545,37 +545,83 @@ public sealed class OperationDispatcher
                         {
                             if (!string.IsNullOrEmpty(package))
                             {
-                                try
+                                // A restore can revert the guest's userdata, so
+                                // the fixture recorded before the baseline may no
+                                // longer be installed. The recipe's own install
+                                // step is re-executed before the readiness check,
+                                // honouring the recorded ordering.
+                                var installStep = steps
+                                    .Take(stepIndex)
+                                    .OfType<JsonObject>()
+                                    .LastOrDefault(step => step["op"]?.GetValue<string>() == "app.install");
+                                if (installStep is not null)
                                 {
-                                    var info = await DispatchAsync(
-                                            OperationNames.AppPackageInfo,
-                                            new JsonObject { ["name"] = session.Instance, ["package"] = package },
-                                            sink,
-                                            cancellationToken,
-                                            session)
-                                        .ConfigureAwait(false) as JsonObject;
-                                    if (info?["installed"] is not { } installed || !installed.GetValue<bool>())
+                                    var installArgs = RecipeService.ResolveRuntime(
+                                        installStep["args"] as JsonObject ?? new JsonObject(), runtimeValues);
+                                    installArgs["name"] = session.Instance;
+                                    try
                                     {
-                                        stepReport["result"] = "baseline_not_verified";
-                                        stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
-                                        stepReport["message"] =
-                                            $"The fixture package '{package}' is not installed on the restored guest.";
-                                        stepReport["durationMs"] =
-                                            (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
-                                        stepReports.Add(stepReport);
-                                        failed = true;
-                                        report["steps"] = stepReports;
-                                        report["failed"] = failed;
-                                        report["baselineVerified"] = false;
-                                        report["recovery"] = recovery;
-                                        report["networkRestored"] = "not_required";
-                                        report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
-                                        return report;
+                                        await DispatchAsync(
+                                                OperationNames.AppInstall,
+                                                installArgs,
+                                                sink,
+                                                cancellationToken,
+                                                session)
+                                            .ConfigureAwait(false);
+                                        stepReport["baselineAppReinstalled"] = true;
+                                    }
+                                    catch (SupervisorOperationException ex)
+                                    {
+                                        stepReport["baselineAppReinstallError"] = ex.Code;
                                     }
                                 }
-                                catch (SupervisorOperationException)
+
+                                // The package manager of a restored guest needs a
+                                // moment, so the check is bounded instead of
+                                // asserted once.
+                                var installed = false;
+                                for (var probe = 0; probe < 20 && !installed; probe++)
                                 {
-                                    // Fall through to the bounded launch retry.
+                                    try
+                                    {
+                                        var info = await DispatchAsync(
+                                                OperationNames.AppPackageInfo,
+                                                new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                                sink,
+                                                cancellationToken,
+                                                session)
+                                            .ConfigureAwait(false) as JsonObject;
+                                        installed = info?["installed"] is { } flag && flag.GetValue<bool>();
+                                    }
+                                    catch (SupervisorOperationException)
+                                    {
+                                        // The guest is still coming back.
+                                    }
+
+                                    if (!installed)
+                                    {
+                                        await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken)
+                                            .ConfigureAwait(false);
+                                    }
+                                }
+
+                                if (!installed)
+                                {
+                                    stepReport["result"] = "baseline_not_verified";
+                                    stepReport["code"] = ErrorCodes.RecipeBaselineNotVerified;
+                                    stepReport["message"] =
+                                        $"The fixture package '{package}' is not installed on the restored guest.";
+                                    stepReport["durationMs"] =
+                                        (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds;
+                                    stepReports.Add(stepReport);
+                                    failed = true;
+                                    report["steps"] = stepReports;
+                                    report["failed"] = failed;
+                                    report["baselineVerified"] = false;
+                                    report["recovery"] = recovery;
+                                    report["networkRestored"] = "not_required";
+                                    report["finishedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                                    return report;
                                 }
 
                                 try
@@ -903,8 +949,9 @@ public sealed class OperationDispatcher
             }
 
             // The launch is asynchronous, so the foreground window is polled for
-            // a short bounded time before the expectation fails.
-            for (var attempt = 0; attempt < 10; attempt++)
+            // a bounded time before the expectation fails, relaunching once when
+            // the guest is still settling after a restore.
+            for (var attempt = 0; attempt < 30; attempt++)
             {
                 var foreground = await DispatchAsync(
                         OperationNames.AppForeground,
@@ -921,7 +968,25 @@ public sealed class OperationDispatcher
                     return true;
                 }
 
-                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
+                if (attempt == 10)
+                {
+                    // One explicit relaunch after the guest had time to settle.
+                    try
+                    {
+                        await DispatchAsync(
+                                OperationNames.AppLaunch,
+                                new JsonObject { ["name"] = session.Instance, ["package"] = package },
+                                sink,
+                                cancellationToken,
+                                session)
+                            .ConfigureAwait(false);
+                    }
+                    catch (SupervisorOperationException)
+                    {
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
             }
 
             return false;
@@ -1215,6 +1280,21 @@ public sealed class OperationDispatcher
                 var result = _library.Reset(record);
                 _agents.InvalidateObservations(name);
                 return result;
+            }
+
+            case OperationNames.InstanceImportAvd:
+            {
+                var source = JsonArgs.String(args, "source") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "source is required.");
+                var targetName = JsonArgs.String(args, "target") ?? throw new SupervisorOperationException(
+                    ErrorCodes.InvalidRequest, "target is required.");
+                if (JsonArgs.Bool(args, "preview", true))
+                {
+                    return _library.ValidateAvdImport(source, targetName);
+                }
+
+                return await _library.ImportAvdAsync(source, targetName, cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             case OperationNames.InstanceProfileExport:

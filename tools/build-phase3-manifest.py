@@ -82,7 +82,8 @@ def main() -> int:
             "artifacts": files_of(directory),
         })
 
-    recipe_root = artifacts / "recipe"
+    for kind, folder in (("recipe", "recipe"), ("import", "import")):
+        recipe_root = artifacts / folder
     if recipe_root.exists():
         for directory in sorted([p for p in recipe_root.iterdir() if p.is_dir()]):
             summary_path = directory / "summary.json"
@@ -92,7 +93,7 @@ def main() -> int:
             versions_path = directory / "versions.json"
             versions = read_json(versions_path) if versions_path.exists() else {}
             runs.append({
-                "kind": "recipe",
+                "kind": kind,
                 "runId": summary.get("runId"),
                 "rawArtifactRoot": str(directory),
                 "rawArtifactsAreGitignored": True,

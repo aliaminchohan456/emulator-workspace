@@ -298,6 +298,13 @@ internal static class SupervisorCommands
                 op = OperationNames.InstanceReset;
                 requestArgs["name"] = name;
                 break;
+            case "import-avd":
+                op = OperationNames.InstanceImportAvd;
+                requestArgs["source"] = args.Optional("source") ?? throw new ArgumentException("--source is required.");
+                requestArgs["target"] = args.Optional("target") ?? throw new ArgumentException("--target is required.");
+                requestArgs["preview"] = !args.Has("apply");
+                deadline = TimeSpan.FromMinutes(5);
+                break;
             case "profile-export":
                 op = OperationNames.InstanceProfileExport;
                 requestArgs["name"] = name;
