@@ -339,16 +339,26 @@ try {
             @{ Name = $target.instance; Wait = $waitTarget; Token = $targetToken },
             @{ Name = $bystander.instance; Wait = $waitBystander; Token = $bystanderToken })) {
         if ($guest.Wait.Code -ne 0) {
-            # A concurrent start can lose the hypervisor on this host; the guest
-            # is recovered with a sequential start and the attempt is recorded.
+            # A guest that does not reach boot on this host is recovered with a
+            # sequential start. The recovery is bounded, so a guest that keeps
+            # failing is reported instead of aborting the whole run.
             $parallelRecovered = $true
-            Log ("parallel start: {0} did not reach boot, recovering sequentially" -f $guest.Name)
-            Invoke-Ws @("stop", "--name", $guest.Name, "--force", "--root", $Root) | Out-Null
-            Wait-PortFree 5556 | Out-Null
-            Wait-PortFree 5558 | Out-Null
-            Wait-PortFree 5560 | Out-Null
-            Start-Guest $guest.Token $guest.Name | Out-Null
-            Invoke-Ws @("wait", "--name", $guest.Name, "--timeout", "600", "--token-file", $guest.Token, "--root", $Root) | Out-Null
+            Log ("start recovery: {0} did not reach boot, recovering sequentially" -f $guest.Name)
+            $recovered = $false
+            for ($attempt = 0; $attempt -lt 3 -and -not $recovered; $attempt++) {
+                Invoke-Ws @("stop", "--name", $guest.Name, "--force", "--root", $Root) -AllowFailure | Out-Null
+                Wait-PortFree 5556 | Out-Null
+                Wait-PortFree 5558 | Out-Null
+                Wait-PortFree 5560 | Out-Null
+                Start-Guest $guest.Token $guest.Name | Out-Null
+                $wait = Invoke-Ws @("wait", "--name", $guest.Name, "--timeout", "600", "--token-file", $guest.Token, "--root", $Root) -AllowFailure
+                if ($wait.Code -eq 0) { $recovered = $true }
+                else { Log ("start recovery: {0} attempt {1} did not boot: {2}" -f $guest.Name, ($attempt + 1), (First-Line $wait.Text)) }
+            }
+
+            if (-not $recovered) {
+                throw "The guest '$($guest.Name)' did not reach boot after three sequential starts."
+            }
         }
     }
 

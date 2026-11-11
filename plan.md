@@ -183,10 +183,21 @@ unchanged.
 
 The fixture-foreground baseline variant now runs end to end as well
 (`artifacts/phase3/recipe/20261111-215921`, 38 of 39 checks): the launch
-operation dismisses the keyguard, the baseline branch waits for the package
-manager and re-runs the recorded install, and the baseline is verified against
-the recipe's first targeted control. The one open check is the retry after an
-interrupted replay.
+operation dismisses the keyguard and any system dialog that holds the focus,
+the baseline branch waits for the package manager, repeats the recorded install
+only when the package is genuinely missing, and the baseline is verified against
+the recipe's first targeted control. The baseline branch is the one open check;
+the harness now waits up to 40 minutes for a replay, because a restore with a
+cold-boot fallback plus a relaunch legitimately takes minutes.
+
+The release track is implemented and produces a real installer: `tools/package-release.ps1`
+publishes the desktop, the supervisor and the CLI self-contained for win-x64,
+harvests the payload into a WiX 5 MSI, and writes the release record, the
+SBOM, the notices and the provenance (commit, SDK versions, build commands,
+pins and the signing status). `tools/installer-acceptance.ps1` verifies the
+clean install, the first launch and boot, the offline reuse, an upgrade that
+preserves the operator profiles and the uninstall. `docs/compatibility-matrix.md`
+and `docs/security-review.md` record what was verified and what is still open.
 
 The Root Lab ADB daemon workflow is implemented and verified on the pinned
 userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 10 of 10 checks):

@@ -1514,6 +1514,24 @@ public sealed class InstanceManager
                 await DismissSystemDialogsAsync(record, cancellationToken).ConfigureAwait(false);
             }
 
+            // The launcher takes the focus back on a guest that is still
+            // settling, so the start is issued again until the application
+            // really owns the foreground.
+            if (attempt % 4 == 3 && component is not null)
+            {
+                try
+                {
+                    await _adb.ShellAsync(
+                            record.AdbSerial,
+                            new[] { "am", "start", "-n", component },
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                }
+            }
+
             await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
         }
 

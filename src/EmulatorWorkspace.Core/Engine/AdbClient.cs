@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using EmulatorWorkspace.Contracts;
+using EmulatorWorkspace.Core.Supervisor;
 
 namespace EmulatorWorkspace.Core.Engine;
 
@@ -166,7 +168,17 @@ public sealed class AdbClient
         var args = new List<string> { "emu" };
         args.AddRange(command);
         var result = await RunAsync(serial, args, TimeSpan.FromMinutes(3), cancellationToken).ConfigureAwait(false);
-        result.EnsureSuccess($"Emulator console command '{string.Join(' ', command)}'");
+        if (result.ExitCode != 0)
+        {
+            // The console of an engine that is still starting is not
+            // reachable; the caller decides whether that is fatal.
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                $"Emulator console command '{string.Join(' ', command)}' failed with exit code {result.ExitCode}. "
+                + (result.StandardOutput + result.StandardError).Trim(),
+                retryable: true);
+        }
+
         return (result.StandardOutput + result.StandardError).Trim();
     }
 

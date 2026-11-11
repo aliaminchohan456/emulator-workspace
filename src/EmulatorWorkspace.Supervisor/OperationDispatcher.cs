@@ -444,9 +444,11 @@ public sealed class OperationDispatcher
                     .ConfigureAwait(false);
                 report["networkRestored"] = "restored";
             }
-            catch (SupervisorOperationException ex)
+            catch (Exception ex)
             {
-                report["networkRestored"] = "failed: " + ex.Code;
+                // A guest whose console is not reachable yet must not abort
+                // the whole replay; the shaping is restored at the end.
+                report["networkRestored"] = "failed: " + ex.Message;
             }
         }
 
@@ -844,9 +846,11 @@ public sealed class OperationDispatcher
                     .ConfigureAwait(false);
                 networkRestored = "restored";
             }
-            catch (SupervisorOperationException ex)
+            catch (Exception ex)
             {
-                networkRestored = "failed: " + ex.Code;
+                // The restore of the recorded profile is best effort: a guest
+                // whose console is gone must not lose the replay report.
+                networkRestored = "failed: " + ex.Message;
             }
         }
 
