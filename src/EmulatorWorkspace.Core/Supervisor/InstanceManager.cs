@@ -1269,6 +1269,31 @@ public sealed class InstanceManager
         }
     }
 
+    /// <summary>
+    /// Closes a system dialog that took the focus away from the launched
+    /// application. A headless guest regularly shows an "Application Not
+    /// Responding" dialog for SystemUI, which would otherwise keep the
+    /// application in the background forever.
+    /// </summary>
+    private async Task DismissSystemDialogsAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        foreach (var command in new[]
+                 {
+                     new[] { "am", "broadcast", "-a", "android.intent.action.CLOSE_SYSTEM_DIALOGS" },
+                     new[] { "input", "keyevent", "4" },
+                 })
+        {
+            try
+            {
+                await _adb.ShellAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+    }
+
 /// <summary>
     /// Switches the ADB daemon of a lab guest between the unprivileged and the
     /// root user and reports the effective UID before and after. The transport
@@ -1479,6 +1504,14 @@ public sealed class InstanceManager
             catch (Exception)
             {
                 processId = "";
+            }
+
+            // A system dialog (for example an ANR report of SystemUI) holds
+            // the focus; it is closed so the application can come forward.
+            if (focused.Contains("Application Not Responding", StringComparison.OrdinalIgnoreCase)
+                || focused.Contains("isn't responding", StringComparison.OrdinalIgnoreCase))
+            {
+                await DismissSystemDialogsAsync(record, cancellationToken).ConfigureAwait(false);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
