@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+"""Builds the sanitized Phase 3 evidence manifest.
+
+The manifest is committed; the raw artifacts stay in the gitignored artifacts
+directory. It records run ids, commits, pins, per-lane check counts and the
+name plus SHA-256 of every artifact file so the raw evidence can be verified
+without committing it.
+"""
+
 import hashlib
 import json
 import pathlib
@@ -53,61 +62,51 @@ def files_of(directory: pathlib.Path) -> list:
     return files
 
 
+def collect(directory: pathlib.Path, kind: str) -> dict | None:
+    summary_path = directory / "summary.json"
+    if not summary_path.exists():
+        return None
+    summary = read_json(summary_path)
+    versions_path = directory / "versions.json"
+    versions = read_json(versions_path) if versions_path.exists() else {}
+    return {
+        "kind": kind,
+        "runId": summary.get("runId"),
+        "rawArtifactRoot": str(directory),
+        "rawArtifactsAreGitignored": True,
+        "commit": versions.get("commit"),
+        "pins": {
+            "emulator": versions.get("emulator"),
+            "imageRevision": versions.get("imageRevision"),
+            "dotnet": versions.get("dotnet"),
+        },
+        "root": versions.get("root"),
+        "freeBytesAtStart": versions.get("freeBytes"),
+        "failedChecks": summary.get("failed"),
+        "totalChecks": len(summary.get("checks", [])),
+        "lanes": lanes_of(summary),
+        "artifacts": files_of(directory),
+    }
+
+
 def main() -> int:
     repo = pathlib.Path(__file__).resolve().parent.parent
     artifacts = repo / "artifacts" / "phase3"
     runs = []
+
     for directory in sorted([p for p in artifacts.iterdir() if p.is_dir()]):
-        summary_path = directory / "summary.json"
-        if not summary_path.exists():
-            continue
-        summary = read_json(summary_path)
-        versions_path = directory / "versions.json"
-        versions = read_json(versions_path) if versions_path.exists() else {}
-        runs.append({
-            "kind": "phase3",
-            "runId": summary.get("runId"),
-            "rawArtifactRoot": str(directory),
-            "rawArtifactsAreGitignored": True,
-            "commit": versions.get("commit"),
-            "pins": {
-                "emulator": versions.get("emulator"),
-                "imageRevision": versions.get("imageRevision"),
-                "dotnet": versions.get("dotnet"),
-            },
-            "root": versions.get("root"),
-            "freeBytesAtStart": versions.get("freeBytes"),
-            "failedChecks": summary.get("failed"),
-            "totalChecks": len(summary.get("checks", [])),
-            "lanes": lanes_of(summary),
-            "artifacts": files_of(directory),
-        })
+        entry = collect(directory, "phase3")
+        if entry is not None:
+            runs.append(entry)
 
     for kind, folder in (("recipe", "recipe"), ("import", "import")):
-        recipe_root = artifacts / folder
-        if not recipe_root.exists():
+        root = artifacts / folder
+        if not root.exists():
             continue
-            for directory in sorted([p for p in recipe_root.iterdir() if p.is_dir()]):
-                summary_path = directory / "summary.json"
-                if not summary_path.exists():
-                    continue
-                summary = read_json(summary_path)
-                versions_path = directory / "versions.json"
-                versions = read_json(versions_path) if versions_path.exists() else {}
-                runs.append({
-                    "kind": kind,
-                    "runId": summary.get("runId"),
-                    "rawArtifactRoot": str(directory),
-                    "rawArtifactsAreGitignored": True,
-                    "commit": versions.get("commit"),
-                    "pins": {"dotnet": versions.get("dotnet")},
-                    "root": versions.get("root"),
-                    "freeBytesAtStart": versions.get("freeBytes"),
-                    "failedChecks": summary.get("failed"),
-                    "totalChecks": len(summary.get("checks", [])),
-                    "lanes": lanes_of(summary),
-                    "artifacts": files_of(directory),
-                })
+        for directory in sorted([p for p in root.iterdir() if p.is_dir()]):
+            entry = collect(directory, kind)
+            if entry is not None:
+                runs.append(entry)
 
     if not runs:
         print("no phase 3 runs found", file=sys.stderr)
