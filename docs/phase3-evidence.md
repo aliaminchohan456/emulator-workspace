@@ -448,10 +448,13 @@ Run `20261112-100421`: **9 checks, 0 failures**.
 
 ### Windows installer acceptance — `tools/installer-acceptance.ps1`
 
-Run `20261112-151632`: **16 checks, 0 failures**. The candidate is the
-per-user MSI `EmulatorWorkspace-0.1.0.msi` (55 363 808 bytes,
-SHA-256 `82e387623ce6c9ffa11694e4e87f0a5fed31313301b2f2c5aeaf5c6a47653e6d`),
-built from commit `2f22ad2` by `tools/package-release.ps1`.
+Run `20261112-192507`: **16 checks, 0 failures**. The candidate is the
+per-user MSI `EmulatorWorkspace-0.1.0.msi` (55 372 000 bytes,
+SHA-256 `4cd7ba5151c3ca88ac02678e5a7f510ce771a8027d5cb73450aac26b3476c6ca`),
+built from the final commit by `tools/package-release.ps1`. The release
+directory is `D:\Release\emulator-workspace-0.1.0-20261112-192247` and holds
+the installer, `release.json`, `sbom.json`, `provenance.json`,
+`THIRD-PARTY-NOTICES.txt` and `SHA256SUMS.json`.
 
 | Check | Result |
 | --- | --- |
