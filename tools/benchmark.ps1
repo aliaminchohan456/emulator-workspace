@@ -300,6 +300,19 @@ function Get-BootProfileConfig($profile) {
     } | Sort-Object
 }
 
+function Stop-RawProcess($process) {
+    try {
+        if (-not $process.HasExited) {
+            try { $process.Kill() }
+            catch {
+                if (-not $process.WaitForExit(15000)) { throw }
+            }
+        }
+        if (-not $process.WaitForExit(15000)) { throw "Raw process $($process.Id) did not exit." }
+    }
+    finally { $process.Dispose() }
+}
+
 function Measure-RawBoot($profile, [int]$sample) {
     $ports = @($profile.consolePort, ($profile.consolePort + 1), $profile.grpcPort)
     $listing = Invoke-BenchmarkProcess $adb @("devices", "-l") 6000
@@ -354,14 +367,17 @@ function Measure-RawBoot($profile, [int]$sample) {
         throw "Raw emulator did not reach interactive readiness."
     }
     finally {
-        if (-not $owned) { $owned = @(Get-RawEngineChildren $launcher $started $profile.avdName) }
-        foreach ($process in @($owned) + @($launcher)) {
-            if (-not $process.HasExited) { $process.Kill() }
-            if (-not $process.WaitForExit(15000)) { throw "Raw process $($process.Id) did not exit." }
-            $process.Dispose()
+        try {
+            if (-not $owned) { $owned = @(Get-RawEngineChildren $launcher $started $profile.avdName) }
+            foreach ($process in $owned) { Stop-RawProcess $process }
         }
-        if ($stdout.Wait(3000) -and $stderr.Wait(3000)) {
-            ($stdout.Result + $stderr.Result) | Set-Content -LiteralPath (Join-Path $out "raw-engine-$sample.log") -Encoding UTF8
+        finally {
+            try { Stop-RawProcess $launcher }
+            finally {
+                if ($stdout.Wait(3000) -and $stderr.Wait(3000)) {
+                    ($stdout.Result + $stderr.Result) | Set-Content -LiteralPath (Join-Path $out "raw-engine-$sample.log") -Encoding UTF8
+                }
+            }
         }
     }
 }

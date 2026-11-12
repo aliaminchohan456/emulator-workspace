@@ -469,3 +469,15 @@ All tasks start open. Check off an implementation task after its scoped verifica
   and keeps every lane's raw evidence under that candidate run, including
   the nested Phase 2 acceptance. Run the nine lanes once the benchmark
   guests have been cleaned up.
+- Snapshot rerun `artifacts/phase3/bench/20261113-020314` verified 20/20
+  independent restored markers and fresh focused windows, with zero cold
+  fallbacks. Request-to-verification was p50 9.19 s and p95 12.34 s, so the
+  8 s median target remains open. The guest was stopped and destroyed, the
+  root's supervisor shut down, and ADB showed no attached devices.
+- Full comparison attempt `artifacts/phase3/bench/20261113-020845` verified
+  all eight matched AVD settings. Windows returned `Access is denied` during
+  raw process teardown. Both recorded profiles were removed and no emulator
+  or ADB transport remained. Teardown now accepts a kill error only after a
+  bounded wait confirms that the exact process exited and retains the raw
+  engine log even when teardown fails. Rerun the 20 pairs and monitor the
+  transcript through both cleanup checks before candidate regression.

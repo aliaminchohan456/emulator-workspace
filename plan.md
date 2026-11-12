@@ -346,5 +346,8 @@ The corrected desktop at `526fb72` collected 25 valid composition-proxy
 trials against the preserved 0.1.1 runtime. It measured p95 840.85 ms and
 22.01 delivered FPS. Both performance targets are open. The changed frame
 reached the WPF composition callback within 3.42 ms p95, so further
-measurement starts with controller input, capture, and delivery. The
-snapshot lane is running on the preserved payload. [Benchmark evidence](docs/benchmark.md)
+measurement starts with controller input, capture, and delivery. All 20
+snapshot trials on the preserved payload verified fresh focus and restored
+state, with zero fallbacks. Median 9.19 s exceeded the 8 s target. The
+20-sample raw and managed cold-boot comparison is running.
+[Benchmark evidence](docs/benchmark.md)

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-12T20:59:53.2044500+00:00",
-  "headCommit": "526fb72",
-  "trackedWorkTree": "M docs/benchmark.md\n M docs/phase3-manifest.json\n M plan.md\n M task.md\n M tools/build-benchmark-doc.py",
+  "latestFinishedUtc": "2026-11-12T21:08:26.7141251Z",
+  "headCommit": "6129e87",
+  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -39001,6 +39001,164 @@
           "name": "transcript.txt",
           "bytes": 717,
           "sha256": "cb3c3b0866815ccf439e121b1fdbf42df54cacfe9b693891919281ccee445ad6"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-020001",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-020001",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "526fb72cf42700abc505d46ea443c50bc23b9e7a",
+      "harnessSha256": "E1739BA6017C74911AE09B15CEB98A174976EB10CDAAAC85D4617C33E098E5A8",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-12T21:02:26.4933548Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "adb.exe -t exceeded the harness timeout.",
+              "atUtc": "2026-11-12T21:02:19.1049292Z"
+            }
+          ]
+        },
+        "cleanup.bench-a2337fde4411": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-a2337fde4411",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:02:26.4720417Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 5126,
+          "sha256": "b6b73c144e5f4eb7e190e02f9eb9903dce7087216e43dfd36079e76f1e2cd1a0"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "a6972d754135572a8fddcce980482b647521ed298a018f822239aeb646029346"
+        },
+        {
+          "name": "restore.jsonl",
+          "bytes": 871,
+          "sha256": "f054edf1f5801b9f2b8e241a4658dc6a97030502f8ee61ecda46181338678916"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 7742,
+          "sha256": "64a53f5818d7e31d2eef14162c101918ed05c3a9ccce3853683cdd5517a8653b"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 818,
+          "sha256": "f84e4bf0f8bb7a5b93be94865f970afb6fc5288c686a5ab2b44def2f99632e37"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-020314",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-020314",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "21430ad76388d933e4b0ba2175d5404b4c5c4bd4",
+      "harnessSha256": "C94C93DC971AE7A52BB3502BDA7C499480D77F9FB31BC49569ACFED41F0FA7EA",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-12T21:08:26.7141251Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "target.warm-restore": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": false,
+              "detail": "warm restore p50 9.19s (target <= 8s)",
+              "atUtc": "2026-11-12T21:08:18.9781091Z"
+            }
+          ]
+        },
+        "cleanup.bench-22a90441197a": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-22a90441197a",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:08:26.6958228Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 16813,
+          "sha256": "37a6ec9ba459fce16cddbb087134cad04ceef5225c6e4ada4d4e8dc4ee05a924"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "74c3c3e12d4a5c14023241d665b090ea43477f2e422f5cd2652ee2dbdc142c80"
+        },
+        {
+          "name": "restore.jsonl",
+          "bytes": 4586,
+          "sha256": "8af29543364d8e01064ecf013976ab68244f6266b0031cd4052a5bedc9ab7342"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 23541,
+          "sha256": "b70795446d28cf988407b60bd6b836ffb0169328de2e61cecb9f9b40907023d3"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2253,
+          "sha256": "a29b65f5b3ab547eb2ed9053a5e2f626066bcf21703faa1bd713667af3d40e1c"
         }
       ]
     },

@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-015728`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-015728`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -41,8 +41,8 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 | Cold boot to interactive readiness (raw CLI, s) | no valid samples | - | - | same-engine control |
 | Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | historical control |
 | Historical restore reading (s) | 20 | 39.65 | 39.65 | invalid endpoint |
-| Verified warm restore (s) | 1 | 44.7 | 44.7 | median at most 8 s, 20 samples |
-| Restore attempt to readiness, including fallback (s) | 1 | 44.7 | 44.7 | reports recovery cost |
+| Verified warm restore (s) | 20 | 9.19 | 12.34 | median at most 8 s, 20 samples |
+| Restore attempt to readiness, including fallback (s) | 20 | 9.19 | 12.34 | reports recovery cost |
 | ADB tap to Logcat, single guest (ms) | 20 | 476.91 | 935.58 | diagnostic |
 | ADB tap to Logcat, two guests (ms) | 20 | 685.26 | 828.83 | diagnostic |
 | CLI one-shot PNG (ms) | 20 | 869.85 | 1155.98 | diagnostic |
