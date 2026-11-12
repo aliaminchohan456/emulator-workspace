@@ -4,6 +4,40 @@ using Xunit;
 
 namespace EmulatorWorkspace.Tests;
 
+public sealed class ApkManifestTests
+{
+    [Fact]
+    public void ReportsDeclaredManifestFieldsAndDistinctNativeAbis()
+    {
+        var manifest = ApkManifestReader.ParseBadging("""
+            package: name='dev.example.fixture' versionCode='12' versionName='1.2'
+            minSdkVersion:'28'
+            targetSdkVersion:'35'
+            launchable-activity: name='dev.example.fixture.MainActivity' label='' icon=''
+            native-code: 'arm64-v8a' 'x86_64' 'x86_64'
+            """);
+
+        Assert.True(manifest["available"]!.GetValue<bool>());
+        Assert.Equal("dev.example.fixture", manifest["package"]!.GetValue<string>());
+        Assert.Equal("28", manifest["minSdk"]!.GetValue<string>());
+        Assert.Equal("35", manifest["targetSdk"]!.GetValue<string>());
+        Assert.Equal("dev.example.fixture.MainActivity", manifest["launchableActivity"]!.GetValue<string>());
+        Assert.Equal(new[] { "arm64-v8a", "x86_64" }, manifest["nativeAbis"]!.AsArray().Select(abi => abi!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void DistinguishesMissingNativeLibrariesFromAnUnavailableManifest()
+    {
+        var valid = ApkManifestReader.ParseBadging("package: name='dev.example.fixture' versionCode='1'");
+        Assert.True(valid["available"]!.GetValue<bool>());
+        Assert.Empty(valid["nativeAbis"]!.AsArray());
+
+        var malformed = ApkManifestReader.ParseBadging("package: name='invalid package name'");
+        Assert.False(malformed["available"]!.GetValue<bool>());
+        Assert.Null(malformed["nativeAbis"]);
+    }
+}
+
 public sealed class EngineArgumentTests
 {
     private static InstanceRecord Record() => new()

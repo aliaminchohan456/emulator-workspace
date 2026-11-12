@@ -1281,7 +1281,8 @@ public sealed class OperationDispatcher
                 return await _manager.InstallAsync(
                     name,
                     path ?? throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "path is required."),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken,
+                    inspectManifest: session is null && JsonArgs.Bool(args, "inspectManifest")).ConfigureAwait(false);
             }
 
             case OperationNames.AppPackageInfo:

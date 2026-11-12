@@ -1197,7 +1197,8 @@ public sealed class InstanceManager
         return new JsonObject { ["name"] = name, ["rotation"] = rotation };
     }
 
-    public async Task<JsonObject> InstallAsync(string name, string apkPath, CancellationToken cancellationToken)
+    public async Task<JsonObject> InstallAsync(
+        string name, string apkPath, CancellationToken cancellationToken, bool inspectManifest = false)
     {
         var record = RuntimeFor(name).Record;
         if (!File.Exists(apkPath))
@@ -1211,6 +1212,9 @@ public sealed class InstanceManager
         }
 
         var size = new FileInfo(apkPath).Length;
+        var manifest = inspectManifest
+            ? await ApkManifestReader.ReadAsync(_sdk, apkPath, cancellationToken).ConfigureAwait(false)
+            : null;
         await _hub.PublishAsync(name, "state", EventNames.Progress, new JsonObject
         {
             ["phase"] = "install",
@@ -1237,13 +1241,18 @@ public sealed class InstanceManager
             ["detail"] = "Install complete",
         }).ConfigureAwait(false);
 
-        return new JsonObject
+        var response = new JsonObject
         {
             ["name"] = name,
             ["apk"] = Path.GetFullPath(apkPath),
             ["bytes"] = size,
             ["output"] = combined,
         };
+        if (manifest is not null)
+        {
+            response["manifest"] = manifest;
+        }
+        return response;
     }
 
 /// <summary>

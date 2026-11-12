@@ -58,9 +58,10 @@ public sealed class ProcessRunner
         {
             await process.WaitForExitAsync(timeoutSource.Token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             TryKill(process);
+            cancellationToken.ThrowIfCancellationRequested();
             throw new TimeoutException(
                 $"'{Path.GetFileName(fileName)}' did not exit within {effectiveTimeout.TotalSeconds:N0}s.");
         }

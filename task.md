@@ -347,3 +347,20 @@ All tasks start open. Check off an implementation task after its scoped verifica
   `bash tools/build-magisk-lab-aosp.sh --check /mnt/aosp`. Signed acceptance
   requires the authorized private key in `Cert:/CurrentUser/My`. The local
   0.1.1 candidate and its release hash remain preserved.
+
+- While the soak runs, APK manifest and ABI reporting was implemented
+  behind the existing supervised install operation. `wsctl install
+  --name <n> --apk <path> --json` requests package name, API levels,
+  launchable activity, and declared native ABIs. WPF uses the supervisor
+  result and keeps automatic launch bound to the selected device at
+  dispatch. An isolated C# host probe compiled the parser and exercised
+  Build-Tools 35.0.0 against the exact staged candidate fixture. It reported
+  `dev.emulatorworkspace.sample`, minimum and target API 35, and an empty
+  native ABI list. Evidence
+  `artifacts/phase3/apk-host/20261112-220535/manifest.json`. The integrated
+  Release build, unit tests, and WHPX install with `--json` remain queued
+  after the soak. Explicit AAB build and signing choices remain open.
+- Inspect current soak status without touching the guests with
+  `python tools/soak-progress.py artifacts/phase3/bench/20261112-213629`.
+  Use `--require-complete` after cleanup to require four hours of paired
+  evidence and successful cleanup for both recorded generations.

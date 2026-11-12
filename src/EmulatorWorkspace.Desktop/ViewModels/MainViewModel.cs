@@ -1102,7 +1102,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public async Task InstallApkAsync(string path)
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
@@ -1112,20 +1112,27 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             var install = await RequestAsync(
                 OperationNames.AppInstall,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["path"] = path },
+                new JsonObject { ["name"] = device.Name, ["path"] = path, ["inspectManifest"] = true },
                 TimeSpan.FromMinutes(10)).ConfigureAwait(true);
-            var package = ResolvePackageName(path);
+            var manifest = install["manifest"];
+            var package = manifest?["package"]?.GetValue<string>();
             if (package is not null)
             {
                 await RequestAsync(
                     OperationNames.AppLaunch,
-                    new JsonObject { ["name"] = SelectedDevice!.Name, ["package"] = package },
+                    new JsonObject { ["name"] = device.Name, ["package"] = package },
                     TimeSpan.FromSeconds(60)).ConfigureAwait(true);
-                StatusMessage = $"Installed and launched {package}.";
+                var abis = manifest?["nativeAbis"]?.AsArray().Select(abi => abi!.GetValue<string>()).ToArray() ?? [];
+                var abiText = abis.Length == 0 ? "no declared native ABIs" : string.Join(", ", abis);
+                var sdk = manifest?["minSdk"]?.GetValue<string>() ?? "unknown";
+                StatusMessage = $"Installed and launched {package}. Minimum API {sdk}, {abiText}.";
             }
             else
             {
-                StatusMessage = "Installed " + Path.GetFileName(path) + "; launch it from the guest.";
+                var reason = manifest?["reason"]?.GetValue<string>();
+                StatusMessage = reason is null
+                    ? $"Installed {Path.GetFileName(path)}. Launch it from the guest."
+                    : $"Installed {Path.GetFileName(path)}. {reason}";
             }
 
             if (IsLogcatOpen)
@@ -1153,53 +1160,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
-        }
-    }
-
-    private static string? ResolvePackageName(string apkPath)
-    {
-        try
-        {
-            var sdk = Core.Engine.SdkLocator.Resolve();
-            var aapt2 = Path.Combine(sdk.SdkRoot, "build-tools", "35.0.0", "aapt2.exe");
-            if (!File.Exists(aapt2))
-            {
-                return null;
-            }
-
-            var start = new ProcessStartInfo(aapt2)
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            };
-            start.ArgumentList.Add("dump");
-            start.ArgumentList.Add("badging");
-            start.ArgumentList.Add(apkPath);
-            using var process = Process.Start(start);
-            if (process is null)
-            {
-                return null;
-            }
-
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit(10000);
-            var line = output.Split('\n').FirstOrDefault(l => l.StartsWith("package: name=", StringComparison.Ordinal));
-            if (line is null)
-            {
-                return null;
-            }
-
-            var startQuote = line.IndexOf('\'');
-            var endQuote = line.IndexOf('\'', startQuote + 1);
-            return startQuote >= 0 && endQuote > startQuote
-                ? line.Substring(startQuote + 1, endQuote - startQuote - 1)
-                : null;
-        }
-        catch (Exception)
-        {
-            return null;
         }
     }
 

@@ -560,6 +560,7 @@ internal static class SupervisorCommands
                 requestArgs["path"] = apkArg.Equals("sample", StringComparison.OrdinalIgnoreCase)
                     ? "sample"
                     : Path.GetFullPath(apkArg);
+                requestArgs["inspectManifest"] = args.Has("json");
                 deadline = TimeSpan.FromMinutes(10);
                 break;
             case "launch":
@@ -729,7 +730,7 @@ internal static class SupervisorCommands
                 Console.WriteLine($"{name} rotation set to {data["rotation"]}");
                 break;
             case "install":
-                Console.WriteLine($"installed {data["apk"]} ({data["bytes"]} bytes) on {name}");
+                Console.WriteLine(args.Has("json") ? data.ToJsonString() : $"installed {data["apk"]} ({data["bytes"]} bytes) on {name}");
                 break;
             case "launch":
                 Console.WriteLine($"launched {data["package"]} on {name} ({data["component"] ?? "monkey fallback"})");
