@@ -16,6 +16,8 @@ param(
     [string]$Root = "D:\Phase1Root",
     [string]$Name = "t1",
     [ValidateRange(1, 100)][int]$Count = 25,
+    [ValidateSet(1, 2)][int]$GuestCount = 1,
+    [switch]$CompareCapture,
     [string]$Gpu,
     [string]$OutDir = "artifacts/phase3/wpf",
     [int]$BootTimeoutSeconds = 600,
@@ -33,14 +35,15 @@ $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
 $candidate = $null
 $owned = $false
+$peerOwned = $false
 $checks = [System.Collections.Generic.List[object]]::new()
 $resultPath = Join-Path $out "presentation.json"
 
-function Invoke-Wsctl([string[]]$arguments) {
+function Invoke-Wsctl([string[]]$arguments, [string]$guestName = $Name, [string]$guestRoot = $Root) {
     $prior = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
-        $output = & $wsctl @arguments --name $Name --root $Root 2>&1 | Out-String
+        $output = & $wsctl @arguments --name $guestName --root $guestRoot 2>&1 | Out-String
         $code = $LASTEXITCODE
     }
     finally { $ErrorActionPreference = $prior }
@@ -48,12 +51,85 @@ function Invoke-Wsctl([string[]]$arguments) {
     return $output
 }
 
+function Install-ProbeFixture([string]$guestName, [string]$guestRoot) {
+    $fixture = Join-Path $verified.payload "ws-sample.apk"
+    $approved = Join-Path $guestRoot "apps/ws-sample.apk"
+    New-Item -ItemType Directory -Force (Split-Path -Parent $approved) | Out-Null
+    Copy-Item -LiteralPath $fixture -Destination $approved
+    Invoke-Wsctl @("install", "--apk", $approved) $guestName $guestRoot | Out-Null
+}
+
 function Check([string]$name, [bool]$passed, [string]$detail) {
     $checks.Add([pscustomobject]@{ name = $name; passed = $passed; detail = $detail })
     Write-Host "$name $passed $detail"
 }
 
+function Measure-EncodedCapture([string]$adb, [string]$transportId) {
+    $ffprobe = (Get-Command ffprobe.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+    $video = Join-Path $out "guest.h264"
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $adb
+    $info.Arguments = "-t $transportId exec-out screenrecord --size 540x1200 --bit-rate 4000000 --time-limit 10 --output-format=h264 -"
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $output = [IO.File]::Create($video)
+    $process = $null
+    try {
+        $timer = [Diagnostics.Stopwatch]::StartNew()
+        $process = [Diagnostics.Process]::Start($info)
+        $copy = $process.StandardOutput.BaseStream.CopyToAsync($output)
+        $errors = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(30000)) { throw "The encoded capture exceeded 30 s." }
+        if (-not $copy.Wait(5000)) { throw "The encoded capture output did not finish copying." }
+        $timer.Stop()
+        $errors.Result | Set-Content -LiteralPath (Join-Path $out "screenrecord-stderr.txt") -Encoding UTF8
+        if ($process.ExitCode -ne 0) { throw "screenrecord exited with $($process.ExitCode)." }
+    }
+    finally {
+        try {
+            if ($process) {
+                try {
+                    if (-not $process.HasExited) { $process.Kill() }
+                }
+                catch { if (-not $process.WaitForExit(5000)) { throw } }
+                if (-not $process.WaitForExit(5000)) { throw "The owned capture process did not exit." }
+            }
+        }
+        finally {
+            if ($process) { $process.Dispose() }
+            $output.Dispose()
+        }
+    }
+
+    $raw = & $ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=codec_name,width,height,nb_read_frames -of json $video
+    if ($LASTEXITCODE -ne 0) { throw "ffprobe could not read the captured H.264 stream." }
+    $stream = ($raw | Out-String | ConvertFrom-Json).streams | Select-Object -First 1
+    if ($stream.codec_name -ne "h264" -or $stream.nb_read_frames -notmatch '^\d+$') {
+        throw "The captured stream did not contain countable H.264 frames."
+    }
+    [ordered]@{
+        command = $info.Arguments
+        transportId = $transportId
+        seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+        frames = [int]$stream.nb_read_frames
+        framesPerWallSecond = [Math]::Round([int]$stream.nb_read_frames / $timer.Elapsed.TotalSeconds, 2)
+        bytes = (Get-Item -LiteralPath $video).Length
+        width = $stream.width
+        height = $stream.height
+        adbSha256 = (Get-FileHash -LiteralPath $adb).Hash
+        ffprobeSha256 = (Get-FileHash -LiteralPath $ffprobe).Hash
+    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $out "encoded-capture.json") -Encoding UTF8
+}
+
 try {
+    if ($GuestCount -eq 2 -and -not ($CandidateRelease -and $CandidatePayload)) {
+        throw "The two-guest probe requires the verified candidate inputs."
+    }
+    if ($CompareCapture -and ($GuestCount -ne 1 -or -not ($CandidateRelease -and $CandidatePayload))) {
+        throw "Capture comparison requires a single verified candidate guest."
+    }
     if ($CandidateRelease -or $CandidatePayload) {
         if (-not ($CandidateRelease -and $CandidatePayload)) { throw "Pass both candidate paths." }
         . (Join-Path $PSScriptRoot "fixtures/candidate-payload.ps1")
@@ -75,6 +151,8 @@ try {
     if ($DesktopExecutable) { $desktop = (Resolve-Path -LiteralPath $DesktopExecutable).ProviderPath }
     $desktopSha256 = (Get-FileHash -LiteralPath $desktop).Hash
     $desktopVersion = (Get-Item -LiteralPath $desktop).VersionInfo.ProductVersion
+    $desktopAssembly = Join-Path (Split-Path -Parent $desktop) "EmulatorWorkspace.Desktop.dll"
+    if (Test-Path -LiteralPath $desktopAssembly) { $desktopAssemblySha256 = (Get-FileHash -LiteralPath $desktopAssembly).Hash }
     $status = Invoke-Wsctl @("status", "--json") | ConvertFrom-Json
     if (-not $status.engineAlive) {
         $arguments = @("start")
@@ -87,17 +165,40 @@ try {
         throw "The desktop probe requires exactly one profile in the selected root."
     }
 
-    if ($owned) {
-        $fixture = Join-Path $verified.payload "ws-sample.apk"
-        $approved = Join-Path $Root "apps/ws-sample.apk"
-        New-Item -ItemType Directory -Force (Split-Path -Parent $approved) | Out-Null
-        Copy-Item -LiteralPath $fixture -Destination $approved
-        Invoke-Wsctl @("install", "--apk", $approved) | Out-Null
-    }
+    if ($owned) { Install-ProbeFixture $Name $Root }
     $package = "dev.emulatorworkspace.sample"
     Invoke-Wsctl @("launch", "--package", $package) | Out-Null
     $foreground = Invoke-Wsctl @("foreground")
     if (-not $foreground.Contains($package)) { throw "The fixture did not reach the foreground." }
+    $primaryIdentity = Invoke-Wsctl @("adb-identity", "--json") | ConvertFrom-Json
+    if (-not $primaryIdentity.transportUsable -or $primaryIdentity.transportId -notmatch '^\d+$') {
+        throw "The foreground workload has no usable managed ADB transport."
+    }
+
+    if ($GuestCount -eq 2) {
+        $peerRoot = "$Root-peer"
+        if (Test-Path -LiteralPath $peerRoot) { throw "Use a new disposable peer root for the candidate probe." }
+        $peerName = "wpf-peer-$run"
+        Invoke-Wsctl @("create") $peerName $peerRoot | Out-Null
+        $peerOwned = $true
+        $peerStart = @("start")
+        if ($Gpu) { $peerStart += @("--gpu", $Gpu) }
+        Invoke-Wsctl $peerStart $peerName $peerRoot | Out-Null
+        Invoke-Wsctl @("wait", "--timeout", "$BootTimeoutSeconds") $peerName $peerRoot | Out-Null
+        Install-ProbeFixture $peerName $peerRoot
+        Invoke-Wsctl @("launch", "--package", $package) $peerName $peerRoot | Out-Null
+        if (-not (Invoke-Wsctl @("foreground") $peerName $peerRoot).Contains($package)) {
+            throw "The peer's fixture did not reach the foreground."
+        }
+        $peerIdentity = Invoke-Wsctl @("adb-identity", "--json") $peerName $peerRoot | ConvertFrom-Json
+        if (-not ($primaryIdentity.transportUsable -and $peerIdentity.transportUsable) -or
+            $primaryIdentity.transportId -eq $peerIdentity.transportId -or
+            $primaryIdentity.enginePid -eq $peerIdentity.enginePid) {
+            throw "The WPF probe requires two distinct managed guest transports."
+        }
+        @($primaryIdentity, $peerIdentity) | ConvertTo-Json -Depth 4 |
+            Set-Content -LiteralPath (Join-Path $out "guest-identities.json") -Encoding UTF8
+    }
     Start-Sleep -Seconds 3
 
     $launch = New-Object System.Diagnostics.ProcessStartInfo
@@ -118,9 +219,45 @@ try {
     Check "presentation.coverage" ($result.valid -ge 20) "$($result.valid)/$($result.trials) valid samples"
     Check "presentation.latency" ($result.valid -ge 20 -and $result.p95Ms -le 100) "p95=$($result.p95Ms) ms"
     Check "presentation.throughput" ($result.deliveredFps -ge 60) "viewport-delivered FPS=$($result.deliveredFps), see workload evidence before evaluating the release gate"
+    $afterIdentity = Invoke-Wsctl @("adb-identity", "--json") | ConvertFrom-Json
+    if ($afterIdentity.identity -ne $primaryIdentity.identity) { throw "The measured guest identity changed." }
+    $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
+    $adb = Join-Path $sdk 'platform-tools/adb.exe'
+    $gfx = & $adb -t $primaryIdentity.transportId shell dumpsys -t 10 gfxinfo $package framestats
+    if ($LASTEXITCODE -ne 0 -or -not ($gfx -match '---PROFILEDATA---')) {
+        throw "The measured guest did not return gfxinfo framestats."
+    }
+    $gfx | Set-Content -LiteralPath (Join-Path $out "guest-framestats.txt") -Encoding UTF8
+    if ($CompareCapture) {
+        if (-not (Invoke-Wsctl @("foreground")).Contains($package)) {
+            throw "The sample must remain foreground for the capture comparison."
+        }
+        try {
+            Invoke-Wsctl @("capture-bench", "--format", "rgb", "--width", "540", "--height", "1200", "--seconds", "10",
+                "--out", (Join-Path $out "rgb-capture.json")) | Out-Null
+            Check "capture.rgb" $true "Saved raw controller stream evidence."
+        }
+        catch { Check "capture.rgb" $false $_.Exception.Message }
+        try {
+            $captureIdentity = Invoke-Wsctl @("adb-identity", "--json") | ConvertFrom-Json
+            if ($captureIdentity.identity -ne $primaryIdentity.identity) { throw "The measured guest identity changed." }
+            Measure-EncodedCapture $adb $primaryIdentity.transportId
+            Check "capture.h264" $true "Saved encoded guest stream evidence."
+        }
+        catch { Check "capture.h264" $false $_.Exception.Message }
+    }
 }
 catch { Check "workflow" $false $_.Exception.Message }
 finally {
+    if ($peerOwned) {
+        try {
+            Invoke-Wsctl @("stop", "--force") $peerName $peerRoot | Out-Null
+            Invoke-Wsctl @("destroy") $peerName $peerRoot | Out-Null
+            Invoke-Wsctl @("supervisor-stop") $peerName $peerRoot | Out-Null
+            Check "cleanup.peer" $true $peerName
+        }
+        catch { Check "cleanup.peer" $false $_.Exception.Message }
+    }
     if ($owned) {
         $desktopLog = Join-Path $Root "logs/desktop.log"
         if (Test-Path -LiteralPath $desktopLog) {
@@ -141,7 +278,9 @@ finally {
         harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
         candidate = $candidate
         root = $Root
+        guestCount = $GuestCount
         desktopSha256 = $desktopSha256
+        desktopAssemblySha256 = $desktopAssemblySha256
         desktopVersion = $desktopVersion
         desktopOverride = [bool]$DesktopExecutable
         checks = $checks.ToArray()

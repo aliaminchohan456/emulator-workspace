@@ -313,6 +313,7 @@ function Read-RawControl([string]$directory, [string[]]$config) {
         ForEach-Object { $_ | ConvertFrom-Json } | Where-Object arm -eq "raw")
     $report.avdConfig = @{ raw = $prior.matchedAvdConfig; managed = $config }
     if ($records.Count -ne $Samples -or $prior.scenarios.rawBoot.samples -ne $Samples -or
+        $prior.bootEndpoint -ne $report.bootEndpoint -or
         $prior.candidate.installerSha256 -ne $candidate.installerSha256 -or
         $prior.candidate.sourceCommit -ne $candidate.sourceCommit -or $prior.fixtureSha256 -ne $report.fixtureSha256 -or
         ($config -join "`n") -ne ($prior.matchedAvdConfig -join "`n")) {
@@ -651,6 +652,7 @@ try {
                 throw "Managed cold boot trial $sample has no foreground window."
             }
             $reported = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+            $elapsed = $reported
             [pscustomobject]@{ trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId; focus = $focus } |
                 ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
         }

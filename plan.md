@@ -349,5 +349,9 @@ reached the WPF composition callback within 3.42 ms p95, so further
 measurement starts with controller input, capture, and delivery. All 20
 snapshot trials on the preserved payload verified fresh focus and restored
 state, with zero fallbacks. Median 9.19 s exceeded the 8 s target. The
-20-sample raw and managed cold-boot comparison is running.
+raw control completed 20 trials. Its median was 41.41 s. The managed arm
+now polls for a current focused window after `wsctl wait`, which can
+return early on the preserved binary. Once the matched arm is complete,
+build and test the readiness fix and package a separate version for the
+installer upgrade and runtime regression lanes.
 [Benchmark evidence](docs/benchmark.md)

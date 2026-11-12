@@ -30,6 +30,12 @@ WHPX boot, the installed snapshot and simulation commands, upgrade from the
 original 0.1.0 MSI with its managed profile preserved, and uninstall.
 [Reproduction and remaining gates](../task.md#continuation-from-806251f)
 
+The 0.1.1 payload completed a four-hour WHPX soak with 200 successful
+two-guest probes and verified cleanup. It restored the named snapshot in
+all 20 measured trials, with p50 9.19 s and p95 12.34 s. The 8 s median
+target and disconnected Windows reuse remain pending.
+[Raw benchmark index](phase3-manifest.json)
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
 ```
@@ -144,9 +150,10 @@ The full review is in `docs/security-review.md`. The short version:
 
 ## Known limitations
 
-- The WPF RGB viewport measured 29.4 FPS in the historical run. The 60 FPS
-  workload and the 100 ms p95 composition-proxy check remain open. Logcat and
-  one-shot PNG timings are listed in [benchmark.md](benchmark.md).
+- The quiet-host WPF diagnostic used the 0.1.1 supervisor and fixture with a
+  separately built desktop. It measured 22.01 delivered FPS and 840.85 ms
+  p95 dispatch to the WPF composition callback over 25 valid trials. The
+  60 FPS and 100 ms p95 targets remain open. [Benchmark results](benchmark.md)
 - The source-built Magisk Lab profile needs an x86_64 Linux builder. The
   pinned inputs and preparation commands are in
   [magisk-lab-build.md](magisk-lab-build.md).

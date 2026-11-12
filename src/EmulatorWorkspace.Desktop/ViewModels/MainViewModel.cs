@@ -898,8 +898,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OperationNames.InputTap,
                 new JsonObject { ["name"] = device.Name, ["x"] = x, ["y"] = y },
                 TimeSpan.FromMilliseconds(timeoutMs)).ConfigureAwait(true);
+            var acknowledgedMs = probe.Clock.Elapsed.TotalMilliseconds;
             var remaining = Math.Max(0, timeoutMs - (int)probe.Clock.ElapsedMilliseconds);
-            return await probe.Completion.Task.WaitAsync(TimeSpan.FromMilliseconds(remaining)).ConfigureAwait(true);
+            var sample = await probe.Completion.Task.WaitAsync(TimeSpan.FromMilliseconds(remaining)).ConfigureAwait(true);
+            return sample with { TapAcknowledgedMs = acknowledgedMs };
         }
         catch (Exception ex) when (ex is TimeoutException or OperationCanceledException or SupervisorRequestException)
         {
@@ -1764,7 +1766,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private sealed record PendingInput(DateTimeOffset DispatchedUtc, int? BaselineColor);
 
-    public sealed record LatencyProbeSample(double FrameAvailableMs, double CompositionMs);
+    public sealed record LatencyProbeSample(double FrameAvailableMs, double CompositionMs)
+    {
+        public double TapAcknowledgedMs { get; init; }
+    }
 
     private sealed record ProbeState(string Device, int Row, int Width, int Height, int ExpectedColor)
     {

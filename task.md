@@ -81,7 +81,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Verify a second stable API level and an official unmodified Google Play profile if available. Publish the exact host, engine, image, graphics, snapshot, root, and simulation support per tested row.
   `docs/compatibility-matrix.md` publishes the tested rows with the exact host, engine, image, ABI, snapshot, root and simulation support, and marks every untested combination as unverified. The Google APIs API 35 image is verified for the ADB-root workflow. The stock Play API 36 revision 7 row passed 8/8. Stock Play API 35 16 KB revision 5 passed 7/8 with a cold-boot fallback for snapshot recovery.
 - [ ] Test same-user and external ADB trust boundaries, privileged scopes, injection, path escapes and reparse points, floods, partial operations, and exposed sockets. Verify retention, artifact deletion, and support-bundle preview.
-  `docs/security-review.md` records the review with the code references, the seven fixed findings and the two open ones (the release signing identity and the four-hour soak).
+  `docs/security-review.md` records the review, seven fixed findings and the open signing identity. The preserved 0.1.1 payload completed the four-hour soak with verified cleanup.
 - [ ] Run the benchmark plan, including baseline comparisons, 30 start/stop cycles and a four-hour two-guest soak. Preserve raw samples and compare workflows with Android Studio, the Emulator CLI, and an existing mobile MCP server.
   The historical results are in [docs/benchmark.md](docs/benchmark.md). The
   managed cold-boot medians were 39.65 s and 44.92 s for two managed profiles.
@@ -94,7 +94,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Add versioned Windows build, test, and package CI plus a separate WHPX hardware lane. Exercise paths with spaces and non-ASCII names, mixed DPI, low disk and RAM, and port conflicts.
   `.github/workflows/windows-release.yml` builds, tests and packages on every tag, verifies the installer hash against the release record and uploads the candidate; a separate self-hosted WHPX lane runs every acceptance harness and the benchmark. The path-with-spaces and non-ASCII cases and the constrained-volume low-space run are still open.
 - [ ] Build the reproducible installer or installable release candidate. Produce hashes, dependency inventory or SBOM, notices, provenance, and signing status. Verify clean install, first launch, offline reuse with installed dependencies, upgrade preserving profiles, and uninstall.
-  The release candidate is built and verified. `tools/package-release.ps1` publishes the desktop, the supervisor and the CLI self-contained for win-x64, harvests the payload into a **per-user WiX 5 MSI** and writes the release record, the SBOM, the notices and the provenance (commit, SDK versions, build commands, pins and the signing status). The candidate is `EmulatorWorkspace-0.1.0.msi`, 55 380 192 bytes, SHA-256 `8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f`, **unsigned** (no user-owned certificate was supplied, and the provenance says so). `tools/installer-acceptance.ps1` passed **16 of 16 checks** in `artifacts/phase3/install/20261112-194153`: clean install, the installed files, the sample APK, the first launch, a boot through the installed CLI on the pinned image, offline reuse, an upgrade that preserves the operator profiles, the uninstall registration, the clean uninstall and the untouched profiles.
+  `tools/package-release.ps1` publishes a self-contained win-x64 payload, a **per-user WiX 5 MSI**, the SBOM, notices and provenance. Historical unsigned `EmulatorWorkspace-0.1.0.msi` is 55,380,192 bytes with SHA-256 `8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f`. Installer acceptance `20261112-194153` passed 16/16 checks covering clean install, first launch, pinned guest boot, local dependency reuse, upgrade and uninstall with profiles retained. The preserved 0.1.1 installer passed 21/21 checks. Disconnected reuse and signed final acceptance remain pending.
 - [ ] Publish setup and recovery commands, architecture decisions, client setup and contract, permissions and compatibility matrices, and the reproducible lab build procedure. Attach first-run and failure screenshots, demo, test outputs, exact versions, benchmark samples, and the remaining gates with their next actions.
   `docs/release-notes.md` publishes the package layout, the pins, the first-run flow, the architecture, the recovery commands, the developer-tooling commands and the known limitations. The demo recording and the first-run/failure screenshots are still open.
 
@@ -489,6 +489,25 @@ All tasks start open. Check off an implementation task after its scoped verifica
   Resume the managed arm using `-RawControlRun artifacts/phase3/bench/20261113-021146`
   with the same matched settings and candidate. The harness verifies and
   hashes the prior raw records before reuse.
+- The managed arm resumed successfully from `a1d95c0` in
+  `artifacts/phase3/bench/20261113-023049`, root
+  `D:/WS-Managed-011-20261113-023047`. It validated the candidate, fixture,
+  settings and reference host against `20261113-021146`. Watch the managed
+  rows in `cold-boot.jsonl` and the final cleanup result.
+- The product readiness fix rejects `mCurrentFocus=null` and requires a
+  real focused window after snapshot load within the recovery deadline.
+  It is queued for build and hardware verification after timed runs.
+  The next WPF diagnostic records tap acknowledgement, guest `gfxinfo`
+  frame timings, and separately measures the pinned controller RGB stream
+  and a targeted guest H.264 stream. Use `-CompareCapture` with one guest
+  and `-GuestCount 2` for the two-guest presentation lane.
+- `wsctl install-apks` now routes through the local supervisor. Pinned
+  bundletool reads the managed device spec and selects the splits on the
+  host. The supervisor checks the same engine and ADB transport before
+  installing through `adb -t <transport-id> install-multiple`. Phase 3
+  regression exercises the CLI path and checks that a second guest remains
+  untouched. Release build and WHPX verification are queued after the
+  matched cold-boot run.
 - Both `Containers-DisposableClientVM` and `Microsoft-Hyper-V-Tools-All`
   still report WMI `InstallState=2` after the canceled elevation. The
   authorized feature change requires an elevated Windows token. Run the

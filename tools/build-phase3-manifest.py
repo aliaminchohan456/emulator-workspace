@@ -141,7 +141,8 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | No
         "harnessCommit": harness_commit,
         "harnessSha256": benchmark.get("harnessSha256") or summary.get("harnessSha256"),
         "candidate": candidate,
-        **({"desktop": {"sha256": summary["desktopSha256"], "version": summary.get("desktopVersion"),
+        **({"desktop": {"sha256": summary["desktopSha256"], "assemblySha256": summary.get("desktopAssemblySha256"),
+                        "version": summary.get("desktopVersion"),
                         "override": summary.get("desktopOverride")}} if summary.get("desktopSha256") else {}),
         "finishedUtc": summary.get("finishedUtc"),
         "pins": {
