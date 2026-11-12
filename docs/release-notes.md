@@ -1,22 +1,43 @@
-# Emulator Workspace 0.1.0 — release notes
+# Emulator Workspace 0.1.1 candidate
 
 A Windows-first Android emulator workspace for development and QA: a WPF
 desktop, a scoped local CLI and MCP workflow, verified device and recipe
-recovery, separate ADB root and Magisk workflows, and an installable Windows
-release candidate.
+recovery, an ADB root workflow, and an installable Windows release candidate.
 
 ## What is in the package
 
 | Component | Path after install | Purpose |
 | --- | --- | --- |
-| Desktop | `%ProgramFiles%\Emulator Workspace\EmulatorWorkspace.Desktop.exe` | The WPF application: device rail, embedded viewport, inspector, Logcat drawer, APK drop, agent sessions, Root Lab panel and the Ctrl+K command palette. |
-| Supervisor | `%ProgramFiles%\Emulator Workspace\EmulatorWorkspace.Supervisor.exe` | The persistent per-user supervisor: named pipe, SQLite state, lifecycle, snapshots, recipes, journal. Started on demand. |
-| CLI | `%ProgramFiles%\Emulator Workspace\wsctl.exe` | The local command line client. |
-| Sample APK | `%ProgramFiles%\Emulator Workspace\ws-sample.apk` | The deterministic QA fixture that the desktop installs and launches. |
+| Desktop | `%LOCALAPPDATA%\Programs\Emulator Workspace\EmulatorWorkspace.Desktop.exe` | The WPF application: device rail, embedded viewport, inspector, Logcat drawer, APK drop, agent sessions, Root Lab panel and the Ctrl+K command palette. |
+| Supervisor | `%LOCALAPPDATA%\Programs\Emulator Workspace\EmulatorWorkspace.Supervisor.exe` | The persistent per-user supervisor: named pipe, SQLite state, lifecycle, snapshots, recipes, journal. Started on demand. |
+| CLI | `%LOCALAPPDATA%\Programs\Emulator Workspace\wsctl.exe` | The local command line client. |
+| Sample APK | `%LOCALAPPDATA%\Programs\Emulator Workspace\ws-sample.apk` | The deterministic QA fixture that the desktop installs and launches. |
 
 The package contains **no** Android SDK, emulator or system image. Those are
 obtained through the guided first-run setup, which uses the official SDK
 Manager and the pinned versions.
+
+## Local build
+
+The candidate built from `8d40469` is at
+`D:/Release/emulator-workspace-0.1.1-20261112-212010/EmulatorWorkspace-0.1.1.msi`.
+It contains 422 payload files, is 55,359,712 bytes, and reports
+`NotSigned` in Authenticode. SHA-256
+`e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b`.
+The release directory contains the SBOM, notices, hash inventory and build
+provenance. Installer run `20261112-212707` passed 21/21 checks, including
+WHPX boot, the installed snapshot and simulation commands, upgrade from the
+original 0.1.0 MSI with its managed profile preserved, and uninstall.
+[Reproduction and remaining gates](../task.md#continuation-from-806251f)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
+```
+
+An authorized signing certificate with its private key must be available in
+`Cert:/CurrentUser/My` for `-CertificateThumbprint`. The build uses Windows
+SDK SignTool to verify the MSI before writing signed provenance.
+[SignTool documentation](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool)
 
 ## Pins
 
@@ -30,8 +51,7 @@ Manager and the pinned versions.
 
 ## First run
 
-1. Install the package (it installs per machine and never touches your
-   profiles).
+1. Install the package for your Windows user.
 2. Start **Emulator Workspace** from the Start menu.
 3. The first-run panel reports the SDK state. Install the official SDK
    components and accept the licenses if the panel asks for them; the pinned

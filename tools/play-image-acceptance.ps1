@@ -95,6 +95,8 @@ finally {
     $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
     $gpu = Get-CimInstance Win32_VideoController | Select-Object -First 1
     $emulator = Join-Path $sdk "emulator/emulator.exe"
+    $fixtureHash = $null
+    if (Test-Path -LiteralPath $fixture) { $fixtureHash = (Get-FileHash -LiteralPath $fixture).Hash }
     [ordered]@{
         runId = $run
         sourceCommit = (& git -C $repo rev-parse HEAD | Out-String).Trim()
@@ -109,7 +111,7 @@ finally {
             emulator = (& $emulator -version 2>&1 | Select-Object -First 1 | Out-String).Trim()
             acceleration = (& $emulator -accel-check 2>&1 | Select-String 'WHPX' | Out-String).Trim()
         }
-        fixtureSha256 = if (Test-Path -LiteralPath $fixture) { (Get-FileHash -LiteralPath $fixture).Hash }
+        fixtureSha256 = $fixtureHash
         checks = $checks.ToArray()
     } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $out "summary.json") -Encoding UTF8
     Write-Host "Evidence: $out"

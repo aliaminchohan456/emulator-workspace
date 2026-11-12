@@ -264,7 +264,7 @@ Each verified run must record the host architecture and CPU, Windows build, engi
 | --- | --- | --- | --- | --- | --- | --- |
 | First developer profile | Windows 11 26H2 26300.9818, i5-8265U, 31.8 GiB, UHD 620 | Emulator 37.2.12 (16428233); `system-images;android-35;default;x86_64` rev 2 | API 35, x86_64, userdebug | Host GPU verified; swiftshader verified; save 5.7 s, load 5.5 s | `adb root` uid 0 and `adb unroot` uid 2000 verified | Verified (Phase 0 + desktop MVP) |
 | Second developer profile | Same host | Same engine and image, second AVD | API 35, x86_64 | Own ports, token, and data; concurrent boot verified | Same image | Verified concurrently; desktop viewport on this profile |
-| Google Play profile | Windows 11 x64 with WHPX | Official unmodified Google Play image; installed but not yet booted | API 35/36, x86_64 | Pending | Unmodified compatibility profile | Planned |
+| Google Play profile | Windows 11 x64 with WHPX | Official Play API 36 rev 7 and API 35 16 KB rev 5 | API 35/36, x86_64 | Host GPU, APK and PNG on both. API 36 restored. API 35 used cold-boot fallback | Stock user builds, ADB UID 2000 | Measured in the compatibility matrix |
 | Magisk Lab | Windows 11 x64 with WHPX | Emulator pinned; ramdisk substitution proven; Magisk build pending on Linux | API 35, x86_64 | `-ramdisk` override boots a modified archive | App-level `su` pending; stock restore verified | In progress |
 
 Track Windows on ARM, other host OSes, nonstandard GPUs, and ARM-only APKs as separate compatibility entries. Inspect native APK ABIs before deployment and surface incompatibility with the selected guest. Publish simulation and interoperability support per verified configuration.
@@ -307,3 +307,10 @@ WPF composition run remains the next presentation measurement. The exact
 commands, raw run paths and current candidate hash are in [task.md](task.md).
 The Magisk experiment has pinned sources and a documented build preflight.
 [Magisk Lab build inputs](docs/magisk-lab-build.md)
+
+The 0.1.1 candidate from `8d40469` passed 21 installer checks in
+`20261112-212707`. The original 0.1.0 MSI served as the predecessor for the
+verified managed-profile upgrade. The corrected read-only simulation probe
+ran through the installed CLI. Final readiness still requires the open
+checks in [task.md](task.md), including disconnected reuse, signed
+acceptance, the full soak, presentation performance, and Magisk.

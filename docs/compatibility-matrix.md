@@ -24,27 +24,41 @@ of documentation alone.
 | --- | --- | --- | --- |
 | `system-images;android-35;default;x86_64` (AOSP API 35, revision 2) | x86_64 | **Yes** | The regression baseline. Every Phase 1, 2 and 3 acceptance run uses it. |
 | `system-images;android-35;google_apis;x86_64` | x86_64 | **Yes** | The `adb root` workflow needs a userdebug image; the Google APIs image is userdebug and was verified for the ADB daemon transitions. |
-| `system-images;android-35;google_apis_playstore_ps16k;x86_64` | x86_64 | **No** | Installed on the host but not exercised. The Play Store image is unmodified and must not be used for the Root Lab. |
-| `system-images;android-36;google_apis_playstore;x86_64` | x86_64 | **No** | Installed but not exercised. |
+| `system-images;android-35;google_apis_playstore_ps16k;x86_64` revision 5 | x86_64 | **Partial** | Boot, APK, foreground and PNG verified. Snapshot state rolled back with cold-boot recovery. |
+| `system-images;android-36;google_apis_playstore;x86_64` revision 7 | x86_64 | **Yes, tested workflows** | Boot, APK, foreground, PNG and named snapshot rollback verified. |
 | `system-images;android-36.1;google_apis_playstore;x86_64` | x86_64 | **No** | Installed but not exercised. |
 | `system-images;android-37.1;google_apis_playstore_ps16k;x86_64` | x86_64 | **No** | Installed but not exercised. |
 
-The goal asks for another stable API level and an official unmodified Google Play
-profile to be verified. Both images are present on the host, so the next
-verification run can cover them; that work is recorded as pending in
-`task.md` rather than claimed here.
+The stock Play runs used Windows 11 Pro build 26300 on the i5-8265U with
+UHD 620 driver 31.0.101.2135, Emulator 37.2.12.0 build 16428233, WHPX, and
+headless host GPU. Both images booted with `ro.build.type=user` and effective
+ADB daemon UID 2000. Their stock ramdisk hashes matched before and after.
+
+| Stock image | Run | Guest build | Named snapshot result |
+| --- | --- | --- | --- |
+| API 36 revision 7 | `20261112-211536`, 8/8 | `BE2A.250530.026.D1/13818094` | `recovery=restored`, fixture absent after load |
+| API 35 16 KB revision 5 | `20261112-211808`, 7/8 | `AE3A.240806.041/12890756` | `recovery=cold_boot`, fixture absent after fallback |
+
+Raw status, probe, snapshot and cleanup records are in `artifacts/phase3/play/`.
+The original simulation output exposed a false-positive console status for
+`route` and `power capacity`. The corrected probe distinguishes console
+rejections, reads the battery state using `power display`, and reads the
+advertised GPS feature without injecting a position. Camera, microphone and
+telephony entries are feature advertisements. The Play tests cover snapshot
+rollback and APK QA. Recipe replay, split installs, live viewport streaming,
+and simulation mutations require separate checks on those profiles.
 
 ## Capabilities
 
 | Capability | AOSP API 35 x86_64 | Google APIs API 35 x86_64 | Google Play image |
 | --- | --- | --- | --- |
-| Cold boot to interactive readiness | Verified (see `docs/phase3-evidence.md`) | Verified | Not verified |
-| Warm snapshot restore | Verified | Not verified | Not verified |
-| Frame capture and streaming | Verified | Not verified | Not verified |
+| Cold boot to interactive readiness | Verified (see `docs/phase3-evidence.md`) | Verified | Verified on both tested images |
+| Warm snapshot restore | Verified | Not verified | API 36 restored. API 35 16 KB used cold-boot recovery |
+| Frame capture and streaming | Verified | Not verified | One-shot PNG verified on both tested images |
 | Input (tap, text, key, swipe) | Verified | Not verified | Not verified |
-| ADB daemon as root (`adb root`) | Verified (`ro.build.type=userdebug`) | Verified | Not verified |
+| ADB daemon as root (`adb root`) | Verified (`ro.build.type=userdebug`) | Verified | Both tested images report user build and root unavailable |
 | Magisk | Not available (needs a Linux builder) | Not available | Out of scope by policy |
-| App install (`.apk`) | Verified | Not verified | Not verified |
+| App install (`.apk`) | Verified | Not verified | Verified on both tested images |
 | Split APK set (`.apks`, bundletool 1.18.1) | Verified | Not verified | Not verified |
 | Recipe record and replay | Verified | Not verified | Not verified |
 | GPS, rotation, battery, network shaping | Verified | Not verified | Not verified |

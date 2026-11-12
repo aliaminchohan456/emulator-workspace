@@ -24,7 +24,9 @@ param(
     [string]$OutDir = "artifacts\phase3\install",
     [string]$WorkRoot = "D:\Phase5Root",
     [int]$BootTimeoutSeconds = 600,
-    [switch]$VerifySnapshotJson
+    [switch]$VerifySnapshotJson,
+    [switch]$VerifySimulationProbe,
+    [string]$PreviousInstaller = ""
 )
 
 $ErrorActionPreference = "Continue"
@@ -80,6 +82,7 @@ function Parse-Json([string]$text) {
 }
 
 function Install-Msi([string]$path, [string]$logPath) {
+    $path = (Resolve-Path -LiteralPath $path -ErrorAction Stop).ProviderPath
     $process = Start-Process -FilePath "msiexec.exe" `
         -ArgumentList "/i", "`"$path`"", "/qn", "/norestart", "/l*v", "`"$logPath`"" `
         -Wait -PassThru -WindowStyle Hidden
@@ -91,6 +94,34 @@ function Uninstall-Msi([string]$productCode, [string]$logPath) {
         -ArgumentList "/x", $productCode, "/qn", "/norestart", "/l*v", "`"$logPath`"" `
         -Wait -PassThru -WindowStyle Hidden
     return $process.ExitCode
+}
+
+function Read-InstallerIdentity([string]$path) {
+    $installer = New-Object -ComObject WindowsInstaller.Installer
+    $database = $installer.OpenDatabase((Resolve-Path -LiteralPath $path).Path, 0)
+    $view = $database.OpenView('SELECT `Property`, `Value` FROM `Property`')
+    $identity = @{}
+    try {
+        $view.Execute()
+        while ($record = $view.Fetch()) {
+            $property = $record.StringData(1)
+            if ($property -in @("ProductCode", "ProductVersion", "UpgradeCode")) {
+                $identity[$property] = $record.StringData(2)
+            }
+        }
+    }
+    finally { $view.Close() }
+    if ($identity.Count -ne 3) { throw "Could not read the MSI product identity." }
+    return $identity
+}
+
+function Get-WorkspaceRegistration([string]$productCode) {
+    $keys = @(
+        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$productCode",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$productCode",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$productCode"
+    )
+    Get-ItemProperty -LiteralPath $keys -ErrorAction SilentlyContinue | Select-Object -First 1
 }
 
 if (-not $Installer) {
@@ -110,9 +141,15 @@ Log "installer acceptance $run installer=$Installer"
 
 try {
     # ------------------------------------------------------------ clean state
+    $candidateIdentity = Read-InstallerIdentity $Installer
+    $previousIdentity = if ($PreviousInstaller) { Read-InstallerIdentity $PreviousInstaller }
+    if ($previousIdentity -and ($previousIdentity.UpgradeCode -ne $candidateIdentity.UpgradeCode -or
+        [version]$previousIdentity.ProductVersion -ge [version]$candidateIdentity.ProductVersion)) {
+        throw "Use a previous, lower version from the same MSI upgrade family."
+    }
     if ((Get-ChildItem -LiteralPath $installedRoot -Force -ErrorAction SilentlyContinue | Select-Object -First 1) -or
-        (Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
-            Where-Object DisplayName -eq "Emulator Workspace")) {
+        (Get-WorkspaceRegistration $candidateIdentity.ProductCode) -or
+        ($previousIdentity -and (Get-WorkspaceRegistration $previousIdentity.ProductCode))) {
         throw "Clean-install acceptance requires a Windows user without an existing Emulator Workspace installation."
     }
 
@@ -164,6 +201,19 @@ try {
             $snapshotResult.action -eq "save" -and $snapshotResult.seconds -gt 0) "the installed CLI reports structured snapshot results"
     }
 
+    if ($VerifySimulationProbe) {
+        $probe = Invoke-Ws $wsctlExe @("simulation-probe", "--name", $guest, "--root", $WorkRoot)
+        $probe.Text | Set-Content -LiteralPath (Join-Path $out "installed-simulation.json") -Encoding UTF8
+        $capabilities = (Parse-Json $probe.Text).capabilities
+        $route = $capabilities | Where-Object capability -eq "routes and offline mode"
+        $battery = $capabilities | Where-Object capability -eq "battery and charging"
+        $gps = $capabilities | Where-Object capability -eq "GPS"
+        Add-Check "installed.simulation-probe" ($route.supported -eq $false -and $route.reason -match '^KO:' -and
+            $battery.supported -eq $true -and $battery.evidence -match 'capacity:' -and
+            $gps.supported -eq $true -and $gps.evidence -eq "feature:android.hardware.location.gps") (
+            "route=$($route.reason) battery=$($battery.supported) GPS=$($gps.evidence)")
+    }
+
     # --------------------------------------------------- offline reuse
     $offlineOk = $true
     $offlineDetail = "the installed CLI answered while the guest was running"
@@ -200,14 +250,7 @@ try {
     Start-Sleep -Seconds 4
 
     $uninstallLog = Join-Path $out "msi-uninstall.log"
-    $productCode = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName -eq "Emulator Workspace" } |
-        Select-Object -First 1).PSChildName
-    if (-not $productCode) {
-        $productCode = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -eq "Emulator Workspace" } |
-            Select-Object -First 1).PSChildName
-    }
+    $productCode = (Get-WorkspaceRegistration $candidateIdentity.ProductCode).PSChildName
     Add-Check "uninstall.registered" ($null -ne $productCode) "the package is registered in the uninstall registry"
     if ($productCode) {
         $code = Uninstall-Msi $productCode $uninstallLog
@@ -215,6 +258,33 @@ try {
     }
     Add-Check "uninstall.files-removed" (-not (Test-Path $desktopExe)) "the installed binaries are gone"
     Add-Check "uninstall.profiles-kept" (Test-Path $profileMarker) "the operator profiles were not touched"
+
+    if ($PreviousInstaller) {
+        if ((Get-WorkspaceRegistration $candidateIdentity.ProductCode) -or (Test-Path -LiteralPath $wsctlExe)) {
+            throw "The clean-install lane must uninstall before the version-upgrade lane."
+        }
+        $code = Install-Msi $PreviousInstaller (Join-Path $out "msi-previous.log")
+        $prior = Get-WorkspaceRegistration $previousIdentity.ProductCode
+        if ($code -ne 0 -or -not $prior) { throw "Previous installer failed (exit $code)." }
+        $upgradeGuest = "upgrade-$([Guid]::NewGuid().ToString('N').Substring(0, 12))"
+        Invoke-Ws $wsctlExe @("create", "--name", $upgradeGuest, "--root", $WorkRoot) | Out-Null
+        Invoke-Ws $wsctlExe @("supervisor-stop", "--root", $WorkRoot) | Out-Null
+        Start-Sleep -Seconds 4
+        $code = Install-Msi $Installer (Join-Path $out "msi-version-upgrade.log")
+        $current = Get-WorkspaceRegistration $candidateIdentity.ProductCode
+        Add-Check "upgrade.version-changed" ($code -eq 0 -and $current -and
+            [version]$current.DisplayVersion -gt [version]$prior.DisplayVersion -and
+            -not (Get-WorkspaceRegistration $previousIdentity.ProductCode)) "$($prior.DisplayVersion) -> $($current.DisplayVersion)"
+        $preserved = Invoke-Ws $wsctlExe @("status", "--name", $upgradeGuest, "--json", "--root", $WorkRoot) -AllowFailure
+        $profile = Parse-Json $preserved.Text
+        Add-Check "upgrade.managed-profile-kept" ($preserved.Code -eq 0 -and $profile.name -eq $upgradeGuest -and
+            $profile.imagePackage -eq "system-images;android-35;default;x86_64") $upgradeGuest
+        Invoke-Ws $wsctlExe @("destroy", "--name", $upgradeGuest, "--root", $WorkRoot) | Out-Null
+        Invoke-Ws $wsctlExe @("supervisor-stop", "--root", $WorkRoot) | Out-Null
+        Start-Sleep -Seconds 4
+        $code = Uninstall-Msi $current.PSChildName (Join-Path $out "msi-version-upgrade-uninstall.log")
+        Add-Check "upgrade.uninstall" ($code -eq 0 -and -not (Get-WorkspaceRegistration $candidateIdentity.ProductCode)) "msiexec /x exited with $code"
+    }
 }
 catch {
     Add-Check "harness.fatal" $false $_.Exception.Message
@@ -227,11 +297,16 @@ finally {
 }
 
 $failed = @($script:results | Where-Object { -not $_.Passed }).Count
+$previousHash = $null
+if ($PreviousInstaller -and (Test-Path -LiteralPath $PreviousInstaller)) {
+    $previousHash = (Get-FileHash -LiteralPath $PreviousInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 $summary = [ordered]@{
     runId = $run
     finishedUtc = (Get-Date).ToUniversalTime().ToString("O")
     installer = $Installer
     installerSha256 = (Get-FileHash $Installer -Algorithm SHA256).Hash.ToLowerInvariant()
+    previousInstallerSha256 = $previousHash
     failed = $failed
     checks = @($script:results)
 }

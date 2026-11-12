@@ -110,3 +110,31 @@ sizes so the shaped path can be distinguished from the baseline.
 ```powershell
 py -3 tools\fixtures\login_fixture.py
 ```
+
+## Release hardware probes
+
+Build the Debug binaries and fixture once before starting the hardware runs.
+Each run creates disposable guests through the supervisor and stores its raw
+results under `artifacts/phase3`.
+
+```powershell
+dotnet build
+powershell -ExecutionPolicy Bypass -File sample/build-sample-apk.ps1
+powershell -ExecutionPolicy Bypass -File tools/benchmark.ps1 -Root D:/WSBench -Samples 20 `
+  -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle
+powershell -ExecutionPolicy Bypass -File tools/play-image-acceptance.ps1 -Root D:/WSPlay36 `
+  -Image 'system-images;android-36;google_apis_playstore;x86_64'
+```
+
+Omit `-SkipRestore` for named snapshot trials. The benchmark records the full
+wall time, console time, recovery mode, and saved marker. Add `-SoakMinutes
+240` for the four-hour paired run and follow `soak.jsonl` through supervisor
+cleanup. See [benchmark results](../docs/benchmark.md) for the endpoints.
+
+The Play harness records interactive boot, stock ADB capabilities, APK
+deployment, capture, snapshot state, and observed simulation capabilities.
+Run it separately for `system-images;android-35;google_apis_playstore_ps16k;x86_64`.
+
+The Linux source-profile build and Windows signing gates have separate
+prerequisites. [Magisk Lab build procedure](../docs/magisk-lab-build.md),
+[Windows release notes](../docs/release-notes.md)

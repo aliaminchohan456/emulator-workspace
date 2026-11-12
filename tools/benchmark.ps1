@@ -16,10 +16,10 @@
       * lifecycle          : N start/stop cycles, watching for leaked engines,
                              ports and memory growth
 
-    A single guest and two guests are measured separately. The targets from the
-    plan are evaluated at the end: 60 delivered FPS, p95 input latency of at
-    most 100 ms, warm restore within 8 s median and boot overhead within the
-    larger of 10% or 1 second.
+    A single guest and two guests are measured separately. The ADB/Logcat
+    and one-shot PNG timings diagnose separate paths from the WPF targets.
+    Warm restore is checked against the 8 s median using 20 verified restores.
+    The managed boot control measures run-to-run variation.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\benchmark.ps1 `
@@ -226,6 +226,22 @@ function New-BenchmarkGuest([string]$prefix) {
 
 function Stop-OwnedGuest([string]$name) {
     Invoke-Ws @("stop", "--name", $name, "--force", "--root", $Root) | Out-Null
+}
+
+function Wait-SoakProcessExit([string]$name) {
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    foreach ($owned in $soakProcesses[$name]) {
+        $remaining = Get-Process -Id $owned.pid -ErrorAction SilentlyContinue
+        if (-not $remaining) { continue }
+        try {
+            if ($remaining.HasExited -or $remaining.StartTime.ToUniversalTime() -ne $owned.startUtc) { continue }
+            $remainingMs = [Math]::Max(0, 15000 - $timer.ElapsedMilliseconds)
+            if (-not $remaining.WaitForExit([int]$remainingMs)) {
+                throw "Owned process $($owned.pid) is still running after the supervisor stop."
+            }
+        }
+        finally { $remaining.Dispose() }
+    }
 }
 
 function Get-GuestIdentity([string]$name) {
@@ -569,13 +585,8 @@ finally {
     foreach ($name in $ownedGuests) {
         try {
             Stop-OwnedGuest $name
+            Wait-SoakProcessExit $name
             Invoke-Ws @("destroy", "--name", $name, "--root", $Root) | Out-Null
-            foreach ($owned in $soakProcesses[$name]) {
-                $remaining = Get-Process -Id $owned.pid -ErrorAction SilentlyContinue
-                if ($remaining -and $remaining.StartTime.ToUniversalTime() -eq $owned.startUtc) {
-                    throw "Owned process $($owned.pid) is still running after cleanup."
-                }
-            }
             Add-Check "cleanup.$name" $true "stopped and removed through the supervisor"
         }
         catch {

@@ -79,7 +79,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 ## 5. Release
 
 - [ ] Verify a second stable API level and an official unmodified Google Play profile if available. Publish the exact host, engine, image, graphics, snapshot, root, and simulation support per tested row.
-  `docs/compatibility-matrix.md` publishes the tested rows with the exact host, engine, image, ABI, snapshot, root and simulation support, and marks every untested combination as unverified. The Google APIs API 35 image is verified for the ADB-root workflow; the Google Play images and the other API levels are installed on the host but still unverified.
+  `docs/compatibility-matrix.md` publishes the tested rows with the exact host, engine, image, ABI, snapshot, root and simulation support, and marks every untested combination as unverified. The Google APIs API 35 image is verified for the ADB-root workflow. The stock Play API 36 revision 7 row passed 8/8. Stock Play API 35 16 KB revision 5 passed 7/8 with a cold-boot fallback for snapshot recovery.
 - [ ] Test same-user and external ADB trust boundaries, privileged scopes, injection, path escapes and reparse points, floods, partial operations, and exposed sockets. Verify retention, artifact deletion, and support-bundle preview.
   `docs/security-review.md` records the review with the code references, the seven fixed findings and the two open ones (the release signing identity and the four-hour soak).
 - [ ] Run the benchmark plan, including baseline comparisons, 30 start/stop cycles and a four-hour two-guest soak. Preserve raw samples and compare workflows with Android Studio, the Emulator CLI, and an existing mobile MCP server.
@@ -152,7 +152,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Two-guest latency | WHPX run `20261112-205244` collected 20/20 fresh markers. ADB-to-Logcat p50 1,099.43 ms / p95 1,451.69 ms. Packaging overlapped the run. | Measure the same input workload through the WPF composition proxy on a quiet host. |
 | The comparison with Android Studio, the raw Emulator CLI and an existing MCP server | Not run in this environment. | Run the same recipe through each of the three and record the measured difference in `docs/benchmark.md`. |
 | The release signing identity | No user-owned code-signing certificate was supplied, so the candidate is unsigned. | Supply the certificate to `tools/package-release.ps1 -CertificateThumbprint` and rebuild; the provenance records the signing status either way. |
-| A second API level and an unmodified Google Play image | The images are installed on the host but were not exercised. | Run `tools/phase3-acceptance.ps1` and the recipe harness against `system-images;android-36;google_apis_playstore;x86_64` and `system-images;android-35;google_apis_playstore_ps16k;x86_64` and add the rows to `docs/compatibility-matrix.md`. |
+| Stock Google Play API 36 and API 35 | Both profiles booted and ran the sample. API 36 restored the named snapshot. API 35 16 KB rolled back the fixture with a cold boot. | Investigate the 16 KB restore path and rerun `tools/play-image-acceptance.ps1` for that package. |
 | 150% and mixed-DPI displays, paths with spaces and non-ASCII names | Only 100% and 125% scaling were exercised, and the workspace roots used plain paths. | Repeat the WPF click-through on a 150% display and run the harnesses with a root path that contains spaces and non-ASCII characters. |
 | The demo recording and the first-run and failure screenshots | Not produced. | Record the WPF click-through and capture the first-run panel and a failure state as PNGs. |
 
@@ -165,7 +165,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
   upgrade check reran the same installer. Network-disconnected reuse and an
   upgrade between versions remain open.
 - Benchmark implementation `f375bde`. Reproduce with
-  `powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 -Root 'D:/WS Bench résumé' -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle`.
+  `powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 -Root 'D:/WS Bench rÃ©sumÃ©' -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle`.
   Run `20261112-205244` collected 20/20 single-guest and 20/20 two-guest
   markers. Single-guest p50/p95 were 221.11/553.47 ms, paired were
   1,099.43/1,451.69 ms. One-shot PNG p50 was 575.15 ms. Packaging overlapped
@@ -173,7 +173,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
   showed no attached guests. Evidence is in `artifacts/phase3/bench/20261112-205244`.
   The smoke run `20261112-204922` exposed view-local log coordinates and
   unbounded ADB waits after a disconnect. Both were corrected.
-- The rebuilt local candidate from `f375bde` is
+- The earlier rebuilt 0.1.0 candidate from `f375bde` is
   `D:/Release/emulator-workspace-0.1.0-20261112-205529/EmulatorWorkspace-0.1.0.msi`.
   Size 55,367,904 bytes. SHA-256
   `7a3650c3208759c60d657b2ef2ffb16aa532fbffed40fad65e5fff8c436d73f3`.
@@ -199,3 +199,65 @@ All tasks start open. Check off an implementation task after its scoped verifica
   acceptance needs the authorized identity. Run
   `tools/package-release.ps1 -Version 0.1.0 -CertificateThumbprint <thumbprint>`
   once the operator has made the key available.
+
+- Soak smoke `20261112-210824` recorded three paired status and
+  package-manager probes through 75.13 seconds, two verified launchers and
+  two QEMU children, and the exact loopback port owners. A QEMU child was
+  still exiting at the first cleanup check and was gone at the subsequent
+  inspection. The harness now waits up to 15 seconds for the exact observed
+  process generations before deleting their profiles. A Windows PowerShell
+  5.1 process probe verified both the matching-generation wait and the
+  mismatched-generation skip. The full soak remains pending.
+- Final managed build check used `dotnet build -c Release` and
+  `dotnet test -c Release --no-build`. It passed 56/56 tests. A concurrent
+  Debug build hit MSB3021/MSB3027 because the active test supervisor held the
+  Debug outputs. The Release build used a separate configuration.
+
+- Play compatibility: `tools/play-image-acceptance.ps1` with roots
+  `D:/WSPlay36` and `D:/WSPlay35` measured the SDK packages listed in the
+  [compatibility matrix](docs/compatibility-matrix.md). API 36 revision 7
+  run `20261112-211536` passed 8/8. API 35 16 KB revision 5 run
+  `20261112-211808` passed 7/8, with cold-boot fallback. Raw records are in
+  `artifacts/phase3/play`. Both guests were removed through the supervisor.
+- The Play probe uncovered false positive capability reports on console
+  `KO` responses and a GPS mutation during an observation. Product commit
+  `8d40469` reports the route rejection, reads power state, and queries the
+  guest GPS feature. The rebuilt 0.1.1 candidate contains this correction.
+
+- Local 0.1.1 candidate build `8d40469`: Release build succeeded and
+  `dotnet test -c Release --no-build` passed 56/56. The MSI is
+  `D:/Release/emulator-workspace-0.1.1-20261112-212010/EmulatorWorkspace-0.1.1.msi`,
+  55,359,712 bytes, SHA-256
+  `e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b`,
+  Authenticode `NotSigned`. Rebuild with
+  `tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release`.
+  The first installer validation attempt `20261112-212243` stopped
+  before installation after finding two stale registrations from older
+  runs. The harness now reads the exact candidate and predecessor product
+  codes from the MSI property tables.
+
+- Initial 0.1.1 acceptance run `20261112-212444` passed its clean-install,
+  boot, installed snapshot, simulation and uninstall checks. The upgrade
+  lane reached Windows Installer error 1619 with a slash-form predecessor
+  path. The harness now resolves both MSI paths to native Windows paths.
+
+- Exact 0.1.1 MSI acceptance `20261112-212707` passed **21/21**. It
+  verified clean install, real WHPX boot, installed snapshot JSON, corrected
+  capability reporting, local status reuse, and uninstall. The original
+  `4f821ee` MSI installed successfully as the 0.1.0 predecessor. Windows
+  Installer replaced its product registration, and the new CLI read the
+  managed profile created by the previous CLI. The upgraded product also
+  uninstalled. Raw evidence is in `artifacts/phase3/install/20261112-212707`.
+
+  ```powershell
+  dotnet build -c Release
+  dotnet test -c Release --no-build
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/installer-acceptance.ps1 `
+    -Installer 'D:/Release/emulator-workspace-0.1.1-20261112-212010/EmulatorWorkspace-0.1.1.msi' `
+    -PreviousInstaller 'D:/Release/emulator-workspace-0.1.0-20261112-194003/EmulatorWorkspace-0.1.0.msi' `
+    -WorkRoot D:/WSInstall011Retry -VerifySnapshotJson -VerifySimulationProbe
+  ```
+
+  Network-disconnected reuse, signed acceptance, the remaining hardware and
+  performance gates, and final-candidate end-to-end regression remain open.
