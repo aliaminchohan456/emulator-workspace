@@ -313,18 +313,17 @@ The 0.1.1 candidate from `8d40469` passed 21 installer checks in
 verified managed-profile upgrade. The corrected read-only simulation probe
 ran through the installed CLI. Final readiness still requires the open
 checks in [task.md](task.md), including disconnected reuse, signed
-acceptance, the full soak, presentation performance, and Magisk.
+acceptance, presentation performance, and Magisk.
 
 ## Final verification in progress
 
 The preserved 0.1.1 MSI and installer acceptance `20261112-212707` were
-rechecked. The full two-guest soak is running against its verified payload
-in `D:/WS-Soak-011-20261112-213626`. Run `20261112-213629` uses harness
-commit `27c655f`, the candidate supervisor from `8d40469`, and the pinned
-WHPX engine and image. Check the last `soak.jsonl` row and the exact harness
-generation before taking any further action on that root. The four-hour
-interval is due to end around **2026-11-13 01:43:29 PKT**, followed by cleanup.
-No benchmark or regression shares the active emulator workload.
+rechecked. The full two-guest soak `20261112-213629` passed 200 paired
+probes over 14,411.36 seconds. The harness used the hash-verified candidate
+payload from `8d40469` with the pinned WHPX engine and API 35 image.
+Both guest generations were stopped and removed. ADB showed no attached
+devices, and the scoped supervisor was then shut down.
+[Benchmark evidence](docs/benchmark.md)
 
 After cleanup, use the prepared candidate lanes for the quiet-host WPF,
 matched raw CLI, verified restore, and runtime regression. The candidate
@@ -332,5 +331,13 @@ installer hash belongs to the preserved 0.1.1 payload. A diagnostic desktop
 override has separate binary and source provenance. Disconnected reuse
 requires an isolated Windows 11 x64 environment that can run the pinned
 Android Emulator with WHPX. The operator approved enabling Sandbox and
-Hyper-V management. Apply those features after the soak and keep any
-required reboot separate. See [task.md](task.md) for exact commands.
+Hyper-V management. The post-soak elevation prompt was canceled before
+Windows servicing started. Feature installation requires an accepted
+administrator prompt, with any required reboot handled separately.
+
+The preserved desktop rendered frames in the quiet-host probe but its
+startup callback did not dispatch trials. Register the callback before the
+window is shown and repeat with separate desktop provenance. The raw
+control reached the interactive endpoint in a smoke trial after correcting
+child identity detection. The full comparison uses normalized AVD settings
+and requires 20 valid observations in each arm. See [task.md](task.md).

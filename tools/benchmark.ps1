@@ -280,14 +280,24 @@ function Get-GuestIdentity([string]$name) {
 function Get-RawEngineChildren($launcher, [datetime]$started, [string]$avdName) {
     $qemu = Join-Path $sdk "emulator/qemu/windows-x86_64/qemu-system-x86_64-headless.exe"
     $filter = "ParentProcessId=$($launcher.Id) AND Name='qemu-system-x86_64-headless.exe'"
+    $avdArgument = '(?:^|\s)-avd\s+(?:"{0}"|{0})(?=\s|$)' -f [regex]::Escape($avdName)
+    $hardwareIni = [regex]::Escape("$avdName.avd\hardware-qemu.ini") + '(?="|\s|$)'
     Get-CimInstance Win32_Process -Filter $filter -ErrorAction Stop |
         Where-Object { $_.ExecutablePath -eq $qemu -and $_.CreationDate -ge $started -and
-            $_.CommandLine -match ([regex]::Escape("$avdName.avd\hardware-qemu.ini")) } |
+            ($_.CommandLine -match $avdArgument -or $_.CommandLine -match $hardwareIni) } |
         ForEach-Object {
             $child = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
             if ($child -and $child.StartTime -ge $started -and
                 [Math]::Abs(($child.StartTime - $_.CreationDate).TotalSeconds) -lt 1) { $child }
         }
+}
+
+function Get-BootProfileConfig($profile) {
+    $pattern = '^\s*(abi.type|image.sysdir.1|hw.cpu.ncore|hw.ramSize|hw.lcd.width|hw.lcd.height|hw.lcd.density|hw.gpu.mode)\s*=\s*(.+)$'
+    $config = Join-Path $Root "avd/$($profile.avdName).avd/config.ini"
+    Get-Content -LiteralPath $config -ErrorAction Stop | ForEach-Object {
+        if ($_ -match $pattern) { "$($Matches[1])=$($Matches[2].Trim())" }
+    } | Sort-Object
 }
 
 function Measure-RawBoot($profile, [int]$sample) {
@@ -324,14 +334,16 @@ function Measure-RawBoot($profile, [int]$sample) {
             $transport = [regex]::Match($listing.Text, "(?m)^$($profile.serial)\s+device\s+[^\r\n]*transport_id:(\d+)\b")
             if ($listing.Code -eq 0 -and $transport.Success -and $owned) {
                 $listeners = @(Get-NetTCPConnection -OwningProcess @($owned.Id) -State Listen -ErrorAction SilentlyContinue)
-                if (@($ports | Where-Object { $_ -notin $listeners.LocalPort }).Count -eq 0) {
+                $loopback = @($listeners | Where-Object LocalAddress -in @('127.0.0.1', '::1'))
+                if (@($ports | Where-Object { $_ -notin $loopback.LocalPort }).Count -eq 0) {
                     $id = [pscustomobject]@{ name = $profile.name; transportId = $transport.Groups[1].Value }
                     if ((Invoke-GuestAdb $id @("shell", "getprop", "sys.boot_completed")) -eq "1") {
                         $windows = Invoke-GuestAdb $id @("shell", "dumpsys", "window")
                         if ($windows -match '(?m)^\s*mCurrentFocus=Window\{') {
                             return [pscustomobject]@{
                                 trial = $sample; arm = "raw"; seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
-                                launcherPid = $launcher.Id; transportId = $id.transportId; arguments = $info.Arguments
+                                launcherPid = $launcher.Id; qemuPids = @($owned.Id)
+                                transportId = $id.transportId; arguments = $info.Arguments
                             }
                         }
                     }
@@ -494,6 +506,15 @@ try {
     $baseline = New-BenchmarkGuest "bench-base"
     if ($RawBaseline) {
         $profile = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--json", "--root", $Root)).Text
+        $guest = New-BenchmarkGuest "bench"
+        $managedProfile = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
+        $rawConfig = @(Get-BootProfileConfig $profile)
+        $managedConfig = @(Get-BootProfileConfig $managedProfile)
+        $report.avdConfig = @{ raw = $rawConfig; managed = $managedConfig }
+        if ($rawConfig.Count -ne 8 -or ($rawConfig -join "`n") -ne ($managedConfig -join "`n")) {
+            throw "Raw and managed AVD settings did not match. See avdConfig in benchmark.json."
+        }
+        $report.matchedAvdConfig = $rawConfig
         $report.rawBootTrials = @()
         $report.bootEndpoint = "host dispatch through boot_completed=1 and a current foreground Window"
         for ($sample = 1; $sample -le $Samples; $sample++) {
@@ -532,17 +553,7 @@ try {
     }
 
     # ------------------------------------------------------------- managed guest
-    $guest = New-BenchmarkGuest "bench"
-    if ($RawBaseline) {
-        $managedProfile = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
-        $pattern = '^(abi.type|image.sysdir.1|hw.cpu.ncore|hw.ramSize|hw.lcd.width|hw.lcd.height|hw.lcd.density|hw.gpu.mode)='
-        $rawConfig = @(Get-Content -LiteralPath (Join-Path $Root "avd/$($profile.avdName).avd/config.ini") | Where-Object { $_ -match $pattern } | Sort-Object)
-        $managedConfig = @(Get-Content -LiteralPath (Join-Path $Root "avd/$($managedProfile.avdName).avd/config.ini") | Where-Object { $_ -match $pattern } | Sort-Object)
-        if (-not $rawConfig -or ($rawConfig -join "`n") -ne ($managedConfig -join "`n")) {
-            throw "Raw and managed AVD settings did not match."
-        }
-        $report.matchedAvdConfig = $rawConfig
-    }
+    if (-not $RawBaseline) { $guest = New-BenchmarkGuest "bench" }
 
     for ($sample = 1; $sample -le $Samples -and -not $SkipColdBoot; $sample++) {
         $started = Get-Date
@@ -579,8 +590,10 @@ try {
     Log ("cold boot p50={0}s p95={1}s over {2} samples" -f $report.scenarios["coldBoot"].p50, $report.scenarios["coldBoot"].p95, $report.scenarios["coldBoot"].samples)
 
     # ------------------------------------------------------------- warm restore
-    Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
-    Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) | Out-Null
+    if (-not ($SkipRestore -and $SkipLatency -and $SkipTwoGuest -and $SkipLifecycle)) {
+        Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
+        Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) | Out-Null
+    }
     if (-not $SkipRestore) {
         $restoreKey = "ws_benchmark_restore_marker"
         $restoreMarker = "baseline_$($guest.Replace('-', '_'))"

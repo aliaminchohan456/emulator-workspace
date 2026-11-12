@@ -81,6 +81,25 @@ def installer_provenance(installer: pathlib.Path, expected_hash: str) -> dict | 
     }
 
 
+def verified_harness_commit(directory: pathlib.Path, record: dict, script: str) -> str | None:
+    context_path = directory / "run-context.json"
+    expected = record.get("harnessSha256")
+    if not expected:
+        return None
+    context = read_json(context_path) if context_path.is_file() else {}
+    commit = context.get("harnessCommit") or record.get("sourceCommit")
+    if not commit or not all(c in "0123456789abcdef" for c in commit) or len(commit) < 7:
+        return None
+    result = subprocess.run(["git", "show", f"{commit}:{script}"], capture_output=True, check=False)
+    if result.returncode != 0:
+        return None
+    content = result.stdout
+    windows_checkout = content.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    if any(hashlib.sha256(variant).hexdigest() == expected.lower() for variant in (content, windows_checkout)):
+        return commit
+    return None
+
+
 def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | None:
     summary_path = directory / "summary.json"
     if not summary_path.exists():
@@ -106,15 +125,22 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | No
                 "evidence": "recorded in acceptance summary",
             }
     source_commit = versions.get("commit") or benchmark.get("sourceCommit") or summary.get("sourceCommit")
+    harness_commit = source_commit
+    if benchmark.get("harnessSha256"):
+        harness_commit = verified_harness_commit(directory, benchmark, "tools/benchmark.ps1")
+    elif kind == "wpf" and summary.get("harnessSha256"):
+        harness_commit = verified_harness_commit(directory, summary, "tools/latency-probe.ps1")
     return {
         "kind": kind,
         "runId": summary.get("runId"),
         "rawArtifactRoot": directory.relative_to(repo).as_posix(),
         "rawArtifactsAreGitignored": True,
         "commit": (candidate or {}).get("sourceCommit") or source_commit,
-        "harnessCommit": source_commit,
+        "harnessCommit": harness_commit,
         "harnessSha256": benchmark.get("harnessSha256") or summary.get("harnessSha256"),
         "candidate": candidate,
+        **({"desktop": {"sha256": summary["desktopSha256"], "version": summary.get("desktopVersion"),
+                        "override": summary.get("desktopOverride")}} if summary.get("desktopSha256") else {}),
         "finishedUtc": summary.get("finishedUtc"),
         "pins": {
             "emulator": versions.get("emulator") or host.get("emulatorVersion") or host.get("emulator"),
@@ -122,7 +148,7 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | No
             "imageRevision": versions.get("imageRevision") or summary.get("revision"),
             "dotnet": versions.get("dotnet") or host.get("dotnetVersion"),
         },
-        "root": versions.get("root"),
+        "root": versions.get("root") or summary.get("root"),
         "freeBytesAtStart": versions.get("freeBytes"),
         "failedChecks": sum(lane["failed"] for lane in lanes.values()),
         "totalChecks": len(summary.get("checks", [])),

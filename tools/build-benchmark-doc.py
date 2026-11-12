@@ -47,7 +47,13 @@ def main() -> int:
               file=sys.stderr)
         return 2
 
-    runs = [load(pathlib.Path(argument) / "summary.json") for argument in sys.argv[1:-1]]
+    directories = [pathlib.Path(argument) for argument in sys.argv[1:-1]]
+    runs = [load(directory / "summary.json") for directory in directories]
+    soaks = [
+        load(directory / "verified-progress.json")
+        for directory in directories
+        if (directory / "verified-progress.json").is_file()
+    ]
     output = pathlib.Path(sys.argv[-1])
     report = merge(runs)
     host = report.get("host", {})
@@ -127,6 +133,29 @@ def main() -> int:
         ]
     else:
         lines.append("The lifecycle scenario was not part of these runs.")
+
+    for soak in soaks:
+        if soak["state"] != "complete":
+            continue
+        lines += [
+            "",
+            "## Four-hour WHPX soak",
+            "",
+            f"Run `{soak['runId']}` passed {soak['pairedProbes']} paired probes over "
+            f"{soak['elapsedSeconds']:,.2f} seconds. Both original guest generations and "
+            "their owned loopback listeners were verified throughout. Both guests were "
+            "stopped and removed through the supervisor.",
+            "",
+            f"Minimum free physical RAM was {soak['freePhysicalMB']['minimum']:,} MiB. "
+            f"Minimum free virtual memory was {soak['freeVirtualMB']['minimum']:,} MiB.",
+            "",
+            "| Guest | Private MiB first / last / peak | Handles first / last / peak |",
+            "| --- | --- | --- |",
+        ]
+        for name, metrics in soak["guests"].items():
+            private = " / ".join(f"{metrics[stage]['privateBytes'] / 2**20:,.1f}" for stage in ("first", "last", "peaks"))
+            handles = " / ".join(str(metrics[stage]["handles"]) for stage in ("first", "last", "peaks"))
+            lines.append(f"| `{name}` | {private} | {handles} |")
 
     lines += [
         "",

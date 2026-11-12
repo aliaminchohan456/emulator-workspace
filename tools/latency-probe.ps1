@@ -74,6 +74,7 @@ try {
 
     if ($DesktopExecutable) { $desktop = (Resolve-Path -LiteralPath $DesktopExecutable).ProviderPath }
     $desktopSha256 = (Get-FileHash -LiteralPath $desktop).Hash
+    $desktopVersion = (Get-Item -LiteralPath $desktop).VersionInfo.ProductVersion
     $status = Invoke-Wsctl @("status", "--json") | ConvertFrom-Json
     if (-not $status.engineAlive) {
         $arguments = @("start")
@@ -121,6 +122,10 @@ try {
 catch { Check "workflow" $false $_.Exception.Message }
 finally {
     if ($owned) {
+        $desktopLog = Join-Path $Root "logs/desktop.log"
+        if (Test-Path -LiteralPath $desktopLog) {
+            Copy-Item -LiteralPath $desktopLog -Destination (Join-Path $out "desktop.log") -ErrorAction Continue
+        }
         try {
             Invoke-Wsctl @("stop", "--force") | Out-Null
             Invoke-Wsctl @("destroy") | Out-Null
@@ -133,8 +138,11 @@ finally {
         runId = $run
         finishedUtc = [DateTimeOffset]::UtcNow.ToString("O")
         sourceCommit = (& git -C $repo rev-parse HEAD | Out-String).Trim()
+        harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
         candidate = $candidate
+        root = $Root
         desktopSha256 = $desktopSha256
+        desktopVersion = $desktopVersion
         desktopOverride = [bool]$DesktopExecutable
         checks = $checks.ToArray()
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $out "summary.json") -Encoding UTF8

@@ -121,7 +121,6 @@ public partial class App : Application
 
         var window = new MainWindow();
         MainWindow = window;
-        window.Show();
 
         var dropFile = "";
         for (var index = 0; index < e.Args.Length - 1; index++)
@@ -173,5 +172,7 @@ public partial class App : Application
                 Shutdown(code);
             };
         }
+
+        window.Show();
     }
 }

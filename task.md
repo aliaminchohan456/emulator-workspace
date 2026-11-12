@@ -148,7 +148,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | The warm restore target of 8 s | The historical harness reused cold-boot readiness. | Run `tools/benchmark.ps1 -Root D:/WSBench -Samples 20 -SkipBaseline -SkipColdBoot -SkipLifecycle -SkipTwoGuest`. Check each restore outcome, guest-state marker and full wall time. |
 | The input latency target of 100 ms | The historical latency endpoint was ADB dispatch to Logcat. | Fix the WPF probe to follow the visible fixture marker and measure composition. |
 | The 60 FPS viewport target | The historical WPF RGB path delivered 29.4 FPS. | Measure a 60 FPS fixture in WPF and profile the RGB path before choosing a transport change. |
-| The four-hour two-guest soak | The historical run omitted the soak. | Run `tools/benchmark.ps1 -Root D:/WSBench -Samples 20 -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle -SoakMinutes 240` and monitor `soak.jsonl` through cleanup. |
+| Four-hour two-guest soak | Verified on the preserved 0.1.1 payload in run `20261112-213629`. 200 paired probes, 14,411.36 s and two successful cleanups. | Repeat on the final candidate after release-affecting changes. |
 | Two-guest latency | WHPX run `20261112-205244` collected 20/20 fresh markers. ADB-to-Logcat p50 1,099.43 ms / p95 1,451.69 ms. Packaging overlapped the run. | Measure the same input workload through the WPF composition proxy on a quiet host. |
 | The comparison with Android Studio, the raw Emulator CLI and an existing MCP server | Not run in this environment. | Run the same recipe through each of the three and record the measured difference in `docs/benchmark.md`. |
 | The release signing identity | No user-owned code-signing certificate was supplied, so the candidate is unsigned. | Supply the certificate to `tools/package-release.ps1 -CertificateThumbprint` and rebuild; the provenance records the signing status either way. |
@@ -268,17 +268,20 @@ All tasks start open. Check off an implementation task after its scoped verifica
   installer summary. The full soak uses all 422 staged payload files
   verified against the candidate inventory. The running supervisor PID
   6140 resolves to the staged `EmulatorWorkspace.Supervisor.exe`.
-- Active soak `20261112-213629`, harness PID **19588**, creation
+- Completed soak `20261112-213629`, harness PID **19588**, creation
   `2026-11-12T16:36:26.8521220Z`, root
   `D:/WS-Soak-011-20261112-213626`. The first paired probe establishes
   an interval start around 21:43:29 PKT. Expected four-hour mark
-  **2026-11-13 01:43:29 PKT**. Raw artifacts
+  **2026-11-13 01:43:29 PKT**. The final paired probe completed at
+  **01:43:40 PKT** and cleanup finished at **01:43:56 PKT**. Raw artifacts
   `artifacts/phase3/bench/20261112-213629`, including `run-context.json`
   with the guest generations and exact ports. Startup collected 20/20
   two-guest markers with ADB-to-Logcat p50 685.26 ms and p95 828.83 ms.
-  A process-scoped wake request is active until the harness writes its
-  summary. Check for the final response and owned process cleanup before
-  starting other hardware lanes. Reproduction from harness `27c655f`:
+  The process-scoped wake request was used for the run.
+  `verified-progress.json` confirms 200 paired probes and 14,411.36 seconds
+  with unchanged guest and listener identities and both cleanups passed.
+  Minimum free physical/virtual memory was 13,909/14,101 MiB. ADB showed
+  no attached devices after cleanup. Reproduction from harness `27c655f`:
 
   ```powershell
   $release = 'D:/Release/emulator-workspace-0.1.1-20261112-212010'
@@ -409,3 +412,31 @@ All tasks start open. Check off an implementation task after its scoped verifica
   supervised CLI/WPF route, deployment to one managed guest, and integrated
   Release build remain queued after the soak. The existing 0.1.1 MSI is
   unchanged. [Official bundletool documentation](https://developer.android.com/tools/bundletool)
+
+- After the four-hour soak, `dotnet build -c Release` completed with zero
+  errors and `dotnet test -c Release --no-build` passed **58/58**. The
+  integrated Release CLI called the supervisor's `build-apks` operation
+  against the pinned bundletool and sample AAB in its own root. It produced
+  the same test-signed APK set digest as the host probe. Raw result
+  `artifacts/phase3/bundle-cli/20261113-014609/result.json`. The supervisor
+  was shut down through the scoped CLI. GUI and managed deployment evidence
+  remain pending.
+- Windows returned `The operation was canceled by the user` when launching
+  the elevated feature command after soak cleanup. Servicing did not start.
+  The next offline action is to approve the Windows administrator prompt
+  for the command above. No restart was requested or performed.
+- The first raw boot smoke `20261113-014645` reached a focused Android launcher.
+  The pinned launcher passed `-avd` to QEMU, and the harness only recognized
+  `hardware-qemu.ini` in the child arguments. The exact child and launcher exited
+  and the managed record was removed. With the ownership check corrected,
+  `20261113-015100` captured a 66.62 s raw boot and cleanly removed both profiles.
+  The managed arm was skipped after the config comparison rejected the pinned
+  engine's whitespace around `=`. The harness now normalizes all eight matched
+  AVD keys before launch, verifies the raw child's loopback ports and records its
+  PID. Both smoke runs are diagnostic and fall short of 20 observations per arm.
+- The exact 0.1.1 WPF run `artifacts/phase3/wpf/20261113-015248` rendered
+  guest frames but never dispatched a probe trial. The 0.1.1 startup registers
+  its probe after showing the window. The owned window was closed so the script
+  could clean up. The current source registers the handler before showing the
+  window. Verify the fix using a separately hashed desktop binary and the
+  preserved candidate runtime, then repeat against the final packaged build.
