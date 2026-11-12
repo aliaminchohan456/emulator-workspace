@@ -197,10 +197,10 @@ publishes the desktop, the supervisor and the CLI self-contained for win-x64,
 harvests the payload into a **per-user WiX 5 MSI** and writes the release
 record, the SBOM, the notices and the provenance (commit, SDK versions, build
 commands, pins and the signing status). The candidate is `EmulatorWorkspace-0.1.0.msi`,
-55 372 000 bytes, SHA-256 `4cd7ba5151c3ca88ac02678e5a7f510ce771a8027d5cb73450aac26b3476c6ca`,
+55 380 192 bytes, SHA-256 `8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f`,
 unsigned because no user-owned certificate was supplied.
 `tools/installer-acceptance.ps1` passed **16 of 16 checks** in
-`artifacts/phase3/install/20261112-192507`: the clean install, the installed
+`artifacts/phase3/install/20261112-194153`: the clean install, the installed
 files, the sample APK, the first launch, a boot through the installed CLI on the
 pinned image, the offline reuse, an upgrade that preserves the operator
 profiles, the uninstall registration, the clean uninstall and the untouched

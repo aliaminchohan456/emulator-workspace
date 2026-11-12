@@ -147,44 +147,60 @@ $sbom = [ordered]@{
     components = @()
 }
 $componentList = New-Object System.Collections.ArrayList
-foreach ($project in @(
-        "src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj",
-        "src\EmulatorWorkspace.Contracts\EmulatorWorkspace.Contracts.csproj",
-        "src\EmulatorWorkspace.Controller\EmulatorWorkspace.Controller.csproj",
-        "src\EmulatorWorkspace.Supervisor\EmulatorWorkspace.Supervisor.csproj",
-        "src\EmulatorWorkspace.Cli\EmulatorWorkspace.Cli.csproj",
-        "src\EmulatorWorkspace.Desktop\EmulatorWorkspace.Desktop.csproj")) {
-    # The structured list is the authoritative dependency inventory.
-    $raw = & dotnet list $project package --include-transitive --format json 2>$null | Out-String
+# The structured list of the whole solution is the authoritative dependency
+# inventory of the release.
+$raw = & dotnet list EmulatorWorkspace.slnx package --include-transitive --format json 2>$null | Out-String
+$start = $raw.IndexOf("{")
+if ($start -ge 0) {
+    $raw = $raw.Substring($start)
     try {
         $parsed = $raw | ConvertFrom-Json
+        foreach ($project in $parsed.projects) {
+            # The test project is not part of the shipped package.
+            if ($project.path -match '[\\/]tests[\\/]') { continue }
+            foreach ($framework in $project.frameworks) {
+                foreach ($package in $framework.topLevelPackages) {
+                    [void]$componentList.Add([PSCustomObject][ordered]@{
+                        name = $package.id
+                        version = $package.resolvedVersion
+                        scope = "nuget"
+                        project = Split-Path $project.path -Leaf
+                        direct = $true
+                    })
+                }
+
+                foreach ($package in $framework.transitiveDependencies) {
+                    [void]$componentList.Add([PSCustomObject][ordered]@{
+                        name = $package.id
+                        version = $package.resolvedVersion
+                        scope = "nuget"
+                        project = Split-Path $project.path -Leaf
+                        direct = $false
+                    })
+                }
+            }
+        }
     }
     catch {
-        continue
-    }
-
-    foreach ($framework in $parsed.projects.frameworks) {
-        foreach ($package in $framework.transitiveDependencies) {
-            [void]$componentList.Add([ordered]@{
-                name = $package.id
-                version = $package.resolvedVersion
-                scope = "nuget"
-                project = $project
-                direct = $false
-            })
-        }
-
-        foreach ($package in $framework.topLevelPackages) {
-            [void]$componentList.Add([ordered]@{
-                name = $package.id
-                version = $package.resolvedVersion
-                scope = "nuget"
-                project = $project
-                direct = $true
-            })
-        }
+        Write-Warning ("the dependency inventory could not be parsed: " + $_.Exception.Message)
     }
 }
+
+# The runtime that is shipped with the package is part of the inventory.
+[void]$componentList.Add([PSCustomObject][ordered]@{
+    name = "Microsoft.NETCore.App"
+    version = "10.0.10"
+    scope = "runtime"
+    project = "self-contained publish"
+    direct = $true
+})
+[void]$componentList.Add([PSCustomObject][ordered]@{
+    name = "Microsoft.WindowsDesktop.App"
+    version = "10.0.10"
+    scope = "runtime"
+    project = "self-contained publish"
+    direct = $true
+})
 $sbom.components = @($componentList | Sort-Object name, version -Unique)
 $sbomPath = Join-Path $releaseDir "sbom.json"
 $sbom | ConvertTo-Json -Depth 6 | Set-Content -Path $sbomPath -Encoding UTF8

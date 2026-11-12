@@ -448,13 +448,20 @@ Run `20261112-100421`: **9 checks, 0 failures**.
 
 ### Windows installer acceptance — `tools/installer-acceptance.ps1`
 
-Run `20261112-192507`: **16 checks, 0 failures**. The candidate is the
-per-user MSI `EmulatorWorkspace-0.1.0.msi` (55 372 000 bytes,
-SHA-256 `4cd7ba5151c3ca88ac02678e5a7f510ce771a8027d5cb73450aac26b3476c6ca`),
-built from the final commit by `tools/package-release.ps1`. The release
-directory is `D:\Release\emulator-workspace-0.1.0-20261112-192247` and holds
-the installer, `release.json`, `sbom.json`, `provenance.json`,
-`THIRD-PARTY-NOTICES.txt` and `SHA256SUMS.json`.
+Run `20261112-194153`: **16 checks, 0 failures**. The candidate is the
+per-user MSI `EmulatorWorkspace-0.1.0.msi` (55 380 192 bytes,
+SHA-256 `8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f`), built from the final commit by
+`tools/package-release.ps1`. The release directory is
+`D:\Release\emulator-workspace-0.1.0-20261112-194003` and holds the installer, `release.json`,
+`sbom.json`, `provenance.json`, `THIRD-PARTY-NOTICES.txt` and
+`SHA256SUMS.json`.
+
+The dependency inventory lists the seven components that actually ship:
+`Google.Protobuf 3.31.1`, `Grpc.Net.Client 2.71.0`, `Grpc.Tools 2.71.0`,
+`Microsoft.Data.Sqlite 10.0.0`, `SQLitePCLRaw.bundle_e_sqlite3 2.1.14` and
+the two self-contained runtimes `Microsoft.NETCore.App 10.0.10` and
+`Microsoft.WindowsDesktop.App 10.0.10`. The test project is excluded, because
+it is not part of the package.
 
 | Check | Result |
 | --- | --- |
