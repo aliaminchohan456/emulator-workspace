@@ -547,6 +547,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
   guest hierarchy. The runner now verifies the fixture is foreground before
   running the flow, waits up to 30 s for the title, and saves debug evidence
   in the run directory. Rerun the Phase 3 lane after the other lanes finish.
+- Launcher-baseline recipe regression reached a restored and independently
+  verified baseline, then failed its first readiness step with `The node
+  already has a parent.` The readiness loop reused one selector `JsonNode`
+  in new objects on successive attempts. It now creates its arguments once
+  and reuses them for the read-only assertion. Preserve
+  `artifacts/phase3/candidate/20261113-025947/recipe-launcher/20261113-031459/recipe-replay.json`
+  and rerun both baselines against a new package containing the fix.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

@@ -682,12 +682,13 @@ public sealed class OperationDispatcher
                         var readinessSelector = RecipeService.FirstAppSelector(steps, stepIndex);
                         if (baselineVerified && readinessSelector is not null)
                         {
+                            var readinessArgs = new JsonObject { ["name"] = session.Instance, ["selector"] = readinessSelector };
                             var ready = false;
                             for (var attempt = 0; attempt < 30 && !ready; attempt++)
                             {
                                 var probe = await DispatchAsync(
                                         OperationNames.UiAssert,
-                                        new JsonObject { ["name"] = session.Instance, ["selector"] = readinessSelector },
+                                        readinessArgs,
                                         sink,
                                         cancellationToken,
                                         session)
