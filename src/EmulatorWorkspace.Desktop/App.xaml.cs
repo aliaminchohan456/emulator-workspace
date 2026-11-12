@@ -8,8 +8,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        Services.DesktopLog.Write("startup");
 
+        // The workspace root is resolved before anything is logged, so the
+        // desktop log always lands in the workspace it belongs to.
         for (var index = 0; index < e.Args.Length - 1; index++)
         {
             if (e.Args[index].Equals("--root", StringComparison.OrdinalIgnoreCase))
@@ -17,6 +18,8 @@ public partial class App : Application
                 Environment.SetEnvironmentVariable("EMULATOR_WORKSPACE_HOME", Path.GetFullPath(e.Args[index + 1]));
             }
         }
+
+        Services.DesktopLog.Write("startup");
         DispatcherUnhandledException += (_, args) =>
         {
             Services.DesktopLog.Write("UNHANDLED " + args.Exception);

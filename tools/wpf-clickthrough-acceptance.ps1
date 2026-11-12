@@ -253,9 +253,11 @@ try {
         $desktopProcess.Refresh()
         if ($desktopProcess.HasExited) { throw "The desktop exited early with code $($desktopProcess.ExitCode)." }
         if ($desktopProcess.MainWindowHandle -ne [IntPtr]::Zero) {
+            # The automation property needs a 32-bit handle value.
+            $handleValue = [int]$desktopProcess.MainWindowHandle.ToInt64()
             $condition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::NativeWindowHandleProperty,
-                $desktopProcess.MainWindowHandle)
+                $handleValue)
             $window = $script:desktop.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
             if ($window) { break }
         }
@@ -265,21 +267,33 @@ try {
     [void][ClickThrough.Native]::ShowWindow($desktopProcess.MainWindowHandle, 3)
     [void][ClickThrough.Native]::SetForegroundWindow($desktopProcess.MainWindowHandle)
     Start-Sleep -Seconds 2
-    $handle = $desktopProcess.MainWindowHandle
+    $handle = [IntPtr]([int]$desktopProcess.MainWindowHandle.ToInt64())
     $shot = Save-WindowShot $handle "01-startup.png"
     Add-Step "window-open" $true ("the desktop window is open and reachable by UI Automation") $shot
 
     # 2. create the device through the real button
-    $create = Find-Element "Create device" "" 30
+    $create = Find-Element "Create device" "" 60
     if (-not $create) { throw "The 'Create device' control was not found." }
+
+    # The control is disabled while the desktop is still connecting, so the
+    # click waits until it can be invoked.
+    $enabledDeadline = (Get-Date).AddSeconds(90)
+    while ((Get-Date) -lt $enabledDeadline) {
+        try { if ($create.Current.IsEnabled) { break } } catch { break }
+        Start-Sleep -Milliseconds 500
+    }
+
     Click-Element $create
     Log "clicked the Create device button"
     $deviceName = $null
     $deviceDeadline = (Get-Date).AddSeconds(240)
     while ((Get-Date) -lt $deviceDeadline) {
-        $instances = Parse-Json (Invoke-Ws @("list", "--root", $Root) -AllowFailure).Text
-        if ($instances -and @($instances).Count -gt 0) {
-            $deviceName = @($instances)[0].name
+        # The CLI prints the instance list as a table; the first column is the
+        # instance name.
+        $listing = (Invoke-Ws @("list", "--root", $Root) -AllowFailure).Text
+        $rows = @($listing -split "`r?`n" | Where-Object { $_ -match "^\S+\s+emulator-" })
+        if ($rows.Count -gt 0) {
+            $deviceName = ($rows[0] -split "\s+")[0]
             break
         }
         Start-Sleep -Seconds 2
@@ -291,10 +305,12 @@ try {
     $bootDeadline = (Get-Date).AddSeconds($BootTimeoutSeconds)
     $booted = $false
     while ((Get-Date) -lt $bootDeadline) {
-        $status = Parse-Json (Invoke-Ws @("status", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
+        $status = Parse-Json (Invoke-Ws @("status", "--name", $deviceName, "--json", "--root", $Root) -AllowFailure).Text
         if ($status -and $status.state -eq "Running") {
+            # The readiness report carries the interactive timestamp; a
+            # guest that reached it is usable.
             $wait = Parse-Json (Invoke-Ws @("wait", "--name", $deviceName, "--timeout", "30", "--root", $Root) -AllowFailure).Text
-            if ($wait -and $wait.ready -eq $true) { $booted = $true; break }
+            if ($wait -and $wait.interactiveUtc) { $booted = $true; break }
         }
         Start-Sleep -Seconds 5
     }
@@ -445,7 +461,7 @@ try {
     $stopDeadline = (Get-Date).AddSeconds(180)
     $stopped = $false
     while ((Get-Date) -lt $stopDeadline) {
-        $status = Parse-Json (Invoke-Ws @("status", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
+        $status = Parse-Json (Invoke-Ws @("status", "--name", $deviceName, "--json", "--root", $Root) -AllowFailure).Text
         if ($status -and $status.state -ne "Running") { $stopped = $true; break }
         Start-Sleep -Seconds 3
     }

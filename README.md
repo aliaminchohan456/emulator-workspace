@@ -21,13 +21,37 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | TypeScript MCP client | `clients/mcp-client` | Full workflow + secure check (SDK 1.32.2) |
 | Python MCP client | `clients/mcp-python` | Discovery + `device_status` (mcp 2.3.0) |
 | Device library, snapshots, transport identity | `src/EmulatorWorkspace.Core/Supervisor/DeviceLibraryService.cs` | Phase 3, verified |
-| Phase 3 acceptance harness | `tools/phase3-acceptance.ps1` | Lifecycle, transport, race, simulation, deployment lanes |
-| Recipe record/replay | `tools/recipe-acceptance.ps1` | Record, export, replay on a clone, isolation, negatives |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 49 passing |
+| Ownership-aware external AVD import | `src/EmulatorWorkspace.Core/Supervisor/DeviceLibraryService.cs` | Verified (9/9 checks) |
+| Developer tooling (package info/permissions, deep link, instrumentation, Logcat export, crash/ANR, bug report) | `src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs` | Verified (9/9 checks) |
+| Root Lab: ADB daemon workflow | `src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs` | Verified (10/10 checks) |
+| Root Lab: WPF surface and Ctrl+K command palette | `src/EmulatorWorkspace.Desktop/MainWindow.xaml` | Built; the click-through is the evidence |
+| Phase 3 acceptance harness | `tools/phase3-acceptance.ps1` | 56/56 checks (run `20261111-030838`) |
+| Recipe record/replay | `tools/recipe-acceptance.ps1` | Both baseline variants green at 39/39 |
+| WPF click-through | `tools/wpf-clickthrough-acceptance.ps1` | UI Automation against the live window |
+| Benchmark plan | `tools/benchmark.ps1` | p50/p95, single and two guest, 30 start/stop cycles |
+| Windows packaging (WiX 5 MSI, SBOM, provenance) | `tools/package-release.ps1`, `packaging/` | Installer builds and carries the full payload |
+| Installer acceptance | `tools/installer-acceptance.ps1` | Clean install, upgrade, uninstall |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 56 passing |
 
-The root-lab UI remains Phase 4 work. Phase 2 closure evidence is in
-`docs/phase2-evidence.md`; Phase 1's desktop click-through and performance
-targets remain separate open items.
+## Release documentation
+
+| Document | Content |
+| --- | --- |
+| `docs/release-notes.md` | Package layout, pins, first run, architecture, recovery commands, known limitations |
+| `docs/compatibility-matrix.md` | The tested host, image, ABI, snapshot, root and simulation rows |
+| `docs/security-review.md` | The trust boundaries, the privileged scopes, the findings and the open items |
+| `docs/phase3-evidence.md` | The acceptance evidence per lane |
+| `docs/phase3-manifest.json` | The sanitized manifest of every recorded run with the artifact hashes |
+
+## Building the release candidate
+
+```powershell
+# the installer, the SBOM, the notices and the provenance
+powershell -ExecutionPolicy Bypass -File tools\package-release.ps1 -Version 0.1.0 -OutDir D:\Release
+
+# clean install, first launch and boot, offline reuse, upgrade, uninstall
+powershell -ExecutionPolicy Bypass -File tools\installer-acceptance.ps1 -Installer D:\Release\emulator-workspace-0.1.0-<stamp>\EmulatorWorkspace-0.1.0.msi
+```
 
 ## Prerequisites
 

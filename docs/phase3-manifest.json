@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "0aa9157",
-  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M task.md",
+  "headCommit": "acc8ee8",
+  "workTree": "clean",
   "runs": [
     {
       "kind": "phase3",

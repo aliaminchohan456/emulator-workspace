@@ -229,12 +229,7 @@ $hashes | ConvertTo-Json -Depth 4 | Set-Content -Path $hashesPath -Encoding UTF8
 # ---------------------------------------------------------------- installer
 $msiPath = $null
 if (-not $SkipInstaller) {
-    $wix = Get-Command wix -ErrorAction SilentlyContinue
-    if (-not $wix) {
-        $wixTool = Join-Path $env:USERPROFILE ".dotnet\tools\wix.exe"
-        if (Test-Path $wixTool) { $wix = Get-Item $wixTool }
-    }
-    if ($wix) {
+    {
         Write-Host "  building the MSI"
         # The installer harvests the payload from a directory next to the
         # project, so the harvest is relative and always resolves.
@@ -259,9 +254,6 @@ if (-not $SkipInstaller) {
         $built = Join-Path $releaseDir "EmulatorWorkspace.msi"
         $msiPath = Join-Path $releaseDir "EmulatorWorkspace-$Version.msi"
         if (Test-Path $built) { Move-Item $built $msiPath -Force }
-    }
-    else {
-        Write-Warning "wix was not found; the installer was not built."
     }
 }
 

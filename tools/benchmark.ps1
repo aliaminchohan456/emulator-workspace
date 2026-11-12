@@ -221,7 +221,7 @@ try {
             [void]$baselineBootSamples.Add([double]$readyJson.launchedToInteractiveSeconds)
         }
         else {
-            $status = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--root", $Root) -AllowFailure).Text
+            $status = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--json", "--root", $Root) -AllowFailure).Text
             if ($status -and $status.readiness -and $status.readiness.launchedToInteractiveSeconds) {
                 [void]$baselineBootSamples.Add([double]$status.readiness.launchedToInteractiveSeconds)
             }
@@ -246,7 +246,7 @@ try {
         $reported = 0
         if ($readyJson -and $readyJson.launchedToInteractiveSeconds) { $reported = [double]$readyJson.launchedToInteractiveSeconds }
         else {
-            $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--root", $Root) -AllowFailure).Text
+            $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
             if ($status -and $status.readiness -and $status.readiness.launchedToInteractiveSeconds) {
                 $reported = [double]$status.readiness.launchedToInteractiveSeconds
             }
@@ -272,7 +272,7 @@ try {
         $reported = 0
         if ($loadJson -and $loadJson.seconds) { $reported = [double]$loadJson.seconds }
         else {
-            $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--root", $Root) -AllowFailure).Text
+            $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
             if ($status -and $status.readiness -and $status.readiness.launchedToInteractiveSeconds) {
                 $reported = [double]$status.readiness.launchedToInteractiveSeconds
             }
@@ -290,7 +290,7 @@ try {
         Start-Sleep -Seconds 8
     }
 
-    $identity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $guest, "--root", $Root) -AllowFailure).Text
+    $identity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
     $serial = $identity.serial
     if ($serial) {
         $logcat = Join-Path $out "bench-logcat.txt"
@@ -335,7 +335,7 @@ try {
         Invoke-Ws @("start", "--name", $second, "--root", $Root) | Out-Null
         Invoke-Ws @("wait", "--name", $second, "--timeout", "600", "--root", $Root) -AllowFailure | Out-Null
         $twoGuestSamples = New-Object System.Collections.ArrayList
-        $twoIdentity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $second, "--root", $Root) -AllowFailure).Text
+        $twoIdentity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $second, "--json", "--root", $Root) -AllowFailure).Text
         if ($twoIdentity.serial) {
             for ($sample = 1; $sample -le $Samples; $sample++) {
                 $started = Get-Date
