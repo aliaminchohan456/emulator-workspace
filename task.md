@@ -461,3 +461,11 @@ All tasks start open. Check off an implementation task after its scoped verifica
   After cleanup, run the full matched raw comparison
   with `-RawBaseline -Samples 20 -SkipRestore -SkipLifecycle -SkipLatency
   -SkipTwoGuest` on a fresh root and the same two candidate paths.
+- The detached worktree at `D:/WS-Candidate-8d40469` built the matching
+  0.1.1 MCP sidecar from `8d40469154965e08eb2e511fb70b6a4fff7a927d`.
+  The executable SHA-256 is
+  `d57400f7d89b0532b8240ed30a461d9267efa0004c074a7a8c48c3afac1f3823`.
+  The regression wrapper checks the override's embedded source commit
+  and keeps every lane's raw evidence under that candidate run, including
+  the nested Phase 2 acceptance. Run the nine lanes once the benchmark
+  guests have been cleaned up.

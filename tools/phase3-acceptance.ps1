@@ -255,10 +255,11 @@ try {
     # Lane A: Phase 2 regression run on the candidate commit.
     if (-not $SkipPhase2) {
         $phase2 = Join-Path $repo "tools\phase2-acceptance.ps1"
-        $phase2Out = (& powershell -ExecutionPolicy Bypass -File $phase2 -Root $Root -TokenFile $tokenP -Template $Template -KeepRunning -SkipBuild 2>&1 | Out-String)
+        $phase2OutDir = Join-Path (Join-Path $OutDir $run) "phase2"
+        $phase2Out = (& powershell -ExecutionPolicy Bypass -File $phase2 -Root $Root -TokenFile $tokenP -Template $Template -OutDir $phase2OutDir -KeepRunning -SkipBuild 2>&1 | Out-String)
         $phase2Code = $LASTEXITCODE
         Save-Text "phase2-acceptance.txt" $phase2Out
-        $phase2Run = Get-ChildItem (Join-Path $repo "artifacts\phase2") -Directory |
+        $phase2Run = Get-ChildItem -LiteralPath (Join-Path $repo $phase2OutDir) -Directory -ErrorAction SilentlyContinue |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
         $phase2Summary = $null
         if ($phase2Run) {

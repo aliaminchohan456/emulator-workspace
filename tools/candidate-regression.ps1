@@ -22,12 +22,17 @@ if (-not (Test-Path -LiteralPath $mcp -PathType Leaf)) {
     throw "This candidate lacks an MCP executable. Supply a separately built matching MCP using -McpExecutable."
 }
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = Join-Path $repo "artifacts/phase3/candidate/$run"
+$outDir = "artifacts/phase3/candidate/$run"
+$out = Join-Path $repo $outDir
 New-Item -ItemType Directory -Force $out | Out-Null
 $context = Join-Path $out "candidate.json"
 $identity = $verified.identity
 $identity.evidenceScope = if ($McpExecutable) { "verified runtime payload and a separately built MCP executable" } else { "entire runtime payload" }
 $identity.mcpExecutableSha256 = (Get-FileHash -LiteralPath $mcp).Hash
+$identity.mcpExecutableVersion = (Get-Item -LiteralPath $mcp).VersionInfo.ProductVersion
+if ($McpExecutable -and ($identity.mcpExecutableVersion -split '\+', 2)[-1] -ne $identity.sourceCommit) {
+    throw "The MCP override was not built from candidate source $($identity.sourceCommit)."
+}
 $identity | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $context -Encoding UTF8
 $env:WS_ACCEPTANCE_PAYLOAD = $verified.payload
 $env:WS_ACCEPTANCE_CONTEXT = $context
@@ -54,10 +59,25 @@ foreach ($name in $Lane) {
     }
     Write-Host "Candidate regression $name at $root"
     $log = Join-Path $out "$name.log"
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot $script) -Root $root @extra |
-        Tee-Object -FilePath $log
-    $code = $LASTEXITCODE
-    $checks.Add([pscustomobject]@{ name = $name; passed = $code -eq 0; detail = "exit=$code, log=$name.log" })
+    $laneOut = Join-Path $outDir $name
+    try {
+        $ErrorActionPreference = "Continue"
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot $script) -Root $root -OutDir $laneOut @extra *>&1 |
+            Tee-Object -FilePath $log
+        $code = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = "Stop" }
+    $laneRoot = Join-Path $repo $laneOut
+    $summaries = @(Get-ChildItem -LiteralPath $laneRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName "summary.json" } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+    $laneChecks = @()
+    if ($summaries.Count -eq 1) {
+        $laneSummary = Get-Content -LiteralPath $summaries[0] -Raw | ConvertFrom-Json -ErrorAction Continue
+        $laneChecks = @($laneSummary.checks | Where-Object { $null -ne $_ })
+    }
+    $failed = @($laneChecks | Where-Object { -not $_.Passed }).Count
+    $passed = $code -eq 0 -and $laneChecks.Count -gt 0 -and $failed -eq 0
+    $checks.Add([pscustomobject]@{ name = $name; passed = $passed; detail = "exit=$code, checks=$($laneChecks.Count), failures=$failed, log=$name.log" })
     if (Test-Path -LiteralPath (Join-Path $root "supervisor.lock")) {
         & $cli supervisor-stop --root $root | Out-Null
     }
@@ -67,6 +87,7 @@ foreach ($name in $Lane) {
     runId = $run
     finishedUtc = [DateTimeOffset]::UtcNow.ToString("O")
     sourceCommit = $sourceCommit
+    harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
     candidate = $identity
     checks = $checks.ToArray()
 } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $out "summary.json") -Encoding UTF8
