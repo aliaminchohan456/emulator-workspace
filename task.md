@@ -440,3 +440,24 @@ All tasks start open. Check off an implementation task after its scoped verifica
   could clean up. The current source registers the handler before showing the
   window. Verify the fix using a separately hashed desktop binary and the
   preserved candidate runtime, then repeat against the final packaged build.
+- Release build at `526fb72` passed with zero errors and 58/58 tests.
+  Quiet-host WPF run `artifacts/phase3/wpf/20261113-015728` used desktop
+  `526fb72cf42700abc505d46ea443c50bc23b9e7a`, executable SHA-256
+  `5e1db799f5dc084213c96ece4574423b89f35b8fbcbd0b6181c891a7e0ce5094`,
+  and the preserved 0.1.1 supervisor, CLI, and fixture. All 25 trials
+  reached the WPF composition proxy, and guest cleanup passed. The p50
+  was 660.51 ms, p95 was 840.85 ms, and viewport delivery was 22.01 FPS
+  at 540 × 1200 with 86 skipped stream sequences. The 499 measured
+  supervisor arrival intervals had a p95 of 82.70 ms. WPF took 3.42 ms
+  p95 from changed-frame availability to the composition callback.
+  Both performance targets remain open. Measure controller discovery and
+  input acknowledgement separately and compare the pinned engine's RGB
+  stream with an available alternate transport before changing defaults.
+- Restore run `artifacts/phase3/bench/20261113-020001` captured four verified
+  restores on the exact 0.1.1 payload (8.50–27.07 s), then the targeted ADB
+  command to prepare the fifth trial exceeded its 6 s bound. The owned guest
+  was stopped and removed. The rerun allows 20 s for targeted guest commands
+  and records failed trial preparation separately within the 40-attempt bound.
+  After cleanup, run the full matched raw comparison
+  with `-RawBaseline -Samples 20 -SkipRestore -SkipLifecycle -SkipLatency
+  -SkipTwoGuest` on a fresh root and the same two candidate paths.

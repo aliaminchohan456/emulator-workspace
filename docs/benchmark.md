@@ -1,8 +1,8 @@
 # Benchmark results
 
-Run directories under `artifacts/phase3/bench/` contain the raw evidence.
+Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-015728`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -29,7 +29,7 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
   a load. The corrected harness times each load with a monotonic clock,
   records fallback and verifies a guest-state marker independently.
 * Logcat latency runs from ADB tap dispatch to host receipt of a fresh
-  fixture marker. WPF dispatch-to-composition needs its own measurement.
+  fixture marker. WPF reports dispatch to the first composition pass after the changed frame.
 * One-shot PNG cost includes the CLI, capture and output write. The
   historical RGB viewport delivered 29.4 FPS in WPF.
 
@@ -68,6 +68,20 @@ Minimum free physical RAM was 13,909 MiB. Minimum free virtual memory was 14,101
 | --- | --- | --- |
 | `bench-e9eab70f3905` | 4,108.2 / 4,112.9 / 4,113.6 | 1545 / 1540 / 1546 |
 | `bench2-52c863b183e4` | 4,128.5 / 4,125.6 / 4,128.5 | 1557 / 1537 / 1557 |
+
+## WPF dispatch-to-composition
+
+Run `20261113-015728` used desktop `0.1.0+526fb72cf42700abc505d46ea443c50bc23b9e7a` with the hash-verified CLI, supervisor and fixture from `8d40469154965e08eb2e511fb70b6a4fff7a927d`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 25 / 25 |
+| Dispatch to composition p50 / p95 | 660.51 / 840.85 ms |
+| Frame availability to composition p95 | 3.42 ms |
+| Supervisor frame arrival interval p95 | 82.70 ms |
+| Viewport throughput | 22.01 FPS at 540 × 1200 |
+| Dropped stream sequences | 86 |
 
 ## Reproduce the corrected benchmarks
 

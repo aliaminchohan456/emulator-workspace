@@ -9,6 +9,7 @@ run is taken from the run that measured it.
 """
 
 import json
+import math
 import pathlib
 import sys
 
@@ -41,6 +42,12 @@ def row(name: str, data: dict, target: str) -> str:
             f"{target} |")
 
 
+def p95(samples: list[float]) -> str:
+    if not samples:
+        return "-"
+    return f"{sorted(samples)[math.ceil(len(samples) * 0.95) - 1]:.2f}"
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         print("usage: build-benchmark-doc.py <run-dir> [<run-dir> ...] <output.md>",
@@ -54,6 +61,11 @@ def main() -> int:
         for directory in directories
         if (directory / "verified-progress.json").is_file()
     ]
+    presentation = [
+        (load(directory / "summary.json"), load(directory / "presentation.json"))
+        for directory in directories
+        if (directory / "presentation.json").is_file()
+    ]
     output = pathlib.Path(sys.argv[-1])
     report = merge(runs)
     host = report.get("host", {})
@@ -63,7 +75,7 @@ def main() -> int:
     lines = [
         "# Benchmark results",
         "",
-        "Run directories under `artifacts/phase3/bench/` contain the raw evidence.",
+        "Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.",
         "",
         "Runs used for this report: " + ", ".join(f"`{run_id}`" for run_id in report["run_ids"]) + ".",
         "",
@@ -92,7 +104,7 @@ def main() -> int:
         "  a load. The corrected harness times each load with a monotonic clock,",
         "  records fallback and verifies a guest-state marker independently.",
         "* Logcat latency runs from ADB tap dispatch to host receipt of a fresh",
-        "  fixture marker. WPF dispatch-to-composition needs its own measurement.",
+        "  fixture marker. WPF reports dispatch to the first composition pass after the changed frame.",
         "* One-shot PNG cost includes the CLI, capture and output write. The",
         "  historical RGB viewport delivered 29.4 FPS in WPF.",
         "",
@@ -156,6 +168,33 @@ def main() -> int:
             private = " / ".join(f"{metrics[stage]['privateBytes'] / 2**20:,.1f}" for stage in ("first", "last", "peaks"))
             handles = " / ".join(str(metrics[stage]["handles"]) for stage in ("first", "last", "peaks"))
             lines.append(f"| `{name}` | {private} | {handles} |")
+
+    for summary, probe in presentation:
+        trace = (probe.get("frameTrace") or {}).get("samples") or []
+        frame_intervals = [sample["intervalMs"] for sample in trace if sample["intervalMs"] > 0]
+        composition_intervals = [
+            sample["ms"] - sample["frameAvailableMs"] for sample in probe["samples"]
+            if not sample["timeout"] and "frameAvailableMs" in sample
+        ]
+        candidate = summary.get("candidate") or {}
+        lines += [
+            "",
+            "## WPF dispatch-to-composition",
+            "",
+            f"Run `{summary['runId']}` used desktop `{summary.get('desktopVersion')}` "
+            f"with the hash-verified CLI, supervisor and fixture from `{candidate.get('sourceCommit')}`.",
+            "The endpoint is the WPF composition callback after the changed frame became available.",
+            "",
+            "| Metric | Result |",
+            "| --- | --- |",
+            f"| Valid trials | {probe['valid']} / {probe['trials']} |",
+            f"| Dispatch to composition p50 / p95 | {probe['p50Ms']} / {probe['p95Ms']} ms |",
+            f"| Frame availability to composition p95 | {p95(composition_intervals)} ms |",
+            f"| Supervisor frame arrival interval p95 | {p95(frame_intervals)} ms |",
+            f"| Viewport throughput | {probe['deliveredFps']} FPS at "
+            f"{probe['deliveredWidth']} × {probe['deliveredHeight']} |",
+            f"| Dropped stream sequences | {probe['dropped']} |",
+        ]
 
     lines += [
         "",

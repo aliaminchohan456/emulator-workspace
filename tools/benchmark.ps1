@@ -602,11 +602,24 @@ try {
         $attemptLimit = if ($RestoreAttempts) { $RestoreAttempts } else { $Samples }
         $verified = 0
         for ($sample = 1; $sample -le $attemptLimit -and $verified -lt $Samples; $sample++) {
-            $before = Get-GuestIdentity $guest
             $dirty = "trial_$sample"
-            Invoke-GuestAdb $before @("shell", "settings", "put", "global", $restoreKey, $dirty) | Out-Null
-            if ((Invoke-GuestAdb $before @("shell", "settings", "get", "global", $restoreKey)) -ne $dirty) {
-                throw "Restore trial $sample could not establish the pre-load marker."
+            try {
+                $before = Get-GuestIdentity $guest
+                Invoke-GuestAdb $before @("shell", "settings", "put", "global", $restoreKey, $dirty) 20000 | Out-Null
+                if ((Invoke-GuestAdb $before @("shell", "settings", "get", "global", $restoreKey) 20000) -ne $dirty) {
+                    throw "The pre-load marker did not match."
+                }
+            }
+            catch {
+                $trial = [pscustomobject]@{
+                    trial = $sample; stage = "pre-load"; interactive = $false; stateRestored = $false
+                    exitCode = -1; error = $_.Exception.Message
+                }
+                $report.restoreTrials += $trial
+                $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "restore.jsonl") -Encoding UTF8
+                Log "restore attempt $sample/$attemptLimit could not establish the pre-load marker: $($trial.error)"
+                Start-Sleep -Seconds 2
+                continue
             }
             $timer = [System.Diagnostics.Stopwatch]::StartNew()
             $load = Invoke-Ws @("snapshot-load", "--name", $guest, "--tag", "bench-base", "--json", "--root", $Root) -AllowFailure
@@ -620,12 +633,12 @@ try {
                     $after = Get-GuestIdentity $guest
                     $verifyUntil = $timer.Elapsed.TotalSeconds + 30
                     do {
-                        $windows = Invoke-GuestAdb $after @("shell", "dumpsys", "window")
+                        $windows = Invoke-GuestAdb $after @("shell", "dumpsys", "window") 20000
                         $focus = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
                         if ($focus) { break }
                         Start-Sleep -Milliseconds 700
                     } while ($timer.Elapsed.TotalSeconds -lt $verifyUntil)
-                    $observedMarker = Invoke-GuestAdb $after @("shell", "settings", "get", "global", $restoreKey)
+                    $observedMarker = Invoke-GuestAdb $after @("shell", "settings", "get", "global", $restoreKey) 20000
                 }
                 catch { $probeError = $_.Exception.Message }
             }
@@ -636,6 +649,7 @@ try {
             if ($load.Code -eq 0 -and $result.recovery -eq "restored" -and $stateRestored -and $interactive) { $verified++ }
             $trial = [pscustomobject]@{
                 trial = $sample
+                stage = "load"
                 wallSeconds = $elapsed
                 operationSeconds = [Math]::Round($operationSeconds, 2)
                 consoleSeconds = $result.seconds
@@ -651,7 +665,8 @@ try {
             if ($load.Code -eq 0 -and $interactive -and $result.recovery -in @("restored", "cold_boot")) {
                 [void]$restoreSamples.Add($elapsed)
             }
-            Log ("warm restore {0}/{1}: {2:N2}s recovery={3} exit={4}" -f $sample, $Samples, $elapsed, $result.recovery, $load.Code)
+            Log ("restore attempt {0}/{1}: {2:N2}s recovery={3} exit={4} verified={5}/{6}" -f `
+                $sample, $attemptLimit, $elapsed, $result.recovery, $load.Code, $verified, $Samples)
         }
         $report.scenarios["restoreAttemptWallSeconds"] = Summary ([double[]]$restoreSamples.ToArray())
         $warm = @($report.restoreTrials | Where-Object {
