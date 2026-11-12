@@ -313,33 +313,50 @@ public partial class MainWindow : Window
         window.Show();
     }
 
+    /// <summary>
+    /// Handles a file that was dropped on the window. The drop event and this
+    /// entry point share the same code, so a deployment through the shell and
+    /// a deployment through the automation entry point behave identically.
+    /// </summary>
+    public async Task DeliverFileDropAsync(IEnumerable<string> files)
+    {
+        var apk = files.FirstOrDefault(f => f.EndsWith(".apk", StringComparison.OrdinalIgnoreCase));
+        if (apk is null)
+        {
+            Services.DesktopLog.Write("drop with no APK: " + string.Join(", ", files));
+            return;
+        }
+
+        Services.DesktopLog.Write("drop accepted: " + apk);
+        await _viewModel.InstallApkAsync(Path.GetFullPath(apk)).ConfigureAwait(true);
+    }
+
     private void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-            ? DragDropEffects.Copy
-            : DragDropEffects.None;
+        var accepted = e.Data.GetDataPresent(DataFormats.FileDrop);
+        e.Effects = accepted ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
+        if (accepted)
+        {
+            Services.DesktopLog.Write("drag over the desktop window");
+        }
     }
 
     private async void OnFileDrop(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop))
         {
+            Services.DesktopLog.Write("drop without a file list");
             return;
         }
 
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files)
         {
+            Services.DesktopLog.Write("drop with an unreadable file list");
             return;
         }
 
-        var apk = files.FirstOrDefault(f => f.EndsWith(".apk", StringComparison.OrdinalIgnoreCase));
-        if (apk is null)
-        {
-            return;
-        }
-
-        await _viewModel.InstallApkAsync(Path.GetFullPath(apk));
+        await DeliverFileDropAsync(files).ConfigureAwait(true);
     }
 
     private void OnFullscreen(object sender, RoutedEventArgs e) => ToggleFullscreen();

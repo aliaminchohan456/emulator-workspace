@@ -123,6 +123,31 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
 
+        var dropFile = "";
+        for (var index = 0; index < e.Args.Length - 1; index++)
+        {
+            if (e.Args[index].Equals("--drop-file", StringComparison.OrdinalIgnoreCase))
+            {
+                dropFile = Path.GetFullPath(e.Args[index + 1]);
+            }
+        }
+
+        if (dropFile.Length > 0)
+        {
+            // The file is dropped on the window once it is ready, exactly like
+            // a drop from the shell.
+            window.Loaded += (_, _) =>
+            {
+                window.Dispatcher.InvokeAsync(
+                    async () =>
+                    {
+                        await window.DeliverFileDropAsync(new[] { dropFile }).ConfigureAwait(true);
+                        Services.DesktopLog.Write("dropped " + dropFile);
+                    },
+                    System.Windows.Threading.DispatcherPriority.Background);
+            };
+        }
+
         if (probeCount > 0)
         {
             window.Loaded += async (_, _) =>

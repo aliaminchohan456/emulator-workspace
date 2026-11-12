@@ -74,8 +74,18 @@ public partial class DragSourceWindow : Window
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        var data = new DataObject(DataFormats.FileDrop, new[] { _path });
-        DragDrop.DoDragDrop(_handle, data, DragDropEffects.Copy);
+        Services.DesktopLog.Write("drag source pressed: " + _path);
+        try
+        {
+            var data = new DataObject(DataFormats.FileDrop, new[] { _path });
+            var effect = DragDrop.DoDragDrop(_handle, data, DragDropEffects.Copy);
+            Services.DesktopLog.Write("drag source finished with effect " + effect);
+        }
+        catch (Exception ex)
+        {
+            Services.DesktopLog.Write("the drag failed: " + ex.Message);
+        }
+
         e.Handled = true;
     }
 }

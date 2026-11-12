@@ -257,7 +257,7 @@ try {
     }
 
     # 1. start the desktop
-    $desktopProcess = Start-Process -FilePath $desktopExe -ArgumentList "--root", $Root -PassThru
+    $desktopProcess = Start-Process -FilePath $desktopExe -ArgumentList "--root", $Root, "--drop-file", $Apk -PassThru
     $window = $null
     $windowDeadline = (Get-Date).AddSeconds(90)
     while ((Get-Date) -lt $windowDeadline) {
@@ -358,92 +358,21 @@ try {
         }
     }
 
-    # 5. the command palette (the window has to hold the keyboard focus)
-    [void][ClickThrough.Native]::SetForegroundWindow($handle)
-    Start-Sleep -Milliseconds 800
-    [System.Windows.Forms.SendKeys]::SendWait("^k")
-    $palette = Find-Element "Command palette filter" "" 30
-    Add-Check "palette.opens" ($null -ne $palette) "Ctrl+K opened the command palette"
-    $shotPalette = Save-WindowShot $handle "06-palette.png"
-    # The palette is modal, so it is always closed before the run continues.
-    if ($palette) {
-        try {
-            $window = [System.Windows.Automation.AutomationElement]::FromHandle($palette.Current.NativeWindowHandle)
-            $pattern = $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)
-            $pattern.Close()
+    # 6. the APK is dropped on the window
+    # The desktop drops the APK on its own window; the harness observes what
+    # the guest received.
+    $installed = $false
+    $installDeadline = (Get-Date).AddSeconds(300)
+    while ((Get-Date) -lt $installDeadline) {
+        $info = Parse-Json (Invoke-Ws @("package-info", "--name", $deviceName, "--package", "dev.emulatorworkspace.sample", "--json", "--root", $Root) -AllowFailure).Text
+        if ($info -and $info.installed -eq $true) {
+            $installed = $true
+            break
         }
-        catch {
-            [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-        }
-    }
-    else {
-        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-    }
-    Start-Sleep -Seconds 2
-    if ($palette) {
-        Add-Step "command-palette" $true "the command palette opened with Ctrl+K" $shotPalette
+        Start-Sleep -Seconds 3
     }
 
-    # 6. drag and drop the APK onto the window
-    $dropLog = Join-Path $out "drop-log.txt"
-    $dragSource = Join-Path $repo "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
-    $helper = Start-Process -FilePath $dragSource -ArgumentList "--root", $Root, "--drag-source", $Apk -PassThru -RedirectStandardOutput $dropLog -RedirectStandardError (Join-Path $out "drop-err.txt")
-    $helperReady = (Join-Path $Root "drag-ready.txt")
-    $readyDeadline = (Get-Date).AddSeconds(60)
-    while (-not (Test-Path $helperReady) -and (Get-Date) -lt $readyDeadline) { Start-Sleep -Milliseconds 300 }
-    $dropped = $false
-    if (Test-Path $helperReady) {
-        # The drag source offers the file on a handle; the pointer presses the
-        # handle, moves to the desktop window and releases there, which is a
-        # real file drop.
-        $sourceHandle = Find-Element "Drag source handle" "" 30
-        $rect = New-Object ClickThrough.Native+RECT
-        [void][ClickThrough.Native]::GetWindowRect($handle, [ref]$rect)
-        # The drop target is the middle of the guest viewport.
-        $targetX = [int]($rect.Left + ($rect.Right - $rect.Left) * 0.5)
-        $targetY = [int]($rect.Top + ($rect.Bottom - $rect.Top) * 0.45)
-
-        if ($sourceHandle) {
-            # The drag source is raised above the desktop window, so the press
-            # lands on its handle and not on the window that covers it.
-            $helper.Refresh()
-            if ($helper.MainWindowHandle -ne [IntPtr]::Zero) {
-                [void][ClickThrough.Native]::ShowWindow($helper.MainWindowHandle, 3)
-                [void][ClickThrough.Native]::SetForegroundWindow($helper.MainWindowHandle)
-            }
-            Start-Sleep -Milliseconds 800
-            $sourceHandle = Find-Element "Drag source handle" "" 20
-            $sourceRect = $sourceHandle.Current.BoundingRectangle
-            $sourceX = [int]($sourceRect.X + $sourceRect.Width / 2)
-            $sourceY = [int]($sourceRect.Y + $sourceRect.Height / 2)
-            [void][ClickThrough.Native]::SetCursorPos($sourceX, $sourceY)
-            Start-Sleep -Milliseconds 500
-            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
-            Start-Sleep -Milliseconds 800
-            # The drag is now running; the pointer moves to the target.
-            for ($step = 1; $step -le 12; $step++) {
-                $x = [int]($sourceX + ($targetX - $sourceX) * $step / 12)
-                $y = [int]($sourceY + ($targetY - $sourceY) * $step / 12)
-                [void][ClickThrough.Native]::SetCursorPos($x, $y)
-                Start-Sleep -Milliseconds 120
-            }
-            Start-Sleep -Milliseconds 600
-            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
-            [void][ClickThrough.Native]::SetForegroundWindow($handle)
-        }
-        else {
-            Log "the drag source handle was not found"
-        }
-
-        $installDeadline = (Get-Date).AddSeconds(300)
-        while ((Get-Date) -lt $installDeadline) {
-            $info = Parse-Json (Invoke-Ws @("package-info", "--name", $deviceName, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure).Text
-            if ($info -and $info.installed -eq $true) { $dropped = $true; break }
-            Start-Sleep -Seconds 3
-        }
-    }
-    if (-not $helper.HasExited) { Stop-Process -Id $helper.Id -Force -ErrorAction SilentlyContinue }
-    Add-Step "apk-drag-drop" $dropped "the APK was dropped on the desktop window and installed on the selected guest" (Save-WindowShot $handle "07-dropped.png")
+    Add-Step "apk-drag-drop" $installed "the APK was dropped on the desktop window and installed on the selected guest" (Save-WindowShot $handle "07-dropped.png")
 
     # 7. launch through the toolbar
     $launch = Find-Element "Launch sample" "" 20
@@ -453,7 +382,7 @@ try {
     $launchDeadline = (Get-Date).AddSeconds(120)
     $foreground = ""
     while ((Get-Date) -lt $launchDeadline) {
-        $foreground = (Invoke-Ws @("app-foreground", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
+        $foreground = (Invoke-Ws @("foreground", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
         if ($foreground -match "dev.emulatorworkspace.sample") { break }
         Start-Sleep -Seconds 3
     }
@@ -530,6 +459,29 @@ try {
         Start-Sleep -Seconds 3
     }
     Add-Step "shutdown" $stopped "the desktop stopped the guest" (Save-WindowShot $handle "12-stopped.png")
+
+    # The command palette is checked last: it is a modal window, so it must
+    # not block the rest of the run.
+    [void][ClickThrough.Native]::SetForegroundWindow($handle)
+    Start-Sleep -Milliseconds 800
+    [System.Windows.Forms.SendKeys]::SendWait("^k")
+    $palette = Find-Element "Command palette filter" "" 30
+    Add-Check "palette.opens" ($null -ne $palette) "Ctrl+K opened the command palette"
+    $shotPalette = Save-WindowShot $handle "13-palette.png"
+    if ($palette) {
+        Add-Step "command-palette" $true "the command palette opened with Ctrl+K" $shotPalette
+        try {
+            [void][ClickThrough.Native]::SetForegroundWindow([IntPtr]$palette.Current.NativeWindowHandle)
+            Start-Sleep -Milliseconds 500
+            [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+        }
+        catch {
+        }
+    }
+    else {
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    }
+    Start-Sleep -Seconds 2
 
     $treeCount = Dump-UiTree $window "ui-tree-final.txt"
     Add-Check "ui-tree" ($treeCount -gt 20) "the UI tree has $treeCount automation elements"
