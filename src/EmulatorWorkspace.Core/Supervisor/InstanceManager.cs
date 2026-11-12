@@ -283,7 +283,7 @@ public sealed class InstanceManager
 
             EnsureDiskFree(StartDiskRequirementBytes, "start a guest");
 
-            foreach (var port in new[] { record.ConsolePort, record.ConsolePort + 1, record.GrpcPort })
+            foreach (var port in EnginePorts(record))
             {
                 if (!PortAllocator.IsPortFree(port))
                 {
@@ -473,6 +473,7 @@ public sealed class InstanceManager
 
             if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
             {
+                await WaitForEngineStopAsync(record, cancellationToken).ConfigureAwait(false);
                 record.State = InstanceState.Stopped;
                 record.EnginePid = null;
                 record.EngineStartTimeUtc = null;
@@ -510,11 +511,11 @@ public sealed class InstanceManager
             var forced = false;
             if (NativeProcess.IsAlive(pid, start))
             {
-                NativeProcess.KillTree(pid);
+                NativeProcess.KillTree(pid, start);
                 forced = true;
-                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
             }
 
+            await WaitForEngineStopAsync(record, cancellationToken).ConfigureAwait(false);
             record.State = InstanceState.Stopped;
             record.EnginePid = null;
             record.EngineStartTimeUtc = null;
@@ -537,6 +538,26 @@ public sealed class InstanceManager
         {
             runtime.Gate.Release();
         }
+    }
+
+    private static int[] EnginePorts(InstanceRecord record) => [record.ConsolePort, record.ConsolePort + 1, record.GrpcPort];
+
+    private static async Task WaitForEngineStopAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var timer = Stopwatch.StartNew();
+        var ports = EnginePorts(record);
+        do
+        {
+            if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc) && ports.All(PortAllocator.IsPortFree))
+            {
+                return;
+            }
+
+            await Task.Delay(350, cancellationToken).ConfigureAwait(false);
+        } while (timer.Elapsed < TimeSpan.FromSeconds(15));
+
+        throw new SupervisorOperationException(ErrorCodes.Timeout,
+            $"Instance '{record.Name}' did not release its engine or reserved ports within 15 seconds.");
     }
 
     public async Task<JsonObject> StatusAsync(string name, CancellationToken cancellationToken)

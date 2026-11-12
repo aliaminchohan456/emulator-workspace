@@ -177,11 +177,17 @@ public static class NativeProcess
         return Math.Abs((actual - recorded).TotalSeconds) < 2;
     }
 
-    public static void KillTree(int pid)
+    public static void KillTree(int pid, string? recordedStartUtc)
     {
         try
         {
             using var process = Process.GetProcessById(pid);
+            if (process.HasExited || !DateTimeOffset.TryParse(recordedStartUtc, out var recorded)
+                || Math.Abs((process.StartTime.ToUniversalTime() - recorded.UtcDateTime).TotalSeconds) >= 2)
+            {
+                return;
+            }
+
             process.Kill(entireProcessTree: true);
         }
         catch (ArgumentException)

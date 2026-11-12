@@ -579,6 +579,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
   when it owns the relaunch, and lets a recorded launch before the first
   UI step establish foreground for the launcher baseline. Verify on a
   separately packaged build. The 0.1.3 run continues through the other lanes.
+- The interrupted launcher-baseline retry also returned `port_conflict`
+  for its own console port 5560 during a restore fallback. Stop now waits
+  up to 15 s for the recorded engine and its reserved ports to clear
+  before clearing ownership, and rechecks the creation timestamp before
+  force-kill. The 30-cycle benchmark records each start, wait, stop and
+  post-stop listener state. Verify both the interrupted retry and cycle
+  lane on the updated runtime.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
