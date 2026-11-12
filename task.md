@@ -364,3 +364,24 @@ All tasks start open. Check off an implementation task after its scoped verifica
   `python tools/soak-progress.py artifacts/phase3/bench/20261112-213629`.
   Use `--require-complete` after cleanup to require four hours of paired
   evidence and successful cleanup for both recorded generations.
+
+- The disconnected Windows Sandbox preparation copied and rehashed the
+  exact MSI and validated a configuration with networking disabled,
+  read-only input/SDK/JDK mappings, and an isolated writable evidence
+  directory. Dry run `D:/WS-OfflineSandbox-20261112-220840`. After soak
+  cleanup, run the operator-authorized feature command from an elevated
+  prompt, with reboot handled separately if Windows requests it.
+
+  ```powershell
+  Enable-WindowsOptionalFeature -Online -FeatureName @(
+    'Containers-DisposableClientVM', 'Microsoft-Hyper-V-Tools-All'
+  ) -All -NoRestart
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/offline-sandbox.ps1 `
+    -CandidateRelease 'D:/Release/emulator-workspace-0.1.1-20261112-212010' `
+    -StagingRoot D:/WS-OfflineSandbox-Live -Launch
+  ```
+
+  The live sandbox first probes the pinned emulator for usable WHPX. If the
+  acceleration check fails, preserve `output/acceleration.txt` and use an
+  isolated Windows 11 x64 VM that exposes nested virtualization and passes
+  the same accelerator probe.

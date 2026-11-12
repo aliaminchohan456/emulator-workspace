@@ -96,10 +96,13 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | No
     if not candidate and candidate_path.exists():
         candidate = read_json(candidate_path)
     if summary.get("installer") and summary.get("installerSha256"):
-        candidate = installer_provenance(pathlib.Path(summary["installer"]), summary["installerSha256"])
-        if candidate is None:
+        installed_hash = summary["installerSha256"]
+        release = installer_provenance(pathlib.Path(summary["installer"]), installed_hash)
+        if release:
+            candidate = release
+        elif not candidate or candidate.get("installerSha256") != installed_hash:
             candidate = {
-                "installerSha256": summary["installerSha256"],
+                "installerSha256": installed_hash,
                 "evidence": "recorded in acceptance summary",
             }
     source_commit = versions.get("commit") or benchmark.get("sourceCommit") or summary.get("sourceCommit")
