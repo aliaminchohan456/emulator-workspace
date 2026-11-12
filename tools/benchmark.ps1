@@ -31,6 +31,8 @@ param(
     [ValidateRange(1, 1000)][int]$Samples = 20,
     [int]$Cycles = 30,
     [string]$Apk = "",
+    [string]$CandidateRelease = "",
+    [string]$CandidatePayload = "",
     [ValidateRange(0, 240)][int]$SoakMinutes = 0,
     [ValidateRange(1, 60)][int]$SoakProbeSeconds = 60,
     [switch]$SkipTwoGuest,
@@ -43,6 +45,28 @@ param(
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
 $wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+$candidate = $null
+if ($CandidateRelease -or $CandidatePayload) {
+    if (-not ($CandidateRelease -and $CandidatePayload) -or $Apk) {
+        throw "Pass both candidate paths and use the candidate's sample APK."
+    }
+    $release = Get-Content -LiteralPath (Join-Path $CandidateRelease "release.json") -Raw | ConvertFrom-Json
+    $msi = Join-Path $CandidateRelease (Split-Path -Leaf $release.installer)
+    if ((Get-FileHash -LiteralPath $msi -ErrorAction Stop).Hash -ne $release.installerSha256) {
+        throw "The candidate MSI does not match its release record."
+    }
+    $inventory = Get-Content -LiteralPath (Join-Path $CandidateRelease "SHA256SUMS.json") -Raw | ConvertFrom-Json
+    if ($inventory.Count -ne $release.payloadFiles) { throw "Candidate inventory count mismatch." }
+    foreach ($entry in $inventory) {
+        $file = Join-Path $CandidatePayload $entry.path
+        if ((Get-FileHash -LiteralPath $file -ErrorAction Stop).Hash -ne $entry.sha256) {
+            throw "Candidate payload hash mismatch: $($entry.path)"
+        }
+    }
+    $wsctl = Join-Path $CandidatePayload "wsctl.exe"
+    $Apk = Join-Path $CandidatePayload "ws-sample.apk"
+    $candidate = [ordered]@{ sourceCommit = $release.commit; installerSha256 = $release.installerSha256; payloadFilesVerified = $inventory.Count }
+}
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 $adb = Join-Path $sdk "platform-tools\adb.exe"
@@ -205,6 +229,7 @@ $report = [ordered]@{
         bootOverheadPercent = 10
     }
     sourceCommit = (& git -C $repo rev-parse HEAD | Out-String).Trim()
+    candidate = $candidate
     harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
     fixtureSha256 = $null
     latencyEndpoint = "ADB tap dispatch to host receipt of the fixture Logcat marker"
