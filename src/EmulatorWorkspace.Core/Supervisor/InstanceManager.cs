@@ -2077,7 +2077,7 @@ public sealed class InstanceManager
             {
                 return (await _adb.ShellAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false)).Trim();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return "! " + ex.Message;
             }
@@ -2089,7 +2089,7 @@ public sealed class InstanceManager
             {
                 return (await _adb.EmulatorConsoleAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false)).Trim();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return "! " + ex.Message;
             }
@@ -2106,30 +2106,21 @@ public sealed class InstanceManager
             });
         }
 
-        // The emulator console drives the simulated hardware.
-        var network = await Console("network", "status").ConfigureAwait(false);
-        Add("network speed and latency",
-            !network.StartsWith("!", StringComparison.Ordinal),
-            network,
-            network.StartsWith("!", StringComparison.Ordinal) ? network : "");
+        async Task AddConsoleCapability(string capability, params string[] command)
+        {
+            var output = await Console(command).ConfigureAwait(false);
+            // adb emu can exit successfully even when the console rejects a command.
+            var rejection = output.Split('\n', StringSplitOptions.TrimEntries)
+                .FirstOrDefault(line => line.StartsWith("KO:", StringComparison.Ordinal)
+                    || line.Equals("KO", StringComparison.Ordinal));
+            var reason = rejection ?? (output.StartsWith("!", StringComparison.Ordinal) ? output : "");
+            Add(capability, reason.Length == 0, output, reason);
+        }
 
-        var routes = await Console("route").ConfigureAwait(false);
-        Add("routes and offline mode",
-            !routes.StartsWith("!", StringComparison.Ordinal),
-            routes,
-            routes.StartsWith("!", StringComparison.Ordinal) ? routes : "");
-
-        var power = await Console("power", "capacity").ConfigureAwait(false);
-        Add("battery and charging",
-            !power.StartsWith("!", StringComparison.Ordinal),
-            power,
-            power.StartsWith("!", StringComparison.Ordinal) ? power : "");
-
-        var sensors = await Console("sensor", "status").ConfigureAwait(false);
-        Add("sensors",
-            !sensors.StartsWith("!", StringComparison.Ordinal),
-            sensors,
-            sensors.StartsWith("!", StringComparison.Ordinal) ? sensors : "");
+        await AddConsoleCapability("network speed and latency", "network", "status").ConfigureAwait(false);
+        await AddConsoleCapability("routes and offline mode", "route").ConfigureAwait(false);
+        await AddConsoleCapability("battery and charging", "power", "display").ConfigureAwait(false);
+        await AddConsoleCapability("sensors", "sensor", "status").ConfigureAwait(false);
 
         // The guest itself reports the hardware it exposes.
         var features = await Shell("pm", "list", "features").ConfigureAwait(false);
@@ -2171,11 +2162,10 @@ public sealed class InstanceManager
             $"airplane_mode_on={offline}",
             string.Empty);
 
-        var gps = await Console("geo", "fix", "0", "0").ConfigureAwait(false);
-        Add("GPS",
-            !gps.StartsWith("!", StringComparison.Ordinal),
-            gps,
-            gps.StartsWith("!", StringComparison.Ordinal) ? gps : "");
+        const string gpsFeature = "feature:android.hardware.location.gps";
+        var gps = featureLines.Any(line => line.Trim().Equals(gpsFeature, StringComparison.Ordinal));
+        var gpsReason = features.StartsWith("!", StringComparison.Ordinal) ? features : "the guest exposes no GPS feature";
+        Add("GPS", gps, gps ? gpsFeature : "", gps ? "" : gpsReason);
 
         return new JsonObject
         {
