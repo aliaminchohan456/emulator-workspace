@@ -314,3 +314,23 @@ verified managed-profile upgrade. The corrected read-only simulation probe
 ran through the installed CLI. Final readiness still requires the open
 checks in [task.md](task.md), including disconnected reuse, signed
 acceptance, the full soak, presentation performance, and Magisk.
+
+## Final verification in progress
+
+The preserved 0.1.1 MSI and installer acceptance `20261112-212707` were
+rechecked. The full two-guest soak is running against its verified payload
+in `D:/WS-Soak-011-20261112-213626`. Run `20261112-213629` uses harness
+commit `27c655f`, the candidate supervisor from `8d40469`, and the pinned
+WHPX engine and image. Check the last `soak.jsonl` row and the exact harness
+generation before taking any further action on that root. The four-hour
+interval is due to end around **2026-11-13 01:43:29 PKT**, followed by cleanup.
+No benchmark or regression shares the active emulator workload.
+
+After cleanup, use the prepared candidate lanes for the quiet-host WPF,
+matched raw CLI, verified restore, and runtime regression. The candidate
+installer hash belongs to the preserved 0.1.1 payload. A diagnostic desktop
+override has separate binary and source provenance. Disconnected reuse
+requires an isolated Windows 11 x64 environment that can run the pinned
+Android Emulator with WHPX. The operator approved enabling Sandbox and
+Hyper-V management. Apply those features after the soak and keep any
+required reboot separate. See [task.md](task.md) for exact commands.

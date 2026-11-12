@@ -865,46 +865,93 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// marker colour changed, then timestamp the next WPF composition pass.
     /// Returns null on timeout.
     /// </summary>
-    public async Task<double?> ProbeTapAsync(int x, int y, int timeoutMs = 2500)
+    public async Task<LatencyProbeSample?> ProbeTapAsync(int timeoutMs = 2500)
     {
-        if (SelectedDevice is null || !SelectedDevice.IsRunning || Frame is null)
+        if (SelectedDevice is not { IsRunning: true } device || Frame is not { } frame
+            || GuestWidth <= 0 || GuestHeight <= 0 || FindProbeMarker(frame) is not { } marker)
         {
             return null;
         }
 
-        var baseline = SampleMarkerColor();
-        if (baseline is null)
+        var x = (int)((frame.PixelWidth / 2 + 0.5) * GuestWidth / frame.PixelWidth);
+        var y = (int)((marker.Row + 0.5) * GuestHeight / frame.PixelHeight);
+        var expected = ProbePalette[(marker.PaletteIndex + 1) % ProbePalette.Length];
+        var probe = new ProbeState(device.Name, marker.Row, frame.PixelWidth, frame.PixelHeight, expected);
+        _probe = probe;
+        void OnRendering(object? sender, EventArgs args)
         {
-            return null;
+            if (probe.FrameAvailableMs is double frameMs && SelectedDevice?.Name == probe.Device)
+            {
+                probe.Completion.TrySetResult(new LatencyProbeSample(frameMs, probe.Clock.Elapsed.TotalMilliseconds));
+            }
         }
 
-        var completion = new TaskCompletionSource<double?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _probe = new ProbeState(completion, Stopwatch.StartNew());
-        _pendingInput = new PendingInput(DateTimeOffset.UtcNow, baseline);
-
+        CompositionTarget.Rendering += OnRendering;
         try
         {
+            probe.Clock.Restart();
             await RequestAsync(
                 OperationNames.InputTap,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["x"] = x, ["y"] = y },
-                TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+                new JsonObject { ["name"] = device.Name, ["x"] = x, ["y"] = y },
+                TimeSpan.FromMilliseconds(timeoutMs)).ConfigureAwait(true);
+            var remaining = Math.Max(0, timeoutMs - (int)probe.Clock.ElapsedMilliseconds);
+            return await probe.Completion.Task.WaitAsync(TimeSpan.FromMilliseconds(remaining)).ConfigureAwait(true);
         }
-        catch (Exception)
+        catch (Exception ex) when (ex is TimeoutException or OperationCanceledException or SupervisorRequestException)
         {
-            _probe = null;
-            _pendingInput = null;
             return null;
         }
-
-        var winner = await Task.WhenAny(completion.Task, Task.Delay(timeoutMs)).ConfigureAwait(true);
-        if (winner != completion.Task)
+        finally
         {
+            CompositionTarget.Rendering -= OnRendering;
             _probe = null;
-            _pendingInput = null;
-            return null;
+        }
+    }
+
+    private static readonly int[] ProbePalette =
+        [0xE53935, 0x43A047, 0x1E88E5, 0xFDD835, 0x8E24AA, 0x00ACC1];
+
+    private static (int Row, int PaletteIndex)? FindProbeMarker(BitmapSource frame)
+    {
+        var height = frame.PixelHeight;
+        var pixels = ReadProbeColumn(frame, 0, height);
+        var bestLength = Math.Max(4, frame.PixelWidth / 14) - 1;
+        (int Row, int PaletteIndex)? marker = null;
+        for (var row = 0; row < height;)
+        {
+            var color = ProbePixel(pixels, row);
+            var end = row + 1;
+            while (end < height && ProbePixel(pixels, end) == color)
+            {
+                end++;
+            }
+
+            var index = Array.IndexOf(ProbePalette, color);
+            if (index >= 0 && end - row > bestLength)
+            {
+                bestLength = end - row;
+                marker = ((row + end) / 2, index);
+            }
+            row = end;
         }
 
-        return await completion.Task.ConfigureAwait(true);
+        return marker;
+    }
+
+    private static byte[] ReadProbeColumn(BitmapSource frame, int row, int height)
+    {
+        var source = frame.Format == PixelFormats.Bgra32
+            ? frame
+            : new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+        var pixels = new byte[height * 4];
+        source.CopyPixels(new Int32Rect(frame.PixelWidth / 2, row, 1, height), pixels, 4, 0);
+        return pixels;
+    }
+
+    private static int ProbePixel(byte[] pixels, int row)
+    {
+        var offset = row * 4;
+        return (pixels[offset + 2] << 16) | (pixels[offset + 1] << 8) | pixels[offset];
     }
 
     public async Task<JsonObject?> GetFrameTraceAsync()
@@ -1482,18 +1529,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 _pendingInput = null;
                 OnPropertyChanged(nameof(InputLatencyText));
 
-                if (_probe is { } probe)
-                {
-                    _probe = null;
-                    EventHandler? handler = null;
-                    handler = (_, _) =>
-                    {
-                        CompositionTarget.Rendering -= handler;
-                        probe.Completion.TrySetResult(probe.Clock.Elapsed.TotalMilliseconds);
-                    };
-                    CompositionTarget.Rendering += handler;
-                }
             }
+        }
+
+        if (_probe is { FrameAvailableMs: null } probe && SelectedDevice?.Name == probe.Device
+            && bitmap.PixelWidth == probe.Width && bitmap.PixelHeight == probe.Height
+            && ProbePixel(ReadProbeColumn(bitmap, probe.Row, 1), 0) == probe.ExpectedColor)
+        {
+            probe.FrameAvailableMs = probe.Clock.Elapsed.TotalMilliseconds;
         }
 
         _lastMarkerColor = SampleMarkerColor();
@@ -1731,7 +1774,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private sealed record PendingInput(DateTimeOffset DispatchedUtc, int? BaselineColor);
 
-    private sealed record ProbeState(TaskCompletionSource<double?> Completion, Stopwatch Clock);
+    public sealed record LatencyProbeSample(double FrameAvailableMs, double CompositionMs);
+
+    private sealed record ProbeState(string Device, int Row, int Width, int Height, int ExpectedColor)
+    {
+        public TaskCompletionSource<LatencyProbeSample> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Stopwatch Clock { get; } = Stopwatch.StartNew();
+        public double? FrameAvailableMs { get; set; }
+    }
 
     private sealed record PendingFrame(string Path, string Format, int Width, int Height, int Stride);
 }

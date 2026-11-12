@@ -261,3 +261,89 @@ All tasks start open. Check off an implementation task after its scoped verifica
 
   Network-disconnected reuse, signed acceptance, the remaining hardware and
   performance gates, and final-candidate end-to-end regression remain open.
+
+## Final Windows verification from `efcf812`
+
+- Verified the unchanged unsigned 0.1.1 MSI SHA-256 and the **21/21** raw
+  installer summary. The full soak uses all 422 staged payload files
+  verified against the candidate inventory. The running supervisor PID
+  6140 resolves to the staged `EmulatorWorkspace.Supervisor.exe`.
+- Active soak `20261112-213629`, harness PID **19588**, creation
+  `2026-11-12T16:36:26.8521220Z`, root
+  `D:/WS-Soak-011-20261112-213626`. The first paired probe establishes
+  an interval start around 21:43:29 PKT. Expected four-hour mark
+  **2026-11-13 01:43:29 PKT**. Raw artifacts
+  `artifacts/phase3/bench/20261112-213629`, including `run-context.json`
+  with the guest generations and exact ports. Startup collected 20/20
+  two-guest markers with ADB-to-Logcat p50 685.26 ms and p95 828.83 ms.
+  A process-scoped wake request is active until the harness writes its
+  summary. Check for the final response and owned process cleanup before
+  starting other hardware lanes. Reproduction from harness `27c655f`:
+
+  ```powershell
+  $release = 'D:/Release/emulator-workspace-0.1.1-20261112-212010'
+  $payload = 'D:/Release/stage-20261112-212010/payload'
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 `
+    -Root 'D:/WS-Soak-011-20261112-213626' -CandidateRelease $release -CandidatePayload $payload `
+    -Samples 20 -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle -SoakMinutes 240
+  ```
+
+- The candidate-bound test harnesses are prepared. Run sequentially on the
+  quiet reference host after the soak. The WPF probe records the composition
+  proxy and detects the exact successor color of the visible fixture
+  marker. The first WPF invocation uses the exact 0.1.1 desktop. If its
+  historical fixed marker coordinates fail, run the diagnostic desktop
+  build with `-DesktopExecutable` and keep the override's hash and source
+  commit separate. The raw comparison uses two AVD profiles with matched
+  hardware settings and directly starts the pinned `emulator.exe` in the
+  raw arm. Restore evidence includes attempted loads, fallback, verified
+  foreground readiness and a separately checked guest-state marker.
+
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/latency-probe.ps1 `
+    -Root D:/WS-WPF-011 -CandidateRelease $release -CandidatePayload $payload -Count 25
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 `
+    -Root D:/WS-Raw-011 -CandidateRelease $release -CandidatePayload $payload `
+    -RawBaseline -Samples 20 -SkipRestore -SkipLifecycle -SkipLatency -SkipTwoGuest
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 `
+    -Root D:/WS-Restore-011 -CandidateRelease $release -CandidatePayload $payload `
+    -Samples 20 -RestoreAttempts 40 -SkipBaseline -SkipColdBoot -SkipLifecycle -SkipLatency -SkipTwoGuest
+  ```
+
+- For candidate regression, build the MCP executable from the candidate
+  commit in a separate worktree. The MSI contains the desktop, supervisor,
+  CLI, and fixture. The MCP executable has separate source and binary
+  provenance. The regression wrapper routes the existing acceptance lanes
+  to the verified candidate payload.
+
+  ```powershell
+  git worktree add --detach D:/WS-Candidate-8d40469 8d40469
+  dotnet build D:/WS-Candidate-8d40469/src/EmulatorWorkspace.Mcp/EmulatorWorkspace.Mcp.csproj -c Release
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/candidate-regression.ps1 `
+    -RootPrefix D:/WS-Regression-011 -CandidateRelease $release -CandidatePayload $payload `
+    -McpExecutable D:/WS-Candidate-8d40469/src/EmulatorWorkspace.Mcp/bin/Release/net10.0/EmulatorWorkspace.Mcp.exe
+  ```
+
+- The disconnected installer guard rejected the connected reference
+  host before installation in `artifacts/phase3/offline/20261112-215224`.
+  After soak cleanup, enable the approved Sandbox and Hyper-V management
+  features from an elevated prompt with `-NoRestart`. This session is
+  unelevated. An isolated Windows 11 x64 environment must provide working
+  nested WHPX if virtualized, and the pinned SDK, image and accepted
+  licenses must be available locally. Remove the environment's network
+  connection, then run `tools/installer-acceptance.ps1 -Installer <exact MSI>
+  -WorkRoot C:/WSOffline -OutDir artifacts/phase3/offline -VerifyDisconnectedReuse`
+  inside it. The harness records adapters and default routes before
+  installation and after booting the same profile and launching its fixture.
+  [Windows Sandbox setup](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-install),
+  [Nested virtualization](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/enable-nested-virtualization)
+
+- `python tools/build-phase3-manifest.py` refreshed 118 finished raw runs,
+  including the exact candidate installer and both stock Play rows. Active
+  runs remain outside finished evidence until their summaries exist. Refresh
+  again after each completed verification lane.
+- Magisk still needs the authorized x86_64 Linux builder with 64 GB RAM
+  and 400 GB free. Next command
+  `bash tools/build-magisk-lab-aosp.sh --check /mnt/aosp`. Signed acceptance
+  requires the authorized private key in `Cert:/CurrentUser/My`. The local
+  0.1.1 candidate and its release hash remain preserved.

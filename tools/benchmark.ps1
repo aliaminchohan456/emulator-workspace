@@ -29,6 +29,7 @@ param(
     [string]$Root = "D:\Phase4Root",
     [string]$OutDir = "artifacts\phase3\bench",
     [ValidateRange(1, 1000)][int]$Samples = 20,
+    [ValidateRange(0, 1000)][int]$RestoreAttempts = 0,
     [int]$Cycles = 30,
     [string]$Apk = "",
     [string]$CandidateRelease = "",
@@ -38,7 +39,9 @@ param(
     [switch]$SkipTwoGuest,
     [switch]$SkipLifecycle,
     [switch]$SkipBaseline,
+    [switch]$RawBaseline,
     [switch]$SkipColdBoot,
+    [switch]$SkipLatency,
     [switch]$SkipRestore
 )
 
@@ -50,22 +53,12 @@ if ($CandidateRelease -or $CandidatePayload) {
     if (-not ($CandidateRelease -and $CandidatePayload) -or $Apk) {
         throw "Pass both candidate paths and use the candidate's sample APK."
     }
-    $release = Get-Content -LiteralPath (Join-Path $CandidateRelease "release.json") -Raw | ConvertFrom-Json
-    $msi = Join-Path $CandidateRelease (Split-Path -Leaf $release.installer)
-    if ((Get-FileHash -LiteralPath $msi -ErrorAction Stop).Hash -ne $release.installerSha256) {
-        throw "The candidate MSI does not match its release record."
-    }
-    $inventory = Get-Content -LiteralPath (Join-Path $CandidateRelease "SHA256SUMS.json") -Raw | ConvertFrom-Json
-    if ($inventory.Count -ne $release.payloadFiles) { throw "Candidate inventory count mismatch." }
-    foreach ($entry in $inventory) {
-        $file = Join-Path $CandidatePayload $entry.path
-        if ((Get-FileHash -LiteralPath $file -ErrorAction Stop).Hash -ne $entry.sha256) {
-            throw "Candidate payload hash mismatch: $($entry.path)"
-        }
-    }
-    $wsctl = Join-Path $CandidatePayload "wsctl.exe"
-    $Apk = Join-Path $CandidatePayload "ws-sample.apk"
-    $candidate = [ordered]@{ sourceCommit = $release.commit; installerSha256 = $release.installerSha256; payloadFilesVerified = $inventory.Count }
+    . (Join-Path $PSScriptRoot "fixtures/candidate-payload.ps1")
+    $verifiedCandidate = Resolve-VerifiedCandidate $CandidateRelease $CandidatePayload
+    $wsctl = Join-Path $verifiedCandidate.payload "wsctl.exe"
+    $Apk = Join-Path $verifiedCandidate.payload "ws-sample.apk"
+    $candidate = $verifiedCandidate.identity
+    $env:EMULATORWORKSPACE_SUPERVISOR_EXE = Join-Path $verifiedCandidate.payload "EmulatorWorkspace.Supervisor.exe"
 }
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
@@ -81,6 +74,12 @@ $package = "dev.emulatorworkspace.sample"
 
 if ($SoakMinutes -gt 0 -and $SkipTwoGuest) {
     throw "A soak requires the two-guest scenario."
+}
+if ($RestoreAttempts -gt 0 -and $RestoreAttempts -lt $Samples) {
+    throw "RestoreAttempts must cover the requested verified samples."
+}
+if ($RawBaseline -and ($SkipBaseline -or $SkipColdBoot)) {
+    throw "A raw comparison requires both cold-boot scenarios."
 }
 
 function Log([string]$message) {
@@ -278,6 +277,83 @@ function Get-GuestIdentity([string]$name) {
     return $identity
 }
 
+function Get-RawEngineChildren($launcher, [datetime]$started, [string]$avdName) {
+    $qemu = Join-Path $sdk "emulator/qemu/windows-x86_64/qemu-system-x86_64-headless.exe"
+    $filter = "ParentProcessId=$($launcher.Id) AND Name='qemu-system-x86_64-headless.exe'"
+    Get-CimInstance Win32_Process -Filter $filter -ErrorAction Stop |
+        Where-Object { $_.ExecutablePath -eq $qemu -and $_.CreationDate -ge $started -and
+            $_.CommandLine -match ([regex]::Escape("$avdName.avd\hardware-qemu.ini")) } |
+        ForEach-Object {
+            $child = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+            if ($child -and $child.StartTime -ge $started -and
+                [Math]::Abs(($child.StartTime - $_.CreationDate).TotalSeconds) -lt 1) { $child }
+        }
+}
+
+function Measure-RawBoot($profile, [int]$sample) {
+    $ports = @($profile.consolePort, ($profile.consolePort + 1), $profile.grpcPort)
+    $listing = Invoke-BenchmarkProcess $adb @("devices", "-l") 6000
+    if ($listing.Code -ne 0 -or $listing.Text -match "(?m)^$($profile.serial)\s" -or
+        (Get-NetTCPConnection -State Listen -ErrorAction Stop | Where-Object LocalPort -in $ports)) {
+        throw "The raw control's reserved ports or serial are already in use."
+    }
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $sdk "emulator/emulator.exe"
+    $info.WorkingDirectory = $sdk
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.EnvironmentVariables["ANDROID_AVD_HOME"] = Join-Path $Root "avd"
+    $info.EnvironmentVariables["ANDROID_SDK_ROOT"] = $sdk
+    $info.Arguments = @("-avd", $profile.avdName, "-port", $profile.consolePort, "-no-audio",
+        "-no-boot-anim", "-no-metrics", "-accel", "on", "-gpu", "host", "-no-window",
+        "-no-snapshot-load", "-no-snapshot-save", "-grpc", $profile.grpcPort, "-grpc-use-token", "-verbose") -join " "
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $launcher = [System.Diagnostics.Process]::Start($info)
+    $started = $launcher.StartTime
+    $stdout = $launcher.StandardOutput.ReadToEndAsync()
+    $stderr = $launcher.StandardError.ReadToEndAsync()
+    $owned = @()
+    try {
+        while ($timer.Elapsed.TotalSeconds -lt 600 -and -not $launcher.HasExited) {
+            if (-not $owned) {
+                $owned = @(Get-RawEngineChildren $launcher $started $profile.avdName)
+            }
+            $listing = Invoke-BenchmarkProcess $adb @("devices", "-l") 6000
+            $transport = [regex]::Match($listing.Text, "(?m)^$($profile.serial)\s+device\s+[^\r\n]*transport_id:(\d+)\b")
+            if ($listing.Code -eq 0 -and $transport.Success -and $owned) {
+                $listeners = @(Get-NetTCPConnection -OwningProcess @($owned.Id) -State Listen -ErrorAction SilentlyContinue)
+                if (@($ports | Where-Object { $_ -notin $listeners.LocalPort }).Count -eq 0) {
+                    $id = [pscustomobject]@{ name = $profile.name; transportId = $transport.Groups[1].Value }
+                    if ((Invoke-GuestAdb $id @("shell", "getprop", "sys.boot_completed")) -eq "1") {
+                        $windows = Invoke-GuestAdb $id @("shell", "dumpsys", "window")
+                        if ($windows -match '(?m)^\s*mCurrentFocus=Window\{') {
+                            return [pscustomobject]@{
+                                trial = $sample; arm = "raw"; seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+                                launcherPid = $launcher.Id; transportId = $id.transportId; arguments = $info.Arguments
+                            }
+                        }
+                    }
+                }
+            }
+            Start-Sleep -Milliseconds 700
+        }
+        throw "Raw emulator did not reach interactive readiness."
+    }
+    finally {
+        if (-not $owned) { $owned = @(Get-RawEngineChildren $launcher $started $profile.avdName) }
+        foreach ($process in @($owned) + @($launcher)) {
+            if (-not $process.HasExited) { $process.Kill() }
+            if (-not $process.WaitForExit(15000)) { throw "Raw process $($process.Id) did not exit." }
+            $process.Dispose()
+        }
+        if ($stdout.Wait(3000) -and $stderr.Wait(3000)) {
+            ($stdout.Result + $stderr.Result) | Set-Content -LiteralPath (Join-Path $out "raw-engine-$sample.log") -Encoding UTF8
+        }
+    }
+}
+
 function Install-Fixture([string]$name) {
     Invoke-Ws @("install", "--name", $name, "--apk", $approved, "--root", $Root) | Out-Null
     Invoke-Ws @("launch", "--name", $name, "--package", $package, "--root", $Root) | Out-Null
@@ -416,6 +492,20 @@ try {
     # comparison measures run-to-run variation on the managed path.
     if (-not $SkipBaseline) {
     $baseline = New-BenchmarkGuest "bench-base"
+    if ($RawBaseline) {
+        $profile = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--json", "--root", $Root)).Text
+        $report.rawBootTrials = @()
+        $report.bootEndpoint = "host dispatch through boot_completed=1 and a current foreground Window"
+        for ($sample = 1; $sample -le $Samples; $sample++) {
+            $trial = Measure-RawBoot $profile $sample
+            $report.rawBootTrials += $trial
+            $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
+            [void]$baselineBootSamples.Add($trial.seconds)
+            Log ("raw cold boot {0}/{1}: {2:N2}s" -f $sample, $Samples, $trial.seconds)
+            Start-Sleep -Seconds 3
+        }
+    }
+    else {
     for ($sample = 1; $sample -le $Samples; $sample++) {
         $started = Get-Date
         Invoke-Ws @("start", "--name", $baseline, "--root", $Root) | Out-Null
@@ -434,15 +524,29 @@ try {
         Invoke-Ws @("stop", "--name", $baseline, "--force", "--root", $Root) -AllowFailure | Out-Null
         Start-Sleep -Seconds 3
     }
-    $report.scenarios["baselineBoot"] = Summary ([double[]]$baselineBootSamples.ToArray())
-    Log ("baseline boot p50={0}s p95={1}s over {2} samples" -f $report.scenarios["baselineBoot"].p50, $report.scenarios["baselineBoot"].p95, $report.scenarios["baselineBoot"].samples)
+    }
+    $baselineScenario = if ($RawBaseline) { "rawBoot" } else { "baselineBoot" }
+    $report.scenarios[$baselineScenario] = Summary ([double[]]$baselineBootSamples.ToArray())
+    $baselineResult = $report.scenarios[$baselineScenario]
+    Log ("baseline boot p50={0}s p95={1}s over {2} samples" -f $baselineResult.p50, $baselineResult.p95, $baselineResult.samples)
     }
 
     # ------------------------------------------------------------- managed guest
     $guest = New-BenchmarkGuest "bench"
+    if ($RawBaseline) {
+        $managedProfile = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
+        $pattern = '^(abi.type|image.sysdir.1|hw.cpu.ncore|hw.ramSize|hw.lcd.width|hw.lcd.height|hw.lcd.density|hw.gpu.mode)='
+        $rawConfig = @(Get-Content -LiteralPath (Join-Path $Root "avd/$($profile.avdName).avd/config.ini") | Where-Object { $_ -match $pattern } | Sort-Object)
+        $managedConfig = @(Get-Content -LiteralPath (Join-Path $Root "avd/$($managedProfile.avdName).avd/config.ini") | Where-Object { $_ -match $pattern } | Sort-Object)
+        if (-not $rawConfig -or ($rawConfig -join "`n") -ne ($managedConfig -join "`n")) {
+            throw "Raw and managed AVD settings did not match."
+        }
+        $report.matchedAvdConfig = $rawConfig
+    }
 
     for ($sample = 1; $sample -le $Samples -and -not $SkipColdBoot; $sample++) {
         $started = Get-Date
+        $timer = [System.Diagnostics.Stopwatch]::StartNew()
         Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
         $ready = Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) -AllowFailure
         $readyJson = Parse-Json $ready.Text
@@ -454,6 +558,17 @@ try {
             if ($status -and $status.readiness -and $status.readiness.launchedToInteractiveSeconds) {
                 $reported = [double]$status.readiness.launchedToInteractiveSeconds
             }
+        }
+        if ($RawBaseline) {
+            if ($ready.Code -ne 0) { throw "Managed cold boot trial $sample failed readiness." }
+            $target = Get-GuestIdentity $guest
+            $windows = Invoke-GuestAdb $target @("shell", "dumpsys", "window")
+            if ($windows -notmatch '(?m)^\s*mCurrentFocus=Window\{') {
+                throw "Managed cold boot trial $sample has no foreground window."
+            }
+            $reported = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+            [pscustomobject]@{ trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId } |
+                ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
         }
         if ($reported -gt 0) { [void]$bootSamples.Add($reported) }
         Log ("cold boot {0}/{1}: {2:N1}s" -f $sample, $Samples, $elapsed)
@@ -471,41 +586,70 @@ try {
         $restoreMarker = "baseline_$($guest.Replace('-', '_'))"
         Invoke-GuestAdb (Get-GuestIdentity $guest) @("shell", "settings", "put", "global", $restoreKey, $restoreMarker) | Out-Null
         Invoke-Ws @("snapshot-save", "--name", $guest, "--tag", "bench-base", "--root", $Root) | Out-Null
-        for ($sample = 1; $sample -le $Samples; $sample++) {
-            Invoke-GuestAdb (Get-GuestIdentity $guest) @("shell", "settings", "put", "global", $restoreKey, "trial_$sample") | Out-Null
+        $attemptLimit = if ($RestoreAttempts) { $RestoreAttempts } else { $Samples }
+        $verified = 0
+        for ($sample = 1; $sample -le $attemptLimit -and $verified -lt $Samples; $sample++) {
+            $before = Get-GuestIdentity $guest
+            $dirty = "trial_$sample"
+            Invoke-GuestAdb $before @("shell", "settings", "put", "global", $restoreKey, $dirty) | Out-Null
+            if ((Invoke-GuestAdb $before @("shell", "settings", "get", "global", $restoreKey)) -ne $dirty) {
+                throw "Restore trial $sample could not establish the pre-load marker."
+            }
             $timer = [System.Diagnostics.Stopwatch]::StartNew()
             $load = Invoke-Ws @("snapshot-load", "--name", $guest, "--tag", "bench-base", "--json", "--root", $Root) -AllowFailure
-            $timer.Stop()
+            $operationSeconds = $timer.Elapsed.TotalSeconds
             $result = Parse-Json $load.Text
-            $elapsed = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
-            $observedMarker = if ($load.Code -eq 0) {
-                Invoke-GuestAdb (Get-GuestIdentity $guest) @("shell", "settings", "get", "global", $restoreKey)
+            $observedMarker = $null
+            $focus = $null
+            $probeError = $null
+            if ($load.Code -eq 0) {
+                try {
+                    $after = Get-GuestIdentity $guest
+                    $verifyUntil = $timer.Elapsed.TotalSeconds + 30
+                    do {
+                        $windows = Invoke-GuestAdb $after @("shell", "dumpsys", "window")
+                        $focus = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
+                        if ($focus) { break }
+                        Start-Sleep -Milliseconds 700
+                    } while ($timer.Elapsed.TotalSeconds -lt $verifyUntil)
+                    $observedMarker = Invoke-GuestAdb $after @("shell", "settings", "get", "global", $restoreKey)
+                }
+                catch { $probeError = $_.Exception.Message }
             }
+            $timer.Stop()
+            $elapsed = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
             $stateRestored = $observedMarker -eq $restoreMarker
-            $report.restoreTrials += [pscustomobject]@{
+            $interactive = -not [string]::IsNullOrWhiteSpace($focus)
+            if ($load.Code -eq 0 -and $result.recovery -eq "restored" -and $stateRestored -and $interactive) { $verified++ }
+            $trial = [pscustomobject]@{
                 trial = $sample
                 wallSeconds = $elapsed
+                operationSeconds = [Math]::Round($operationSeconds, 2)
                 consoleSeconds = $result.seconds
                 recovery = $result.recovery
+                interactive = $interactive
                 stateRestored = $stateRestored
                 observedMarker = $observedMarker
                 exitCode = $load.Code
-                error = if ($load.Code -ne 0) { $load.Text }
+                error = if ($load.Code -ne 0) { $load.Text } else { $probeError }
             }
-            if ($load.Code -eq 0 -and $result.recovery -in @("restored", "cold_boot")) {
+            $report.restoreTrials += $trial
+            $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "restore.jsonl") -Encoding UTF8
+            if ($load.Code -eq 0 -and $interactive -and $result.recovery -in @("restored", "cold_boot")) {
                 [void]$restoreSamples.Add($elapsed)
             }
             Log ("warm restore {0}/{1}: {2:N2}s recovery={3} exit={4}" -f $sample, $Samples, $elapsed, $result.recovery, $load.Code)
         }
         $report.scenarios["restoreAttemptWallSeconds"] = Summary ([double[]]$restoreSamples.ToArray())
         $warm = @($report.restoreTrials | Where-Object {
-            $_.exitCode -eq 0 -and $_.recovery -eq "restored" -and $_.stateRestored
+            $_.exitCode -eq 0 -and $_.recovery -eq "restored" -and $_.stateRestored -and $_.interactive
         } | ForEach-Object { $_.wallSeconds })
         $report.scenarios["warmRestore"] = Summary ([double[]]$warm)
         $fallbacks = @($report.restoreTrials | Where-Object recovery -eq "cold_boot").Count
-        Log "restore attempts=$Samples verifiedWarm=$($warm.Count) coldBootFallbacks=$fallbacks"
+        Log "restore attempts=$($report.restoreTrials.Count) verifiedWarm=$($warm.Count) coldBootFallbacks=$fallbacks"
     }
 
+    if (-not $SkipLatency) {
     Install-Fixture $guest
     $report.scenarios["inputLatencyMs"] = Measure-GuestLatency $guest "singleGuest" ""
 
@@ -519,6 +663,7 @@ try {
         Log ("capture {0}/{1}: {2:N0} ms" -f $sample, $Samples, $elapsed)
     }
     $report.scenarios["captureMs"] = Summary ([double[]]$frameSamples.ToArray())
+    }
 
     # ------------------------------------------------------- two-guest scenario
     if (-not $SkipTwoGuest) {
@@ -526,10 +671,12 @@ try {
         Invoke-Ws @("start", "--name", $second, "--root", $Root) | Out-Null
         Invoke-Ws @("wait", "--name", $second, "--timeout", "600", "--root", $Root) | Out-Null
         Install-Fixture $second
-        $twoGuestLatency = Measure-GuestLatency $guest "twoGuest" $second
-        $report.scenarios["twoGuestLatencyMs"] = $twoGuestLatency
-        Add-Check "coverage.two-guest-latency" ($twoGuestLatency.samples -ge 20) (
-            "valid={0}/{1} p50={2}ms p95={3}ms" -f $twoGuestLatency.samples, $Samples, $twoGuestLatency.p50, $twoGuestLatency.p95)
+        if (-not $SkipLatency) {
+            $twoGuestLatency = Measure-GuestLatency $guest "twoGuest" $second
+            $report.scenarios["twoGuestLatencyMs"] = $twoGuestLatency
+            Add-Check "coverage.two-guest-latency" ($twoGuestLatency.samples -ge 20) (
+                "valid={0}/{1} p50={2}ms p95={3}ms" -f $twoGuestLatency.samples, $Samples, $twoGuestLatency.p50, $twoGuestLatency.p95)
+        }
         if ($SoakMinutes -gt 0) { Invoke-TwoGuestSoak @($guest, $second) }
         Stop-OwnedGuest $second
     }
@@ -572,15 +719,21 @@ try {
 
     # ------------------------------------------------------------------ targets
     $boot = $report.scenarios["coldBoot"]
-    $baselineBoot = $report.scenarios["baselineBoot"]
+    $baselineBoot = if ($RawBaseline) { $report.scenarios["rawBoot"] } else { $report.scenarios["baselineBoot"] }
     if ($SkipBaseline -or $SkipColdBoot) {
         Log "SKIP target.boot-overhead: boot comparison omitted"
     }
     elseif ($boot.samples -ge 20 -and $baselineBoot.samples -ge 20) {
         $overhead = [Math]::Round($boot.p50 - $baselineBoot.p50, 2)
         $allowed = [Math]::Max(1.0, [Math]::Round($baselineBoot.p50 * 0.10, 2))
-        Add-Check "comparison.managed-boot" $true `
-            ("managed cold boot p50 {0}s vs second managed profile p50 {1}s = {2}s overhead (allowed {3}s)" -f $boot.p50, $baselineBoot.p50, $overhead, $allowed)
+        if ($RawBaseline) {
+            Add-Check "target.boot-overhead" ($overhead -le $allowed) (
+                "managed p50 {0}s vs raw p50 {1}s = {2}s overhead (allowed {3}s)" -f $boot.p50, $baselineBoot.p50, $overhead, $allowed)
+        }
+        else {
+            Add-Check "comparison.managed-boot" $true (
+                "managed p50 {0}s vs second managed profile p50 {1}s" -f $boot.p50, $baselineBoot.p50)
+        }
     }
     else {
         Add-Check "comparison.managed-boot" $false "not enough samples (boot $($boot.samples), baseline $($baselineBoot.samples))"
@@ -597,9 +750,11 @@ try {
         Add-Check "target.warm-restore" $false "only $($restore.samples) restore samples"
     }
 
-    $latency = $report.scenarios["inputLatencyMs"]
-    Add-Check "coverage.single-guest-latency" ($latency.samples -ge 20) (
-        "ADB tap to Logcat p50 {0}ms p95 {1}ms over {2} samples" -f $latency.p50, $latency.p95, $latency.samples)
+    if (-not $SkipLatency) {
+        $latency = $report.scenarios["inputLatencyMs"]
+        Add-Check "coverage.single-guest-latency" ($latency.samples -ge 20) (
+            "ADB tap to Logcat p50 {0}ms p95 {1}ms over {2} samples" -f $latency.p50, $latency.p95, $latency.samples)
+    }
 
 }
 catch {

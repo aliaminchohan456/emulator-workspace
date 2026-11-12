@@ -51,8 +51,7 @@ public partial class MainWindow : Window
 
         if (!_viewModel.HasFrame)
         {
-            MessageBox.Show("No frame arrived; the guest must be running with the sample app foreground.",
-                "Latency probe", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Services.DesktopLog.Write("Latency probe timed out waiting for the guest frame.");
             return 2;
         }
 
@@ -61,8 +60,8 @@ public partial class MainWindow : Window
         var timeouts = 0;
         for (var trial = 1; trial <= count; trial++)
         {
-            var latency = await _viewModel.ProbeTapAsync(540, 720, 2500);
-            Services.DesktopLog.Write($"probe trial {trial} latency={(latency?.ToString("N1") ?? "timeout")}");
+            var latency = await _viewModel.ProbeTapAsync();
+            Services.DesktopLog.Write($"probe trial {trial} latency={(latency?.CompositionMs.ToString("N1") ?? "timeout")}");
             if (latency is null)
             {
                 timeouts++;
@@ -70,11 +69,12 @@ public partial class MainWindow : Window
             }
             else
             {
-                values.Add(latency.Value);
+                values.Add(latency.CompositionMs);
                 samples.Add(new JsonObject
                 {
                     ["trial"] = trial,
-                    ["ms"] = Math.Round(latency.Value, 2),
+                    ["ms"] = Math.Round(latency.CompositionMs, 2),
+                    ["frameAvailableMs"] = Math.Round(latency.FrameAvailableMs, 2),
                     ["timeout"] = false,
                 });
             }
