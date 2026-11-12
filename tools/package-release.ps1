@@ -53,7 +53,7 @@ Write-Host "  commit  : $commit"
 Write-Host "  stage   : $StageDir"
 Write-Host "  release : $releaseDir"
 
-function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfContained) {
+function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfContained, [bool]$overwrite = $true) {
     $project = Join-Path $repo $projectDirectory
     $arguments = @(
         "publish", $project,
@@ -92,12 +92,23 @@ function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfCo
         }
     }
     if (-not $source) { throw "The publish output for $assembly was not found." }
-    Copy-Item (Join-Path $source "*") $payload -Recurse -Force
+
+    # The three applications share the framework assemblies, but only the
+    # desktop carries the real WPF implementation. The first publish therefore
+    # owns the shared files and the later ones only add what is missing.
+    foreach ($file in (Get-ChildItem $source -Recurse -File)) {
+        $relative = $file.FullName.Substring($source.Length + 1)
+        $target = Join-Path $payload $relative
+        if ((Test-Path $target) -and -not $overwrite) { continue }
+        $targetDirectory = Split-Path $target -Parent
+        New-Item -ItemType Directory -Force $targetDirectory | Out-Null
+        Copy-Item $file.FullName $target -Force
+    }
 }
 
 Publish-App "src\EmulatorWorkspace.Desktop" "EmulatorWorkspace.Desktop.exe" $true
-Publish-App "src\EmulatorWorkspace.Supervisor" "EmulatorWorkspace.Supervisor.exe" $true
-Publish-App "src\EmulatorWorkspace.Cli" "wsctl.exe" $true
+Publish-App "src\EmulatorWorkspace.Supervisor" "EmulatorWorkspace.Supervisor.exe" $true $false
+Publish-App "src\EmulatorWorkspace.Cli" "wsctl.exe" $true $false
 
 # The sample fixture belongs to the product: the desktop installs it as the
 # approved package.
@@ -143,24 +154,33 @@ foreach ($project in @(
         "src\EmulatorWorkspace.Supervisor\EmulatorWorkspace.Supervisor.csproj",
         "src\EmulatorWorkspace.Cli\EmulatorWorkspace.Cli.csproj",
         "src\EmulatorWorkspace.Desktop\EmulatorWorkspace.Desktop.csproj")) {
-    $json = & dotnet list $project package --include-transitive 2>$null | Out-String
-    $current = ""
-    foreach ($line in ($json -split "`r?`n")) {
-        if ($line -match '^\s*>\s+(\S+)\s+(\S+)\s*$') {
-            $current = $Matches[1]
+    # The structured list is the authoritative dependency inventory.
+    $raw = & dotnet list $project package --include-transitive --format json 2>$null | Out-String
+    try {
+        $parsed = $raw | ConvertFrom-Json
+    }
+    catch {
+        continue
+    }
+
+    foreach ($framework in $parsed.projects.frameworks) {
+        foreach ($package in $framework.transitiveDependencies) {
             [void]$componentList.Add([ordered]@{
-                name = $current
-                version = $Matches[2]
+                name = $package.id
+                version = $package.resolvedVersion
                 scope = "nuget"
                 project = $project
+                direct = $false
             })
         }
-        elseif ($line -match '^\s*(\S+)\s+(\S+)\s*$' -and $line -notmatch 'Project' -and $line -notmatch 'Top-level') {
+
+        foreach ($package in $framework.topLevelPackages) {
             [void]$componentList.Add([ordered]@{
-                name = $Matches[1]
-                version = $Matches[2]
+                name = $package.id
+                version = $package.resolvedVersion
                 scope = "nuget"
                 project = $project
+                direct = $true
             })
         }
     }
@@ -229,13 +249,18 @@ $hashes | ConvertTo-Json -Depth 4 | Set-Content -Path $hashesPath -Encoding UTF8
 # ---------------------------------------------------------------- installer
 $msiPath = $null
 if (-not $SkipInstaller) {
-    {
         Write-Host "  building the MSI"
         # The installer harvests the payload from a directory next to the
         # project, so the harvest is relative and always resolves.
         $harvest = Join-Path $repo "packaging\payload"
         Remove-Item $harvest -Recurse -Force -ErrorAction SilentlyContinue
         Copy-Item $payload $harvest -Recurse -Force
+        # The payload fragment is generated, because a per-user package needs
+        # a registry key path on every component that lands in the profile.
+        $fragment = Join-Path $repo "packaging\Payload.wxs"
+        & python (Join-Path $repo "tools\generate-payload-wxs.py") $harvest $fragment
+        if ($LASTEXITCODE -ne 0) { throw "the payload fragment could not be generated" }
+
         # The harvest is an input to the installer, so the previous build is
         # discarded; otherwise MSBuild would reuse the old package.
         Remove-Item (Join-Path $repo "packaging\obj") -Recurse -Force -ErrorAction SilentlyContinue
@@ -251,16 +276,22 @@ if (-not $SkipInstaller) {
             "-c", "Release",
             "-p:PkgVersion=$Version"
         )
-        & dotnet @wixArgs
-        if ($LASTEXITCODE -ne 0) { throw "the installer build failed with exit code $LASTEXITCODE" }
+        $buildLog = Join-Path $releaseDir "installer-build.log"
+        & dotnet @wixArgs *> $buildLog
+        if ($LASTEXITCODE -ne 0) {
+            Get-Content $buildLog | Write-Host
+            throw "the installer build failed with exit code $LASTEXITCODE"
+        }
 
-        $built = Get-ChildItem (Join-Path $repo "packaging") -Recurse -Filter "EmulatorWorkspace.msi" -ErrorAction SilentlyContinue |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        if (-not $built) { throw "the installer was not produced." }
+        $built = Join-Path $repo "packaging\bin\Release\EmulatorWorkspace.msi"
+        if (-not (Test-Path $built)) {
+            Get-Content $buildLog | Write-Host
+            throw "the installer was not produced at $built"
+        }
 
         $msiPath = Join-Path $releaseDir "EmulatorWorkspace-$Version.msi"
-        Copy-Item $built.FullName $msiPath -Force
-    }
+        Copy-Item $built $msiPath -Force
+        Write-Host ("  installer: {0} ({1} bytes)" -f $msiPath, (Get-Item $msiPath).Length)
 }
 
 # ------------------------------------------------------- release manifest

@@ -10,13 +10,19 @@
     <PackageId>EmulatorWorkspace</PackageId>
     <!-- ICE60 warns about the satellite assemblies of the .NET runtime,
          which live in culture directories; they are installed as they are. -->
-    <SuppressIces>ICE60;ICE61</SuppressIces>
+    <!-- ICE60 warns about the satellite assemblies of the .NET runtime,
+         which live in culture directories; they are installed as they are.
+         ICE64 wants every harvested directory of the user profile in the
+         RemoveFile table; the files are removed with their parent, and the
+         profile folders themselves are removed by their own component. -->
+    <SuppressIces>ICE60;ICE61;ICE64</SuppressIces>
     <EnableDefaultItems>false</EnableDefaultItems>
     <DefineConstants>ProductVersion=$(PkgVersion)</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Product.wxs" />
+    <Compile Include="Payload.wxs" />
   </ItemGroup>
 
   <ItemGroup>

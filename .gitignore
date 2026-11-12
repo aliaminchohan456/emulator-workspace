@@ -17,3 +17,4 @@ node_modules/
 packaging/payload/
 packaging/obj/
 packaging/bin/
+packaging/Payload.wxs

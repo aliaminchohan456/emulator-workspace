@@ -5,7 +5,7 @@
            Manufacturer="Emulator Workspace"
            Version="$(ProductVersion)"
            UpgradeCode="7C0B4F0E-9E1A-4A2E-9F41-6C9D4B2E5A11"
-           Scope="perMachine"
+           Scope="perUser"
            Compressed="yes"
            InstallerVersion="500">
     <SummaryInformation Description="Emulator Workspace $(ProductVersion)" Manufacturer="Emulator Workspace" />
@@ -33,33 +33,29 @@
   </Package>
 
   <Fragment>
-    <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLFOLDER" Name="Emulator Workspace" />
-    </StandardDirectory>
-  </Fragment>
-
-  <Fragment>
-    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
-      <Files Include="payload\**" />
-    </ComponentGroup>
-  </Fragment>
-
-  <Fragment>
-    <StandardDirectory Id="ProgramMenuFolder">
-      <Directory Id="ShortcutFolder" Name="Emulator Workspace" />
-    </StandardDirectory>
-    <StandardDirectory Id="DesktopFolder" />
-    <ComponentGroup Id="Shortcuts" Directory="ShortcutFolder">
+    <ComponentGroup Id="Shortcuts" Directory="MenuFolder">
       <Component Id="StartMenuShortcut" Guid="1B0B8C3A-8E3C-4F1E-9C2C-2E3C6D9A44F1">
         <Shortcut Id="DesktopShortcut"
                   Name="Emulator Workspace"
                   Description="Android emulator workspace"
                   Target="[INSTALLFOLDER]EmulatorWorkspace.Desktop.exe"
                   WorkingDirectory="INSTALLFOLDER" />
-        <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
+        <RemoveFolder Id="RemoveShortcutFolder" Directory="MenuFolder" On="uninstall" />
         <RegistryValue Root="HKCU"
                        Key="Software\Emulator Workspace"
                        Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+
+      <!-- The directories in the user profile are removed on uninstall. -->
+      <Component Id="RemoveProfileFolders" Guid="2C1D9E4B-7A65-4E3C-8B0D-9F2A5C6E7D81">
+        <RemoveFolder Id="RemoveMenuFolder" Directory="MenuFolder" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\Emulator Workspace"
+                       Name="ProfileFolders"
                        Type="integer"
                        Value="1"
                        KeyPath="yes" />

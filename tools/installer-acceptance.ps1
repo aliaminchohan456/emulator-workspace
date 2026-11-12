@@ -103,7 +103,7 @@ if (-not $Installer) {
     $Installer = $candidate.FullName
 }
 
-$installedRoot = Join-Path $env:ProgramFiles "Emulator Workspace"
+$installedRoot = Join-Path $env:LOCALAPPDATA "Programs\Emulator Workspace"
 $profilesRoot = Join-Path $env:LOCALAPPDATA "EmulatorWorkspace"
 Log "installer acceptance $run installer=$Installer"
 
@@ -142,10 +142,13 @@ try {
     Invoke-Ws $wsctlExe @("create", "--name", $guest, "--root", $WorkRoot) | Out-Null
     Invoke-Ws $wsctlExe @("start", "--name", $guest, "--root", $WorkRoot) | Out-Null
     $ready = Invoke-Ws $wsctlExe @("wait", "--name", $guest, "--timeout", "$BootTimeoutSeconds", "--root", $WorkRoot) -AllowFailure
-    $readyJson = Parse-Json $ready.Text
-    Add-Check "first-boot" ($ready.Code -eq 0 -and $readyJson.interactiveUtc) `
+    # The readiness of the guest is read from its JSON status, because the
+    # wait command prints a human readable summary.
+    $status = Parse-Json (Invoke-Ws $wsctlExe @("status", "--name", $guest, "--json", "--root", $WorkRoot) -AllowFailure).Text
+    $booted = $false
+    if ($status -and $status.bootCompleted -eq "1") { $booted = $true }
+    Add-Check "first-boot" ($ready.Code -eq 0 -and $booted) `
         "the guest created by the installed CLI reached interactive readiness"
-    $status = Parse-Json (Invoke-Ws $wsctlExe @("status", "--name", $guest, "--root", $WorkRoot) -AllowFailure).Text
     Add-Check "first-boot.state" ($status -and $status.state -eq "Running") "the guest reports Running"
     Add-Check "first-boot.image" ($status -and $status.imagePackage -like "system-images;android-35*") `
         ("the guest uses " + $status.imagePackage)
@@ -178,6 +181,14 @@ try {
 
     # --------------------------------------------------------------- uninstall
     Invoke-Ws $wsctlExe @("stop", "--name", $guest, "--force", "--root", $WorkRoot) -AllowFailure | Out-Null
+    Start-Sleep -Seconds 3
+
+    # The supervisor of the installed package holds its own files, so it is
+    # stopped before the uninstall; otherwise the installer cannot remove them.
+    Invoke-Ws $wsctlExe @("supervisor-stop", "--root", $WorkRoot) -AllowFailure | Out-Null
+    Start-Sleep -Seconds 4
+    Get-Process EmulatorWorkspace.Supervisor, EmulatorWorkspace.Desktop -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 3
 
     $uninstallLog = Join-Path $out "msi-uninstall.log"
