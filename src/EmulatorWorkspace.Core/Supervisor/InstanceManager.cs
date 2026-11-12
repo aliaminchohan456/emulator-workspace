@@ -706,36 +706,44 @@ public sealed class InstanceManager
 
     /// <summary>
     /// Reports whether the guest answers again after a snapshot load: the
-    /// transport must exist and Android must report boot completion.
+    /// transport must exist, Android must report boot completion, and a
+    /// current focused window must be available.
     /// </summary>
     private async Task<bool> WaitForInteractiveAsync(
         InstanceRecord record, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        var deadline = DateTimeOffset.UtcNow + timeout;
-        while (DateTimeOffset.UtcNow < deadline)
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(timeout);
+        try
         {
-            try
+            while (true)
             {
-                var probe = await _adb.RunAsync(
-                        record.AdbSerial,
-                        new[] { "shell", "getprop", "sys.boot_completed" },
-                        TimeSpan.FromSeconds(15),
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                if (probe.ExitCode == 0 && probe.StandardOutput.Trim() == "1")
+                try
                 {
-                    return true;
+                    var probe = await _adb.RunAsync(
+                            record.AdbSerial,
+                            new[] { "shell", "getprop", "sys.boot_completed" },
+                            TimeSpan.FromSeconds(15),
+                            deadline.Token)
+                        .ConfigureAwait(false);
+                    if (probe.ExitCode == 0 && probe.StandardOutput.Trim() == "1"
+                        && await ForegroundAsync(record, deadline.Token).ConfigureAwait(false) is not null)
+                    {
+                        return true;
+                    }
                 }
-            }
-            catch (Exception)
-            {
-                // The guest is still coming back; keep waiting.
-            }
+                catch (Exception ex) when (ex is InvalidOperationException or TimeoutException)
+                {
+                    // The guest is still coming back; keep waiting.
+                }
 
-            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(3), deadline.Token).ConfigureAwait(false);
+            }
         }
-
-        return false;
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     public async Task<byte[]> CapturePngAsync(
@@ -1253,6 +1261,73 @@ public sealed class InstanceManager
             response["manifest"] = manifest;
         }
         return response;
+    }
+
+    public async Task<JsonObject> InstallApkSetAsync(
+        string name, string apkSet, string? bundletool, CancellationToken cancellationToken)
+    {
+        var runtime = RuntimeFor(name);
+        await runtime.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var record = Get(name);
+            var transportId = await RequireInstallTransportAsync(record, cancellationToken).ConfigureAwait(false);
+            BundleApkSetBuilder.RejectReparsePoints(_paths.EvidenceDirectory);
+            var scratch = Path.Combine(_paths.EvidenceDirectory, $"install-splits-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(scratch);
+            try
+            {
+                apkSet = Path.GetFullPath(apkSet);
+                var selected = await BundleApkSetBuilder.ExtractForDeviceAsync(
+                    apkSet, bundletool, scratch, _adb.AdbPath, record.AdbSerial, cancellationToken).ConfigureAwait(false);
+                if (await RequireInstallTransportAsync(record, cancellationToken).ConfigureAwait(false) != transportId)
+                {
+                    throw new SupervisorOperationException(ErrorCodes.InstallFailed, "The managed ADB transport changed before deployment.");
+                }
+
+                var install = await _adb.InstallSplitsAsync(transportId, selected.Splits, cancellationToken).ConfigureAwait(false);
+                var output = (install.StandardOutput + "\n" + install.StandardError).Trim();
+                if (install.ExitCode != 0 || !output.Split('\n').Any(line => line.Trim() == "Success"))
+                {
+                    throw new SupervisorOperationException(ErrorCodes.InstallFailed, output);
+                }
+
+                return new JsonObject
+                {
+                    ["instance"] = name,
+                    ["serial"] = record.AdbSerial,
+                    ["transportId"] = transportId.ToString(CultureInfo.InvariantCulture),
+                    ["apks"] = apkSet,
+                    ["bundletool"] = selected.Bundletool,
+                    ["splitCount"] = selected.Splits.Length,
+                    ["installed"] = true,
+                    ["output"] = output,
+                };
+            }
+            finally
+            {
+                Directory.Delete(scratch, recursive: true);
+            }
+        }
+        finally { runtime.Gate.Release(); }
+    }
+
+    private async Task<ulong> RequireInstallTransportAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
+        {
+            throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no live managed engine.");
+        }
+
+        var listing = await _adb.ListDevicesAsync(cancellationToken).ConfigureAwait(false);
+        var transport = AdbIdentity.Find(listing, record.AdbSerial);
+        if (transport?.State != "device" || !ulong.TryParse(transport.TransportId, NumberStyles.None,
+                CultureInfo.InvariantCulture, out var transportId) || transportId == 0)
+        {
+            throw new SupervisorOperationException(ErrorCodes.InstallFailed, "The managed guest has no usable ADB transport ID.");
+        }
+
+        return transportId;
     }
 
 /// <summary>
@@ -2407,12 +2482,18 @@ public sealed class InstanceManager
                 TimeSpan.FromSeconds(30),
                 cancellationToken).ConfigureAwait(false);
 
+            if (dump.ExitCode != 0)
+            {
+                return null;
+            }
+
+            const string prefix = "mCurrentFocus=";
             var line = dump.StandardOutput
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Select(l => l.Trim())
-                .FirstOrDefault(l => l.StartsWith("mCurrentFocus=", StringComparison.Ordinal));
+                .FirstOrDefault(l => l.StartsWith(prefix + "Window{", StringComparison.Ordinal));
 
-            return line is null ? null : line["mCurrentFocus=".Length..].Trim();
+            return line is null ? null : line[prefix.Length..];
         }
         catch (Exception ex) when (ex is InvalidOperationException or TimeoutException)
         {

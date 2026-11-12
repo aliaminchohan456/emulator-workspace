@@ -1263,6 +1263,13 @@ public sealed class OperationDispatcher
                     JsonArgs.String(args, "bundletool"), _paths.EvidenceDirectory,
                     JsonArgs.Bool(args, "testSigning"), cancellationToken).ConfigureAwait(false);
 
+            case OperationNames.AppInstallApkSet:
+                return await _manager.InstallApkSetAsync(
+                    name,
+                    JsonArgs.String(args, "path") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "An APK set path is required."),
+                    JsonArgs.String(args, "bundletool"), cancellationToken).ConfigureAwait(false);
+
             case OperationNames.AppInstall:
             {
                 var path = JsonArgs.String(args, "path");

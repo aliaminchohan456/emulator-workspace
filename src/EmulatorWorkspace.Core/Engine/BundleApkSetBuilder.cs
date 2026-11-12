@@ -26,33 +26,19 @@ public static class BundleApkSetBuilder
             throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Select an existing Android App Bundle (.aab).");
         }
 
-        bundletool ??= Environment.GetEnvironmentVariable("WS_BUNDLETOOL");
-        if (string.IsNullOrWhiteSpace(bundletool) || !File.Exists(bundletool))
-        {
-            throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable,
-                $"Configure the pinned bundletool {BundletoolVersion} jar with WS_BUNDLETOOL or --bundletool.");
-        }
-        bundletool = Path.GetFullPath(bundletool);
-
-        var javaHome = Environment.GetEnvironmentVariable("JAVA_HOME");
-        var java = string.IsNullOrWhiteSpace(javaHome) ? "" : Path.Combine(javaHome, "bin", "java.exe");
+        bundletool = ResolveBundletool(bundletool);
+        var java = ResolveJava();
         var key = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".android", "debug.keystore");
-        if (!File.Exists(java) || !File.Exists(key))
+        if (!File.Exists(key))
         {
             throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable,
-                "APK set test signing requires JAVA_HOME and the Android debug keystore at .android/debug.keystore.");
+                "APK set test signing requires the Android debug keystore at .android/debug.keystore.");
         }
 
         RejectReparsePoints(bundle);
-        RejectReparsePoints(bundletool);
-        RejectReparsePoints(java);
         RejectReparsePoints(key);
         RejectReparsePoints(evidenceDirectory);
-        await using var jarRead = File.Open(bundletool, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (Convert.ToHexString(await SHA256.HashDataAsync(jarRead, cancellationToken).ConfigureAwait(false)) != BundletoolSha256)
-        {
-            throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable, $"The jar does not match pinned bundletool {BundletoolVersion}.");
-        }
+        await using var jarRead = await OpenPinnedBundletoolAsync(bundletool, cancellationToken).ConfigureAwait(false);
         await using var bundleRead = File.Open(bundle, FileMode.Open, FileAccess.Read, FileShare.Read);
         await using var keyRead = File.Open(key, FileMode.Open, FileAccess.Read, FileShare.Read);
         var inputHash = Convert.ToHexString(await SHA256.HashDataAsync(bundleRead, cancellationToken).ConfigureAwait(false));
@@ -107,13 +93,120 @@ public static class BundleApkSetBuilder
         }
     }
 
-    private static void RejectReparsePoints(string path)
+    public static async Task<(string Bundletool, string[] Splits)> ExtractForDeviceAsync(
+        string apkSet, string? bundletool, string scratch, string adb, string serial, CancellationToken cancellationToken)
+    {
+        if (!Path.GetExtension(apkSet).Equals(".apks", StringComparison.OrdinalIgnoreCase) || !File.Exists(apkSet))
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Select an existing APK set (.apks).");
+        }
+
+        bundletool = ResolveBundletool(bundletool ?? Environment.GetEnvironmentVariable("WS_BUNDLETOOL")
+            ?? @"D:\Phase3Tools\bundletool-1.18.1.jar");
+        var java = ResolveJava();
+        RejectReparsePoints(apkSet);
+        RejectReparsePoints(scratch);
+        await using var jarRead = await OpenPinnedBundletoolAsync(bundletool, cancellationToken).ConfigureAwait(false);
+        await using var setRead = File.Open(apkSet, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var device = Path.Combine(scratch, "device.json");
+        var output = Path.Combine(scratch, "splits");
+        Directory.CreateDirectory(output);
+        try
+        {
+            using (var zip = new ZipArchive(setRead, ZipArchiveMode.Read, leaveOpen: true))
+            {
+                if (zip.GetEntry("toc.pb") is null || zip.Entries.Any(entry =>
+                        Path.IsPathRooted(entry.FullName) || entry.FullName.Contains(':') ||
+                        entry.FullName.Split('/', '\\').Contains("..", StringComparer.Ordinal)))
+                {
+                    throw new SupervisorOperationException(ErrorCodes.InstallFailed, "The APK set has an invalid table of contents or archive path.");
+                }
+            }
+
+            var spec = await ProcessRunner.RunAsync(java,
+                ["-jar", bundletool, "get-device-spec", $"--adb={adb}", $"--device-id={serial}", $"--output={device}"],
+                timeout: TimeSpan.FromMinutes(1), cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (spec.ExitCode != 0 || !File.Exists(device))
+            {
+                throw new SupervisorOperationException(ErrorCodes.InstallFailed,
+                    $"bundletool could not read the managed guest's device spec (exit {spec.ExitCode}).");
+            }
+
+            var extract = await ProcessRunner.RunAsync(java,
+                ["-jar", bundletool, "extract-apks", $"--apks={apkSet}", $"--device-spec={device}", $"--output-dir={output}"],
+                timeout: TimeSpan.FromMinutes(2), cancellationToken: cancellationToken).ConfigureAwait(false);
+            var splits = Directory.GetFiles(output, "*.apk");
+            if (extract.ExitCode != 0 || splits.Length == 0)
+            {
+                throw new SupervisorOperationException(ErrorCodes.InstallFailed,
+                    $"bundletool could not select APKs for the guest (exit {extract.ExitCode}).");
+            }
+
+            foreach (var split in splits)
+            {
+                RejectReparsePoints(split);
+            }
+
+            return (bundletool, splits);
+        }
+        catch (Exception ex) when (ex is TimeoutException or IOException or Win32Exception or InvalidDataException)
+        {
+            throw new SupervisorOperationException(ErrorCodes.InstallFailed, "APK set selection did not finish: " + ex.Message);
+        }
+    }
+
+    private static string ResolveBundletool(string? bundletool)
+    {
+        bundletool ??= Environment.GetEnvironmentVariable("WS_BUNDLETOOL");
+        if (string.IsNullOrWhiteSpace(bundletool) || !File.Exists(bundletool))
+        {
+            throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable,
+                $"Configure the pinned bundletool {BundletoolVersion} jar with WS_BUNDLETOOL or --bundletool.");
+        }
+
+        return Path.GetFullPath(bundletool);
+    }
+
+    private static string ResolveJava()
+    {
+        var javaHome = Environment.GetEnvironmentVariable("JAVA_HOME");
+        var java = string.IsNullOrWhiteSpace(javaHome) ? "" : Path.Combine(javaHome, "bin", "java.exe");
+        if (!File.Exists(java))
+        {
+            throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable, "Configure JAVA_HOME for the pinned bundletool.");
+        }
+
+        RejectReparsePoints(java);
+        return java;
+    }
+
+    private static async Task<FileStream> OpenPinnedBundletoolAsync(string bundletool, CancellationToken cancellationToken)
+    {
+        RejectReparsePoints(bundletool);
+        var stream = File.Open(bundletool, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            if (Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false)) != BundletoolSha256)
+            {
+                throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable, $"The jar does not match pinned bundletool {BundletoolVersion}.");
+            }
+
+            return stream;
+        }
+        catch
+        {
+            await stream.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    internal static void RejectReparsePoints(string path)
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))
         {
             if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
             {
-                throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "APK set build paths cannot contain reparse points.");
+                throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "APK set paths cannot contain reparse points.");
             }
         }
     }

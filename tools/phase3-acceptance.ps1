@@ -529,15 +529,14 @@ try {
             Unlock-Guest $dupSerial
             $usable = Wait-TransportUsable $dupSerial
             Add-Check "deployment" "transport-usable" $usable "round-trip probe on the selected serial"
-            $install = ""
-            for ($attempt = 1; $attempt -le 3; $attempt++) {
-                $install = (& java -jar $bundletool.FullName install-apks --apks=$apks --device-id=$dupSerial 2>&1 | Out-String)
-                if ($install -notmatch "Unable to find the requested device") { break }
-                Start-Sleep -Seconds 5
-            }
-            Save-Text "bundletool-install.txt" $install
+            $install = Invoke-Ws @("install-apks", "--name", "p3-dup", "--apks", $apks,
+                "--bundletool", $bundletool.FullName, "--root", $Root, "--json") -AllowFailure
+            Save-Text "bundletool-install.txt" $install.Text
+            $splitInstall = Parse-Json $install.Text
             $installed = (Invoke-Adb @("-s", $dupSerial, "shell", "pm", "list", "packages")).Text
-            Add-Check "deployment" "apks-install" ($installed -match "dev.emulatorworkspace.sample") "package present after .apks deployment"
+            Add-Check "deployment" "apks-install" ($install.Code -eq 0 -and $splitInstall.installed -and
+                $splitInstall.serial -eq $dupSerial -and $splitInstall.transportId -eq $dupIdentity.transportId -and
+                $splitInstall.splitCount -gt 0 -and $installed -match "dev.emulatorworkspace.sample") "scoped install exit=$($install.Code), transport=$($splitInstall.transportId)"
             $splits = (Invoke-Adb @("-s", $dupSerial, "shell", "dumpsys", "package", "dev.emulatorworkspace.sample")).Text
             Save-Text "package-dumpsys.txt" $splits
             Add-Check "deployment" "split-install-recorded" ($splits -match "split") "package manager reports split APKs"
@@ -546,10 +545,11 @@ try {
 
             $bad = Join-Path $out "malformed.apks"
             Set-Content $bad "this is not an apk set" -Encoding UTF8
-            $badInstall = (& java -jar $bundletool.FullName install-apks --apks=$bad --device-id=$idP.serial 2>&1 | Out-String)
-            $badCode = $LASTEXITCODE
-            Save-Text "bundletool-malformed.txt" $badInstall
-            Add-Check "deployment" "malformed-apks-diagnosed" ($badCode -ne 0 -and $badInstall -match "Error") "exit=$badCode typed diagnostic returned"
+            $badInstall = Invoke-Ws @("install-apks", "--name", "p3-dup", "--apks", $bad,
+                "--bundletool", $bundletool.FullName, "--root", $Root) -AllowFailure
+            Save-Text "bundletool-malformed.txt" $badInstall.Text
+            Add-Check "deployment" "malformed-apks-diagnosed" ($badInstall.Code -ne 0 -and
+                $badInstall.Text -match '\[install_failed\]') "exit=$($badInstall.Code) typed diagnostic returned"
         }
         else {
             Add-Check "deployment" "apks-build" $false "bundletool jar or ws-sample.apks missing under $ToolDir"

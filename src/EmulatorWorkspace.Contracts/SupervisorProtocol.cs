@@ -163,6 +163,7 @@ public static class OperationNames
 
     public const string AppInstall = "app.install";
     public const string AppBuildApkSet = "app.buildApkSet";
+    public const string AppInstallApkSet = "app.installApkSet";
     public const string AppLaunch = "app.launch";
     public const string AppPackageInfo = "app.packageInfo";
     public const string AppForeground = "app.foreground";

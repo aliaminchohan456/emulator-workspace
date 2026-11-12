@@ -65,6 +65,13 @@ public sealed class AdbClient
         return result.StandardOutput.Trim();
     }
 
+    public Task<ProcessResult> InstallSplitsAsync(
+        ulong transportId, IEnumerable<string> splits, CancellationToken cancellationToken) =>
+        ProcessRunner.RunAsync(_adbPath,
+            new[] { "-t", transportId.ToString(System.Globalization.CultureInfo.InvariantCulture), "install-multiple", "-r", "-t" }
+                .Concat(splits),
+            timeout: TimeSpan.FromMinutes(3), cancellationToken: cancellationToken);
+
     /// <summary>
     /// Read-only listing of every transport the pinned server can see. It never
     /// changes server state and is used to prove which transport a managed
