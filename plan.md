@@ -192,14 +192,22 @@ harness now recovers a guest that does not boot with a bounded number of
 sequential starts and waits up to 40 minutes for a replay, because a restore
 with a cold-boot fallback plus a relaunch legitimately takes minutes.
 
-The release track is implemented and produces a real installer: `tools/package-release.ps1`
+The release track is complete and produces a verified installer. `tools/package-release.ps1`
 publishes the desktop, the supervisor and the CLI self-contained for win-x64,
-harvests the payload into a WiX 5 MSI, and writes the release record, the
-SBOM, the notices and the provenance (commit, SDK versions, build commands,
-pins and the signing status). `tools/installer-acceptance.ps1` verifies the
-clean install, the first launch and boot, the offline reuse, an upgrade that
-preserves the operator profiles and the uninstall. `docs/compatibility-matrix.md`
-and `docs/security-review.md` record what was verified and what is still open.
+harvests the payload into a **per-user WiX 5 MSI** and writes the release
+record, the SBOM, the notices and the provenance (commit, SDK versions, build
+commands, pins and the signing status). The candidate is `EmulatorWorkspace-0.1.0.msi`,
+55 363 808 bytes, SHA-256 `82e387623ce6c9ffa11694e4e87f0a5fed31313301b2f2c5aeaf5c6a47653e6d`,
+unsigned because no user-owned certificate was supplied.
+`tools/installer-acceptance.ps1` passed **16 of 16 checks** in
+`artifacts/phase3/install/20261112-151632`: the clean install, the installed
+files, the sample APK, the first launch, a boot through the installed CLI on the
+pinned image, the offline reuse, an upgrade that preserves the operator
+profiles, the uninstall registration, the clean uninstall and the untouched
+profiles.
+
+`docs/compatibility-matrix.md` and `docs/security-review.md` record what was
+verified and what is still open.
 
 The Root Lab ADB daemon workflow is implemented and verified on the pinned
 userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 10 of 10 checks):
