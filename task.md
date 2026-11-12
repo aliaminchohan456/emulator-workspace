@@ -592,6 +592,12 @@ All tasks start open. Check off an implementation task after its scoped verifica
   SHA-256 `0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d`.
   Its stage is `D:/Release/stage-20261113-042924/payload`. Verify the two
   recipe baselines and restart cleanup before repeating final acceptance.
+- The 0.1.3 fixture-baseline replay observed `sys.boot_completed=1` while
+  the selected guest's window-service dump timed out. It eventually failed
+  after 19 minutes, with an ADB 60 s timeout during recovery. The current
+  source bounds the recipe UI wait to two minutes, the launch focus wait
+  by elapsed wall time, and each WindowManager dump by both guest and host
+  deadlines. Confirm prompt failure or recovery on a real restored guest.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

@@ -1581,63 +1581,55 @@ public sealed class InstanceManager
         // "started but not foreground" from "started and foreground".
         var focused = "";
         var processId = "";
-        for (var attempt = 0; attempt < Math.Max(1, focusWaitSeconds); attempt++)
+        using var focusDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        focusDeadline.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, focusWaitSeconds)));
+        var focusToken = focusDeadline.Token;
+        try
         {
-            try
+            for (var attempt = 0; ; attempt++)
             {
-                focused = await ForegroundAsync(record, cancellationToken).ConfigureAwait(false) ?? "";
-            }
-            catch (Exception)
-            {
-                focused = "";
-            }
+                focused = await ForegroundAsync(record, focusToken).ConfigureAwait(false) ?? "";
 
-            if (focused.Contains(package, StringComparison.Ordinal))
-            {
-                break;
-            }
+                if (focused.Contains(package, StringComparison.Ordinal))
+                {
+                    break;
+                }
 
-            try
-            {
-                processId = await _adb.ShellAsync(
-                        record.AdbSerial,
-                        new[] { "pidof", package },
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                processId = processId.Trim();
-            }
-            catch (Exception)
-            {
-                processId = "";
-            }
-
-            // A system dialog (for example an ANR report of SystemUI) holds
-            // the focus; it is closed so the application can come forward.
-            if (focused.Contains("Application Not Responding", StringComparison.OrdinalIgnoreCase)
-                || focused.Contains("isn't responding", StringComparison.OrdinalIgnoreCase))
-            {
-                await DismissSystemDialogsAsync(record, cancellationToken).ConfigureAwait(false);
-            }
-
-            // The launcher takes the focus back on a guest that is still
-            // settling, so the start is issued again until the application
-            // really owns the foreground.
-            if (attempt % 4 == 3 && component is not null)
-            {
                 try
                 {
-                    await _adb.ShellAsync(
-                            record.AdbSerial,
-                            new[] { "am", "start", "-n", component },
-                            cancellationToken)
-                        .ConfigureAwait(false);
+                    var pid = await _adb.RunAsync(record.AdbSerial, ["shell", "pidof", package],
+                        TimeSpan.FromSeconds(3), focusToken).ConfigureAwait(false);
+                    processId = pid.StandardOutput.Trim();
                 }
-                catch (Exception)
+                catch (Exception ex) when (ex is InvalidOperationException or TimeoutException)
                 {
+                    processId = "";
                 }
-            }
 
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                // A system dialog can block the activity after launch.
+                if (focused.Contains("Application Not Responding", StringComparison.OrdinalIgnoreCase)
+                    || focused.Contains("isn't responding", StringComparison.OrdinalIgnoreCase))
+                {
+                    await DismissSystemDialogsAsync(record, focusToken).ConfigureAwait(false);
+                }
+
+                if (attempt % 4 == 3 && component is not null)
+                {
+                    try
+                    {
+                        await _adb.RunAsync(record.AdbSerial, ["shell", "am", "start", "-n", component],
+                            TimeSpan.FromSeconds(5), focusToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is InvalidOperationException or TimeoutException)
+                    {
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1), focusToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
         }
 
         var focusedMatches = focused.Contains(package, StringComparison.Ordinal);
@@ -2499,8 +2491,8 @@ public sealed class InstanceManager
         {
             var dump = await _adb.RunAsync(
                 record.AdbSerial,
-                new[] { "shell", "dumpsys", "window" },
-                TimeSpan.FromSeconds(30),
+                new[] { "shell", "dumpsys", "-t", "5", "window" },
+                TimeSpan.FromSeconds(8),
                 cancellationToken).ConfigureAwait(false);
 
             if (dump.ExitCode != 0)
