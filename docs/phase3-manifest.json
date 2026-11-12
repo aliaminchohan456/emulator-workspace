@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "acc8ee8",
-  "workTree": "clean",
+  "headCommit": "88770c9",
+  "workTree": "M docs/phase3-evidence.md\n M src/EmulatorWorkspace.Desktop/App.xaml.cs\n M src/EmulatorWorkspace.Desktop/MainWindow.xaml.cs\n M tools/build-phase3-manifest.py\n M tools/wpf-clickthrough-acceptance.ps1",
   "runs": [
     {
       "kind": "phase3",
@@ -29919,6 +29919,3599 @@
           "name": "unroot.json",
           "bytes": 345,
           "sha256": "38889b0a97f14c54178bb192ae59d9c17cb2548eb351bb7e45b0ede466a8fca5"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-101151",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-101151",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 1,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Exception calling \".ctor\" with \"2\" argument(s): \"PropertyCondition value for property 'AutomationElementIdentifiers.NativeWindowHandleProperty' must be 'Int32'.",
+              "atUtc": "2026-11-12T05:11:56.1635433Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "transcript.txt",
+          "bytes": 647,
+          "sha256": "91df57a60c527f3541991cb640503ed34be0a7ae6cea17e413024f6cead5b1f7"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-101614",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-101614",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T05:16:20.3468331Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The desktop did not create a managed instance.",
+              "atUtc": "2026-11-12T05:20:21.1464170Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99262,
+          "sha256": "0e593353e6c469d198fa1db6b39e4d38d798a642b6909ec80046397adafae629"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 563,
+          "sha256": "ebcb656205f666bd72769c14eb8bb41ae8d2766d48034a38e1858afe3f015e0e"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-102257",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-102257",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T05:23:04.2128303Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The desktop did not create a managed instance.",
+              "atUtc": "2026-11-12T05:27:12.8371649Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99345,
+          "sha256": "8cb5d3db7e437055ea5f1d00745202990fa58ddec21a7f6e1d8e618bad5709ad"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 563,
+          "sha256": "97081f4ec82d1c41e5ecaddaed536af97bbadc4f9c3314c5254935fcedd9be0b"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-102912",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-102912",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 4,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T05:29:17.7648697Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T05:29:25.0010489Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": false,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T05:39:28.3351868Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The guest did not reach readiness.",
+              "atUtc": "2026-11-12T05:39:28.3538725Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99288,
+          "sha256": "c89e3d8e142facb901e32ef260549706beaefcc12ff02b81c2493b0364717780"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101347,
+          "sha256": "be8e7709401cfe24d0965ce4d66af3bd0a968c6569c9e62657e52e12a4627c23"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 242924,
+          "sha256": "9cdc819bdbdc57840387c94cad4e50940afd0bf64c6969b102e82ed665e16ad2"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 740,
+          "sha256": "81ae452aa20e53e1b0e2c816549bbe7c28f296739a88fdb1ca79d3a1cdefb3bb"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-104345",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-104345",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 4,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T05:43:52.1089510Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T05:44:05.2083204Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": false,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T05:54:09.9153683Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The guest did not reach readiness.",
+              "atUtc": "2026-11-12T05:54:09.9608987Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99292,
+          "sha256": "143e17291b4bbd9ee70dfe7c96849aa149177c58525646d927a1988a8674c61f"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100901,
+          "sha256": "6c3c9293dedd00d0978107dfeb83a66cbe3a384934174695de6bc8cbfdea73f6"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 153426,
+          "sha256": "0b17344952798bfde123378e876e886afd1599deae1813542a769ff085ebaca6"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 740,
+          "sha256": "a8eac648ece2c3ec99a91fb5ec9714808669ad3a8e82ed9a8e5bbfd6d3700a4d"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-110423",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-110423",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 7,
+      "totalChecks": 14,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T06:04:29.6816217Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T06:04:41.6732963Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T06:06:00.4716924Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T06:06:00.8912064Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": false,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T06:08:04.1412260Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T06:08:05.0565072Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": false,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T06:08:22.5017397Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T06:09:22.7114760Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T06:11:27.5319881Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest control and changed the guest state",
+              "atUtc": "2026-11-12T06:11:33.5262377Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T06:11:48.0372554Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": false,
+              "detail": "the Screenshot button produced no file",
+              "atUtc": "2026-11-12T06:13:19.6974933Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T06:13:23.3684940Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the final UI tree has 106 automation elements",
+              "atUtc": "2026-11-12T06:13:23.7882960Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99352,
+          "sha256": "3f98dd9e2844724511ca45bb0a8386a17152622c96dc98ada6c802c8c23eecad"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100901,
+          "sha256": "6c3c9293dedd00d0978107dfeb83a66cbe3a384934174695de6bc8cbfdea73f6"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 136091,
+          "sha256": "44e073c746abec85d016f4cda2dbe7c47294beb8a70f065ce4e3342151dc31e4"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 252722,
+          "sha256": "7e4fc459bb205295922ab77d30e758ac3c80cd4bde77497becad64edcaf30bcc"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 252722,
+          "sha256": "7e4fc459bb205295922ab77d30e758ac3c80cd4bde77497becad64edcaf30bcc"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 249364,
+          "sha256": "3be9695c849b88067a401a64e4893f83095cdca04e7ab34efd07724860a19dbf"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 170916,
+          "sha256": "4e699a0572de9d8e6927c4d0ba242778ddfba4bf701956cfe5e451e7aebd476d"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 178255,
+          "sha256": "5b5f861b1ed9b38fdca784c1d29d51c9b456147b5f2528f95c8b57e7c00e3d09"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 224418,
+          "sha256": "c9e96712998d96d5b93ae6701bde647176e66b1a48742459d012fae3b41195b1"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 208089,
+          "sha256": "bed22dc6c4ca721e53cd5f2cb84e7f9c22cb7020f0c9d1429c831b7e05da6635"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 190950,
+          "sha256": "deb690434efb8ea357215fd80beec976d8fb99efb32103d4790c4ecfdb7d6791"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1634,
+          "sha256": "1aca6cda3c2577ef44a9d207fd606cc24ac9ffb305848c01f9094acd779daac2"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3860,
+          "sha256": "e5774e2587f4a2ddaa794b26259a8d5939b85acf049b5f92deafe6e04ac3a47b"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-111614",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-111614",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 6,
+      "totalChecks": 15,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T06:16:21.5348075Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T06:16:33.9009129Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T06:18:30.7838838Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T06:18:31.0606136Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": false,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T06:20:34.6406947Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": false,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T06:20:35.7245730Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T06:20:38.6684217Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T06:20:39.7973669Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T06:21:40.5623806Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T06:23:48.7168182Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T06:24:51.8704778Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T06:25:06.7536100Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-112507.png",
+              "atUtc": "2026-11-12T06:25:09.2815973Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T06:25:12.3564207Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the final UI tree has 106 automation elements",
+              "atUtc": "2026-11-12T06:25:12.7189712Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99289,
+          "sha256": "d8f37bf7feca5023abda03bf051b99061f7161ecfa97aa2ba4020b1bddb26903"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100919,
+          "sha256": "57465566649d39a9210f15e877aea43bb97be17210042d596ab64ade62f1d025"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 133799,
+          "sha256": "d8f4e1f358fe95df18a808682cff8c170991970e16d7a20041139efdc579afe5"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 165833,
+          "sha256": "943a97fed7d4d809107ab5e9c14dbe68789fe28158d4cae0580eaeb5d9f1a534"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 165833,
+          "sha256": "943a97fed7d4d809107ab5e9c14dbe68789fe28158d4cae0580eaeb5d9f1a534"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 165833,
+          "sha256": "943a97fed7d4d809107ab5e9c14dbe68789fe28158d4cae0580eaeb5d9f1a534"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 172945,
+          "sha256": "9e2839bc0550c7c9117d6d676cbf59cf469813c63b8dbcc6daf91a80f4e2dfb9"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 123187,
+          "sha256": "2e115b51eabbee1b560b2099527d5446eadedcffe31eddf5f38810e8fd389d54"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 124054,
+          "sha256": "f060e5ab90195c13e4c0245e439ad2eb5e89722470a2775ac7d7673f2bd1d704"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 221965,
+          "sha256": "4573cc18d324a389701963925e279b0c302bbb8275e1e50ef2ac015c1e1a88da"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 230677,
+          "sha256": "58fb1772a0b07bce4c4b96396ce771ef3fc04eb7f495d920be277b2230f5cd4d"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 203246,
+          "sha256": "99be03d9a72014374f16c64b675404f337e59df26eca2b321b131c732570768c"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1729,
+          "sha256": "3edb28274882d706c88a49b7ebc2b6a6c193de9a46c3cd0ed19862eca860052d"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3884,
+          "sha256": "a4f063faee71d02eaa97d136fd99c34dc99da145ad8c8b84da1a5eede6f9bbaf"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-112717",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-112717",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 8,
+      "totalChecks": 14,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T06:27:23.5207347Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T06:28:54.1956253Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T06:30:17.4870818Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T06:30:17.9660197Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": false,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T06:32:18.8997692Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": false,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T06:32:19.6495698Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": false,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T06:32:38.0096103Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T06:33:38.0617937Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T06:35:44.9485008Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T06:36:47.0338559Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T06:37:01.7235370Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-113702.png",
+              "atUtc": "2026-11-12T06:37:03.8409612Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T06:37:06.8236304Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": false,
+              "detail": "the final UI tree has 1 automation elements",
+              "atUtc": "2026-11-12T06:37:06.8739855Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99291,
+          "sha256": "6892cd9328d9589e3fee9e656ca1cd639b29344a695693c3fe07fa4aabd85ab7"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1641,
+          "sha256": "5af0c316cef99b9b9fb6080336fb6f012195239c3b8525846d8b059ba39cade2"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 7,
+          "sha256": "ae9aadf9dcbd17eefbeda78e32f52f502d6daee16fed73b7d5b6c7a5c523d9b5"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-112826",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-112826",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 7,
+      "totalChecks": 15,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T06:28:32.0268986Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T06:28:40.3447386Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T06:30:15.2511939Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T06:30:15.6722900Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": false,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T06:33:47.6289471Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": false,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T06:35:18.4762922Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T06:35:21.4231993Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T06:35:22.5601782Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T06:40:54.5289062Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T06:42:59.2127162Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T06:44:01.9536240Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T06:44:16.3920351Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-114417.png",
+              "atUtc": "2026-11-12T06:44:18.5525732Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T06:44:22.7911307Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": false,
+              "detail": "the final UI tree has 1 automation elements",
+              "atUtc": "2026-11-12T06:44:22.8663721Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99260,
+          "sha256": "d864b030c0af06e89eef6cf8b1778b81b93a14ad67474abfb84228bd456fbeb4"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101368,
+          "sha256": "b17f0ef11afdb134ad0d96f2c002fd4f1064574e5e3adcf1af97c7c103c58936"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 141353,
+          "sha256": "d351dbf3629494268632f9990e3966c89c66bdba5cdf5e6b3a7c2b5a1b6c446b"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 173231,
+          "sha256": "e5bfa1f35b783e2c7eb41b48a4b43934f04a2d8726a2fa60bd4b34ff4eafa883"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 163194,
+          "sha256": "a5ea667c86261167804ee8988ab2fdf48a18306de4f9a44a35ffdf506278f28f"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 163194,
+          "sha256": "a5ea667c86261167804ee8988ab2fdf48a18306de4f9a44a35ffdf506278f28f"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1776,
+          "sha256": "51b0862806c2c7d427297921fe3e933f3c962806e6457697a8c2f51dcfcc678f"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 7,
+          "sha256": "ae9aadf9dcbd17eefbeda78e32f52f502d6daee16fed73b7d5b6c7a5c523d9b5"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-115631",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-115631",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T06:56:36.7211989Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T06:56:37.4135560Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 107 automation elements",
+              "atUtc": "2026-11-12T07:07:43.0078395Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T06:56:48.3937367Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T06:58:25.9367638Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T06:58:26.1335285Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T06:58:31.9122635Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T06:58:37.6762138Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T06:58:38.7069809Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T06:58:40.9662915Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T07:04:14.5192254Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T07:06:19.8547721Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T07:07:21.7249829Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T07:07:36.5256290Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-120737.png",
+              "atUtc": "2026-11-12T07:07:39.1590630Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T07:07:42.6582805Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 98973,
+          "sha256": "8cd5bd36cd32c5792e3197b98ad88b46fb5753f28394a180573442bf8a96e6ce"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100901,
+          "sha256": "6c3c9293dedd00d0978107dfeb83a66cbe3a384934174695de6bc8cbfdea73f6"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 135740,
+          "sha256": "7163262635c3733aaf6348eb00a84dddcfc5f44ac1cd1d658a27acb671afd4fb"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 162980,
+          "sha256": "583a1041adc309542fa652d385a5d3f425ee3089521c0b83285950c968c075b0"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 172894,
+          "sha256": "59b8b4383cecb59d23a805708699bbadabd92d92e0f2f6671c1b7ca0d4ded18a"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 169376,
+          "sha256": "fb67af2baac0fc5f130feb905430fe5ffcae57f271ca03d4caba5ed8c672a948"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 277952,
+          "sha256": "0287d506c8fb8228f47ca643104ff9d08deed7643f32af86430a3bb4f936800e"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 180271,
+          "sha256": "e93eb0b906068faced25223bc4a234e964a3b000e7a7cefbf8ca2cf40d751e03"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 189533,
+          "sha256": "15e34cc4fb043467f7521961204eba621026433b289c48f5413c4c354153cc45"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 230700,
+          "sha256": "f134147073224fed9bf1c5db0ac1c38aec3737c3767e49eb6d7d52b73c494289"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 237462,
+          "sha256": "2a09833d1aab5d83b6e90e89f546b496272cfa82c420bc9eec33b933f8c5724c"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 157259,
+          "sha256": "418483ba344668c2210e244acb1269f5a77b1096f55bd9d206ab62b792242ea7"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1838,
+          "sha256": "f0946ced97a031e242e2d4aaeed48615d5393b81fbc1944119b58d5286ea2623"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3942,
+          "sha256": "ccc2b7a90fdd64766784ecada2fdb588ac9a0993bfd9caefe59213ed9bdc762e"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-121251",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-121251",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T07:12:58.5281244Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T07:12:59.2641639Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 106 automation elements",
+              "atUtc": "2026-11-12T07:24:18.3135238Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T07:13:07.0419800Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T07:15:20.2473166Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T07:15:20.6093174Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T07:15:28.0347209Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T07:15:37.2515311Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T07:15:38.4304165Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T07:15:41.4515177Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T07:20:50.9664024Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T07:22:54.3461813Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T07:23:56.1388495Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T07:24:10.9480903Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-122411.png",
+              "atUtc": "2026-11-12T07:24:13.3098197Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T07:24:17.6522668Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99353,
+          "sha256": "1af37664dfdb23c1084ae9603fe0f33e1ac2d7e97ade8883bcbbf3765214d6d4"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100196,
+          "sha256": "e777c01a8b66ab90437910876a9070b741a0a7c2afa2f84a6fd5f42797250e58"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 132655,
+          "sha256": "dc9f889f2487356330d897d28919b60e9c239b3f8aa3490d1d2553417d594498"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 166982,
+          "sha256": "ec13019a7c8a289a84e86d280ed7faa73b6333ba9d58ab95619217cf6a004455"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 208945,
+          "sha256": "94ce10a7c2adb9650d0d774787b43d3462a5ed85fcc36d6e4ce5c504ecd06838"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 205528,
+          "sha256": "540947d1c55f7d058f71652ed2468e2cf1313e27153eca0ab7c8b0c678d12b3f"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 216481,
+          "sha256": "c936caf0292db790142f1e541208661aa6191f1d6c068416e630e8cadea4f0b8"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 272968,
+          "sha256": "ad8729d163e4e6e72716f3e4f7ad1c23c4de4b112abcca38885b7c751bfca6ce"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 272969,
+          "sha256": "4eb14f91cf923765c708c56ee9652ec799b4d3d03450e8c7b3b9db6d805da37a"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 426932,
+          "sha256": "e968ce1613b8e263264afc9a57a4489da440fe071172d480d9b6b92b18315673"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 434090,
+          "sha256": "b5bb44e6795de49ca88292e2adf2e8fbce714ef2fd1211d76c22faa682898b4e"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 152483,
+          "sha256": "c380ebf5ad6ddfe0c82b68c66d45ecc8695ce8ec982dedba1634359edd7c96ea"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1789,
+          "sha256": "87cf366f43d3f80c97e842fe51a216f4509b844a28f25e998f04392d5dfeaeb0"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3854,
+          "sha256": "4b401b28fc2af6b14640dd071f9426c7d06346f98c70c83c2de2e709b3bb7bb0"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-122651",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-122651",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 6,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T07:27:01.4758156Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 1,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T07:27:03.1685885Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": false,
+              "detail": "the UI tree has 1 automation elements",
+              "atUtc": "2026-11-12T07:39:19.3891105Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T07:27:18.6772616Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T07:28:44.9701761Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T07:28:45.1921082Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T07:28:51.4337428Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T07:28:57.8994125Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T07:28:59.0334707Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T07:29:01.2633755Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T07:34:10.2598435Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T07:36:11.9234594Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T07:37:13.6373131Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T07:37:28.0603518Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": false,
+              "detail": "the Screenshot button produced no file",
+              "atUtc": "2026-11-12T07:38:58.6008958Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T07:39:19.3705800Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99293,
+          "sha256": "077ab2b8b98e057308cede240b32fab9c909e3aab311cf6fd7934062987febdf"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 100901,
+          "sha256": "6c3c9293dedd00d0978107dfeb83a66cbe3a384934174695de6bc8cbfdea73f6"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 141422,
+          "sha256": "9ca1173f2410b4e77ba4b312bde30a459860824b03ed5c65d4b62e8a8008a2ef"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 159294,
+          "sha256": "98b7304e821d1bba61da2e0685ed7a705fe487a7995359638c95ad58911d9f4b"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 265918,
+          "sha256": "ce5db90e7613d3c456a75554d3f304e8d668fde529b23aadb7127f639deb3e4e"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 262045,
+          "sha256": "bccceea588e41e09211408961ad88907f980fc2ca36af58b3573fe24094bd6fb"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 272320,
+          "sha256": "f6f2fcb4e605678f95203f3e22d2c65c9d31cb6e94fd4231c266f234b2dfe1cb"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 263836,
+          "sha256": "1051d0f9f6413102e70ae0e99468a4423980543e8fcc19490494cde40c02cc87"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 266028,
+          "sha256": "ce327d1d81abeabb59cb7ff6624181ef458e9d3b840c8b4bfb10b473d3e9c923"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 273729,
+          "sha256": "226e0f947fc1c346d4416e6d5d32ba6f407108cdca2d7c60ad5c0112975b978c"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1771,
+          "sha256": "60e06bfa984fe9a24b93d9300955a00c4f045e057d2271b9f8bb201b0d43968d"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 7,
+          "sha256": "ae9aadf9dcbd17eefbeda78e32f52f502d6daee16fed73b7d5b6c7a5c523d9b5"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-123735",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-123735",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 5,
+      "totalChecks": 12,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T07:37:40.9547336Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T07:37:41.5329486Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T07:37:48.2155719Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T07:39:16.8402411Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T07:39:17.0372671Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": false,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T07:41:52.1091749Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": false,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T07:44:24.2143194Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T07:44:25.1861646Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T07:44:27.3801826Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T07:49:40.0194375Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T07:53:12.4512493Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Cannot convert value \"NaN\" to type \"System.Int32\". Error: \"Value was either too large or too small for an Int32.\"",
+              "atUtc": "2026-11-12T07:53:13.6142338Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99262,
+          "sha256": "0e593353e6c469d198fa1db6b39e4d38d798a642b6909ec80046397adafae629"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101347,
+          "sha256": "be8e7709401cfe24d0965ce4d66af3bd0a968c6569c9e62657e52e12a4627c23"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 125658,
+          "sha256": "dbdb88793758da4f02ea24272c54a3687e50d918da7fec3c8904692188545b13"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 146223,
+          "sha256": "a169b887630affb4b959c05f1fbb9d5604abd299fd1f7be4ae5ead5cb1dfe0e5"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 146223,
+          "sha256": "a169b887630affb4b959c05f1fbb9d5604abd299fd1f7be4ae5ead5cb1dfe0e5"
+        },
+        {
+          "name": "06-palette.png",
+          "bytes": 142807,
+          "sha256": "95e63c2e5538e0ff681e90d078748176a4baac91406eb3876321fe7932211818"
+        },
+        {
+          "name": "drop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "drop-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1693,
+          "sha256": "b8c4e3c0fd73cd94d81c23dad5fddbe00e0728d38ed4707c080b1147f21323b1"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-125614",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-125614",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T07:56:20.0381401Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T07:56:20.6216477Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 106 automation elements",
+              "atUtc": "2026-11-12T08:06:33.8659719Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T07:56:27.3952248Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T07:57:54.8282449Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T07:57:55.0251962Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T07:58:00.4864217Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T07:58:05.6292137Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T08:03:07.0878238Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T08:05:09.5809907Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T08:06:10.9861806Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T08:06:25.2604469Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-130625.png",
+              "atUtc": "2026-11-12T08:06:27.4599857Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T08:06:29.8926013Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T08:06:30.8547569Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T08:06:30.9663423Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99284,
+          "sha256": "1824a9f7e1d82a2291ecb43351b703dac7d5d67807a548b323139e466ca45cdb"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101347,
+          "sha256": "be8e7709401cfe24d0965ce4d66af3bd0a968c6569c9e62657e52e12a4627c23"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 139602,
+          "sha256": "1e34416d9de5ebb7d96318ab6d16dcecdc2e84dc3b123df175af725c9c4a10bf"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 161681,
+          "sha256": "df1c7ca8aef5c9812c47f8f239e8a4078b0e25e87376f86dc1004ec08ced35cc"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 274450,
+          "sha256": "ddd281d7118ce26b32c43f950891b51890ef9fa2f8a22451fb6baa9f81d2713e"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 274918,
+          "sha256": "a513898e7d7866ac1f70bca3b9ed1ac98e72c15bf070dd42ed2a66f6d1333318"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 273127,
+          "sha256": "ef429b5646dddce12d39ec7b10be52ea92391a59ede171327dcb37b20b13fcb4"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 276169,
+          "sha256": "fb733b78483c3afb388d3f4131b272a7d83ad1a1b43cbc884685378e704a7910"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 431488,
+          "sha256": "d49df331146cafb94671b9fcb1e5c195a2ad4a88f0bbdbc8abfee5e80c5f5ce3"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 438930,
+          "sha256": "ee07e49d7df6a0674d18311779898e242662779c9511d41da005e3e8d881e9f2"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 257485,
+          "sha256": "d9560058eef231ba890567025c37880d306af2929b456b8f062db3b7927f0e27"
+        },
+        {
+          "name": "13-palette.png",
+          "bytes": 151386,
+          "sha256": "1ae00b790969cb03f15b3cc6b4fc13182e23a7f4a05de2eebfe8173f56e7bda4"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1789,
+          "sha256": "2a31b181ddef5186df42e8b2a4a952f020899cb1cce6776f22e7fbb5e70903f8"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3868,
+          "sha256": "46007a1472fe6c8bf480d2d9b67e3c4511f7fec7c975d4972bdfe00e6a1eee6d"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-130920",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-130920",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T08:09:27.1800152Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T08:09:27.8586992Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 106 automation elements",
+              "atUtc": "2026-11-12T08:19:30.8242423Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T08:09:35.6281115Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T08:10:46.2895602Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T08:10:46.5026283Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T08:10:53.0195431Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T08:10:59.5385832Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": false,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T08:16:02.9994339Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": false,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T08:18:06.2613580Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": false,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T08:19:07.6358658Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": false,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T08:19:22.0591990Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-131922.png",
+              "atUtc": "2026-11-12T08:19:24.3001268Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T08:19:26.8532687Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T08:19:27.8059943Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T08:19:27.9087983Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 98994,
+          "sha256": "3aa712b82c0768bfcfee2253b0aaf9d2f1d45e34aacc3e2a21d565d521092ab3"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101368,
+          "sha256": "b17f0ef11afdb134ad0d96f2c002fd4f1064574e5e3adcf1af97c7c103c58936"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 137062,
+          "sha256": "8708b7bf14d590bd7df49eeb994779a22895336cdc4f94acd19c65ef3cd9cfcc"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 163126,
+          "sha256": "f7a4eca32d7ea4f2ed32c9088ae9f9fd766ef1afd30173320212d3b99af4794b"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 170699,
+          "sha256": "32e1405129bcff04966ffe497cd75fa198301201b860763a9416e3b7f6171f66"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 269465,
+          "sha256": "a40ccd7c8389d0dc5de6106c92c7a853d6f6540d7ae633eb10127fc08a0d7f97"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 267411,
+          "sha256": "96f5d20e16bcec5351b292bc754ae1bb74d910ecede37616eebbd46770f06135"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 269079,
+          "sha256": "8e1d7d9803f10ec33bb647109db2ded1df83f67f1440fefa3d335e981674b215"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 274150,
+          "sha256": "af58e5261ea57337049f5b925604fd7db8e227b415fd9eb710c3cfc990fb0113"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 281207,
+          "sha256": "d7e8dd494f00e8e9c8efd38ca496e321a7585601bf0c6cc1cfb0a21c1a032b79"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 154520,
+          "sha256": "8c70d1157999bfd415b8ce51d0675a82f08d4ec64727da234835878d899d12df"
+        },
+        {
+          "name": "13-palette.png",
+          "bytes": 151316,
+          "sha256": "0734380bcd0d0fafce9a6fb4f9060a1de6d7579d0a81faa3ecef16b6768ee1e7"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1789,
+          "sha256": "2275928e0068800345f2dcc29781258493f36ed66653cda18c98d212beddf533"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 3868,
+          "sha256": "ecd7c42e02ed73c318df94fc96469750667fef04267e7e0568b47dc3d90ed573"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261112-132247",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-132247",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-12T08:22:53.6530095Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-12T08:22:54.1367043Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 185 automation elements",
+              "atUtc": "2026-11-12T08:25:18.3596209Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-12T08:23:00.9473153Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-12T08:24:27.9739423Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-12T08:24:28.3309124Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-12T08:24:50.4789255Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-12T08:24:57.9485040Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": true,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-12T08:25:02.1845490Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": true,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-12T08:25:04.6572700Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": true,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-12T08:25:08.1399006Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": true,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-12T08:25:08.8480322Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261112-132509.png",
+              "atUtc": "2026-11-12T08:25:11.7062725Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-12T08:25:14.3334742Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-12T08:25:15.2622309Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-12T08:25:15.3461711Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 99282,
+          "sha256": "d3095b9352fb34e31aaf18019d506110d8640fa4063345dab22c1503abcf499f"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 101368,
+          "sha256": "b5a5ff26d064fdb87cdb9aa03d62cde488b08bacca82fd6793cf6efcd64920c5"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 135362,
+          "sha256": "009b33cc52f40cbbbdec20b3813b91abdde074c126d2c7cf87bf32ec04f79c62"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 165918,
+          "sha256": "b2d6981b7e7549b3ef6a01d417fcde002edf86702fb4707d8b47d2fba5d8badd"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 163562,
+          "sha256": "c7b8a5756b157611f64be50051acf29cbbb08614df487ead950fe47ba4937310"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 164331,
+          "sha256": "1b9b46e63b19113c7281b426ee7b24d93a89ae1f6eda02d927957272ec2d5c16"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 164028,
+          "sha256": "556c9c5b2033c28f0059c1658233196c94f024a762e0635c2426cd0be7caba13"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 163419,
+          "sha256": "b63e2eb3dbf85a5d1f7cb53bebf461d541d34f761f467f2889085934d0ed087d"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 163506,
+          "sha256": "4fe3d792f9497fd7787817cd76a1e39487dfdb05c2164d7e418866abf5df6d0e"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 171305,
+          "sha256": "8cdeeb153f5e1c54714a85e964d1f437924f4286d6a5ae772dabab59b90c6e17"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 159822,
+          "sha256": "2a2349604418cb1597e3fed7e2fbe3f02ae6b1ddec77e69701e5c2c1ca4a6856"
+        },
+        {
+          "name": "13-palette.png",
+          "bytes": 156357,
+          "sha256": "704d159b90f1687c758c19cd2b155151cb24f175cd26176f82e2966f96bf2b7d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1789,
+          "sha256": "5946455ef14139ca4459cd33f040c416266f71a25f52e47040c0ee5f852ebbca"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 7158,
+          "sha256": "dfbb46c970d0cdee39510695fb7eeb579297747e7fb3313b4bb4a8c417ebae62"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4231,
+          "sha256": "2e12bb3300f51710aef9e1ec5f6b0d0adc5cfde31c9e26771e0b2f51a169eb89"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261112-095717",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\devtools\\20261112-095717",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 9,
+      "lanes": {
+        "package-info": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "package-info",
+              "passed": false,
+              "detail": "installed=False version= codePath=",
+              "atUtc": "2026-11-12T05:00:27.0607269Z"
+            }
+          ]
+        },
+        "package-permissions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-permissions",
+              "passed": true,
+              "detail": "requested=0 granted=0",
+              "atUtc": "2026-11-12T05:00:27.3942236Z"
+            }
+          ]
+        },
+        "deep-link": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link",
+              "passed": true,
+              "detail": "scheme=https host=emulatorworkspace.local started=True",
+              "atUtc": "2026-11-12T05:00:28.8399038Z"
+            }
+          ]
+        },
+        "deep-link.negative": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link.negative",
+              "passed": true,
+              "detail": "a malformed URI is refused: FAILED [invalid_request] 'not a uri' is not an absolute URI.",
+              "atUtc": "2026-11-12T05:00:29.3883341Z"
+            }
+          ]
+        },
+        "instrumentation": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "instrumentation",
+              "passed": true,
+              "detail": "tests=0 failures=0 passed=False",
+              "atUtc": "2026-11-12T05:00:33.3725842Z"
+            }
+          ]
+        },
+        "logcat-export": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "logcat-export",
+              "passed": true,
+              "detail": "artifact=d:\\phase5root\\evidence\\logcat-devtools-4791-20261112-050034.txt bytes=49028",
+              "atUtc": "2026-11-12T05:00:34.5483178Z"
+            }
+          ]
+        },
+        "crash-report": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "crash-report",
+              "passed": true,
+              "detail": "crashes=0 anrs=9",
+              "atUtc": "2026-11-12T05:00:35.5880026Z"
+            }
+          ]
+        },
+        "bugreport": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "bugreport",
+              "passed": false,
+              "detail": "artifact= bytes= sha256=",
+              "atUtc": "2026-11-12T05:01:18.7525774Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-12T05:01:29.1028161Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bugreport.json",
+          "bytes": 3,
+          "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+        },
+        {
+          "name": "crash-report.json",
+          "bytes": 709,
+          "sha256": "420565f1dabec8ff17a303a9307e1b147bce8c51186841cf3c7dbd1e92887dd4"
+        },
+        {
+          "name": "deep-link.json",
+          "bytes": 527,
+          "sha256": "e20601f27fa0532f2307b57b829b26d0c3baaf0c11cd6eae95017fc5ec4ce97c"
+        },
+        {
+          "name": "instrumentation.json",
+          "bytes": 26957,
+          "sha256": "f82446512d08dab12dbeb39e19ecb50983093d07aa07c226ec9437d92dd1bfc3"
+        },
+        {
+          "name": "logcat-export.json",
+          "bytes": 248,
+          "sha256": "28a02483a7fa43935350a33bc7edacb7562f1303c6fc03be3df3f6034dc85837"
+        },
+        {
+          "name": "logcat-export.txt",
+          "bytes": 49049,
+          "sha256": "9d25dabc52ec7adb3cf31f24664b30683e1ec6441b25ffc152d583b32822b226"
+        },
+        {
+          "name": "package-info.json",
+          "bytes": 219,
+          "sha256": "295314fbbdee54298a414288c83c2c64fccb1b7af0f885af1068222aed17b3b9"
+        },
+        {
+          "name": "package-permissions.json",
+          "bytes": 232,
+          "sha256": "04fecc0c52912f401af197f4d6d9c8cd14882852bdf105f331ca5429beac9841"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 873,
+          "sha256": "6655deefa8a0004f9a7e1b77a8f3d682942e015930264837008e09f9c40a37c9"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261112-100421",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\devtools\\20261112-100421",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 9,
+      "lanes": {
+        "package-info": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-info",
+              "passed": true,
+              "detail": "installed=True version=1.0 codePath=/data/app/~~R-b3ikuc7nEOwoDQLEa7ZA==/dev.emulatorworkspace.sample-u8M0SvmpasEPGJAmTkQG7A==",
+              "atUtc": "2026-11-12T05:05:41.7398221Z"
+            }
+          ]
+        },
+        "package-permissions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-permissions",
+              "passed": true,
+              "detail": "requested=1 granted=1",
+              "atUtc": "2026-11-12T05:05:42.6464155Z"
+            }
+          ]
+        },
+        "deep-link": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link",
+              "passed": true,
+              "detail": "scheme=https host=emulatorworkspace.local started=True",
+              "atUtc": "2026-11-12T05:05:45.6703053Z"
+            }
+          ]
+        },
+        "deep-link.negative": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link.negative",
+              "passed": true,
+              "detail": "a malformed URI is refused: FAILED [invalid_request] 'not a uri' is not an absolute URI.",
+              "atUtc": "2026-11-12T05:05:46.2331837Z"
+            }
+          ]
+        },
+        "instrumentation": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "instrumentation",
+              "passed": true,
+              "detail": "available=False tests=0 failures=0 reason=The package 'dev.emulatorworkspace.sample' does not publish an instrumentation runner.",
+              "atUtc": "2026-11-12T05:05:48.3776368Z"
+            }
+          ]
+        },
+        "logcat-export": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "logcat-export",
+              "passed": true,
+              "detail": "artifact=d:\\phase5root\\evidence\\logcat-devtools-516-20261112-050548.txt bytes=48130",
+              "atUtc": "2026-11-12T05:05:48.7965115Z"
+            }
+          ]
+        },
+        "crash-report": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "crash-report",
+              "passed": true,
+              "detail": "crashes=0 anrs=0",
+              "atUtc": "2026-11-12T05:05:49.3158841Z"
+            }
+          ]
+        },
+        "bugreport": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bugreport",
+              "passed": true,
+              "detail": "artifact=d:\\phase5root\\evidence\\bugreport-devtools-516-20261112-050549.zip bytes=4242234 sha256=eacb50730ebccbdfeb9d601e2cab297df912ab64b62e4c7f76639f3099d4701d",
+              "atUtc": "2026-11-12T05:06:42.1244438Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-12T05:06:53.2145903Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bugreport.json",
+          "bytes": 298,
+          "sha256": "6f9ff20ac9336d8182fa676aace2515d9c8214e62eaafe5ab559e3e460d3e585"
+        },
+        {
+          "name": "crash-report.json",
+          "bytes": 265,
+          "sha256": "83d626dcb054a212323ffd0fa2f9d1fa1c725c235f363710773e76ba18fde09c"
+        },
+        {
+          "name": "deep-link.json",
+          "bytes": 506,
+          "sha256": "262dc5abe1621ceaee0ec710e011eba7601d62ce1aeb40cdd9864cdcd66d8c3c"
+        },
+        {
+          "name": "instrumentation.json",
+          "bytes": 369,
+          "sha256": "9d29e141a4c187ee7947d65622c11e8f8288902da834ee6c650ccce8f68d8f78"
+        },
+        {
+          "name": "logcat-export.json",
+          "bytes": 246,
+          "sha256": "5f4058ad2097132b32d6b23e93cd12abea89e563708722753847f6eb190abb57"
+        },
+        {
+          "name": "logcat-export.txt",
+          "bytes": 48282,
+          "sha256": "e073dc52d9a3aa88ffd2a9a852a68615f1d63b66b906866d6940cebda5df4498"
+        },
+        {
+          "name": "package-info.json",
+          "bytes": 310,
+          "sha256": "c9e2a9760d00a8e6caa451f9a991781b16b1e0bc406dd4f389c7a133b3395bf2"
+        },
+        {
+          "name": "package-permissions.json",
+          "bytes": 345,
+          "sha256": "4feb42e4e1aefa717b560f071759ce37d9aea0d083542d57d8866d60b454309a"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1197,
+          "sha256": "89e402f4c34180c51ea09e8441688a08e73fb4e315af329ed5d0240a64de0771"
         }
       ]
     }

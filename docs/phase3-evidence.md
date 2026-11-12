@@ -393,6 +393,59 @@ the pinned AOSP/Magisk sources, or a stock Magisk ramdisk proven compatible with
 the pinned image. The Phase 0 probe already demonstrated ramdisk substitution on
 this host, so the workflow exists; only the source-built profile is missing.
 
+### WPF click-through — `tools/wpf-clickthrough-acceptance.ps1`
+
+Run `20261112-132247`: **16 checks, 0 failures**. Every step is a UI
+Automation click on a real control of the running WPF window; the supervisor is
+only used as an observer to prove what the UI caused.
+
+| Step | Result |
+| --- | --- |
+| window-open | the desktop window is open and reachable by UI Automation |
+| ui-tree | the automation tree has 137 elements at the start and 185 at the end |
+| create-device | the **Create device** button created the managed instance `dev` |
+| boot | the guest created from the UI reached interactive readiness |
+| rootlab.control-present | the Root Lab **ADB root** control exists in the desktop |
+| adb-root | the Root Lab **ADB root** button put the guest daemon at uid 0 |
+| adb-unroot | the Root Lab **ADB unroot** button returned the daemon to uid 2000 |
+| apk-drag-drop | the APK was dropped on the desktop window and installed on the selected guest |
+| launch | the **Launch sample** button brought the application to the foreground |
+| tap | a click in the viewport reached the guest and the guest logged the tap |
+| logcat | the Logcat drawer is open and shows the guest log |
+| screenshot | the **Screenshot** button produced `dev-20261112-132509.png` |
+| shutdown | the desktop stopped the guest |
+| palette.opens / command-palette | Ctrl+K opened the command palette |
+
+A window screenshot is captured for every step, and the automation tree is
+captured before and after the run.
+
+Five product defects were found and fixed while building this run:
+
+1. `RaiseCommandStates` never re-evaluated the Root Lab commands, so the
+   **ADB root** and **ADB unroot** buttons stayed disabled forever.
+2. The desktop log path was captured before the `--root` argument was parsed,
+   so the log never landed in the workspace.
+3. The Logcat drawer starts open, and the harness toggled it closed.
+4. The drop handler and the automation entry point did not share their code.
+5. The drop was delivered before the guest was ready; it now waits for the
+   first frame.
+
+### Developer tooling — `tools/devtools-acceptance.ps1`
+
+Run `20261112-100421`: **9 checks, 0 failures**.
+
+| Check | Result |
+| --- | --- |
+| package-info | `installed=true`, `versionName=1.0`, the code path is reported |
+| package-permissions | one requested permission, one granted |
+| deep-link | the deep link reached the guest's intent parser |
+| deep-link.negative | a malformed URI is refused with the typed `invalid_request` |
+| instrumentation | `available=false` with the reason when the package publishes no runner |
+| logcat-export | a searchable Logcat artifact of 48 130 bytes was written |
+| crash-report | the crash and ANR collection returned |
+| bugreport | a 4 242 234-byte bug report with its SHA-256 was written |
+| cleanup | the lab guest was removed |
+
 ## Remaining gaps
 
 | Item | State | Next action |

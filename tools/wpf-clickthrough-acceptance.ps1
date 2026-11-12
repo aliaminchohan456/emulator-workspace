@@ -418,13 +418,17 @@ try {
     Add-Step "tap" $tapMapped "a click in the viewport reached the guest and the guest logged the tap" (Save-WindowShot $handle "09-tapped.png")
 
     # 9. logcat drawer
-    $logcat = Find-Element "Toggle Logcat" "" 20
-    if ($logcat) {
-        Wait-Enabled $logcat
-        Click-Element $logcat
+    # The Logcat drawer starts open, so it is only toggled when it is closed.
+    $logcatVisible = (Find-Element "Search logcat" "" 8) -ne $null
+    if (-not $logcatVisible) {
+        $logcat = Find-Element "Toggle Logcat" "" 20
+        if ($logcat) {
+            Wait-Enabled $logcat
+            Click-Element $logcat
+        }
+        Start-Sleep -Seconds 6
+        $logcatVisible = (Find-Element "Search logcat" "" 8) -ne $null
     }
-    Start-Sleep -Seconds 6
-    $logcatVisible = (Find-Element "Logcat drawer" "" 8) -ne $null
     Add-Step "logcat" $logcatVisible "the Logcat drawer opened and shows the guest log" (Save-WindowShot $handle "10-logcat.png")
 
     # 10. screenshot

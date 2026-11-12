@@ -15,6 +15,9 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private Point? _dragStart;
+
+    /// <summary>The view model behind the window, for the automation modes.</summary>
+    public MainViewModel ViewModel => _viewModel;
     private Point? _dragCurrent;
 
     public MainWindow()

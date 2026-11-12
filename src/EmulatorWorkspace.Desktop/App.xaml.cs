@@ -134,18 +134,32 @@ public partial class App : Application
 
         if (dropFile.Length > 0)
         {
-            // The file is dropped on the window once it is ready, exactly like
-            // a drop from the shell.
-            window.Loaded += (_, _) =>
+            // The file is dropped on the window once a guest is running and
+            // selected, exactly like a drop from the shell onto a live guest.
+            var delivered = false;
+            var timer = new System.Windows.Threading.DispatcherTimer(
+                System.Windows.Threading.DispatcherPriority.Background);
+            timer.Interval = TimeSpan.FromSeconds(2);
+            timer.Tick += (_, _) =>
             {
-                window.Dispatcher.InvokeAsync(
-                    async () =>
-                    {
-                        await window.DeliverFileDropAsync(new[] { dropFile }).ConfigureAwait(true);
-                        Services.DesktopLog.Write("dropped " + dropFile);
-                    },
-                    System.Windows.Threading.DispatcherPriority.Background);
+                if (delivered)
+                {
+                    timer.Stop();
+                    return;
+                }
+
+                var device = window.ViewModel.SelectedDevice;
+                if (device is null || !device.IsRunning || !window.ViewModel.HasFrame)
+                {
+                    return;
+                }
+
+                delivered = true;
+                timer.Stop();
+                _ = window.DeliverFileDropAsync(new[] { dropFile });
+                Services.DesktopLog.Write("dropped " + dropFile);
             };
+            timer.Start();
         }
 
         if (probeCount > 0)
