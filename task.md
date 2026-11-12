@@ -385,3 +385,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
   acceleration check fails, preserve `output/acceleration.txt` and use an
   isolated Windows 11 x64 VM that exposes nested virtualization and passes
   the same accelerator probe.
+
+- Future candidate packaging now includes the MCP stdio executable and
+  its publish command in provenance. The installer harness has an optional
+  `-VerifyMcp` check for initialize, tool discovery, protocol-only stdout,
+  and clean exit on stdin EOF. A host-only smoke using the existing Release
+  MCP executable and the preserved candidate's staged supervisor passed
+  with 22 tools. Evidence `artifacts/phase3/mcp-host/20261112-221940/stdio.json`.
+  After the soak, build and test the current source, then use a new version
+  when packaging product changes. Repeat the installer check with
+  `-VerifyMcp` against the resulting MSI. The preserved 0.1.1 MSI and
+  its original 21/21 evidence remain the baseline.

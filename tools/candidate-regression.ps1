@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)][string]$RootPrefix,
     [Parameter(Mandatory)][string]$CandidateRelease,
     [Parameter(Mandatory)][string]$CandidatePayload,
-    [Parameter(Mandatory)][string]$McpExecutable,
+    [string]$McpExecutable = "",
     [ValidateSet("phase3", "recipe-launcher", "recipe-fixture", "rootlab", "import", "devtools", "wpf", "play36", "play35")]
     [string[]]$Lane = @("phase3", "recipe-launcher", "recipe-fixture", "rootlab", "import", "devtools", "wpf", "play36", "play35")
 )
@@ -12,13 +12,21 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "fixtures/candidate-payload.ps1")
 $verified = Resolve-VerifiedCandidate $CandidateRelease $CandidatePayload
-$mcp = (Resolve-Path -LiteralPath $McpExecutable).ProviderPath
+$mcp = if ($McpExecutable) {
+    (Resolve-Path -LiteralPath $McpExecutable).ProviderPath
+}
+else {
+    Join-Path $verified.payload "EmulatorWorkspace.Mcp.exe"
+}
+if (-not (Test-Path -LiteralPath $mcp -PathType Leaf)) {
+    throw "This candidate lacks an MCP executable. Supply a separately built matching MCP using -McpExecutable."
+}
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo "artifacts/phase3/candidate/$run"
 New-Item -ItemType Directory -Force $out | Out-Null
 $context = Join-Path $out "candidate.json"
 $identity = $verified.identity
-$identity.evidenceScope = "verified runtime payload and a separately built MCP executable"
+$identity.evidenceScope = if ($McpExecutable) { "verified runtime payload and a separately built MCP executable" } else { "entire runtime payload" }
 $identity.mcpExecutableSha256 = (Get-FileHash -LiteralPath $mcp).Hash
 $identity | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $context -Encoding UTF8
 $env:WS_ACCEPTANCE_PAYLOAD = $verified.payload

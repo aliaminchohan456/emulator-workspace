@@ -26,6 +26,7 @@ param(
     [int]$BootTimeoutSeconds = 600,
     [switch]$VerifySnapshotJson,
     [switch]$VerifySimulationProbe,
+    [switch]$VerifyMcp,
     [switch]$VerifyDisconnectedReuse,
     [string]$PreviousInstaller = ""
 )
@@ -137,6 +138,52 @@ function Assert-NetworkDisconnected([string]$stage) {
     }
 }
 
+function Test-McpStdio([string]$executable, [string]$supervisor, [string]$root) {
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $executable
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $info.RedirectStandardInput = $true
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.EnvironmentVariables["EMULATOR_WORKSPACE_HOME"] = $root
+    $info.EnvironmentVariables["EMULATORWORKSPACE_SUPERVISOR_EXE"] = $supervisor
+    $info.EnvironmentVariables.Remove("WS_AGENT_TOKEN")
+    $info.EnvironmentVariables.Remove("WS_AGENT_TOKEN_FILE")
+    $process = [System.Diagnostics.Process]::Start($info)
+    $errors = $process.StandardError.ReadToEndAsync()
+    try {
+        $process.StandardInput.AutoFlush = $true
+        $requests = @(
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"installer-acceptance","version":"1"}}}',
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+        )
+        $responses = for ($i = 0; $i -lt $requests.Count; $i++) {
+            $process.StandardInput.WriteLine($requests[$i])
+            $read = $process.StandardOutput.ReadLineAsync()
+            if (-not $read.Wait(30000) -or -not $read.Result) { throw "The MCP server did not answer request $($i + 1)." }
+            $message = $read.Result | ConvertFrom-Json
+            if ($message.jsonrpc -ne "2.0" -or $message.id -ne ($i + 1) -or -not $message.result) {
+                throw "MCP stdout did not contain the matching JSON-RPC response."
+            }
+            $message.result
+        }
+        $process.StandardInput.Close()
+        if (-not $process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw "MCP did not exit cleanly on stdin EOF." }
+        [pscustomobject]@{
+            protocol = $responses[0].protocolVersion
+            server = $responses[0].serverInfo.name
+            tools = @($responses[1].tools | Select-Object -ExpandProperty name)
+            protocolOnly = -not $process.StandardOutput.ReadToEnd().Trim()
+            diagnostics = $errors.Result.Trim()
+        }
+    }
+    finally {
+        if (-not $process.HasExited) { $process.Kill() }
+        $process.Dispose()
+    }
+}
+
 if (-not $Installer) {
     $candidate = Get-ChildItem "D:\Release" -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -179,6 +226,15 @@ try {
         "the desktop, the supervisor and the CLI are installed under $installedRoot"
     Add-Check "install.sample-apk" (Test-Path (Join-Path $installedRoot "ws-sample.apk")) `
         "the approved sample APK ships with the package"
+    if ($VerifyMcp) {
+        try {
+            $mcp = Test-McpStdio (Join-Path $installedRoot "EmulatorWorkspace.Mcp.exe") $supervisorExe $WorkRoot
+            $mcp | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $out "installed-mcp.json") -Encoding UTF8
+            Add-Check "installed.mcp-stdio" ($mcp.protocol -eq "2024-11-05" -and $mcp.server -eq "emulator-workspace" -and
+                $mcp.protocolOnly -and "device_status" -in $mcp.tools) "initialized and listed scoped MCP tools through the installed executable"
+        }
+        catch { Add-Check "installed.mcp-stdio" $false $_.Exception.Message }
+    }
 
     # ---------------------------------------------------------- first launch
     $launchLog = Join-Path $out "desktop-launch.txt"

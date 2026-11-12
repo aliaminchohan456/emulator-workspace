@@ -123,7 +123,7 @@ function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfCo
     }
     if (-not $source) { throw "The publish output for $assembly was not found." }
 
-    # The three applications share the framework assemblies, but only the
+    # The applications share the framework assemblies, but only the
     # desktop carries the real WPF implementation. The first publish therefore
     # owns the shared files and the later ones only add what is missing.
     foreach ($file in (Get-ChildItem $source -Recurse -File)) {
@@ -139,6 +139,7 @@ function Publish-App([string]$projectDirectory, [string]$assembly, [bool]$selfCo
 Publish-App "src\EmulatorWorkspace.Desktop" "EmulatorWorkspace.Desktop.exe" $true
 Publish-App "src\EmulatorWorkspace.Supervisor" "EmulatorWorkspace.Supervisor.exe" $true $false
 Publish-App "src\EmulatorWorkspace.Cli" "wsctl.exe" $true $false
+Publish-App "src\EmulatorWorkspace.Mcp" "EmulatorWorkspace.Mcp.exe" $true $false
 
 # The sample fixture belongs to the product: the desktop installs it as the
 # approved package.
@@ -253,6 +254,7 @@ $provenance = [ordered]@{
         "dotnet publish src\EmulatorWorkspace.Desktop\EmulatorWorkspace.Desktop.csproj -c $Configuration -r $Runtime -p:Version=$Version",
         "dotnet publish src\EmulatorWorkspace.Supervisor\EmulatorWorkspace.Supervisor.csproj -c $Configuration -r $Runtime -p:Version=$Version",
         "dotnet publish src\EmulatorWorkspace.Cli\EmulatorWorkspace.Cli.csproj -c $Configuration -r $Runtime -p:Version=$Version",
+        "dotnet publish src\EmulatorWorkspace.Mcp\EmulatorWorkspace.Mcp.csproj -c $Configuration -r $Runtime -p:Version=$Version",
         "dotnet test -c $Configuration"
     )
     pins = [ordered]@{
