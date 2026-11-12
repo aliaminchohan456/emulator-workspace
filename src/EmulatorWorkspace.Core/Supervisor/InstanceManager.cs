@@ -1742,6 +1742,25 @@ public sealed class InstanceManager
         var output = await _adb.ShellAsync(record.AdbSerial, arguments.ToArray(), cancellationToken)
             .ConfigureAwait(false);
 
+        // When the package has no instrumentation, the guest prints the help
+        // of the activity manager. That is a clean "not available" answer, not
+        // a failure, and it is reported without the whole help text.
+        if (output.Contains("Activity manager (activity) commands:", StringComparison.Ordinal))
+        {
+            return new JsonObject
+            {
+                ["name"] = name,
+                ["package"] = package,
+                ["runner"] = runner ?? string.Empty,
+                ["available"] = false,
+                ["tests"] = 0,
+                ["failures"] = 0,
+                ["passed"] = false,
+                ["reason"] = $"The package '{package}' does not publish an instrumentation runner.",
+                ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+            };
+        }
+
         var failures = 0;
         var tests = 0;
         foreach (var line in output.Split('\n'))
@@ -1775,6 +1794,7 @@ public sealed class InstanceManager
             ["name"] = name,
             ["package"] = package,
             ["runner"] = runner ?? string.Empty,
+            ["available"] = true,
             ["tests"] = tests,
             ["failures"] = failures,
             ["passed"] = failures == 0 && tests > 0,
@@ -1929,6 +1949,11 @@ public sealed class InstanceManager
     /// <summary>
     /// Writes a full bug report of the guest into the workspace evidence
     /// directory and returns its path and digest.
+    ///
+    /// The report is produced by the ADB client itself: since ADB 34 the
+    /// command writes a zip file into the working directory instead of
+    /// accepting a target path, so the client runs in the evidence directory
+    /// and the produced file is moved to its final name.
     /// </summary>
     public async Task<JsonObject> BugReportAsync(
         string name, CancellationToken cancellationToken)
@@ -1936,31 +1961,96 @@ public sealed class InstanceManager
         var record = RuntimeFor(name).Record;
         Directory.CreateDirectory(_paths.EvidenceDirectory);
         var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-        var file = Path.Combine(_paths.EvidenceDirectory, $"bugreport-{name}-{stamp}.txt");
+        var file = Path.Combine(_paths.EvidenceDirectory, $"bugreport-{name}-{stamp}.zip");
+
+        var before = Directory
+            .EnumerateFiles(_paths.EvidenceDirectory, "bugreport*.zip")
+            .Select(path => path + "|" + new FileInfo(path).LastWriteTimeUtc.Ticks)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var result = await _adb.RunAsync(
                 record.AdbSerial,
-                new[] { "bugreport", file },
-                TimeSpan.FromMinutes(10),
-                cancellationToken)
+                new[] { "bugreport" },
+                TimeSpan.FromMinutes(15),
+                cancellationToken,
+                workingDirectory: _paths.EvidenceDirectory)
             .ConfigureAwait(false);
 
-        if (!File.Exists(file))
+        // The client writes the report asynchronously; it is picked up as soon
+        // as it appears and stops growing.
+        var produced = string.Empty;
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(5);
+        while (DateTimeOffset.UtcNow < deadline)
         {
-            throw new SupervisorOperationException(
-                ErrorCodes.Internal,
-                "The bug report was not produced: " + (result.StandardError + result.StandardOutput).Trim());
+            foreach (var candidate in Directory.EnumerateFiles(_paths.EvidenceDirectory, "bugreport*.zip"))
+            {
+                var key = candidate + "|" + new FileInfo(candidate).LastWriteTimeUtc.Ticks;
+                if (before.Contains(key))
+                {
+                    continue;
+                }
+
+                var info = new FileInfo(candidate);
+                if (info.Length == 0)
+                {
+                    continue;
+                }
+
+                await WaitForStableFileAsync(candidate, cancellationToken).ConfigureAwait(false);
+                produced = candidate;
+                break;
+            }
+
+            if (produced.Length > 0)
+            {
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
         }
 
-        var info = new FileInfo(file);
+        if (produced.Length == 0)
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InstanceUnavailable,
+                "The bug report was not produced: " + (result.StandardError + result.StandardOutput).Trim(),
+                retryable: true);
+        }
+
+        if (!string.Equals(produced, file, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Move(produced, file, overwrite: true);
+        }
+
+        var final = new FileInfo(file);
         return new JsonObject
         {
             ["name"] = name,
             ["artifactPath"] = file,
-            ["bytes"] = info.Length,
+            ["bytes"] = final.Length,
             ["sha256"] = HashFile(file),
             ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
         };
+    }
+
+    /// <summary>
+    /// Waits until a file stops growing, so a report that is still being
+    /// written is never read half-finished.
+    /// </summary>
+    private static async Task WaitForStableFileAsync(string path, CancellationToken cancellationToken)
+    {
+        long previous = -1;
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            var length = new FileInfo(path).Length;
+            if (length > 0 && length == previous)
+            {
+                return;
+            }
+
+            previous = length;
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private static string HashFile(string path)

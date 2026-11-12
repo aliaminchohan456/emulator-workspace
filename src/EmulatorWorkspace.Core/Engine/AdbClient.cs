@@ -39,7 +39,8 @@ public sealed class AdbClient
         string serial,
         IEnumerable<string> arguments,
         TimeSpan? timeout = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? workingDirectory = null)
     {
         ValidateSerial(serial);
         var args = new List<string> { "-s", serial };
@@ -48,6 +49,7 @@ public sealed class AdbClient
         return await ProcessRunner.RunAsync(
             _adbPath,
             args,
+            workingDirectory: workingDirectory,
             timeout: timeout ?? TimeSpan.FromSeconds(60),
             cancellationToken: cancellationToken).ConfigureAwait(false);
     }

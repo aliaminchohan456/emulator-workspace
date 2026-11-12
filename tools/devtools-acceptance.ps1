@@ -101,7 +101,7 @@ try {
         }
     }
     if (Test-Path $apk) {
-        Invoke-Ws @("install", "--name", $instance, "--path", $apk, "--root", $Root) -AllowFailure | Out-Null
+        Invoke-Ws @("install", "--name", $instance, "--apk", $apk, "--root", $Root) -AllowFailure | Out-Null
     }
     Invoke-Ws @("launch", "--name", $instance, "--package", $Package, "--root", $Root) -AllowFailure | Out-Null
     Start-Sleep -Seconds 6
@@ -133,8 +133,8 @@ try {
     # -------------------------------------------------------- instrumentation
     $instrument = Parse-Json (Invoke-Ws @("instrumentation", "--name", $instance, "--package", $Package, "--root", $Root) -AllowFailure).Text
     Set-Content -Path (Join-Path $out "instrumentation.json") -Value ($instrument | ConvertTo-Json -Depth 6) -Encoding UTF8
-    Add-Check "instrumentation" ($null -ne $instrument -and $null -ne $instrument.tests) `
-        ("tests=" + $instrument.tests + " failures=" + $instrument.failures + " passed=" + $instrument.passed)
+    Add-Check "instrumentation" ($null -ne $instrument -and $null -ne $instrument.available) `
+        ("available=" + $instrument.available + " tests=" + $instrument.tests + " failures=" + $instrument.failures + " reason=" + $instrument.reason)
 
     # ----------------------------------------------------------- logcat export
     $export = Parse-Json (Invoke-Ws @("logcat-export", "--name", $instance, "--lines", "300", "--root", $Root) -AllowFailure).Text
