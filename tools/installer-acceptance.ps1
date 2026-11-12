@@ -23,7 +23,8 @@ param(
     [string]$Installer = "",
     [string]$OutDir = "artifacts\phase3\install",
     [string]$WorkRoot = "D:\Phase5Root",
-    [int]$BootTimeoutSeconds = 600
+    [int]$BootTimeoutSeconds = 600,
+    [switch]$VerifySnapshotJson
 )
 
 $ErrorActionPreference = "Continue"
@@ -109,9 +110,11 @@ Log "installer acceptance $run installer=$Installer"
 
 try {
     # ------------------------------------------------------------ clean state
-    Get-Process EmulatorWorkspace.Supervisor, EmulatorWorkspace.Desktop -ErrorAction SilentlyContinue |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
+    if ((Get-ChildItem -LiteralPath $installedRoot -Force -ErrorAction SilentlyContinue | Select-Object -First 1) -or
+        (Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+            Where-Object DisplayName -eq "Emulator Workspace")) {
+        throw "Clean-install acceptance requires a Windows user without an existing Emulator Workspace installation."
+    }
 
     $installLog = Join-Path $out "msi-install.log"
     $code = Install-Msi $Installer $installLog
@@ -153,6 +156,14 @@ try {
     Add-Check "first-boot.image" ($status -and $status.imagePackage -like "system-images;android-35*") `
         ("the guest uses " + $status.imagePackage)
 
+    if ($VerifySnapshotJson) {
+        $snapshot = Invoke-Ws $wsctlExe @("snapshot-save", "--name", $guest, "--tag", "installer-probe", "--json", "--root", $WorkRoot) -AllowFailure
+        $snapshot.Text | Set-Content -LiteralPath (Join-Path $out "installed-snapshot.json") -Encoding UTF8
+        $snapshotResult = Parse-Json $snapshot.Text
+        Add-Check "installed.snapshot-json" ($snapshot.Code -eq 0 -and $snapshotResult.tag -eq "installer-probe" -and
+            $snapshotResult.action -eq "save" -and $snapshotResult.seconds -gt 0) "the installed CLI reports structured snapshot results"
+    }
+
     # --------------------------------------------------- offline reuse
     $offlineOk = $true
     $offlineDetail = "the installed CLI answered while the guest was running"
@@ -164,10 +175,10 @@ try {
         $offlineOk = $false
         $offlineDetail = $_.Exception.Message
     }
-    Add-Check "offline-reuse" $offlineOk $offlineDetail
+    Add-Check "local-status-reuse" $offlineOk $offlineDetail
 
     # -------------------------------------------------- profile preservation
-    $profileMarker = Join-Path $profilesRoot "profiles\acceptance-marker.txt"
+    $profileMarker = Join-Path $profilesRoot "profiles\acceptance-$([Guid]::NewGuid().ToString('N')).txt"
     $profilesDir = Join-Path $profilesRoot "profiles"
     New-Item -ItemType Directory -Force $profilesDir | Out-Null
     Set-Content -Path $profileMarker -Value "kept across the upgrade" -Encoding UTF8
@@ -187,9 +198,6 @@ try {
     # stopped before the uninstall; otherwise the installer cannot remove them.
     Invoke-Ws $wsctlExe @("supervisor-stop", "--root", $WorkRoot) -AllowFailure | Out-Null
     Start-Sleep -Seconds 4
-    Get-Process EmulatorWorkspace.Supervisor, EmulatorWorkspace.Desktop -ErrorAction SilentlyContinue |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 3
 
     $uninstallLog = Join-Path $out "msi-uninstall.log"
     $productCode = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
@@ -211,6 +219,11 @@ try {
 catch {
     Add-Check "harness.fatal" $false $_.Exception.Message
     Log ("fatal: " + $_.Exception.Message)
+}
+finally {
+    if ($profileMarker -and (Test-Path -LiteralPath $profileMarker)) {
+        Remove-Item -LiteralPath $profileMarker
+    }
 }
 
 $failed = @($script:results | Where-Object { -not $_.Passed }).Count

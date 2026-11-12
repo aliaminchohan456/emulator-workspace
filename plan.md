@@ -209,12 +209,12 @@ profiles.
 `docs/compatibility-matrix.md` and `docs/security-review.md` record what was
 verified and what is still open.
 
-The benchmark plan was run and published in `docs/benchmark.md`: the boot
-overhead target is met (the managed cold boot is not slower than the same
-engine started outside the supervisor), the warm restore and the input latency
-targets are not met (39.65 s against 8 s, and p95 324.76 ms against 100 ms),
-the engine's PNG capture path is the frame-rate limiter (p50 498 ms per frame),
-and thirty start/stop cycles leave no engine process behind.
+The historical benchmark is documented in [docs/benchmark.md](docs/benchmark.md).
+The 39.65 s and 44.92 s cold-boot medians were both supervisor-managed. The
+raw CLI control is still required. The historical warm restore median reused
+cold-boot readiness and is invalid for the 8 s gate. The Logcat and PNG
+round-trip measurements are diagnostics with separate endpoints from the WPF
+composition proxy.
 
 The Root Lab ADB daemon workflow is implemented and verified on the pinned
 userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 10 of 10 checks):
@@ -292,13 +292,18 @@ two guests, 741/858 ms software. The 60 FPS target is still missed; the remainin
 limiter is engine capture plus host CPU. Composition-proxy latency is not yet
 validated.
 
-Measured Phase 3 plan (`docs/benchmark.md`, the reference host of the run):
-the cold boot to interactive readiness is p50 39.65 s against a same-engine
-baseline of p50 44.92 s over 20 samples each, so the **boot overhead target is
-met**; the warm restore is p50 39.65 s over 20 samples, so the **8 s target is
-not met** because a restore that does not bring the guest back within 90
-seconds falls back to a cold boot; the input latency is p50 154.73 ms and p95
-324.76 ms over 20 samples, so the **100 ms target is not met**; one captured
-frame costs p50 498.19 ms, which is the frame-rate limiter and the reason the
-60 FPS target stays out of reach; and 30 start/stop cycles leave no engine
-process behind and do not shrink the free memory.
+The Phase 3 benchmark measured 20 cold boots per managed profile. The
+matched raw CLI control remains open. The corrected harness measures restore
+wall time, distinguishes clean-boot fallback, and checks an independent
+guest-state marker. The verified warm-restore sample count and the viewport
+presentation targets remain release gates. See [docs/benchmark.md](docs/benchmark.md).
+## Continuation checkpoint
+
+The Windows reference host ran the corrected two-guest benchmark under WHPX
+with an isolated workspace root containing spaces and non-ASCII characters.
+Both latency scenarios collected 20 fresh fixture markers, with both guests
+removed through the supervisor. Packaging ran concurrently, so a quiet-host
+WPF composition run remains the next presentation measurement. The exact
+commands, raw run paths and current candidate hash are in [task.md](task.md).
+The Magisk experiment has pinned sources and a documented build preflight.
+[Magisk Lab build inputs](docs/magisk-lab-build.md)

@@ -52,6 +52,7 @@ $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
 $script:results = New-Object System.Collections.ArrayList
 $ownedGuests = [System.Collections.Generic.List[string]]::new()
+$soakProcesses = @{}
 $package = "dev.emulatorworkspace.sample"
 
 if ($SoakMinutes -gt 0 -and $SkipTwoGuest) {
@@ -190,15 +191,7 @@ $hostInfo = [ordered]@{
 $hostInfo | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $out "host.json") -Encoding UTF8
 Log ("host: {0} / {1} / {2} / {3} GB RAM" -f $hostInfo.machine, $hostInfo.cpuCores, $hostInfo.gpu, [Math]::Round($hostInfo.totalRamMB / 1024, 1))
 
-if (-not $Apk) {
-    $Apk = (Get-ChildItem (Join-Path $repo "artifacts") -Recurse -Filter "ws-sample.apk" -ErrorAction SilentlyContinue |
-        Select-Object -First 1).FullName
-}
-if ($Apk) {
-    $approved = Join-Path $Root "apps\ws-sample.apk"
-    New-Item -ItemType Directory -Force (Split-Path $approved) | Out-Null
-    Copy-Item $Apk $approved -Force
-}
+if (-not $Apk) { $Apk = Join-Path $repo "artifacts/phase1/sample/ws-sample.apk" }
 
 $report = [ordered]@{
     runId = $run
@@ -212,7 +205,8 @@ $report = [ordered]@{
         bootOverheadPercent = 10
     }
     sourceCommit = (& git -C $repo rev-parse HEAD | Out-String).Trim()
-    fixtureSha256 = if ($Apk) { (Get-FileHash -LiteralPath $Apk).Hash } else { $null }
+    harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
+    fixtureSha256 = $null
     latencyEndpoint = "ADB tap dispatch to host receipt of the fixture Logcat marker"
     latencyTrials = [ordered]@{}
     restoreTrials = @()
@@ -317,19 +311,36 @@ function Invoke-TwoGuestSoak([string[]]$names) {
             $packageInfo = Parse-Json (Invoke-Ws @("package-info", "--name", $current.name, "--package", $package, "--root", $Root)).Text
             if (-not $packageInfo.installed) { throw "Soak fixture is missing on $($current.name)." }
 
-            $engine = Get-Process -Id $current.enginePid -ErrorAction Stop
-            $ports = @(Get-NetTCPConnection -OwningProcess $current.enginePid -State Listen -ErrorAction SilentlyContinue |
-                Select-Object -ExpandProperty LocalPort -Unique | Sort-Object)
-            if ($current.consolePort -notin $ports -or $current.grpcPort -notin $ports) {
-                throw "Soak guest $($current.name) lost an owned listener."
+            $launcher = Get-Process -Id $current.enginePid -ErrorAction Stop
+            $childFilter = "ParentProcessId=$($launcher.Id) AND Name='qemu-system-x86_64-headless.exe'"
+            $enginePath = Join-Path $sdk "emulator/qemu/windows-x86_64/qemu-system-x86_64-headless.exe"
+            $children = @(Get-CimInstance Win32_Process -Filter $childFilter -ErrorAction Stop |
+                Where-Object { $_.ExecutablePath -eq $enginePath -and $_.CreationDate -ge $launcher.StartTime })
+            $processes = @($launcher) + @($children | ForEach-Object {
+                Get-Process -Id $_.ProcessId -ErrorAction Stop
+            })
+            $metrics = @($processes | ForEach-Object {
+                [pscustomobject]@{
+                    pid = $_.Id
+                    startUtc = $_.StartTime.ToUniversalTime()
+                    workingSetBytes = $_.WorkingSet64
+                    privateBytes = $_.PrivateMemorySize64
+                    handles = $_.HandleCount
+                    cpuSeconds = $_.CPU
+                }
+            })
+            $soakProcesses[$current.name] = $metrics
+            $ports = @(Get-NetTCPConnection -OwningProcess @($metrics.pid) -State Listen -ErrorAction Stop |
+                Select-Object LocalAddress, LocalPort, OwningProcess)
+            foreach ($port in @($current.consolePort, ($current.consolePort + 1), $current.grpcPort)) {
+                if (-not ($ports | Where-Object { $_.LocalPort -eq $port -and $_.LocalAddress -in @("127.0.0.1", "::1") })) {
+                    throw "Soak guest $($current.name) has no owned loopback listener on port ${port}."
+                }
             }
             [pscustomobject]@{
                 identity = $current
-                listeningPorts = $ports
-                workingSetBytes = $engine.WorkingSet64
-                privateBytes = $engine.PrivateMemorySize64
-                handles = $engine.HandleCount
-                cpuSeconds = $engine.CPU
+                listeners = $ports
+                processes = $metrics
             }
         }
         [pscustomobject]@{
@@ -351,6 +362,13 @@ Log "benchmark $run root=$Root samples=$Samples cycles=$Cycles"
 
 try {
     New-Item -ItemType Directory -Force $Root | Out-Null
+    if (-not (Test-Path -LiteralPath $Apk -PathType Leaf)) {
+        throw "Build the sample APK or pass -Apk before benchmarking input."
+    }
+    $approved = Join-Path $Root "apps/benchmark-$([Guid]::NewGuid().ToString('N')).apk"
+    New-Item -ItemType Directory -Force (Split-Path -Parent $approved) | Out-Null
+    Copy-Item -LiteralPath $Apk -Destination $approved -ErrorAction Stop
+    $report.fixtureSha256 = (Get-FileHash -LiteralPath $approved).Hash
 
     # ---------------------------------------------------- the same-engine baseline
     # The historical baseline is a second supervisor-managed profile. This
@@ -447,11 +465,10 @@ try {
         Log "restore attempts=$Samples verifiedWarm=$($warm.Count) coldBootFallbacks=$fallbacks"
     }
 
-    if (-not $Apk) { throw "Build the sample APK or pass -Apk before benchmarking input." }
     Install-Fixture $guest
     $report.scenarios["inputLatencyMs"] = Measure-GuestLatency $guest "singleGuest" ""
 
-    # --------------------------------------------------------------- frame rate
+    # -------------------------------------------------------- one-shot PNG cost
     $frameSamples = New-Object System.Collections.ArrayList
     for ($sample = 1; $sample -le $Samples; $sample++) {
         $started = Get-Date
@@ -478,6 +495,7 @@ try {
 
     # ------------------------------------------------------- lifecycle stability
     if (-not $SkipLifecycle) {
+        Stop-OwnedGuest $guest
         $before = Get-MemorySnapshot
         $cycleTimes = New-Object System.Collections.ArrayList
         $failures = 0
@@ -539,12 +557,8 @@ try {
     }
 
     $latency = $report.scenarios["inputLatencyMs"]
-    if ($latency.samples -ge 20) {
-        Add-Check "target.input-latency" ($latency.p95 -le 100) ("input latency p50 {0}ms p95 {1}ms over {2} samples (target p95 <= 100ms)" -f $latency.p50, $latency.p95, $latency.samples)
-    }
-    else {
-        Add-Check "target.input-latency" $false "only $($latency.samples) latency samples"
-    }
+    Add-Check "coverage.single-guest-latency" ($latency.samples -ge 20) (
+        "ADB tap to Logcat p50 {0}ms p95 {1}ms over {2} samples" -f $latency.p50, $latency.p95, $latency.samples)
 
 }
 catch {
@@ -556,11 +570,20 @@ finally {
         try {
             Stop-OwnedGuest $name
             Invoke-Ws @("destroy", "--name", $name, "--root", $Root) | Out-Null
+            foreach ($owned in $soakProcesses[$name]) {
+                $remaining = Get-Process -Id $owned.pid -ErrorAction SilentlyContinue
+                if ($remaining -and $remaining.StartTime.ToUniversalTime() -eq $owned.startUtc) {
+                    throw "Owned process $($owned.pid) is still running after cleanup."
+                }
+            }
             Add-Check "cleanup.$name" $true "stopped and removed through the supervisor"
         }
         catch {
             Add-Check "cleanup.$name" $false $_.Exception.Message
         }
+    }
+    if ($approved -and (Test-Path -LiteralPath $approved)) {
+        Remove-Item -LiteralPath $approved
     }
     $report | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $out "benchmark.json") -Encoding UTF8
 }

@@ -70,6 +70,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Add separate ADB root and Magisk controls and capability badges. Verify targeted `adb root` and `adb unroot` with effective UID after reconnect. Recheck after boots, restores, and updates.
   The CLI side is implemented and verified: `wsctl adb-root`, `wsctl adb-unroot`, `wsctl adb-root-state` (ops `instance.adbRoot`, `instance.adbRootState`) are scoped to one managed guest by its exact ADB serial, refuse a non-userdebug image with the typed `capability_unavailable` error and re-read the effective user. Run `artifacts/phase3/rootlab/20261111-222756` passed 10 of 10 checks: uid 2000 -> 0 -> 2000, transport reattachment 301 -> 302, state refresh after boot and after a snapshot restore, named snapshot round-trip and cleanup. The WPF Root Lab surface is built: the inspector carries an **ADB root** / **ADB unroot** / **Refresh** group that shows the effective uid, the build type and the transport, and the same actions are in the Ctrl+K command palette. The Magisk actions remain; Magisk needs a Linux builder for the pinned sources (external prerequisite).
 - [ ] Pin AOSP, engine, and Magisk versions and document image provenance and the verified patch flow. Preserve pristine artifacts and patch a per-instance copy of the actual boot inputs.
+  [The build procedure](docs/magisk-lab-build.md) pins the experimental AOSP manifest and Magisk v30.7, records the SDK stock ramdisk hash, and provides the Linux capacity check and exact pinned patch command. The script passes `bash -n` and correctly refuses Windows Git Bash. Source build and patch acceptance remain open.
 - [ ] Implement approved Magisk install with durable backup, journaled staging, validated activation, cold boot, and incompatible snapshot fencing. Provide progress and exact compatibility failure reasons.
 - [ ] Verify Android boot, expected Magisk version, and approved guest app or probe `su` with UID 0. Repeat after a second cold boot and verify the original profile still boots.
 - [ ] Recover from the Windows app while Android is unavailable. Test exact stock boot and compatible guest data restoration after interrupted writes, corrupt patches, and boot timeouts. Preserve evidence before allowing retries.
@@ -82,15 +83,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Test same-user and external ADB trust boundaries, privileged scopes, injection, path escapes and reparse points, floods, partial operations, and exposed sockets. Verify retention, artifact deletion, and support-bundle preview.
   `docs/security-review.md` records the review with the code references, the seven fixed findings and the two open ones (the release signing identity and the four-hour soak).
 - [ ] Run the benchmark plan, including baseline comparisons, 30 start/stop cycles and a four-hour two-guest soak. Preserve raw samples and compare workflows with Android Studio, the Emulator CLI, and an existing mobile MCP server.
-  The plan was run and published. `tools/benchmark.ps1` declares the reference host before it measures anything, collects at least 20 samples per latency and boot scenario with p50/p95, measures the single-guest and the two-guest scenarios separately, runs 30 start/stop cycles watching for leaked engines, ports and memory growth, and evaluates the targets at the end. The results are in `docs/benchmark.md`:
+  The historical results are in [docs/benchmark.md](docs/benchmark.md). The
+  managed cold-boot medians were 39.65 s and 44.92 s for two managed profiles.
+  The actual raw CLI control remains open. The historical warm restore reused
+  cold-boot readiness and cannot verify the 8 s gate. The 30-cycle run had
+  one failure and finished without a surviving engine. ADB tap-to-Logcat
+  and the CLI PNG capture are diagnostic endpoints. The WPF composition proxy
+  and 60 FPS workload remain pending.
 
-  * **boot overhead: met.** The managed cold boot is p50 39.65 s against a same-engine baseline of p50 44.92 s over 20 samples each, so the supervisor adds no measurable boot cost.
-  * **warm restore: not met.** The restore is bimodal: a quickboot restore brings the guest back in 10-13 s, but a restore that does not come back within the supervisor's 90 s window falls back to a cold boot of 40-50 s, so the median lands at 39.65 s against the 8 s target.
-  * **input latency: not met.** The dispatch-to-response latency is p50 154.73 ms and p95 324.76 ms over 20 samples, more than twice the 100 ms target.
-  * **capture path: the frame-rate limiter.** One captured frame costs p50 498 ms, so the engine's PNG capture path bounds the delivered frame rate and the 60 FPS target is out of reach with it.
-  * **lifecycle: stable.** Thirty start/stop cycles leave no engine process behind and the free memory does not shrink.
-
-  Still open: the two-guest latency samples, the four-hour two-guest soak, and the comparison with Android Studio, the raw Emulator CLI and an existing mobile MCP server.
 - [ ] Add versioned Windows build, test, and package CI plus a separate WHPX hardware lane. Exercise paths with spaces and non-ASCII names, mixed DPI, low disk and RAM, and port conflicts.
   `.github/workflows/windows-release.yml` builds, tests and packages on every tag, verifies the installer hash against the release record and uploads the candidate; a separate self-hosted WHPX lane runs every acceptance harness and the benchmark. The path-with-spaces and non-ASCII cases and the constrained-volume low-space run are still open.
 - [ ] Build the reproducible installer or installable release candidate. Produce hashes, dependency inventory or SBOM, notices, provenance, and signing status. Verify clean install, first launch, offline reuse with installed dependencies, upgrade preserving profiles, and uninstall.
@@ -135,7 +135,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 3 WPF click-through | Verified | `artifacts/phase3/wpf/20261112-132247`: 16/16 checks, real UI Automation against the live window | Repeat on a 150% DPI display |
 | Phase 3 developer tooling | Verified | `artifacts/phase3/devtools/20261112-100421`: 9/9 checks (package info/permissions, deep link, instrumentation, logcat export, crash/ANR, bug report) | Add the `.aab` build and signing choice |
 | Phase 3 Windows installer | Verified | `artifacts/phase3/install/20261112-194153`: 16/16 checks; per-user MSI 55 380 192 bytes, SHA-256 `87423673â€¦`, unsigned | Sign with a user-owned certificate |
-| Phase 3 benchmark | Measured, two targets missed | `docs/benchmark.md`: boot overhead met (39.65 s against a 44.92 s baseline, 20 samples each); warm restore 39.65 s against the 8 s target; input latency p50 154.73 ms / p95 324.76 ms over 20 samples against the 100 ms target; capture p50 498 ms per frame; 30 start/stop cycles leak no engine | Profile the capture path; shorten the restore fallback |
+| Phase 3 benchmark | Historical diagnostics | `docs/benchmark.md`: two managed boot profiles; historical restore endpoint invalid; ADB-to-Logcat and PNG costs retained; one failure in 30 lifecycle cycles, no surviving engine | Matched raw CLI, verified restore and WPF composition runs |
 | Phase 3 simulation probe | Implemented | `wsctl simulation-probe` checks the network profile, routes, power, sensors, camera, microphone, telephony, locale, timezone, display and airplane mode against the running guest and reports the exact reason for every capability the guest does not offer | Record the measured answers in the compatibility matrix |
 | Guest ANR overlay | Diagnosed | A blocking "Quickstep isn't responding" dialog was captured in the Maestro debug artifacts and explains the earlier alternating runs; both harnesses now detect it and restart the guest | Keep the detection in the acceptance path |
 | Snapshot restore recovery | Verified | A snapshot load that does not bring the guest back now triggers a clean boot and reports `recovery=cold_boot` | Test the same path under two-guest load |
@@ -144,14 +144,58 @@ All tasks start open. Check off an implementation task after its scoped verifica
 
 | Item | Why it is open | Exact next action |
 | --- | --- | --- |
-| The Magisk lab profile | A source-built Magisk profile needs a Linux builder for the pinned AOSP and Magisk sources, or a stock Magisk ramdisk proven compatible with the pinned image. Neither is available in this environment. | Provide a Linux builder (or the stock ramdisk), then run `tools/root-lab-acceptance.ps1` with the Magisk profile: install, cold boot, `su` with uid 0, a second cold boot and the stock restoration. |
-| The warm restore target of 8 s | The restore is bimodal: a quickboot restore brings the guest back in 10-13 s, but a restore that does not come back within the supervisor's 90 s window falls back to a cold boot of 40-50 s. | Measure how often the fallback happens (`recovery=cold_boot` in the replay report) and either shorten the fallback detection or make the quickboot restore reliable on this image. |
-| The input latency target of 100 ms | The measured dispatch-to-response latency is p50 154.73 ms and p95 324.76 ms. The engine's PNG capture path costs about 498 ms per frame, so the measurement is bounded by the capture, not by the input path. | Profile the capture path and evaluate the encoded transport, then re-run `tools/benchmark.ps1` with the same scenario switches. |
-| The 60 FPS viewport target | The capture path is the limiter (see above). | The same capture-path work as the latency target. |
-| The four-hour two-guest soak | It was not part of the benchmark run. | Run `tools/benchmark.ps1` with the two-guest scenario and let the guest pair soak for four hours, watching the engine count, the ports and the memory. |
-| The two-guest latency samples | The two-guest scenario ran before the install path was fixed, so it produced no samples. | Run `tools/benchmark.ps1 -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle` with the two-guest scenario enabled. |
+| The Magisk lab profile | The source build needs x86_64 Linux, 64 GB RAM and 400 GB free. This Windows host has 31.8 GiB RAM and WSL is absent. | Run `bash tools/build-magisk-lab-aosp.sh --check /mnt/aosp` on the builder, then follow [the pinned procedure](docs/magisk-lab-build.md). |
+| The warm restore target of 8 s | The historical harness reused cold-boot readiness. | Run `tools/benchmark.ps1 -Root D:/WSBench -Samples 20 -SkipBaseline -SkipColdBoot -SkipLifecycle -SkipTwoGuest`. Check each restore outcome, guest-state marker and full wall time. |
+| The input latency target of 100 ms | The historical latency endpoint was ADB dispatch to Logcat. | Fix the WPF probe to follow the visible fixture marker and measure composition. |
+| The 60 FPS viewport target | The historical WPF RGB path delivered 29.4 FPS. | Measure a 60 FPS fixture in WPF and profile the RGB path before choosing a transport change. |
+| The four-hour two-guest soak | The historical run omitted the soak. | Run `tools/benchmark.ps1 -Root D:/WSBench -Samples 20 -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle -SoakMinutes 240` and monitor `soak.jsonl` through cleanup. |
+| Two-guest latency | WHPX run `20261112-205244` collected 20/20 fresh markers. ADB-to-Logcat p50 1,099.43 ms / p95 1,451.69 ms. Packaging overlapped the run. | Measure the same input workload through the WPF composition proxy on a quiet host. |
 | The comparison with Android Studio, the raw Emulator CLI and an existing MCP server | Not run in this environment. | Run the same recipe through each of the three and record the measured difference in `docs/benchmark.md`. |
 | The release signing identity | No user-owned code-signing certificate was supplied, so the candidate is unsigned. | Supply the certificate to `tools/package-release.ps1 -CertificateThumbprint` and rebuild; the provenance records the signing status either way. |
 | A second API level and an unmodified Google Play image | The images are installed on the host but were not exercised. | Run `tools/phase3-acceptance.ps1` and the recipe harness against `system-images;android-36;google_apis_playstore;x86_64` and `system-images;android-35;google_apis_playstore_ps16k;x86_64` and add the rows to `docs/compatibility-matrix.md`. |
 | 150% and mixed-DPI displays, paths with spaces and non-ASCII names | Only 100% and 125% scaling were exercised, and the workspace roots used plain paths. | Repeat the WPF click-through on a 150% display and run the harnesses with a root path that contains spaces and non-ASCII characters. |
 | The demo recording and the first-run and failure screenshots | Not produced. | Record the WPF click-through and capture the first-run panel and a failure state as PNGs. |
+
+### Continuation from `806251f`
+
+- Baseline: `dotnet build` and `dotnet test --no-build` passed, 56/56 tests.
+  The existing MSI's hash and `NotSigned` status matched its release record.
+  Its provenance identifies source `4f821ee`. The historical acceptance
+  script's offline check was local status with the guest running and its
+  upgrade check reran the same installer. Network-disconnected reuse and an
+  upgrade between versions remain open.
+- Benchmark implementation `f375bde`. Reproduce with
+  `powershell -NoProfile -ExecutionPolicy Bypass -File tools/benchmark.ps1 -Root 'D:/WS Bench résumé' -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle`.
+  Run `20261112-205244` collected 20/20 single-guest and 20/20 two-guest
+  markers. Single-guest p50/p95 were 221.11/553.47 ms, paired were
+  1,099.43/1,451.69 ms. One-shot PNG p50 was 575.15 ms. Packaging overlapped
+  the run. The harness deleted both guests through the supervisor and ADB
+  showed no attached guests. Evidence is in `artifacts/phase3/bench/20261112-205244`.
+  The smoke run `20261112-204922` exposed view-local log coordinates and
+  unbounded ADB waits after a disconnect. Both were corrected.
+- The rebuilt local candidate from `f375bde` is
+  `D:/Release/emulator-workspace-0.1.0-20261112-205529/EmulatorWorkspace-0.1.0.msi`.
+  Size 55,367,904 bytes. SHA-256
+  `7a3650c3208759c60d657b2ef2ffb16aa532fbffed40fad65e5fff8c436d73f3`.
+  Authenticode reports `NotSigned`. Acceptance `20261112-210610` passed
+  **17/17**, including structured snapshot JSON from the installed CLI,
+  WHPX boot, local status, same-version reinstall preserving the marker,
+  and uninstall. Reproduce with `tools/installer-acceptance.ps1 -Installer <exact MSI> -WorkRoot D:/WSCandidate205529 -VerifySnapshotJson`.
+  Raw evidence is in `artifacts/phase3/install/20261112-210610`. Build command
+  `powershell -NoProfile -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.0 -OutDir D:/Release`.
+
+- Restore smoke `20261112-210012`: one named load restored the independent
+  guest marker in 44.70 s full wall time, of which the console call took
+  6.09 s. No fallback occurred in that sample. The soak probe detected that
+  Windows assigns emulator listeners to the QEMU child instead of the
+  launcher PID. The harness now verifies the pinned executable and process
+  generation before attributing those ports. The 20-sample restore gate and
+  four-hour soak remain open.
+- Signing preflight now checks for the exact code-signing thumbprint and a
+  private key in `Cert:/CurrentUser/My`. It rejected a missing identity
+  before packaging. A supplied identity invokes Windows SDK SignTool and
+  must pass Authenticode verification before provenance says signed.
+  Windows SDK 10.0.26100.0 SignTool is installed. Actual signed-candidate
+  acceptance needs the authorized identity. Run
+  `tools/package-release.ps1 -Version 0.1.0 -CertificateThumbprint <thumbprint>`
+  once the operator has made the key available.

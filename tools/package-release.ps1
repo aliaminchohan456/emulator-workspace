@@ -27,12 +27,42 @@ param(
     [string]$CertificateThumbprint = "",
     [string]$CertificatePath = "",
     [string]$CertificatePassword = "",
+    [string]$TimestampUrl = "",
     [switch]$SkipInstaller
 )
 
 $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
+
+$certificate = $null
+if ($CertificatePath -or $CertificatePassword) {
+    throw "Import the signing identity into Cert:\CurrentUser\My and pass -CertificateThumbprint."
+}
+if ($TimestampUrl -and -not $CertificateThumbprint) {
+    throw "-TimestampUrl requires -CertificateThumbprint."
+}
+if ($CertificateThumbprint) {
+    if ($SkipInstaller) { throw "Installer signing requires an MSI build." }
+    $thumbprint = $CertificateThumbprint -replace '\s', ''
+    if ($thumbprint -notmatch '^[0-9a-fA-F]{40}$') { throw "The signing certificate thumbprint must contain 40 hex digits." }
+    $certificate = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
+        Where-Object { $_.Thumbprint -eq $thumbprint -and $_.HasPrivateKey } |
+        Select-Object -First 1
+    if (-not $certificate) { throw "No code-signing certificate with that thumbprint and private key exists in Cert:\CurrentUser\My." }
+
+    $signTool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Source
+    if (-not $signTool) {
+        $sdkBin = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\bin"
+        $signTool = Get-ChildItem -LiteralPath $sdkBin -Directory -ErrorAction SilentlyContinue |
+            Where-Object Name -match '^\d+\.\d+\.\d+\.\d+$' |
+            Sort-Object { [version]$_.Name } -Descending |
+            ForEach-Object { Join-Path $_.FullName "x64\signtool.exe" } |
+            Where-Object { Test-Path -LiteralPath $_ } |
+            Select-Object -First 1
+    }
+    if (-not $signTool) { throw "Install the Windows SDK Signing Tools or add signtool.exe to PATH." }
+}
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 if (-not $StageDir) { $StageDir = Join-Path $OutDir "stage-$stamp" }
@@ -237,18 +267,7 @@ $provenance = [ordered]@{
         reason = "No user-owned code-signing certificate was supplied to this build."
     }
 }
-if ($CertificateThumbprint -or $CertificatePath) {
-    $certificate = Get-ChildItem Cert:\CurrentUser\My -ErrorAction SilentlyContinue |
-        Where-Object { $_.Thumbprint -eq $CertificateThumbprint -or $_.Subject -eq $CertificatePath } |
-        Select-Object -First 1
-    if ($certificate) {
-        $provenance.signing.status = "signed"
-        $provenance.signing.identity = $certificate.Subject
-        $provenance.signing.thumbprint = $certificate.Thumbprint
-    }
-}
 $provenancePath = Join-Path $releaseDir "provenance.json"
-$provenance | ConvertTo-Json -Depth 6 | Set-Content -Path $provenancePath -Encoding UTF8
 
 # -------------------------------------------------------------- file hashes
 $hashes = New-Object System.Collections.ArrayList
@@ -305,10 +324,31 @@ if (-not $SkipInstaller) {
             throw "the installer was not produced at $built"
         }
 
+        if ($certificate) {
+            $signArgs = @("sign", "/fd", "SHA256", "/s", "My", "/sha1", $certificate.Thumbprint)
+            if ($TimestampUrl) { $signArgs += @("/tr", $TimestampUrl, "/td", "SHA256") }
+            & $signTool @signArgs $built
+            if ($LASTEXITCODE -ne 0) { throw "SignTool could not sign the MSI (exit $LASTEXITCODE)." }
+            & $signTool verify /pa $built
+            if ($LASTEXITCODE -ne 0) { throw "The MSI signature did not pass Authenticode verification (exit $LASTEXITCODE)." }
+            $signature = Get-AuthenticodeSignature -LiteralPath $built
+            if ($signature.Status -ne "Valid" -or $signature.SignerCertificate.Thumbprint -ne $certificate.Thumbprint) {
+                throw "The MSI signature did not match the requested identity."
+            }
+            $provenance.signing = [ordered]@{
+                status = "signed"
+                identity = $certificate.Subject
+                thumbprint = $certificate.Thumbprint
+                timestamped = $null -ne $signature.TimeStamperCertificate
+            }
+        }
+
         $msiPath = Join-Path $releaseDir "EmulatorWorkspace-$Version.msi"
         Copy-Item $built $msiPath -Force
         Write-Host ("  installer: {0} ({1} bytes)" -f $msiPath, (Get-Item $msiPath).Length)
 }
+
+$provenance | ConvertTo-Json -Depth 6 | Set-Content -Path $provenancePath -Encoding UTF8
 
 # ------------------------------------------------------- release manifest
 $release = [ordered]@{

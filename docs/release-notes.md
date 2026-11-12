@@ -124,13 +124,12 @@ The full review is in `docs/security-review.md`. The short version:
 
 ## Known limitations
 
-- The 60 FPS viewport target and the p95 input-latency target of 100 ms are
-  **not met** on this host. The measured numbers and their endpoints are in
-  `docs/benchmark.md`; the limiter is the engine's PNG capture path, not the
-  WPF decode or the pipe.
-- The Magisk lab profile needs a Linux builder for the pinned AOSP/Magisk
-  sources. The ramdisk-substitution workflow itself is proven; only the
-  source-built profile is missing.
+- The WPF RGB viewport measured 29.4 FPS in the historical run. The 60 FPS
+  workload and the 100 ms p95 composition-proxy check remain open. Logcat and
+  one-shot PNG timings are listed in [benchmark.md](benchmark.md).
+- The source-built Magisk Lab profile needs an x86_64 Linux builder. The
+  pinned inputs and preparation commands are in
+  [magisk-lab-build.md](magisk-lab-build.md).
 - Concurrent engine starts are unreliable on this host, so the acceptance
   harnesses start the guests sequentially and record the concurrent attempt as
   an explicit option.

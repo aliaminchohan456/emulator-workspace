@@ -2,7 +2,7 @@
 
 Run directories under `artifacts/phase3/bench/` contain the raw evidence.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -40,11 +40,11 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 | Cold boot to interactive readiness (managed, s) | 20 | 39.65 | 49.81 | raw CLI comparison pending |
 | Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | historical control |
 | Historical restore reading (s) | 20 | 39.65 | 39.65 | invalid endpoint |
-| Verified warm restore (s) | no valid samples | - | - | median at most 8 s, 20 samples |
-| Restore attempt to readiness, including fallback (s) | no valid samples | - | - | reports recovery cost |
-| ADB tap to Logcat, single guest (ms) | 20 | 154.73 | 324.76 | diagnostic |
-| ADB tap to Logcat, two guests (ms) | no valid samples | - | - | diagnostic |
-| CLI one-shot PNG (ms) | 20 | 629.63 | 685.88 | diagnostic |
+| Verified warm restore (s) | 1 | 44.7 | 44.7 | median at most 8 s, 20 samples |
+| Restore attempt to readiness, including fallback (s) | 1 | 44.7 | 44.7 | reports recovery cost |
+| ADB tap to Logcat, single guest (ms) | 20 | 221.11 | 553.47 | diagnostic |
+| ADB tap to Logcat, two guests (ms) | 20 | 1099.43 | 1451.69 | diagnostic |
+| CLI one-shot PNG (ms) | 20 | 575.15 | 644.66 | diagnostic |
 
 ## Lifecycle
 
