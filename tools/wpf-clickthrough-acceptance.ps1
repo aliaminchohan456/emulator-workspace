@@ -366,7 +366,19 @@ try {
     Add-Check "palette.opens" ($null -ne $palette) "Ctrl+K opened the command palette"
     $shotPalette = Save-WindowShot $handle "06-palette.png"
     # The palette is modal, so it is always closed before the run continues.
-    [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    if ($palette) {
+        try {
+            $window = [System.Windows.Automation.AutomationElement]::FromHandle($palette.Current.NativeWindowHandle)
+            $pattern = $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)
+            $pattern.Close()
+        }
+        catch {
+            [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+        }
+    }
+    else {
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    }
     Start-Sleep -Seconds 2
     if ($palette) {
         Add-Step "command-palette" $true "the command palette opened with Ctrl+K" $shotPalette

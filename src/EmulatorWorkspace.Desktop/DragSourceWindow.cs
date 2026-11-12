@@ -15,7 +15,7 @@ namespace EmulatorWorkspace.Desktop;
 public partial class DragSourceWindow : Window
 {
     private readonly string _path;
-    private readonly Border _handle;
+    private readonly Button _handle;
 
     public DragSourceWindow(string path)
     {
@@ -35,15 +35,15 @@ public partial class DragSourceWindow : Window
             FontWeight = FontWeights.SemiBold,
         };
 
-        _handle = new Border
+        _handle = new Button
         {
+            Content = label,
             Background = (Brush)FindResource("LogBg"),
             BorderBrush = (Brush)FindResource("BorderBrush"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
             Padding = new Thickness(12),
             Margin = new Thickness(12),
-            Child = label,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
             Cursor = Cursors.Hand,
         };
         _handle.MouseLeftButtonDown += OnMouseLeftButtonDown;
