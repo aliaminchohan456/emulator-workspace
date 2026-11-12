@@ -349,9 +349,12 @@ reached the WPF composition callback within 3.42 ms p95, so further
 measurement starts with controller input, capture, and delivery. All 20
 snapshot trials on the preserved payload verified fresh focus and restored
 state, with zero fallbacks. Median 9.19 s exceeded the 8 s target. The
-raw control completed 20 trials. Its median was 41.41 s. The managed arm
-now polls for a current focused window after `wsctl wait`, which can
-return early on the preserved binary. Once the matched arm is complete,
-build and test the readiness fix and package a separate version for the
-installer upgrade and runtime regression lanes.
+matched cold-boot comparison passed with 20 observations per arm. The
+managed median was 44.36 s against 41.41 s raw, within the allowed 4.14 s
+overhead. The latest source includes the readiness fix and supervisor split
+install path. Its Release build passed all 58 tests. The separate unsigned
+0.1.2 MSI passed 22 installer checks, including packaged MCP and a real
+upgrade preserving a managed profile from 0.1.1. The preserved 0.1.1
+installer still has its original hash. Candidate runtime regression and
+disconnected reuse remain open.
 [Benchmark evidence](docs/benchmark.md)

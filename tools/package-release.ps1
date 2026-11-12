@@ -64,6 +64,10 @@ if ($CertificateThumbprint) {
     if (-not $signTool) { throw "Install the Windows SDK Signing Tools or add signtool.exe to PATH." }
 }
 
+if (-not $Version) {
+    $props = Get-Content (Join-Path $repo "Directory.Build.props") -Raw
+    if ($props -match '<VersionPrefix>([^<]+)</VersionPrefix>') { $Version = $Matches[1] } else { $Version = "0.1.0" }
+}
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 if (-not $StageDir) { $StageDir = Join-Path $OutDir "stage-$stamp" }
 $payload = Join-Path $StageDir "payload"
@@ -73,10 +77,6 @@ New-Item -ItemType Directory -Force $releaseDir | Out-Null
 
 $commit = (git rev-parse HEAD).Trim()
 $shortCommit = (git rev-parse --short HEAD).Trim()
-if (-not $Version) {
-    $props = Get-Content (Join-Path $repo "Directory.Build.props") -Raw
-    if ($props -match '<VersionPrefix>([^<]+)</VersionPrefix>') { $Version = $Matches[1] } else { $Version = "0.1.0" }
-}
 
 Write-Host "Emulator Workspace $Version"
 Write-Host "  commit  : $commit"
@@ -387,7 +387,7 @@ Write-Host ""
 Write-Host "Release $Version"
 Write-Host "  directory : $releaseDir"
 if ($release.installer) {
-    Write-Host "  installer : $release.installer"
+    Write-Host "  installer : $($release.installer)"
     Write-Host "  sha256    : $($release.installerSha256)"
     Write-Host "  bytes     : $($release.installerBytes)"
 }

@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-015728`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-015728`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -37,8 +37,8 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
 | Scenario | Valid samples | p50 | p95 | Target |
 | --- | --- | --- | --- | --- |
-| Cold boot to interactive readiness (managed, s) | 20 | 39.65 | 49.81 | matched raw CLI overhead gate when both arms have 20 samples |
-| Cold boot to interactive readiness (raw CLI, s) | no valid samples | - | - | same-engine control |
+| Cold boot to interactive readiness (managed, s) | 20 | 44.36 | 55.96 | matched raw CLI overhead gate when both arms have 20 samples |
+| Cold boot to interactive readiness (raw CLI, s) | 20 | 41.41 | 47.27 | same-engine control |
 | Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | historical control |
 | Historical restore reading (s) | 20 | 39.65 | 39.65 | invalid endpoint |
 | Verified warm restore (s) | 20 | 9.19 | 12.34 | median at most 8 s, 20 samples |
@@ -82,6 +82,12 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Supervisor frame arrival interval p95 | 82.70 ms |
 | Viewport throughput | 22.01 FPS at 540 × 1200 |
 | Dropped stream sequences | 86 |
+
+## Matched cold-boot comparison
+
+Run `20261113-023049` verified the 20 raw control rows from `20261113-021146` against the same Windows host, emulator, fixture, MSI and AVD settings before running the managed arm.
+Both arms required Android boot completion and a current focused window.
+Managed p50 44.36s vs raw p50 41.41s = 2.95s overhead (allowed 4.14s).
 
 ## Reproduce the corrected benchmarks
 

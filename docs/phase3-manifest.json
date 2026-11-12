@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-12T21:08:26.7141251Z",
-  "headCommit": "6129e87",
-  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md",
+  "latestFinishedUtc": "2026-11-12T21:50:25.3093627Z",
+  "headCommit": "76454c9",
+  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md\n M tools/build-benchmark-doc.py\n M tools/build-phase3-manifest.py",
   "runs": [
     {
       "kind": "phase3",
@@ -34086,6 +34086,7 @@
       },
       "desktop": {
         "sha256": "1E5644976EEE5CD2A9734B0B5B5DF16A9D161F5962D7BD094DDA96409E7877AC",
+        "assemblySha256": null,
         "version": null,
         "override": false
       },
@@ -34161,6 +34162,7 @@
       },
       "desktop": {
         "sha256": "5E1DB799F5DC084213C96ECE4574423B89F35B8FBCBD0B6181C891A7E0CE5094",
+        "assemblySha256": null,
         "version": "0.1.0+526fb72cf42700abc505d46ea443c50bc23b9e7a",
         "override": true
       },
@@ -39159,6 +39161,449 @@
           "name": "transcript.txt",
           "bytes": 2253,
           "sha256": "a29b65f5b3ab547eb2ed9053a5e2f626066bcf21703faa1bd713667af3d40e1c"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-020845",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-020845",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "6129e87bc812316f2c02bbe1c3a465ce1c242710",
+      "harnessSha256": "C94C93DC971AE7A52BB3502BDA7C499480D77F9FB31BC49569ACFED41F0FA7EA",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-12T21:10:15.1217641Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Exception calling \"Kill\" with \"0\" argument(s): \"Access is denied\"",
+              "atUtc": "2026-11-12T21:10:13.7227879Z"
+            }
+          ]
+        },
+        "cleanup.bench-base-f1479bc817cd": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-base-f1479bc817cd",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:10:14.5172558Z"
+            }
+          ]
+        },
+        "cleanup.bench-9c9545e3e463": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-9c9545e3e463",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:10:15.1052400Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 4128,
+          "sha256": "923a342ded79753882a6a10fac85c0490a9e758aef13d4f0311ec5ef91180c22"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "81036961bf4d793461a532ff269d130fc4f769b5ebc580bed3807470dd248a2c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 6698,
+          "sha256": "519dcbe8e7e8d36723cae073a6996e1ca65a7c93d89f392e03b34fa0cbd69365"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 655,
+          "sha256": "b21a0af9d41c20d8f6440ff81c72626e17f4b768b0a3b984bacfe68e8feb7284"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-021146",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-021146",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "87fcbd09e69840e093d1997c96a93b82837e12e0",
+      "harnessSha256": "41ED36BC894F251296582690813CC4D31D248EE3E066245A4BE2D5139529219C",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-12T21:28:44.6526745Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Managed cold boot trial 1 has no foreground window.",
+              "atUtc": "2026-11-12T21:28:35.5669659Z"
+            }
+          ]
+        },
+        "cleanup.bench-base-66a25c051aa9": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-base-66a25c051aa9",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:28:37.2844155Z"
+            }
+          ]
+        },
+        "cleanup.bench-698702d61c36": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-698702d61c36",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:28:44.6297991Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 18177,
+          "sha256": "edff0dceda3d0ea89b8fef14fda05a5c9eeb717036affda0489ff35530c14111"
+        },
+        {
+          "name": "cold-boot.jsonl",
+          "bytes": 5919,
+          "sha256": "ccb7ab4d704953333c705d336b681c9d95498311c26137cb4b3a93789d34ff95"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "e2d57fa30885c9cd9517e9652b25afaac6a009d0dff87d71b0640d92adb26659"
+        },
+        {
+          "name": "raw-engine-1.log",
+          "bytes": 107200,
+          "sha256": "22fc723d3988b3ee859c929fb37dd6f2b2db32020c64641094ab61bac5d84024"
+        },
+        {
+          "name": "raw-engine-10.log",
+          "bytes": 106909,
+          "sha256": "cff27b087219f5a05183a6082993f24a1a089d68dae50ba3012d8c40a1f7e9df"
+        },
+        {
+          "name": "raw-engine-11.log",
+          "bytes": 106909,
+          "sha256": "15d92d45157bc5fd864c6b0ef071a46252fbaeb928003afc720a232305f39c52"
+        },
+        {
+          "name": "raw-engine-12.log",
+          "bytes": 103302,
+          "sha256": "edfaa0d0181e0f016c210f8a324622692445eeeb91f6138eb61db99a1ff89608"
+        },
+        {
+          "name": "raw-engine-13.log",
+          "bytes": 106796,
+          "sha256": "dd1462fa5ade09d171d71662c5d1976a6e23d20b14599fa24841f6b74eec7ee8"
+        },
+        {
+          "name": "raw-engine-14.log",
+          "bytes": 106849,
+          "sha256": "171bdf9ed746f3f1eab8c0667e315482c0207ea1a77362f832035e5f97b4c46c"
+        },
+        {
+          "name": "raw-engine-15.log",
+          "bytes": 106909,
+          "sha256": "e0382a017dacd2bf2165c9fe69968d99f47c9da404b096de1db60753cd28a60e"
+        },
+        {
+          "name": "raw-engine-16.log",
+          "bytes": 103302,
+          "sha256": "3fe618e2039442dcc3a6eed2d0da702e178490882bfee021228df755c424bebb"
+        },
+        {
+          "name": "raw-engine-17.log",
+          "bytes": 103189,
+          "sha256": "b77e11cef505fb0e8bdd6324d24d7529bfc3eab16f0b8556fa44fee7a12b9d8f"
+        },
+        {
+          "name": "raw-engine-18.log",
+          "bytes": 106794,
+          "sha256": "035dc4f67dcabbb74f22841ae515f5cac6dd02406dbd8e20db83235f4d5e55b1"
+        },
+        {
+          "name": "raw-engine-19.log",
+          "bytes": 106907,
+          "sha256": "5fa5073571bcc8c5b1cab72ab39aecd957794bddf66a9302dd5ac70b49e971a9"
+        },
+        {
+          "name": "raw-engine-2.log",
+          "bytes": 106186,
+          "sha256": "5cb09be2b465ab34a6000345e8329bb4ac23462bb69deec7e43bc3dd88b38ab4"
+        },
+        {
+          "name": "raw-engine-20.log",
+          "bytes": 103266,
+          "sha256": "88725026869daa554b2c1bf44383ebd8e40623f48c8adb63d4975a2dc9998b9b"
+        },
+        {
+          "name": "raw-engine-3.log",
+          "bytes": 106184,
+          "sha256": "2c42c5d26b864b3bdf51a83fed92a54502acaddfe82eeae06dd40b02ed9ec479"
+        },
+        {
+          "name": "raw-engine-4.log",
+          "bytes": 106159,
+          "sha256": "2155aa86d995ae48881eaaa75feb48fdf1b190eb2d8ab528baf9def700ca0e91"
+        },
+        {
+          "name": "raw-engine-5.log",
+          "bytes": 106162,
+          "sha256": "8e4551f839bc0d09929dcf998ae1c397e58afcc2f49280e5d4763e0f3ff9eef8"
+        },
+        {
+          "name": "raw-engine-6.log",
+          "bytes": 106909,
+          "sha256": "96bc216742c5c65048cc9148b8da71cb1247ca8b6b670c496d43c7fc34ea2d39"
+        },
+        {
+          "name": "raw-engine-7.log",
+          "bytes": 103302,
+          "sha256": "0c8bb0207f4300c61dffa0667cec5f5b122be7254ecff7c41b3cfe29294c5c05"
+        },
+        {
+          "name": "raw-engine-8.log",
+          "bytes": 103189,
+          "sha256": "7c4dabf1fe29229764d174ba7bad4c9f8a68b9dfc934551d843019b7872724c4"
+        },
+        {
+          "name": "raw-engine-9.log",
+          "bytes": 106796,
+          "sha256": "105c96e702213f689a357d5f9d039743d30950202410b95a1aeca8af3ea67997"
+        },
+        {
+          "name": "run-context.json",
+          "bytes": 722,
+          "sha256": "e491a578f8a2ea1e1c0272f3ccd4fb8b6c130833a4521d6d2a5bb9e1a44c5e6b"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 24831,
+          "sha256": "eb7d41843dba9b5cdf0eec255f7fe1588fb1dc31d3b42ff36f2acac5baaaf289"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1482,
+          "sha256": "f64c2bbd3a26a247169bcaeb69d9f42dfb4937c08d0a02983a881488e960e029"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-023011",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-023011",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "1d393345f8d764a9dcc1c52a12de0351452684dc",
+      "harnessSha256": "B90A9BF1EF088D1B073C6E449D983F021A0BF2279E0B52F121A995C62FF2034A",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-12T21:30:18.5139832Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "The saved raw control does not match the sample count, candidate, fixture or AVD settings.",
+              "atUtc": "2026-11-12T21:30:18.0358333Z"
+            }
+          ]
+        },
+        "cleanup.bench-c2d61883bfcc": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-c2d61883bfcc",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:30:18.4968907Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 2393,
+          "sha256": "8a7f53b15a7f97d76435148980fd42790a3759b9a3b152031383d9c452094786"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "bd64d9608e02f8ad505c95e4b831f1542c164baed3d2ce1563a85cb86ae64a74"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 4069,
+          "sha256": "047ba6fee7c6b1b7f1f4e4581826743ffb1e43ed008a87abe58d3fd3aeca576d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 616,
+          "sha256": "541c5822cbdf7f2d7135fd3aa745e8800568a7bf4892805f2bb63aa4cea6f6b8"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-023049",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-023049",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "a1d95c0ad8e991f674af2f3ffcefa7b4115caceb",
+      "harnessSha256": "E5C2E5EEA0D3E5C98E5D4C48974EDA52C3DE0670544CBE0F2AE04BC68D39AA81",
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "payloadFilesVerified": 422,
+        "signingStatus": "unsigned"
+      },
+      "rawControl": {
+        "runId": "20261113-021146",
+        "directory": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\bench\\20261113-021146",
+        "sourceCommit": "87fcbd09e69840e093d1997c96a93b82837e12e0",
+        "harnessSha256": "41ED36BC894F251296582690813CC4D31D248EE3E066245A4BE2D5139529219C",
+        "benchmarkSha256": "EDFF0DCEDA3D0EA89B8FEF14FDA05A5C9EEB717036AFFDA0489FF35530C14111",
+        "samplesSha256": "CCB7AB4D704953333C705D336B681C9D95498311C26137CB4B3A93789D34FF95"
+      },
+      "finishedUtc": "2026-11-12T21:50:25.3093627Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "target.boot-overhead": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": true,
+              "detail": "managed p50 44.36s vs raw p50 41.41s = 2.95s overhead (allowed 4.14s)",
+              "atUtc": "2026-11-12T21:50:24.5460364Z"
+            }
+          ]
+        },
+        "cleanup.bench-f5dc7b2edc1e": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-f5dc7b2edc1e",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T21:50:25.2732331Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 19228,
+          "sha256": "2156137d71be606efeb8a21c0aaca72553b8965a4516e3728b6a033ad6308949"
+        },
+        {
+          "name": "cold-boot.jsonl",
+          "bytes": 9267,
+          "sha256": "018b2eabe78a8b562b510f8a8bfef42a0af2c5b219fad6328836232a97edf721"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "559d0bab6ff966121fbb07b0ce3eb9e25547279e6cd1460e141b70e904d6639d"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 25893,
+          "sha256": "7a4ab3a8b8b3060dcda2b43de43b056f2b4943cb4adaeb8363973c5109842b41"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1462,
+          "sha256": "ba3df4d382786915123922d9cc30e835d5cd3d0c03e8839f5796d1e1af02013a"
         }
       ]
     },

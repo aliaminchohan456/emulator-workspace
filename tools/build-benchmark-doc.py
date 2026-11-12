@@ -176,6 +176,7 @@ def main() -> int:
             sample["ms"] - sample["frameAvailableMs"] for sample in probe["samples"]
             if not sample["timeout"] and "frameAvailableMs" in sample
         ]
+
         candidate = summary.get("candidate") or {}
         lines += [
             "",
@@ -195,6 +196,21 @@ def main() -> int:
             f"{probe['deliveredWidth']} × {probe['deliveredHeight']} |",
             f"| Dropped stream sequences | {probe['dropped']} |",
         ]
+
+    for run in runs:
+        data = run.get("benchmark") or {}
+        control = data.get("rawControl")
+        check = next((check for check in run.get("checks", []) if check.get("Check") == "target.boot-overhead"), None)
+        if control and check:
+            lines += [
+                "",
+                "## Matched cold-boot comparison",
+                "",
+                f"Run `{run['runId']}` verified the 20 raw control rows from `{control['runId']}` "
+                "against the same Windows host, emulator, fixture, MSI and AVD settings before running the managed arm.",
+                "Both arms required Android boot completion and a current focused window.",
+                f"{check['Detail'].capitalize()}.",
+            ]
 
     lines += [
         "",

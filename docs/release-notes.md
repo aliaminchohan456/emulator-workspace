@@ -36,6 +36,15 @@ all 20 measured trials, with p50 9.19 s and p95 12.34 s. The 8 s median
 target and disconnected Windows reuse remain pending.
 [Raw benchmark index](phase3-manifest.json)
 
+Version 0.1.2 is a separate unsigned candidate built from
+`76454c91a8a972eb43b2633cb7d69982ed73d90a`. It packages MCP stdio alongside
+the desktop, supervisor, CLI and fixture. The MSI is
+`D:/Release/emulator-workspace-0.1.2-20261113-025118/EmulatorWorkspace-0.1.2.msi`
+with SHA-256 `601dd19bf243ae3d2f1e02ad1c1aa9ea565bc1701022b5252f1019a2897e761e`.
+Installer run `20261113-025335` passed 22/22 checks, including installed
+MCP stdio, real upgrade from the preserved 0.1.1 MSI, managed profile
+retention, and uninstall. Runtime regression and disconnected reuse remain open.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
 ```

@@ -508,6 +508,29 @@ All tasks start open. Check off an implementation task after its scoped verifica
   regression exercises the CLI path and checks that a second guest remains
   untouched. Release build and WHPX verification are queued after the
   matched cold-boot run.
+- The matched comparison `20261113-023049` passed with 20/20 observations
+  in both arms. Raw p50/p95 was 41.41/47.27 s. Managed p50/p95 was
+  44.36/55.96 s. The median overhead of 2.95 s was within 4.14 s. The
+  managed guest was stopped and removed, the supervisor was shut down,
+  and ADB showed no attached devices. Raw control `20261113-021146` and
+  its recorded checksums are in the combined benchmark report.
+- Release build at `76454c91a8a972eb43b2633cb7d69982ed73d90a` passed
+  with zero errors and 58/58 tests. Unsigned 0.1.2 built in
+  `D:/Release/emulator-workspace-0.1.2-20261113-025118` with a separate
+  426-file stage at `D:/Release/stage-20261113-025118/payload`. MSI SHA-256
+  `601dd19bf243ae3d2f1e02ad1c1aa9ea565bc1701022b5252f1019a2897e761e`.
+  Both MSI hashes were rechecked, and both reported `NotSigned`.
+  Installer run `20261113-025335` uses the exact 0.1.1 MSI as predecessor
+  with `-VerifySnapshotJson -VerifySimulationProbe -VerifyMcp`. It passed
+  all 22 checks, including packaged MCP stdio and the real version upgrade.
+- The 0.1.2 offline Sandbox kit is staged at
+  `D:/WS-OfflineSandbox-012-20261113-025606`. Its MSI hash matches the
+  release record, networking is disabled in the configuration, and the
+  installer, SDK and JDK inputs are mapped read-only. It has yet to launch
+  because Windows still requires elevated feature enablement.
+- The exact 0.1.2 WPF and capture run is `artifacts/phase3/wpf/20261113-025638`.
+  After cleanup, run `tools/candidate-regression.ps1` against the new
+  release and stage, using its packaged MCP executable.
 - Both `Containers-DisposableClientVM` and `Microsoft-Hyper-V-Tools-All`
   still report WMI `InstallState=2` after the canceled elevation. The
   authorized feature change requires an elevated Windows token. Run the
