@@ -291,3 +291,14 @@ dispatch-to-captured-frame was p50 434 ms / p95 474 ms single guest, 695/1012 ms
 two guests, 741/858 ms software. The 60 FPS target is still missed; the remaining
 limiter is engine capture plus host CPU. Composition-proxy latency is not yet
 validated.
+
+Measured Phase 3 plan (`docs/benchmark.md`, the reference host of the run):
+the cold boot to interactive readiness is p50 39.65 s against a same-engine
+baseline of p50 44.92 s over 20 samples each, so the **boot overhead target is
+met**; the warm restore is p50 39.65 s over 20 samples, so the **8 s target is
+not met** because a restore that does not bring the guest back within 90
+seconds falls back to a cold boot; the input latency is p50 154.73 ms and p95
+324.76 ms over 20 samples, so the **100 ms target is not met**; one captured
+frame costs p50 498.19 ms, which is the frame-rate limiter and the reason the
+60 FPS target stays out of reach; and 30 start/stop cycles leave no engine
+process behind and do not shrink the free memory.
