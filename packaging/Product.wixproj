@@ -8,11 +8,10 @@
     <Manufacturer>Emulator Workspace</Manufacturer>
     <Copyright>Copyright (c) Emulator Workspace contributors</Copyright>
     <PackageId>EmulatorWorkspace</PackageId>
-    <SuppressIces>ICE61</SuppressIces>
+    <!-- ICE60 warns about the satellite assemblies of the .NET runtime,
+         which live in culture directories; they are installed as they are. -->
+    <SuppressIces>ICE60;ICE61</SuppressIces>
     <EnableDefaultItems>false</EnableDefaultItems>
-    <OutputPath>$(OutputDir)\</OutputPath>
-    <IntermediateOutputPath>$(StageDir)\obj\</IntermediateOutputPath>
-    <BaseIntermediateOutputPath>$(StageDir)\obj\</BaseIntermediateOutputPath>
     <DefineConstants>ProductVersion=$(PkgVersion)</DefineConstants>
   </PropertyGroup>
 

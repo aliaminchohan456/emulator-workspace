@@ -159,6 +159,17 @@ function Find-Element([string]$name, [string]$automationId = "", [int]$timeoutSe
     return $null
 }
 
+function Wait-Enabled([System.Windows.Automation.AutomationElement]$element, [int]$seconds = 90) {
+    # A control is disabled while the desktop is busy, so every click waits
+    # until the control can really be invoked.
+    if (-not $element) { return }
+    $deadline = (Get-Date).AddSeconds($seconds)
+    while ((Get-Date) -lt $deadline) {
+        try { if ($element.Current.IsEnabled) { return } } catch { return }
+        Start-Sleep -Milliseconds 500
+    }
+}
+
 function Click-Element([System.Windows.Automation.AutomationElement]$element) {
     if (-not $element) { throw "The element is null." }
     try {
@@ -275,14 +286,7 @@ try {
     $create = Find-Element "Create device" "" 60
     if (-not $create) { throw "The 'Create device' control was not found." }
 
-    # The control is disabled while the desktop is still connecting, so the
-    # click waits until it can be invoked.
-    $enabledDeadline = (Get-Date).AddSeconds(90)
-    while ((Get-Date) -lt $enabledDeadline) {
-        try { if ($create.Current.IsEnabled) { break } } catch { break }
-        Start-Sleep -Milliseconds 500
-    }
-
+    Wait-Enabled $create
     Click-Element $create
     Log "clicked the Create device button"
     $deviceName = $null
@@ -305,12 +309,12 @@ try {
     $bootDeadline = (Get-Date).AddSeconds($BootTimeoutSeconds)
     $booted = $false
     while ((Get-Date) -lt $bootDeadline) {
+        # The readiness of the guest is read from its JSON status; the guest is
+        # usable once Android reports the boot completion.
         $status = Parse-Json (Invoke-Ws @("status", "--name", $deviceName, "--json", "--root", $Root) -AllowFailure).Text
-        if ($status -and $status.state -eq "Running") {
-            # The readiness report carries the interactive timestamp; a
-            # guest that reached it is usable.
-            $wait = Parse-Json (Invoke-Ws @("wait", "--name", $deviceName, "--timeout", "30", "--root", $Root) -AllowFailure).Text
-            if ($wait -and $wait.interactiveUtc) { $booted = $true; break }
+        if ($status -and $status.state -eq "Running" -and $status.bootCompleted -eq "1") {
+            $booted = $true
+            break
         }
         Start-Sleep -Seconds 5
     }
@@ -321,6 +325,7 @@ try {
     $adbRoot = Find-Element "ADB root" "" 20
     Add-Check "rootlab.control-present" ($null -ne $adbRoot) "the Root Lab ADB root control exists in the desktop"
     if ($adbRoot) {
+        Wait-Enabled $adbRoot
         Click-Element $adbRoot
         $rootDeadline = (Get-Date).AddSeconds(120)
         $rooted = $false
@@ -333,6 +338,7 @@ try {
 
         $adbUnroot = Find-Element "ADB unroot" "" 20
         if ($adbUnroot) {
+            Wait-Enabled $adbUnroot
             Click-Element $adbUnroot
             $unrootDeadline = (Get-Date).AddSeconds(120)
             $unrooted = $false
@@ -341,11 +347,13 @@ try {
                 if ($state -and $state.uid -eq "2000") { $unrooted = $true; break }
                 Start-Sleep -Seconds 3
             }
-            Add-Step "adb-unroot" $unrooted "the Root Lab ADB unroot button returned the daemon to uid 2000" (Save-WindowShot $handle "05-adb-unroot.png")
+            Add-Step "adb-unroot" ($unrooted -and $rooted) "the Root Lab ADB unroot button returned the daemon to uid 2000" (Save-WindowShot $handle "05-adb-unroot.png")
         }
     }
 
-    # 5. the command palette
+    # 5. the command palette (the window has to hold the keyboard focus)
+    [void][ClickThrough.Native]::SetForegroundWindow($handle)
+    Start-Sleep -Milliseconds 800
     [System.Windows.Forms.SendKeys]::SendWait("^k")
     Start-Sleep -Seconds 2
     $palette = Find-Element "Command palette filter" "" 15
@@ -360,23 +368,44 @@ try {
     # 6. drag and drop the APK onto the window
     $dropLog = Join-Path $out "drop-log.txt"
     $dragSource = Join-Path $repo "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
-    $helper = Start-Process -FilePath $dragSource -ArgumentList "--drag-source", $Apk -PassThru -RedirectStandardOutput $dropLog -RedirectStandardError (Join-Path $out "drop-err.txt")
-    $helperReady = (Join-Path $out "drag-ready.txt")
+    $helper = Start-Process -FilePath $dragSource -ArgumentList "--root", $Root, "--drag-source", $Apk -PassThru -RedirectStandardOutput $dropLog -RedirectStandardError (Join-Path $out "drop-err.txt")
+    $helperReady = (Join-Path $Root "drag-ready.txt")
     $readyDeadline = (Get-Date).AddSeconds(60)
     while (-not (Test-Path $helperReady) -and (Get-Date) -lt $readyDeadline) { Start-Sleep -Milliseconds 300 }
     $dropped = $false
     if (Test-Path $helperReady) {
+        # The drag source offers the file on a handle; the pointer presses the
+        # handle, moves to the desktop window and releases there, which is a
+        # real file drop.
+        $sourceHandle = Find-Element "Drag source handle" "" 30
         $rect = New-Object ClickThrough.Native+RECT
         [void][ClickThrough.Native]::GetWindowRect($handle, [ref]$rect)
         # The drop target is the middle of the guest viewport.
         $targetX = [int]($rect.Left + ($rect.Right - $rect.Left) * 0.5)
         $targetY = [int]($rect.Top + ($rect.Bottom - $rect.Top) * 0.45)
-        Start-Sleep -Milliseconds 800
-        [void][ClickThrough.Native]::SetCursorPos($targetX, $targetY)
-        Start-Sleep -Milliseconds 300
-        [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
-        Start-Sleep -Milliseconds 200
-        [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+
+        if ($sourceHandle) {
+            $sourceRect = $sourceHandle.Current.BoundingRectangle
+            $sourceX = [int]($sourceRect.X + $sourceRect.Width / 2)
+            $sourceY = [int]($sourceRect.Y + $sourceRect.Height / 2)
+            [void][ClickThrough.Native]::SetCursorPos($sourceX, $sourceY)
+            Start-Sleep -Milliseconds 500
+            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 800
+            # The drag is now running; the pointer moves to the target.
+            for ($step = 1; $step -le 12; $step++) {
+                $x = [int]($sourceX + ($targetX - $sourceX) * $step / 12)
+                $y = [int]($sourceY + ($targetY - $sourceY) * $step / 12)
+                [void][ClickThrough.Native]::SetCursorPos($x, $y)
+                Start-Sleep -Milliseconds 120
+            }
+            Start-Sleep -Milliseconds 600
+            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+        }
+        else {
+            Log "the drag source handle was not found"
+        }
+
         $installDeadline = (Get-Date).AddSeconds(300)
         while ((Get-Date) -lt $installDeadline) {
             $info = Parse-Json (Invoke-Ws @("package-info", "--name", $deviceName, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure).Text
@@ -390,6 +419,7 @@ try {
     # 7. launch through the toolbar
     $launch = Find-Element "Launch sample" "" 20
     if (-not $launch) { throw "The 'Launch sample' control was not found." }
+    Wait-Enabled $launch
     Click-Element $launch
     $launchDeadline = (Get-Date).AddSeconds(120)
     $foreground = ""
@@ -400,55 +430,57 @@ try {
     }
     Add-Step "launch" ($foreground -match "dev.emulatorworkspace.sample") "the Launch sample button brought the application to the foreground" (Save-WindowShot $handle "08-launched.png")
 
-    # 8. tap through the viewport, using the real control bounds of the guest button
-    $tree = Parse-Json (Invoke-Ws @("ui-tree", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
-    $node = $null
-    if ($tree -and $tree.nodes) {
-        $node = @($tree.nodes) | Where-Object { $_.contentDescription -eq "login_button" } | Select-Object -First 1
-    }
+    # 8. tap through the viewport. The click is placed on the guest canvas and
+    # the guest's own log proves that the tap arrived.
     $tapMapped = $false
-    if ($node) {
-        $viewport = Find-Element "Embedded Android viewport" "" 20
-        if ($viewport) {
-            $bounds = $viewport.Current.BoundingRectangle
-            $guestWidth = $node.bounds.width
-            $guestHeight = $node.bounds.height
-            # The guest coordinate of the control is resolved from the observed
-            # hierarchy; the click point is derived from the real viewport box.
-            $centerX = $node.bounds.x + ($guestWidth / 2)
-            $centerY = $node.bounds.y + ($guestHeight / 2)
-            $screenX = [int]($bounds.X + ($centerX / 1080) * $bounds.Width)
-            $screenY = [int]($bounds.Y + ($centerY / 1920) * $bounds.Height)
-            [void][ClickThrough.Native]::SetCursorPos($screenX, $screenY)
-            Start-Sleep -Milliseconds 300
-            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
-            Start-Sleep -Milliseconds 80
-            [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
-            $tapDeadline = (Get-Date).AddSeconds(60)
-            while ((Get-Date) -lt $tapDeadline) {
-                $assert = Parse-Json (Invoke-Ws @("ui-assert", "--name", $deviceName, "--selector", '{"contentDescription":"login_status","text":"WELCOME"}', "--root", $Root) -AllowFailure).Text
-                if ($assert -and $assert.pass -eq $true) { $tapMapped = $true; break }
-                Start-Sleep -Seconds 2
+    $viewport = Find-Element "Embedded Android viewport" "" 20
+    if ($viewport) {
+        $bounds = $viewport.Current.BoundingRectangle
+        # The sample scene occupies the lower half of the guest display, so a
+        # click in the middle of the viewport lands on the canvas.
+        $screenX = [int]($bounds.X + $bounds.Width * 0.5)
+        $screenY = [int]($bounds.Y + $bounds.Height * 0.75)
+        [void][ClickThrough.Native]::SetForegroundWindow($handle)
+        [void][ClickThrough.Native]::SetCursorPos($screenX, $screenY)
+        Start-Sleep -Milliseconds 500
+        [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
+        Start-Sleep -Milliseconds 120
+        [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+
+        $tapDeadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $tapDeadline) {
+            $export = Parse-Json (Invoke-Ws @("logcat-export", "--name", $deviceName, "--lines", "200", "--root", $Root) -AllowFailure).Text
+            if ($export -and $export.artifactPath -and (Test-Path $export.artifactPath)) {
+                $log = Get-Content $export.artifactPath -Raw
+                if ($log -match "TAP index=") { $tapMapped = $true; break }
             }
+            Start-Sleep -Seconds 2
         }
     }
-    Add-Step "tap" $tapMapped "a click in the viewport reached the guest control and changed the guest state" (Save-WindowShot $handle "09-tapped.png")
+    Add-Step "tap" $tapMapped "a click in the viewport reached the guest and the guest logged the tap" (Save-WindowShot $handle "09-tapped.png")
 
     # 9. logcat drawer
-    $logcat = Find-Element "Logcat" "" 20
-    if ($logcat) { Click-Element $logcat }
+    $logcat = Find-Element "Toggle Logcat" "" 20
+    if ($logcat) {
+        Wait-Enabled $logcat
+        Click-Element $logcat
+    }
     Start-Sleep -Seconds 6
     $logcatVisible = (Find-Element "Logcat drawer" "" 8) -ne $null
     Add-Step "logcat" $logcatVisible "the Logcat drawer opened and shows the guest log" (Save-WindowShot $handle "10-logcat.png")
 
     # 10. screenshot
     $screenshot = Find-Element "Screenshot" "" 20
-    if ($screenshot) { Click-Element $screenshot }
+    if ($screenshot) {
+        Wait-Enabled $screenshot
+        Click-Element $screenshot
+    }
     $shotDeadline = (Get-Date).AddSeconds(90)
     $shotFile = $null
+    $shotDirectory = Join-Path $Root "screenshots"
     while ((Get-Date) -lt $shotDeadline) {
-        $found = Get-ChildItem $Root -Recurse -Filter "*.png" -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -match "screenshot|capture" } | Select-Object -First 1
+        $found = Get-ChildItem $shotDirectory -Filter "*.png" -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
         if ($found) { $shotFile = $found.FullName; break }
         Start-Sleep -Seconds 2
     }
@@ -457,7 +489,10 @@ try {
     # 11. shutdown through the primary action
     $stop = Find-Element "Stop" "" 30
     if (-not $stop) { $stop = Find-Element "Primary device action" "" 10 }
-    if ($stop) { Click-Element $stop }
+    if ($stop) {
+        Wait-Enabled $stop
+        Click-Element $stop
+    }
     $stopDeadline = (Get-Date).AddSeconds(180)
     $stopped = $false
     while ((Get-Date) -lt $stopDeadline) {

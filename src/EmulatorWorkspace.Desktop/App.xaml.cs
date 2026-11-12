@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 
 namespace EmulatorWorkspace.Desktop;
 
@@ -65,6 +66,26 @@ public partial class App : Application
                 Shutdown(0);
             };
             probeWindow.Show();
+            return;
+        }
+
+        if (e.Args.Contains("--drag-source", StringComparer.OrdinalIgnoreCase))
+        {
+            // The drag source lets an external harness perform a real file
+            // drop on the desktop: the window starts a WPF drag-and-drop of
+            // the file as soon as the pointer presses it.
+            var apk = "";
+            for (var index = 0; index < e.Args.Length - 1; index++)
+            {
+                if (e.Args[index].Equals("--drag-source", StringComparison.OrdinalIgnoreCase))
+                {
+                    apk = Path.GetFullPath(e.Args[index + 1]);
+                }
+            }
+
+            var source = new DragSourceWindow(apk);
+            MainWindow = source;
+            source.Show();
             return;
         }
 

@@ -241,19 +241,25 @@ if (-not $SkipInstaller) {
         Remove-Item (Join-Path $repo "packaging\obj") -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $repo "packaging\bin") -Recurse -Force -ErrorAction SilentlyContinue
         # The WiX project is built through MSBuild, which carries the version
-        # and the output directory as properties.
+        # as a property. The output directory is not passed on the command
+        # line, because a trailing backslash would be swallowed by the native
+        # argument parsing; the package is copied out of the default location
+        # instead.
         $wixArgs = @(
             "build",
             (Join-Path $repo "packaging\Product.wixproj"),
             "-c", "Release",
-            "-p:PkgVersion=$Version",
-            "-p:OutputDir=$releaseDir\"
+            "-p:PkgVersion=$Version"
         )
         & dotnet @wixArgs
         if ($LASTEXITCODE -ne 0) { throw "the installer build failed with exit code $LASTEXITCODE" }
-        $built = Join-Path $releaseDir "EmulatorWorkspace.msi"
+
+        $built = Get-ChildItem (Join-Path $repo "packaging") -Recurse -Filter "EmulatorWorkspace.msi" -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if (-not $built) { throw "the installer was not produced." }
+
         $msiPath = Join-Path $releaseDir "EmulatorWorkspace-$Version.msi"
-        if (Test-Path $built) { Move-Item $built $msiPath -Force }
+        Copy-Item $built.FullName $msiPath -Force
     }
 }
 
@@ -275,9 +281,9 @@ $release = [ordered]@{
     notices = "THIRD-PARTY-NOTICES.txt"
     hashes = "SHA256SUMS.json"
     payloadFiles = $hashes.Count
-    payloadSha256 = ([System.Security.Cryptography.SHA256]::Create().ComputeHash(
-            [System.Text.Encoding]::UTF8.GetBytes(($hashes | ForEach-Object { "$($_.sha256)  $($_.path)" }) -join "`n")) |
-            ForEach-Object { ($_ | ForEach-Object { $_.ToString("x2") }) -join "" })
+    payloadSha256 = (Get-FileHash -InputStream (
+            [System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes(
+                ($hashes | ForEach-Object { "$($_.sha256)  $($_.path)" }) -join "`n"))) -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 if ($msiPath -and (Test-Path $msiPath)) {
     $msiInfo = Get-Item $msiPath

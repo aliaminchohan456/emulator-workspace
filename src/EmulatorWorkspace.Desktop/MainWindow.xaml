@@ -80,7 +80,8 @@
                 </WrapPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Logcat" Style="{StaticResource ToolButton}" Command="{Binding ToggleLogcatCommand}" />
+                    <Button Content="Logcat" Style="{StaticResource ToolButton}" Command="{Binding ToggleLogcatCommand}"
+                            AutomationProperties.Name="Toggle Logcat" />
                     <Button Content="Theme" Style="{StaticResource ToolButton}" Command="{Binding ToggleThemeCommand}" />
                     <Button Content="Refresh" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}" />
                 </StackPanel>
@@ -287,7 +288,8 @@
 
         <!-- Logcat drawer -->
         <Border Grid.Row="2" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,1,0,0" Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}">
+                BorderThickness="0,1,0,0" Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}"
+                AutomationProperties.Name="Logcat drawer">
             <DockPanel Margin="8">
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
