@@ -396,3 +396,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   when packaging product changes. Repeat the installer check with
   `-VerifyMcp` against the resulting MSI. The preserved 0.1.1 MSI and
   its original 21/21 evidence remain the baseline.
+
+- The supervisor now exposes explicit Android debug test signing for
+  `.aab` conversion. CLI `wsctl build-apks --aab <path> --test-signing
+  --bundletool <pinned jar>`. WPF **Build APK set** in Ctrl+K asks for
+  confirmation and uses `WS_BUNDLETOOL`. It generates a local APK set
+  without contacting a guest. Host-only probe
+  `artifacts/phase3/bundle-host/20261112-231755` rejected absent signing
+  selection and a jar with the wrong digest, then built the existing sample
+  with bundletool 1.18.1. Build-Tools 35.0.0 `apksigner verify --print-certs`
+  verified its base split under the Android Debug certificate. The
+  supervised CLI/WPF route, deployment to one managed guest, and integrated
+  Release build remain queued after the soak. The existing 0.1.1 MSI is
+  unchanged. [Official bundletool documentation](https://developer.android.com/tools/bundletool)

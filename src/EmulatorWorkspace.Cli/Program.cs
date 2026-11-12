@@ -942,6 +942,7 @@ internal static class HelpText
               wsctl frame --name <n> [--out <png>] [--via auto|controller|adb] [--width 480]
               wsctl tap --name <n> --x <px> --y <px> [--via controller|adb]
               wsctl install --name <n> --apk <path> [--json]
+              wsctl build-apks --aab <path> --test-signing [--bundletool <jar>]
               wsctl snapshot-save --name <n> --tag <t> [--via adb|controller]
               wsctl snapshot-load --name <n> --tag <t> [--via adb|controller]
               wsctl verify-target --name <n>

@@ -62,6 +62,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         RecentsCommand = new AsyncRelayCommand(() => KeyAsync("RECENTS"), () => CanSendInput);
         ScreenshotCommand = new AsyncRelayCommand(ScreenshotAsync, () => SelectedDevice?.IsRunning == true);
         InstallApkCommand = new AsyncRelayCommand(InstallApkDialogAsync, () => SelectedDevice?.IsRunning == true && !IsBusy);
+        BuildApkSetCommand = new AsyncRelayCommand(BuildApkSetDialogAsync, () => IsConnected && !IsBusy);
         LaunchSampleCommand = new AsyncRelayCommand(
             () => LaunchAsync("dev.emulatorworkspace.sample"),
             () => SelectedDevice?.IsRunning == true);
@@ -85,6 +86,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Palette.Add(new PaletteEntryViewModel("Restart device", "Restart the selected guest", RestartCommand));
         Palette.Add(new PaletteEntryViewModel("Cold boot", "Cold boot the selected guest", ColdBootCommand));
         Palette.Add(new PaletteEntryViewModel("Install APK", "Install an APK on the selected guest", InstallApkCommand));
+        Palette.Add(new PaletteEntryViewModel("Build APK set", "Convert an Android App Bundle using test signing", BuildApkSetCommand));
         Palette.Add(new PaletteEntryViewModel("Launch sample", "Launch the sample application", LaunchSampleCommand));
         Palette.Add(new PaletteEntryViewModel("Screenshot", "Capture a PNG of the selected guest", ScreenshotCommand));
         Palette.Add(new PaletteEntryViewModel("Toggle Logcat", "Show or hide the Logcat drawer", ToggleLogcatCommand));
@@ -130,6 +132,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncRelayCommand ScreenshotCommand { get; }
 
     public AsyncRelayCommand InstallApkCommand { get; }
+
+    public AsyncRelayCommand BuildApkSetCommand { get; }
 
     public AsyncRelayCommand LaunchSampleCommand { get; }
 
@@ -1100,6 +1104,31 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    private async Task BuildApkSetDialogAsync()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select an Android App Bundle",
+            Filter = "Android App Bundle (*.aab)|*.aab",
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog() != true || MessageBox.Show(
+                "Build the APK set with your Android debug key for local testing?",
+                "Test signing", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+        {
+            return;
+        }
+
+        await RunBusyAsync("Building test APK set...", async () =>
+        {
+            var result = await RequestAsync(
+                OperationNames.AppBuildApkSet,
+                new JsonObject { ["path"] = dialog.FileName, ["testSigning"] = true },
+                TimeSpan.FromMinutes(5)).ConfigureAwait(true);
+            StatusMessage = $"Saved test-signed APK set to {result["path"]!.GetValue<string>()}.";
+        }).ConfigureAwait(true);
+    }
+
     public async Task InstallApkAsync(string path)
     {
         if (SelectedDevice is not { } device)
@@ -1700,6 +1729,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         RecentsCommand.RaiseCanExecuteChanged();
         ScreenshotCommand.RaiseCanExecuteChanged();
         InstallApkCommand.RaiseCanExecuteChanged();
+        BuildApkSetCommand.RaiseCanExecuteChanged();
         LaunchSampleCommand.RaiseCanExecuteChanged();
         RotateCommand.RaiseCanExecuteChanged();
         AdbRootCommand.RaiseCanExecuteChanged();

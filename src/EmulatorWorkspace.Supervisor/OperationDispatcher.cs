@@ -1256,6 +1256,13 @@ public sealed class OperationDispatcher
                 return await _manager.RotateAsync(name, JsonArgs.Int(args, "rotation") ?? 0, cancellationToken)
                     .ConfigureAwait(false);
 
+            case OperationNames.AppBuildApkSet:
+                return await BundleApkSetBuilder.BuildAsync(
+                    JsonArgs.String(args, "path") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "An app bundle path is required."),
+                    JsonArgs.String(args, "bundletool"), _paths.EvidenceDirectory,
+                    JsonArgs.Bool(args, "testSigning"), cancellationToken).ConfigureAwait(false);
+
             case OperationNames.AppInstall:
             {
                 var path = JsonArgs.String(args, "path");

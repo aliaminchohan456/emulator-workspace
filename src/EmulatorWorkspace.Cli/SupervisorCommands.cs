@@ -360,6 +360,13 @@ internal static class SupervisorCommands
                 requestArgs["name"] = name;
                 deadline = TimeSpan.FromMinutes(15);
                 break;
+            case "build-apks":
+                op = OperationNames.AppBuildApkSet;
+                requestArgs["path"] = Path.GetFullPath(args.Optional("aab") ?? throw new ArgumentException("--aab is required."));
+                requestArgs["testSigning"] = args.Has("test-signing");
+                requestArgs["bundletool"] = args.Optional("bundletool");
+                deadline = TimeSpan.FromMinutes(5);
+                break;
             case "install-apks":
             {
                 // A targeted APK-set deployment: the device is resolved from a
