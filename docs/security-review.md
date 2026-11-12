@@ -114,7 +114,7 @@ Privileged changes are separated from ordinary ones:
 | 6 | A stale device could receive input after the engine was replaced. | Fixed: the engine identity (AVD name, ADB port, gRPC port) is verified before input is sent. |
 | 7 | The privileged ADB-root operation was reachable from an agent scope. | Fixed: `instance.adbRoot` and `instance.adbRootState` are outside the agent scopes. |
 | 8 | The code-signing certificate of the release candidate. | **Open**: no user-owned signing identity was supplied, so the release candidate is produced unsigned and the provenance records `signing.status = "unsigned"`. Supplying a certificate is an operator action. |
-| 9 | The four-hour two-guest soak. | **Open**: the benchmark harness runs 30 start/stop cycles; the four-hour soak is scheduled separately and is recorded as pending. |
+| 9 | The four-hour two-guest soak. | **Open**: four-hour WHPX soak `20261112-213629` is active. Final responsiveness, resource trends, and cleanup evidence are pending. |
 
 ## 10. How to reproduce the checks
 

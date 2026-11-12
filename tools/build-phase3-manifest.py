@@ -12,6 +12,7 @@ import json
 import pathlib
 import subprocess
 import sys
+from functools import lru_cache
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -38,13 +39,15 @@ def read_json(path: pathlib.Path):
 def lanes_of(summary: dict) -> dict:
     lanes: dict[str, dict] = {}
     for check in summary.get("checks", []):
-        lane_name = check.get("Lane") or check.get("Check") or "check"
+        name = check.get("Check") or check.get("name")
+        passed = check.get("Passed", check.get("passed"))
+        lane_name = check.get("Lane") or name or "check"
         lane = lanes.setdefault(lane_name, {"passed": 0, "failed": 0, "checks": []})
-        lane["passed" if check.get("Passed") else "failed"] += 1
+        lane["passed" if passed else "failed"] += 1
         lane["checks"].append({
-            "check": check.get("Check"),
-            "passed": check.get("Passed"),
-            "detail": (check.get("Detail") or "")[:160],
+            "check": name,
+            "passed": passed,
+            "detail": (check.get("Detail") or check.get("detail") or "")[:160],
             "atUtc": check.get("AtUtc"),
         })
     return lanes
@@ -53,7 +56,7 @@ def lanes_of(summary: dict) -> dict:
 def files_of(directory: pathlib.Path) -> list:
     files = []
     for path in sorted(directory.rglob("*")):
-        if path.is_file() and path.name != "summary.json":
+        if path.is_file():
             files.append({
                 "name": str(path.relative_to(directory)).replace("\\", "/"),
                 "bytes": path.stat().st_size,
@@ -62,29 +65,65 @@ def files_of(directory: pathlib.Path) -> list:
     return files
 
 
-def collect(directory: pathlib.Path, kind: str) -> dict | None:
+@lru_cache(maxsize=None)
+def installer_provenance(installer: pathlib.Path, expected_hash: str) -> dict | None:
+    release_path = installer.with_name("release.json")
+    if not installer.is_file() or not release_path.is_file():
+        return None
+    release = read_json(release_path)
+    if release.get("installerSha256") != expected_hash or sha256(installer) != expected_hash:
+        return None
+    return {
+        "sourceCommit": release.get("commit"),
+        "installerSha256": expected_hash,
+        "signingStatus": release.get("signingStatus"),
+        "evidence": "verified MSI and matching release record",
+    }
+
+
+def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | None:
     summary_path = directory / "summary.json"
     if not summary_path.exists():
         return None
     summary = read_json(summary_path)
     versions_path = directory / "versions.json"
     versions = read_json(versions_path) if versions_path.exists() else {}
+    benchmark = summary.get("benchmark") or {}
+    host = benchmark.get("host") or summary.get("host") or {}
+    lanes = lanes_of(summary)
+    candidate = benchmark.get("candidate") or summary.get("candidate")
+    candidate_path = directory / "candidate.json"
+    if not candidate and candidate_path.exists():
+        candidate = read_json(candidate_path)
+    if summary.get("installer") and summary.get("installerSha256"):
+        candidate = installer_provenance(pathlib.Path(summary["installer"]), summary["installerSha256"])
+        if candidate is None:
+            candidate = {
+                "installerSha256": summary["installerSha256"],
+                "evidence": "recorded in acceptance summary",
+            }
+    source_commit = versions.get("commit") or benchmark.get("sourceCommit") or summary.get("sourceCommit")
     return {
         "kind": kind,
         "runId": summary.get("runId"),
-        "rawArtifactRoot": str(directory),
+        "rawArtifactRoot": directory.relative_to(repo).as_posix(),
         "rawArtifactsAreGitignored": True,
-        "commit": versions.get("commit"),
+        "commit": (candidate or {}).get("sourceCommit") or source_commit,
+        "harnessCommit": source_commit,
+        "harnessSha256": benchmark.get("harnessSha256") or summary.get("harnessSha256"),
+        "candidate": candidate,
+        "finishedUtc": summary.get("finishedUtc"),
         "pins": {
-            "emulator": versions.get("emulator"),
-            "imageRevision": versions.get("imageRevision"),
-            "dotnet": versions.get("dotnet"),
+            "emulator": versions.get("emulator") or host.get("emulatorVersion") or host.get("emulator"),
+            "image": summary.get("image"),
+            "imageRevision": versions.get("imageRevision") or summary.get("revision"),
+            "dotnet": versions.get("dotnet") or host.get("dotnetVersion"),
         },
         "root": versions.get("root"),
         "freeBytesAtStart": versions.get("freeBytes"),
-        "failedChecks": summary.get("failed"),
+        "failedChecks": sum(lane["failed"] for lane in lanes.values()),
         "totalChecks": len(summary.get("checks", [])),
-        "lanes": lanes_of(summary),
+        "lanes": lanes,
         "artifacts": files_of(directory),
     }
 
@@ -95,16 +134,16 @@ def main() -> int:
     runs = []
 
     for directory in sorted([p for p in artifacts.iterdir() if p.is_dir()]):
-        entry = collect(directory, "phase3")
+        entry = collect(directory, "phase3", repo)
         if entry is not None:
             runs.append(entry)
 
-    for kind, folder in (("recipe", "recipe"), ("import", "import"), ("rootlab", "rootlab"), ("wpf", "wpf"), ("devtools", "devtools"), ("install", "install")):
-        root = artifacts / folder
+    for kind in ("recipe", "import", "rootlab", "wpf", "devtools", "install", "bench", "play", "offline", "candidate"):
+        root = artifacts / kind
         if not root.exists():
             continue
         for directory in sorted([p for p in root.iterdir() if p.is_dir()]):
-            entry = collect(directory, kind)
+            entry = collect(directory, kind, repo)
             if entry is not None:
                 runs.append(entry)
 
@@ -114,9 +153,9 @@ def main() -> int:
 
     manifest = {
         "schemaVersion": 1,
-        "generatedUtc": runs[-1].get("finishedUtc"),
+        "latestFinishedUtc": max((run["finishedUtc"] for run in runs if run["finishedUtc"]), default=None),
         "headCommit": git("rev-parse", "--short", "HEAD"),
-        "workTree": git("status", "--porcelain") or "clean",
+        "trackedWorkTree": git("status", "--porcelain", "--untracked-files=no") or "clean",
         "runs": runs,
     }
     out = repo / "docs" / "phase3-manifest.json"

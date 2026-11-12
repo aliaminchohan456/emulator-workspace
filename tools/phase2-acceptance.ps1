@@ -36,8 +36,10 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 $mcpExe = Join-Path $repo "src\EmulatorWorkspace.Mcp\bin\Debug\net10.0\EmulatorWorkspace.Mcp.exe"
+if ($env:WS_ACCEPTANCE_MCP_EXE) { $mcpExe = $env:WS_ACCEPTANCE_MCP_EXE }
 $mcpClient = Join-Path $repo "clients\mcp-client\workflow.mjs"
 $mcpSecure = Join-Path $repo "clients\mcp-client\secure-check.mjs"
 $pythonClient = Join-Path $repo "clients\mcp-python\client.py"
@@ -50,6 +52,7 @@ $env:ANDROID_SDK_ROOT = $sdk
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $log = Join-Path $out "transcript.txt"
 $script:checkResults = New-Object System.Collections.ArrayList
 $fixtureProcess = $null
@@ -223,16 +226,7 @@ Log "Phase 2 acceptance $run instance=$instance template=$Template root=$Root"
 
 try {
     # Isolated deterministic login fixture.
-    $existing = Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
-        Where-Object { $_.CommandLine -match 'login_fixture\.py' }
-    foreach ($process in $existing) {
-        Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
-    }
-
-    $env:FIXTURE_BODY_BYTES = "$FixtureBytes"
-    $env:FIXTURE_LOG = Join-Path $out "fixture.jsonl"
-    $env:FIXTURE_PORT = "8765"
-    $fixtureProcess = Start-Process -FilePath "py" -ArgumentList "-3", (Join-Path $repo "tools\fixtures\login_fixture.py") -PassThru -WindowStyle Hidden
+    $fixtureProcess = Start-AcceptanceLoginFixture (Join-Path $out "fixture.jsonl") $FixtureBytes
     $fixtureReady = Wait-Port "127.0.0.1" 8765 10
     Add-Check "fixture" $fixtureReady "127.0.0.1:8765 body=$FixtureBytes"
 
@@ -442,7 +436,7 @@ try {
     }
 
     if (-not $SkipDesktop) {
-        $desktopExe = Join-Path $repo "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
+        $desktopExe = Get-AcceptanceBinary "EmulatorWorkspace.Desktop.exe" "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
         if (Test-Path $desktopExe) {
             $probePath = Join-Path $out "agent-sessions-probe.json"
             $probeProcess = Start-Process -FilePath $desktopExe `

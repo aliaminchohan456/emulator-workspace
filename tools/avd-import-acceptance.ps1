@@ -26,7 +26,8 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 $avdmanager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
@@ -34,6 +35,7 @@ $avdmanager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $script:results = New-Object System.Collections.ArrayList
 
 function Log([string]$message) {

@@ -33,7 +33,8 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 $adb = Join-Path $sdk "platform-tools\adb.exe"
@@ -44,6 +45,7 @@ $env:MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED = "true"
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $log = Join-Path $out "transcript.txt"
 $script:results = New-Object System.Collections.ArrayList
 $lanes = @{}
@@ -230,7 +232,7 @@ try {
     }
 
     # The Phase 2 lane installs the approved sample APK from this root.
-    $approvedApk = Join-Path $repo "artifacts\phase1\sample\ws-sample.apk"
+    $approvedApk = Get-AcceptanceBinary "ws-sample.apk" "artifacts\phase1\sample\ws-sample.apk"
     if (Test-Path $approvedApk) {
         New-Item -ItemType Directory -Force (Join-Path $Root "apps") | Out-Null
         Copy-Item $approvedApk (Join-Path $Root "apps\ws-sample.apk") -Force

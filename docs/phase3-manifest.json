@@ -1,17 +1,22 @@
 {
   "schemaVersion": 1,
-  "generatedUtc": null,
-  "headCommit": "4f821ee",
-  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M task.md\n M tools/package-release.ps1",
+  "latestFinishedUtc": "2026-11-12T16:29:52.0316879Z",
+  "headCommit": "27c655f",
+  "trackedWorkTree": "M src/EmulatorWorkspace.Desktop/MainWindow.xaml.cs\n M src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs\n M tools/benchmark.ps1\n M tools/build-phase3-manifest.py\n M tools/installer-acceptance.ps1\n M tools/latency-probe.ps1",
   "runs": [
     {
       "kind": "phase3",
       "runId": "20261110-224008",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261110-224008",
+      "rawArtifactRoot": "artifacts/phase3/20261110-224008",
       "rawArtifactsAreGitignored": true,
       "commit": "958fe74",
+      "harnessCommit": "958fe74",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T17:45:11.1051374Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -433,6 +438,11 @@
           "sha256": "700ccc496770196e349a6c0ca447f9c14620a3cfd30eee2da458f18159ba30c4"
         },
         {
+          "name": "summary.json",
+          "bytes": 2712231,
+          "sha256": "8231653c1389f35a8998f0f6abf6631c016ba315cf8e927fbcdded4b144d7fb9"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "b75f5d34538cb29399ff1a93cf714fe904b479c9545ebca01aed65ae1e0357b2"
@@ -452,11 +462,16 @@
     {
       "kind": "phase3",
       "runId": "20261110-224920",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261110-224920",
+      "rawArtifactRoot": "artifacts/phase3/20261110-224920",
       "rawArtifactsAreGitignored": true,
       "commit": "958fe74",
+      "harnessCommit": "958fe74",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T17:57:01.8222834Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -968,6 +983,11 @@
           "sha256": "96b4b80d6043cb0b35d12e1351746905353252b43614fa5956992f81ce028f61"
         },
         {
+          "name": "summary.json",
+          "bytes": 2715944,
+          "sha256": "cb1547cefe789ab084e0c001ee314d436c5fb2cead221ddc9f162e6c675c29e5"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "a33f6725939dce5d8829f961ee1604478305fa416efe2f77824b904546ef3389"
@@ -987,11 +1007,16 @@
     {
       "kind": "phase3",
       "runId": "20261110-225956",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261110-225956",
+      "rawArtifactRoot": "artifacts/phase3/20261110-225956",
       "rawArtifactsAreGitignored": true,
       "commit": "958fe74",
+      "harnessCommit": "958fe74",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T18:15:01.0270973Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -1503,6 +1528,11 @@
           "sha256": "69d5544112f094d17bd92cec0e3882c51817cf59e7b5a169eb5ec05793cbaa95"
         },
         {
+          "name": "summary.json",
+          "bytes": 274151,
+          "sha256": "2e42abfa1cc31df88a6e1d952feea5c99e4b00fc5303c109ea25d81a704ada76"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "b4b916405fe86a8f76d8578fa4f80248774cb9cf55d0619b14ae56096da575af"
@@ -1522,11 +1552,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-000803",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-000803",
+      "rawArtifactRoot": "artifacts/phase3/20261111-000803",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T19:08:20.6829125Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -1591,6 +1626,11 @@
           "sha256": "50afeb6e6e11afde27175fbb1495c6e703aa1ab16dc8148ddbe06fefef653f59"
         },
         {
+          "name": "summary.json",
+          "bytes": 1963,
+          "sha256": "3f3a8b9d4cb7d7b751a7b8beca6e96a163cfe4721a92e87c672123efbf70a792"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "9ba2e8f1820013eb216835fe67424052cbe732e4e2fd195d7affb1f33aa8ecb7"
@@ -1610,11 +1650,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-000853",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-000853",
+      "rawArtifactRoot": "artifacts/phase3/20261111-000853",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T19:09:11.8498666Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -1679,6 +1724,11 @@
           "sha256": "e3745fc364a3297d80708f66b766bfc27199228ea30b9a210b9ff757983893ea"
         },
         {
+          "name": "summary.json",
+          "bytes": 1963,
+          "sha256": "c7a397420f560f2195ea83d79e753356c3b39596dd0bd64b4dc7e2e7e5152070"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "f492a9e7e26e912ee15c3f69c0c720d13f10d1b8acd22c144564e2db6b33c22b"
@@ -1698,11 +1748,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-000947",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-000947",
+      "rawArtifactRoot": "artifacts/phase3/20261111-000947",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T19:21:14.3628463Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -2220,6 +2275,11 @@
           "sha256": "9b665d9209fc39cf1ee533aeb9442d0ba796293b930d21556e0e9b0228dcb72e"
         },
         {
+          "name": "summary.json",
+          "bytes": 34396,
+          "sha256": "410b4dfdf7a036f226a6f9ce9de90cfb36ceb1f7f5ac4c41abb109fe83f74835"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "d7a750ce78c646440078161146fc8a71bb470ff26b09f9e935a2346d59998b7b"
@@ -2239,11 +2299,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-002526",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-002526",
+      "rawArtifactRoot": "artifacts/phase3/20261111-002526",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T19:37:50.5969069Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -2761,6 +2826,11 @@
           "sha256": "b3ca8d0b43d241c3e94d2990f30a3d6deaa861c9a9b88abcf7650e0e4cbd972c"
         },
         {
+          "name": "summary.json",
+          "bytes": 34394,
+          "sha256": "6d03d17c4b9c6b98d5c52b9a07de210b19be35897afae4d40942ea6be3ad9e58"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "a4b07cdae40f4736e0b013f84f2305db838abb6ebe9bef21e10b06f1b80a16f2"
@@ -2780,11 +2850,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-004253",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-004253",
+      "rawArtifactRoot": "artifacts/phase3/20261111-004253",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T20:10:51.2599754Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -3308,6 +3383,11 @@
           "sha256": "18f8782f0d654c1ace488349966c394446a258d3b2cf8e2ea65e25e68454486b"
         },
         {
+          "name": "summary.json",
+          "bytes": 274591,
+          "sha256": "7e2815962a82487154a83f3caead8768a6136e02747c166afd1c69db417f0c35"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "1b487f6f8b21877b2f57b6aff20a6653f7776384656ab49a783b19f77956c023"
@@ -3327,11 +3407,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-011331",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-011331",
+      "rawArtifactRoot": "artifacts/phase3/20261111-011331",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T20:29:23.1530425Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -3867,6 +3952,11 @@
           "sha256": "a2d0530cb487a17101eb33c2b993b4cc7c651397453bee9143b10eada041bbb4"
         },
         {
+          "name": "summary.json",
+          "bytes": 279052,
+          "sha256": "56b578bbd9c0a94fb6be5b5cadca345233cb1da3028fd4b18a9bf458ac3a59af"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "ea150fbcef151cd1287f3dd5e178850a4893c8f2b54cdc4d0501f761f57eafe6"
@@ -3886,11 +3976,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-013402",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-013402",
+      "rawArtifactRoot": "artifacts/phase3/20261111-013402",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T20:46:14.8378455Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -4437,6 +4532,11 @@
           "sha256": "73815f8986007d4d2ba561f349f309e498239e5fcc8d0e3fe3bf772a84bf04fd"
         },
         {
+          "name": "summary.json",
+          "bytes": 35795,
+          "sha256": "cc768188d377841e16de9de89ff849a490ea33f0a935ba32c536f9b761128d06"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "f8265e90d0e85425abb1f9db1bfcb9eb5e852200bd61e3d5fc24469d7c14a540"
@@ -4456,11 +4556,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-015144",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-015144",
+      "rawArtifactRoot": "artifacts/phase3/20261111-015144",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T21:05:11.6958469Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -5007,6 +5112,11 @@
           "sha256": "0b3bd4f94819d22e9ad0b47e36da378fd5f52ba0e8d5b764040b261a3e1bafeb"
         },
         {
+          "name": "summary.json",
+          "bytes": 35797,
+          "sha256": "dc73f0d48d3067f12e77201e7a33869fff07e02f44bcce32a9a883652ec01819"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "cdf149683afdd1a6e287a3eb5f472670ab00bee3cca032967a97dd6b1a895783"
@@ -5026,11 +5136,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-021054",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-021054",
+      "rawArtifactRoot": "artifacts/phase3/20261111-021054",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T21:24:50.5206417Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -5577,6 +5692,11 @@
           "sha256": "f7efc53645cdfce28cc95b9ae445124bdbe51bff86a06d841bb8ae7d39df30b7"
         },
         {
+          "name": "summary.json",
+          "bytes": 36075,
+          "sha256": "b3373ac7a63e062c295681cd08c9cd83fedf0425f17e81714379a910a0fc7bbb"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "f8265e90d0e85425abb1f9db1bfcb9eb5e852200bd61e3d5fc24469d7c14a540"
@@ -5596,11 +5716,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-022746",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-022746",
+      "rawArtifactRoot": "artifacts/phase3/20261111-022746",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T21:43:44.4305227Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -6165,6 +6290,11 @@
           "sha256": "34d3b87c74984f4a064221cecb7da989427aa190f694ba67eb986aa5bfee6fb2"
         },
         {
+          "name": "summary.json",
+          "bytes": 37097,
+          "sha256": "473a7972c2e14fb6fcd37b5ca526456aeae714a08a9099581aa373b38fc6d8d6"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "e7a5a30bf20245201ded3645e0b1671febdf736b6d62d59e27596d2f9e84cf13"
@@ -6184,11 +6314,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-024751",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-024751",
+      "rawArtifactRoot": "artifacts/phase3/20261111-024751",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T22:00:32.7080074Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -6753,6 +6888,11 @@
           "sha256": "6cf0d260a18b13bd01ff373bd865c268c740ef784476d2bb309c98431c6ea8b9"
         },
         {
+          "name": "summary.json",
+          "bytes": 37098,
+          "sha256": "4e9d60015400359a1be2e042566cae0b2fa7244106f651c0ff2b61ece3cbb7b3"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "45e9fa010cd0c29b41649032b98e4c228ad2dff1ca79de1a4ac2eee531b8b036"
@@ -6772,11 +6912,16 @@
     {
       "kind": "phase3",
       "runId": "20261111-030838",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\20261111-030838",
+      "rawArtifactRoot": "artifacts/phase3/20261111-030838",
       "rawArtifactsAreGitignored": true,
       "commit": "27bfb64",
+      "harnessCommit": "27bfb64",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-10T22:21:18.6398300Z",
       "pins": {
         "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
         "imageRevision": "Pkg.Revision=2",
         "dotnet": "10.0.302"
       },
@@ -7341,6 +7486,11 @@
           "sha256": "6ae03e8376491ecc709026091c4ea3e342713648aad806a42ef9d85945036523"
         },
         {
+          "name": "summary.json",
+          "bytes": 37106,
+          "sha256": "91623665e67c550875a80924ef1fec165ff00a0caebac62771cc9f2933afe6bb"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "e234f00c66d88086ac374ed34d7f3ad848c29a6cdaf727d3e7a56aafde1ea2d1"
@@ -7360,11 +7510,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-093019",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-093019",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-093019",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T04:38:14.1438758Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -7831,6 +7986,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12537,
+          "sha256": "8becde80afc9ac0b8ef23b2684ae827cd33573ae502cfea86b162a154b774dc7"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "6792039ac5a0c14e695f86e35d6740bee25435364ceab88459bdc98d4b654e70"
@@ -7850,11 +8010,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-094137",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-094137",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-094137",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T04:50:24.2132004Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -8311,6 +8476,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 14696,
+          "sha256": "e5a924df072b1fba68d8ab30f7cec65e523c58169100968a0d022f2d6ff659c4"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "0cd5c861acadafab32483ef0dbf78b595b33c479c1ab3761997dadf4dcf306a4"
@@ -8330,11 +8500,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-095413",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-095413",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-095413",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T05:02:46.1115845Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -8791,6 +8966,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 14730,
+          "sha256": "e6e57f8c8b4e6bf5a8ebbde20b5130415665237349ecbf0a187202bdb71d91ef"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "eb0fc01185599dae3512a1537b496117b1ac6710051f244308dd29edbddec1d5"
@@ -8810,11 +8990,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-100837",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-100837",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-100837",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T05:16:48.3844917Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -9271,6 +9456,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12529,
+          "sha256": "83f4ec8efd130e2d446e46e0585a7f19b0bf3ed6162dd5d7303f72486c70a769"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "eb0fc01185599dae3512a1537b496117b1ac6710051f244308dd29edbddec1d5"
@@ -9290,11 +9480,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-102256",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-102256",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-102256",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T05:31:41.1237291Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -9751,6 +9946,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12526,
+          "sha256": "6fa4e5a169d8fbe80ee9b075f33831bce3757a3de7b78e978cf4d890aeadd017"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "72dbae3887571ee030229521ed40bc1d1924691d98035bcdff5ac9dae9de17b3"
@@ -9770,11 +9970,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-103754",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-103754",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-103754",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T05:53:58.7889499Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -10231,6 +10436,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12377,
+          "sha256": "bda3c3c118dd69cf76682e5289810a0d105af3f54dbd10a6bf6dbd9840d112ba"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "fc5e8fdc85571bb7b45ed35c2153e68db6b916a6d2e55a88c25ff91ba23060aa"
@@ -10250,11 +10460,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-105651",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-105651",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-105651",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T06:11:56.5435436Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -10716,6 +10931,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12525,
+          "sha256": "1a473cfb67517799397c0822f70f54a612d88444e0920b5c31bda19f34c5ecc0"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "7de30b82458702e8749bf281c648e935897847865e2fae3972be223ec23c482b"
@@ -10735,11 +10955,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-111424",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-111424",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-111424",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T06:30:13.7098311Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -11201,6 +11426,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12522,
+          "sha256": "ce204bdc79d35e896f8819037acd9a7544c6b45b49f53bdfcb0c4b3927a7ba86"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "7de30b82458702e8749bf281c648e935897847865e2fae3972be223ec23c482b"
@@ -11220,11 +11450,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-113208",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-113208",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-113208",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T06:48:00.1775715Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -11686,6 +11921,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12525,
+          "sha256": "9b9a99aaa56eae0f1e7fa22875ab8b06d6f9fe4904f7cd20b37049129dadf09c"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "7de30b82458702e8749bf281c648e935897847865e2fae3972be223ec23c482b"
@@ -11705,11 +11945,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-115044",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-115044",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-115044",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T06:59:49.2700117Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -11946,6 +12191,11 @@
           "sha256": "69beb243644320e1a43cf88a283dd3af0cf8ee65deb4b447369a4d5a4d0c2bc9"
         },
         {
+          "name": "summary.json",
+          "bytes": 4395,
+          "sha256": "b355a4f4d2e6655f3a704fb0333cdb55a9ebc38a1de782af8991b2ede3b35a87"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "7de30b82458702e8749bf281c648e935897847865e2fae3972be223ec23c482b"
@@ -11965,11 +12215,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-115214",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-115214",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-115214",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T06:53:04.6987247Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -12040,6 +12295,11 @@
           "sha256": "6c5b7da35a1f31c439acc0925d6ce65a77187fcbbb1bf79b58f156652a94f519"
         },
         {
+          "name": "summary.json",
+          "bytes": 2085,
+          "sha256": "48288238078f50ec024e07cfec3334b99223f6acfcc14a6577c0d0ce710a26b0"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "7de30b82458702e8749bf281c648e935897847865e2fae3972be223ec23c482b"
@@ -12059,11 +12319,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-121222",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-121222",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-121222",
       "rawArtifactsAreGitignored": true,
       "commit": "dcefc81",
+      "harnessCommit": "dcefc81",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T07:17:19.6402884Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -12146,6 +12411,11 @@
           "sha256": "72f2248dae4d950f2091063d39c47f4d81963e59efe872b2b2b7b81298ca2f44"
         },
         {
+          "name": "summary.json",
+          "bytes": 2547,
+          "sha256": "d8efb1e2af4446fecc0127a87872f971f7560897d73886471adfcf63bf3ba733"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "f0e4de2914181c2723a45ce9335efb3691daddba5b9ebf524019ad14173fd3ca"
@@ -12165,11 +12435,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-131210",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-131210",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-131210",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T08:23:39.6346701Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -12631,6 +12906,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12456,
+          "sha256": "5f9f89dc8f2b0b03edfddd23532ce21dab199918e61f0ed89ac1573d6afccdb8"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "e28754a2e0358dcb5d625d00bfb5bee67754aa4ba1119342a7e8cc6997120a9b"
@@ -12650,11 +12930,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-132447",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-132447",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-132447",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T08:35:03.5435609Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -13186,6 +13471,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13681,
+          "sha256": "22dbdfae528ee6b8e38be1eaa22b73a146405fcdcf201092194ea571460a338a"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "46acec4229a0eecb7eabea65bc088fd1dc06b9046637264de415163356a103e5"
@@ -13205,11 +13495,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-133607",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-133607",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-133607",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T08:52:24.6891433Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -13741,6 +14036,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13710,
+          "sha256": "0ebc8320861a33017fc969badc78e4074e4955aebf3c56bd61f4073083df08a3"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "37aab4f6c4e8ad9d6c7b0badb738d0a62c3726e21a9e159ab9ad1bd932bc2769"
@@ -13760,11 +14060,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-135323",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-135323",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-135323",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T09:04:29.5624325Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -14301,6 +14606,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13773,
+          "sha256": "5256f7983da31b02e5edf16f0bc7790b82c13a9bd129a7296a5e525a2c67f7ec"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "decf45f4d5ad1abd6b109146c52cf853af0bbd5c1d3aafe3c75a91f2db906e9e"
@@ -14320,11 +14630,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-140516",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-140516",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-140516",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T09:17:13.5220838Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -14786,6 +15101,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12453,
+          "sha256": "8cf0f60982b7a448265dad6f062e4b2a6285f15f2fc87ea1698bc7824bbe8f6f"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "c7f8e2bc589736324bc454a31bdc1286dc13480467e62b78c02a22fa4b842620"
@@ -14805,11 +15125,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-141828",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-141828",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-141828",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T09:31:11.8340954Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -15282,6 +15607,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12824,
+          "sha256": "f4ad0db2011ec5a01ba576f87fb7b07639b21807a9f67293a4dfaa4ba99d5302"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "15f9cd452059b8a7fd52e12dcf1b94603f31bc502fde8bf8147bc3c5994d2222"
@@ -15301,11 +15631,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-143213",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-143213",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-143213",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T09:50:11.3591116Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -15778,6 +16113,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12766,
+          "sha256": "f36e1d91144bae377bc95a703afb45e25744dfdf133feb3f8dfd6097626cdd47"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "26978b5067ebe756842718de520f613110f2331b11d5657877942dc4ec707157"
@@ -15797,11 +16137,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-145110",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-145110",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-145110",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T10:08:42.4399388Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -16263,6 +16608,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12619,
+          "sha256": "d9b6b6091055bbfe83c47720bc3818ff7733041ab0d3e4b41f822c0f93e063ca"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "a8c53d2d2f24be4f56419e3af68a950edb5ee0ff037f84464e5f756e180afaf8"
@@ -16282,11 +16632,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-150920",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-150920",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-150920",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T10:26:12.3840160Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -16748,6 +17103,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12554,
+          "sha256": "d95343ddf27e4061944cedcba7e4ba6c27a50147e38112553ac6ca0e88ce45e7"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "402d4cab751a0693b5d766f837c18aeecb5b9e8bf4ae7b0c613e4554944489b9"
@@ -16767,11 +17127,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-152743",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-152743",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-152743",
       "rawArtifactsAreGitignored": true,
       "commit": "739db05",
+      "harnessCommit": "739db05",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T10:48:50.7084525Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -17054,6 +17419,11 @@
           "sha256": "4c3873aaca557f957c5e94ffcc39864fdc173655b1c386ec1ab35d1c5e2b8e32"
         },
         {
+          "name": "summary.json",
+          "bytes": 5638,
+          "sha256": "7c11ae6a2f13478aaa208cb0f323cf75151b71b00af46fd2f2720239c827c6d1"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "46acec4229a0eecb7eabea65bc088fd1dc06b9046637264de415163356a103e5"
@@ -17073,11 +17443,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-161543",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-161543",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-161543",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T11:28:48.4757313Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -17561,6 +17936,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12945,
+          "sha256": "393414c61621952f3219e55e633e2429435ca9f109cbcf4c55458f9ef3c1d17f"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "30b4985b60b366d3e5bfdf0949ea246188ca5d3a63b3652b0d189fe6c017cf03"
@@ -17580,11 +17960,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-163108",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-163108",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-163108",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T11:45:39.3964628Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -18068,6 +18453,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12945,
+          "sha256": "f5cfce83a4e864c4729c617ccc10c28ddd86fcce5c16678cf4bdf2849e472f63"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "3fe184eb87d7c427b942fab81ee2e20e56805c6a17cf0562f73b66d6c6d0923a"
@@ -18087,11 +18477,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-164631",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-164631",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-164631",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T12:01:52.4803293Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -18575,6 +18970,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 12878,
+          "sha256": "ff8dac1fb8d9508049198baa9d20f935ae62f8284bbf2dcccdb0e032d45169ac"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "50bdcfb6b904fd7b117671928b62c088e0cd21081a42dc05dc85a11c9b006a29"
@@ -18594,11 +18994,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-171056",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-171056",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-171056",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T12:11:48.9718308Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -18669,6 +19074,11 @@
           "sha256": "d25a38cd6e42d4f5d264f12a73cf69d7196789f8da35e5a717d39fd2eb4eab59"
         },
         {
+          "name": "summary.json",
+          "bytes": 2152,
+          "sha256": "f3d60aa26df4e87b1c05e2a839d7e506c26c4b250099c67bcc0872a9289cd308"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "0c2758bb6de0e3a6890e93f10b8d5f44a27d6ff1fe1c4e7ccffdee001ee58037"
@@ -18688,11 +19098,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-171512",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-171512",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-171512",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T12:29:22.4332863Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -19154,6 +19569,11 @@
           "sha256": "fc617e4f5886a53cf0acd312cc11358d32bdb3569dccb079154da2c39c171905"
         },
         {
+          "name": "summary.json",
+          "bytes": 6272,
+          "sha256": "7d606655bd84074f8000958d05f4094bb7679d79e4657de22aa7d07b305fee55"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "ab930944368885f14778841c5e6c51984ab2c3b0bfccb366c886bffea45dc934"
@@ -19173,11 +19593,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-173204",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-173204",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-173204",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T12:41:55.2034503Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -19260,6 +19685,11 @@
           "sha256": "cb06b4536e02b99bbb372f96d2a713e01d33eeafe87b2a2a081d08b24af6aded"
         },
         {
+          "name": "summary.json",
+          "bytes": 2566,
+          "sha256": "86414efc3c25252c80bd747728a34c4c5cdae4658654d053ea1859d87810a3da"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "2fd0851312f701d570b6566213414c53130c41ae523a12f37f42beed2027f834"
@@ -19279,11 +19709,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-174604",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-174604",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-174604",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T13:05:44.7337737Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -19899,6 +20334,11 @@
           "sha256": "4f7ca51d6f9d88b20e164247699add311f8db1f651b8828461c5a27afabce57e"
         },
         {
+          "name": "summary.json",
+          "bytes": 5107,
+          "sha256": "6ba00a825a74c138f09355ad0706636e9be79889efac3f663785d9a540e68f36"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "2fd0851312f701d570b6566213414c53130c41ae523a12f37f42beed2027f834"
@@ -19918,11 +20358,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-180013",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-180013",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-180013",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T13:02:40.0854790Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -19993,6 +20438,11 @@
           "sha256": "533f253a8cf7215a40bfadddaacf944f33f37bdf8326a87b61a441d91bb7360e"
         },
         {
+          "name": "summary.json",
+          "bytes": 2095,
+          "sha256": "4513aa20f3dbdf251fc8f942d34206856a12dc1f42592a5f4cad304a904f21b4"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "bc5a5f15527b2ef66eda917edb8a4df88baee515272ab68a0de8e8dc7db34c80"
@@ -20012,11 +20462,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-182000",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-182000",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-182000",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T13:36:40.4722901Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -20099,6 +20554,11 @@
           "sha256": "46eef65ce4cdded7370e7cc5b60102eb4c55a098cf3a82b2ebc5f0067abf341b"
         },
         {
+          "name": "summary.json",
+          "bytes": 2767,
+          "sha256": "e89c6154e88cc1850d77d93f1d2398ff9e0599aee71f8c5360f13d04237c0029"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "17554969bf3534c3d611f736aba69f805a54b7c1acce61fae499c7f722d48042"
@@ -20118,11 +20578,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-184156",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-184156",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-184156",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T13:55:01.9392821Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -20617,6 +21082,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13110,
+          "sha256": "09e3fad5170e1629473d049d9b75dc410608615611da7f96cab90bbb880b01cc"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "3390b99a14eec502b3ea4d2a25fb16ada46b2d02ed44b15e0f4e5d36e7768a87"
@@ -20636,11 +21106,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-185626",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-185626",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-185626",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T14:08:51.5900096Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -21135,6 +21610,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13085,
+          "sha256": "6e5dcd1b823da08116b4c073b15815910351a5b7ea2b4e258329cc39bc55904d"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "5bc747dc9b8f8a7ce5b9848bc114faebdc4ef7125444e2333c272e82e6938b78"
@@ -21154,11 +21634,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-191528",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-191528",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-191528",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T14:28:24.3762598Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -21653,6 +22138,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13085,
+          "sha256": "5c055e3864a53bd0842c0de9a7dd65cbf9ab1853e2d12c48797f10a4f7068954"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "61c007d54a0fd406010458a7d34b15cb4e4d985e287ffff4466483ede349bb5c"
@@ -21672,11 +22162,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-193051",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-193051",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-193051",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T14:52:38.4701097Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -22171,6 +22666,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13031,
+          "sha256": "9862e532c055ba8efc7c79341652f71b205d7ef336f78f11a47877c76cfe948f"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "b3a417e1f2c907b0e735c7cfa85b2e8dea07dc3302d6662c0ef229eed33fe427"
@@ -22190,11 +22690,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-195359",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-195359",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-195359",
       "rawArtifactsAreGitignored": true,
       "commit": "75902a1",
+      "harnessCommit": "75902a1",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:10:56.1420762Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -22689,6 +23194,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13169,
+          "sha256": "6c47b2e58b23f0075aa6f67e0f29a2c07bc591d141337052e3f7680164de75ca"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "2fd0851312f701d570b6566213414c53130c41ae523a12f37f42beed2027f834"
@@ -22708,11 +23218,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-210346",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-210346",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-210346",
       "rawArtifactsAreGitignored": true,
       "commit": "a844bd2",
+      "harnessCommit": "a844bd2",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T16:25:42.3026673Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -23207,6 +23722,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13164,
+          "sha256": "7edcc06c6f3195492ad37b6168f85f2161d6b8d0567bdab17ea013bfe7a9f14e"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "32a3246aea8f08eac07e6926c0fb0e3a458bde809a5a3eb0cb408d72ea94df74"
@@ -23226,11 +23746,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-213425",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-213425",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-213425",
       "rawArtifactsAreGitignored": true,
       "commit": "a844bd2",
+      "harnessCommit": "a844bd2",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T16:48:36.2413298Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -23725,6 +24250,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13176,
+          "sha256": "a1c5d21a290648e1517f5c85f620198f92be5a151b91e4a4f6304a836399a767"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "0854f93e5203a0b336239ee9c37e14ea0783eb75af93abc571fa2cef9ebd5a71"
@@ -23744,11 +24274,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-215758",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-215758",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-215758",
       "rawArtifactsAreGitignored": true,
       "commit": "a844bd2",
+      "harnessCommit": "a844bd2",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T16:58:22.1032359Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -23819,6 +24354,11 @@
           "sha256": "91656f5880de82777ad4799418ec28806031e147390bb029451168ecbc0125b6"
         },
         {
+          "name": "summary.json",
+          "bytes": 2096,
+          "sha256": "2aa80f73b0e29025a4e258c92e97272fa9d2862f3c0f59e8f4c2cb3ed05ab18a"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "a8522c1ffb24c99e6db14c3ddfc2a1eb8120f2fdf8eff72f5da373eb4e454897"
@@ -23838,11 +24378,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-215921",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-215921",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-215921",
       "rawArtifactsAreGitignored": true,
       "commit": "a844bd2",
+      "harnessCommit": "a844bd2",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:15:28.2767599Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -24332,6 +24877,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13112,
+          "sha256": "92148a39a364e8103af657b19d75c972fc042f739b79fc8a4dc7162a3c50f2fe"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "5218786eabf4ada11d76dacd28c680bcf4cb71200000a483f70af8e1d3b0fa28"
@@ -24351,11 +24901,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-223756",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-223756",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-223756",
       "rawArtifactsAreGitignored": true,
       "commit": "e793b63",
+      "harnessCommit": "e793b63",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:59:43.4848949Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -24845,6 +25400,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13085,
+          "sha256": "01174383c266bf4c7a1edb2604e7e44618026b35a50cfbadaf24f5efb78ac9e9"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "3325f247245c75eece7c1ddaa825e15bf8e2b17a4ccfe80f5cb3b6ddf6e8ae8e"
@@ -24864,11 +25424,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-230348",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-230348",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-230348",
       "rawArtifactsAreGitignored": true,
       "commit": "e793b63",
+      "harnessCommit": "e793b63",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T18:24:48.2287137Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -25358,6 +25923,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13112,
+          "sha256": "f4db20b36adebd3a83fefe6c0376f18bc9b548fde6176e546bfc5aaf8c75f335"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "c94b3043e418cb3b14569b62b43d28843ea8d611d2541ad46f284952198f2f43"
@@ -25377,11 +25947,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-232956",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-232956",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-232956",
       "rawArtifactsAreGitignored": true,
       "commit": "ff2893e",
+      "harnessCommit": "ff2893e",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T18:57:39.0725061Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -25871,6 +26446,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13111,
+          "sha256": "eac75f7c3696621c08a453a7407e3b19840f94f4ea83e89d88f544bc9b56b3f2"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "9834927902824202caf401d6ba40364e4c36d5543838752c2903f1995a67340d"
@@ -25890,11 +26470,16 @@
     {
       "kind": "recipe",
       "runId": "20261111-235944",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-235944",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261111-235944",
       "rawArtifactsAreGitignored": true,
       "commit": "795c293",
+      "harnessCommit": "795c293",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T19:36:52.4926897Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -26384,6 +26969,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13165,
+          "sha256": "d5564b259e147d877fa7596f923a30de902e0037a27bcd8ebaf49c2791313737"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "9daf29b492607155d9c8e3c1666be897edde000fe2a280c4da8347dc7655c6ab"
@@ -26403,11 +26993,16 @@
     {
       "kind": "recipe",
       "runId": "20261112-004305",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-004305",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261112-004305",
       "rawArtifactsAreGitignored": true,
       "commit": "8c68319",
+      "harnessCommit": "8c68319",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T20:07:20.8342862Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -26897,6 +27492,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13085,
+          "sha256": "4c89c8d2685fc280b7fbb4b90a017126c222a980477378e9fbe50771d4f86c8d"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "6f79ee6bbcf32d0367e9e577eba8346946b38f73563e66de30fd2c7ef24a047a"
@@ -26916,11 +27516,16 @@
     {
       "kind": "recipe",
       "runId": "20261112-011138",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-011138",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261112-011138",
       "rawArtifactsAreGitignored": true,
       "commit": "c9af9fc",
+      "harnessCommit": "c9af9fc",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T20:25:48.9327833Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -27410,6 +28015,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13164,
+          "sha256": "280c127a7c46d801420c5005f2db605e72dac395f58a5a57d73f67cc6ae8abc3"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "a82c94616e400dfc3e6cff909d4109db9534c52bb6b3f91527f2bce467827d0d"
@@ -27429,11 +28039,16 @@
     {
       "kind": "recipe",
       "runId": "20261112-014149",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-014149",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261112-014149",
       "rawArtifactsAreGitignored": true,
       "commit": "c9af9fc",
+      "harnessCommit": "c9af9fc",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T20:47:29.4712369Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -27516,6 +28131,11 @@
           "sha256": "356c8c8685f13e541462de3fa2a849584f68c1579bc9a1dafecc1bcfa83cdd67"
         },
         {
+          "name": "summary.json",
+          "bytes": 2560,
+          "sha256": "6d703bf1bb2b9d42da2eea459fd2c7c1980853f38e3e4c2811f73bb1416aeb80"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "6010e7a60880b43864900e2588aa4301f322921604ed0e24d210c72cfc3cbdf8"
@@ -27535,11 +28155,16 @@
     {
       "kind": "recipe",
       "runId": "20261112-020804",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-020804",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261112-020804",
       "rawArtifactsAreGitignored": true,
       "commit": "c9af9fc",
+      "harnessCommit": "c9af9fc",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T21:30:25.0958988Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -28029,6 +28654,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13029,
+          "sha256": "06b00453972f4f54179377d9e97e0ff4a1b14836f07cd7695130ae5d9c996e4b"
+        },
+        {
           "name": "tests.txt",
           "bytes": 351,
           "sha256": "06c75be759897dd8940451a589b3906c384d8b68bac875038365747e3a7bf693"
@@ -28048,11 +28678,16 @@
     {
       "kind": "recipe",
       "runId": "20261112-092743",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-092743",
+      "rawArtifactRoot": "artifacts/phase3/recipe/20261112-092743",
       "rawArtifactsAreGitignored": true,
       "commit": "0aa9157",
+      "harnessCommit": "0aa9157",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T04:45:43.1942561Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": "10.0.302"
       },
@@ -28547,6 +29182,11 @@
           "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
         },
         {
+          "name": "summary.json",
+          "bytes": 13106,
+          "sha256": "c118537314b2177a46cbc40207bd6bfaa4f9113f9ed08a1b84e7a8e38439fb60"
+        },
+        {
           "name": "tests.txt",
           "bytes": 348,
           "sha256": "c2b795640d043a5b95642acb7a953bb1e2a9aebf3806a8ebea296cf0ad4ac98c"
@@ -28566,11 +29206,16 @@
     {
       "kind": "import",
       "runId": "20261111-201422",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201422",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201422",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:14:27.9766851Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -28720,6 +29365,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2665,
+          "sha256": "d5fd5f53a600e5d2c769456b74d64201bd4a9e2db0398b0d6532f40755b4c7f4"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 860,
           "sha256": "4237085b6c48d84a6060133e3b2ab95eebe7b9b1220d3db29ea8ff0dbc7502ec"
@@ -28729,11 +29379,16 @@
     {
       "kind": "import",
       "runId": "20261111-201526",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201526",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201526",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:15:31.9156180Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -28883,6 +29538,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2665,
+          "sha256": "d0876ad4ffe7e26705d37c40137cfee48c5e9c5bd6f5a3a45becd3176584e7b0"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 860,
           "sha256": "9744faf764cd04dd6ff5df722737d8bd8c29f75cadbed5633a672bc2fad4b316"
@@ -28892,11 +29552,16 @@
     {
       "kind": "import",
       "runId": "20261111-201614",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201614",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201614",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:16:22.5791914Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29046,6 +29711,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2665,
+          "sha256": "72ea4910c65845717793bdda47e1f04c3c832e96daf32e23d5a40ff50efa3b5b"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 860,
           "sha256": "f57b60d8bb656189265c4a4de4be3ef2007416c79d439040eda4349ad3ac7f12"
@@ -29055,11 +29725,16 @@
     {
       "kind": "import",
       "runId": "20261111-201707",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201707",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201707",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:17:11.3808075Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29209,6 +29884,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2665,
+          "sha256": "6ca166e864f86d462d49677132d436755203affa72c5cddfbe2a3817aa7da956"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 860,
           "sha256": "d4053ad563fd53b4f1919b6785c01b0decaa3797cd0043d27ac5b27705a67f24"
@@ -29218,11 +29898,16 @@
     {
       "kind": "import",
       "runId": "20261111-201735",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201735",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201735",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:17:40.9013392Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29372,6 +30057,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2665,
+          "sha256": "db31b2284f6ced4dc6f8a6a9a2c8e64a398c456fd1e9b44fcb8dcacd0a2492dd"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 860,
           "sha256": "71e9a1b21a48d64cda9b4e610c4bdce86fdb90a6c93f125dd0c3e128eb521bad"
@@ -29381,11 +30071,16 @@
     {
       "kind": "import",
       "runId": "20261111-201839",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\import\\20261111-201839",
+      "rawArtifactRoot": "artifacts/phase3/import/20261111-201839",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T15:18:48.5957433Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29535,6 +30230,11 @@
           "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
         },
         {
+          "name": "summary.json",
+          "bytes": 2865,
+          "sha256": "53e55dbb31eb198af590629fa031857d093ba51ceada1aae2db7340d3a9343c9"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1064,
           "sha256": "7306b5b3c2eabd4c4f586aed447bedb420918a924b99f6c63431a09b667e7c90"
@@ -29544,11 +30244,16 @@
     {
       "kind": "rootlab",
       "runId": "20261111-222145",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222145",
+      "rawArtifactRoot": "artifacts/phase3/rootlab/20261111-222145",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:22:53.2040949Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29559,6 +30264,11 @@
       "lanes": {},
       "artifacts": [
         {
+          "name": "summary.json",
+          "bytes": 153,
+          "sha256": "98c7cdf7eff73befc2af27e882c1bd8a0c97589033bac10111618dc357859bda"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 195,
           "sha256": "c70fd0c2175d115931ccdb468bbecb7cf18d3460a5abeb1af8b021ae50eadedf"
@@ -29568,11 +30278,16 @@
     {
       "kind": "rootlab",
       "runId": "20261111-222312",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222312",
+      "rawArtifactRoot": "artifacts/phase3/rootlab/20261111-222312",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:24:16.9702643Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29596,6 +30311,11 @@
       },
       "artifacts": [
         {
+          "name": "summary.json",
+          "bytes": 615,
+          "sha256": "7b10dfb1832dd574d048af530d1990ac40a72a80573872a6daea92e8d9bc9b0e"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 441,
           "sha256": "0fb0565b25e0fc7b519daaa81c6a755b6cb5930f0855ca3f7b4084a7d7f58299"
@@ -29605,11 +30325,16 @@
     {
       "kind": "rootlab",
       "runId": "20261111-222437",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222437",
+      "rawArtifactRoot": "artifacts/phase3/rootlab/20261111-222437",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:26:59.9392069Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29751,6 +30476,11 @@
           "sha256": "3460ec0f0dbe39a8e24e902ad57cf95bc97b1ed4a3ea16f4c79abc0f03862dba"
         },
         {
+          "name": "summary.json",
+          "bytes": 2864,
+          "sha256": "c7a81998e2dd6d344ea29d23516b6f0eb1f76587fb04b15ad1949e1964e9933b"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 813,
           "sha256": "c0dd745161d6a92f3975b3a64671583597df24ba3b6447e0af0bca3b4f23995e"
@@ -29765,11 +30495,16 @@
     {
       "kind": "rootlab",
       "runId": "20261111-222756",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\rootlab\\20261111-222756",
+      "rawArtifactRoot": "artifacts/phase3/rootlab/20261111-222756",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-11T17:30:45.8046611Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29911,6 +30646,11 @@
           "sha256": "0c052cff2abe03ca76f01aca9644b42790f15374f9cec0000b3914106e8c7508"
         },
         {
+          "name": "summary.json",
+          "bytes": 2867,
+          "sha256": "6b10ee8be4395613e066efb3f9ad02ad8ffbcc56dec9a6ea0c8e659784170bb9"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 817,
           "sha256": "36119e5abf5d99cc1c22e95faf1285f87a2a99816fb6131886e33404b27de4f7"
@@ -29925,11 +30665,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-101151",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-101151",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-101151",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:11:56.2294913Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -29953,6 +30698,11 @@
       },
       "artifacts": [
         {
+          "name": "summary.json",
+          "bytes": 752,
+          "sha256": "aec548e8b6047ccfa57d2d1739916fab875b67551d041265be8e869c00060181"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 647,
           "sha256": "91df57a60c527f3541991cb640503ed34be0a7ae6cea17e413024f6cead5b1f7"
@@ -29962,11 +30712,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-101614",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-101614",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-101614",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:20:21.2364675Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30007,6 +30762,11 @@
           "sha256": "0e593353e6c469d198fa1db6b39e4d38d798a642b6909ec80046397adafae629"
         },
         {
+          "name": "summary.json",
+          "bytes": 1350,
+          "sha256": "5e9da7270caaba819edce3f225f0da145f3a2ebe9351da62c1f6760f4cc8a5f6"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 563,
           "sha256": "ebcb656205f666bd72769c14eb8bb41ae8d2766d48034a38e1858afe3f015e0e"
@@ -30016,11 +30776,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-102257",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-102257",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-102257",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:27:12.9227963Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30061,6 +30826,11 @@
           "sha256": "8cb5d3db7e437055ea5f1d00745202990fa58ddec21a7f6e1d8e618bad5709ad"
         },
         {
+          "name": "summary.json",
+          "bytes": 1350,
+          "sha256": "7392bd5f402c057b0e0718861dde4b8e5f30ecdce36939c7b5d16fdc7abc188f"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 563,
           "sha256": "97081f4ec82d1c41e5ecaddaed536af97bbadc4f9c3314c5254935fcedd9be0b"
@@ -30070,11 +30840,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-102912",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-102912",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-102912",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:39:28.4483239Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30149,6 +30924,11 @@
           "sha256": "9cdc819bdbdc57840387c94cad4e50940afd0bf64c6969b102e82ed665e16ad2"
         },
         {
+          "name": "summary.json",
+          "bytes": 2841,
+          "sha256": "47572b5873ae022a5bd88e4856b9088af057c0e9c47abc3b2b07cc8c4be4ae05"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 740,
           "sha256": "81ae452aa20e53e1b0e2c816549bbe7c28f296739a88fdb1ca79d3a1cdefb3bb"
@@ -30158,11 +30938,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-104345",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-104345",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-104345",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:54:10.1021302Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30237,6 +31022,11 @@
           "sha256": "0b17344952798bfde123378e876e886afd1599deae1813542a769ff085ebaca6"
         },
         {
+          "name": "summary.json",
+          "bytes": 2841,
+          "sha256": "69e2911955417c975cab76ef4adf32a6c4aa54dd420876aa2c806e41b996ad6d"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 740,
           "sha256": "a8eac648ece2c3ec99a91fb5ec9714808669ad3a8e82ed9a8e5bbfd6d3700a4d"
@@ -30246,11 +31036,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-110423",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-110423",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-110423",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T06:13:23.8147816Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30495,6 +31290,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 9324,
+          "sha256": "c075bd92c05cf8b7b0c02d235982191700537de5b842fde30a31628aafd3b4d3"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1634,
           "sha256": "1aca6cda3c2577ef44a9d207fd606cc24ac9ffb305848c01f9094acd779daac2"
@@ -30509,11 +31309,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-111614",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-111614",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-111614",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T06:25:12.7433965Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30775,6 +31580,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 10053,
+          "sha256": "59fae99f88050a8ca8bff6740a56356f3e57f0892d1af595a9eb917c5dc5c7ee"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1729,
           "sha256": "3edb28274882d706c88a49b7ebc2b6a6c193de9a46c3cd0ed19862eca860052d"
@@ -30789,11 +31599,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-112717",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-112717",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-112717",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T06:37:06.8888956Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -30988,6 +31803,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 8316,
+          "sha256": "e4466f98dce3bcbf2f2ca0e311d86c646d17f7d51ddcc67fc8bb50546b5b9fd1"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1641,
           "sha256": "5af0c316cef99b9b9fb6080336fb6f012195239c3b8525846d8b059ba39cade2"
@@ -31002,11 +31822,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-112826",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-112826",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-112826",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T06:44:22.9224740Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -31238,6 +32063,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 9438,
+          "sha256": "00b18548db92b7ab5e9bc800488fa129a59dd747fc0b94a2a7d36f70bbb4f84d"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1776,
           "sha256": "51b0862806c2c7d427297921fe3e933f3c962806e6457697a8c2f51dcfcc678f"
@@ -31252,11 +32082,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-115631",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-115631",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-115631",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T07:07:43.0648067Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -31524,6 +32359,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 10317,
+          "sha256": "6bd03f8da4e41fe06bab50e35ecd230b3fa9f5222e86ec3dbb977bd032f0ebcd"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1838,
           "sha256": "f0946ced97a031e242e2d4aaeed48615d5393b81fbc1944119b58d5286ea2623"
@@ -31543,11 +32383,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-121251",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-121251",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-121251",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T07:24:18.4081531Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -31815,6 +32660,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 10317,
+          "sha256": "39cfdcbba89430303ae12be1e1c67fc7530479946a735218ed8a906b7e0d5b8c"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1789,
           "sha256": "87cf366f43d3f80c97e842fe51a216f4509b844a28f25e998f04392d5dfeaeb0"
@@ -31834,11 +32684,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-122651",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-122651",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-122651",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T07:39:19.4121533Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -32096,6 +32951,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 10079,
+          "sha256": "2f49fc56ae588db562e984c61dc69e1ac1587a08ddb9331c1b344defb5520a11"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1771,
           "sha256": "60e06bfa984fe9a24b93d9300955a00c4f045e057d2271b9f8bb201b0d43968d"
@@ -32115,11 +32975,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-123735",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-123735",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-123735",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T07:53:13.6452504Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -32315,6 +33180,11 @@
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
         {
+          "name": "summary.json",
+          "bytes": 7318,
+          "sha256": "f5e5987c7e15381e9c29e53aba604489731b8a81591d391104c92928cf21d7b6"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1693,
           "sha256": "b8c4e3c0fd73cd94d81c23dad5fddbe00e0728d38ed4707c080b1147f21323b1"
@@ -32329,11 +33199,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-125614",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-125614",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-125614",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T08:06:33.8897800Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -32591,6 +33466,11 @@
           "sha256": "1ae00b790969cb03f15b3cc6b4fc13182e23a7f4a05de2eebfe8173f56e7bda4"
         },
         {
+          "name": "summary.json",
+          "bytes": 10317,
+          "sha256": "c89bdd253ba7b2c083f7bd93b5e99924aa19632492cb97d988337321d081c44b"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1789,
           "sha256": "2a31b181ddef5186df42e8b2a4a952f020899cb1cce6776f22e7fbb5e70903f8"
@@ -32610,11 +33490,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-130920",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-130920",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-130920",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T08:19:30.8531483Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -32872,6 +33757,11 @@
           "sha256": "0734380bcd0d0fafce9a6fb4f9060a1de6d7579d0a81faa3ecef16b6768ee1e7"
         },
         {
+          "name": "summary.json",
+          "bytes": 10317,
+          "sha256": "4b554c631e1e5fd84966e4f96d63d9f5a054a41776aebf362700793923e51aca"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1789,
           "sha256": "2275928e0068800345f2dcc29781258493f36ed66653cda18c98d212beddf533"
@@ -32891,11 +33781,16 @@
     {
       "kind": "wpf",
       "runId": "20261112-132247",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\wpf\\20261112-132247",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261112-132247",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T08:25:18.3917303Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33153,6 +34048,11 @@
           "sha256": "704d159b90f1687c758c19cd2b155151cb24f175cd26176f82e2966f96bf2b7d"
         },
         {
+          "name": "summary.json",
+          "bytes": 10309,
+          "sha256": "49f8f9f27be9696725bb5bb63135520eef032cb6c2ae5f75b1903255c5d4c099"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1789,
           "sha256": "5946455ef14139ca4459cd33f040c416266f71a25f52e47040c0ee5f852ebbca"
@@ -33172,11 +34072,16 @@
     {
       "kind": "devtools",
       "runId": "20261112-095717",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\devtools\\20261112-095717",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261112-095717",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:01:29.4824508Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33336,6 +34241,11 @@
           "sha256": "04fecc0c52912f401af197f4d6d9c8cd14882852bdf105f331ca5429beac9841"
         },
         {
+          "name": "summary.json",
+          "bytes": 2708,
+          "sha256": "2e4c380ba376ffaf5f298b660df5a04f470737ea367121ffc53405fdd34d0983"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 873,
           "sha256": "6655deefa8a0004f9a7e1b77a8f3d682942e015930264837008e09f9c40a37c9"
@@ -33345,11 +34255,16 @@
     {
       "kind": "devtools",
       "runId": "20261112-100421",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\devtools\\20261112-100421",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261112-100421",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T05:06:53.8308733Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33509,6 +34424,11 @@
           "sha256": "4feb42e4e1aefa717b560f071759ce37d9aea0d083542d57d8866d60b454309a"
         },
         {
+          "name": "summary.json",
+          "bytes": 3043,
+          "sha256": "914332f50cd48b423861b4040093008a5b602690f825ccca176c14ebebd50849"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1197,
           "sha256": "89e402f4c34180c51ea09e8441688a08e73fb4e315af329ed5d0240a64de0771"
@@ -33518,11 +34438,19 @@
     {
       "kind": "install",
       "runId": "20261112-134818",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-134818",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-134818",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "120ae1569c23b5a6b97a9f6bf8142bf4a0c9a1141ea4147c4546310c778f129e",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T08:48:23.2088752Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33597,6 +34525,11 @@
           "sha256": "adf8e33b7cd5940649a148498c593d9e9b7c09ab57bbf2c42277a120cbb81d7f"
         },
         {
+          "name": "summary.json",
+          "bytes": 1575,
+          "sha256": "05e8a62b8ca70a158892b9346e65633ae3367823a0a51d1d871104bb846525d2"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 763,
           "sha256": "f7482bfdd542e19de987b8ddee88bf21c96e1c0a2f43686e838dfe88e40a8435"
@@ -33606,11 +34539,19 @@
     {
       "kind": "install",
       "runId": "20261112-140028",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-140028",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-140028",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "a8798043ef3dd2b0ec19a8b5864dee61334bf9914886ed9591eed4dcaaa1e170",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:00:34.9363007Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33685,6 +34626,11 @@
           "sha256": "c53bb2a3b36530fdb0df51fc750576957584cb7890078eb49a99393a10774846"
         },
         {
+          "name": "summary.json",
+          "bytes": 1596,
+          "sha256": "5d99485d9ce09e0b2a81caeac972281621dd310b49d36271fe2918de2065c3e0"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 781,
           "sha256": "cf623f92bee2cc5c615fda382a7da37eb73bf50b75372fbd38df393b306c3760"
@@ -33694,11 +34640,19 @@
     {
       "kind": "install",
       "runId": "20261112-141005",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-141005",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-141005",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "dde4cf42f8d78a5e61e4010d9f8b6b294da612060c3b93af08120a5bd27ac4a0",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:11:50.2757062Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -33927,6 +34881,11 @@
           "sha256": "20539f07713811d71fda669012e0908213ea09de173428956bec94ebb9815781"
         },
         {
+          "name": "summary.json",
+          "bytes": 4976,
+          "sha256": "6ffd18f4eb330bd026fa7e58ee13acb66122cd7e8d827281e2840ddc81d29408"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1556,
           "sha256": "87775e6601770e257be290feaacaa7a5f1f2be3f6a55d97f6811dfa401a3503b"
@@ -33936,11 +34895,19 @@
     {
       "kind": "install",
       "runId": "20261112-142303",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-142303",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-142303",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "4924b4adcca27ec0b75ffaad4ffc665391e884909897628729fc0c0916e85d97",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:25:02.4928189Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -34169,6 +35136,11 @@
           "sha256": "53b4972f2dc532972ddeef7c149d62d49028bcfba8c6267a833fc5d8605ec6dd"
         },
         {
+          "name": "summary.json",
+          "bytes": 4975,
+          "sha256": "0ceb4f8b32e91ee7733e68376d39f4b9c2ed3047740f558706fe3a18cb55e827"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1556,
           "sha256": "7b9b90ebab428bea09160f8730963141e94c841086e51cb2cd7a93a450cb09a4"
@@ -34178,11 +35150,19 @@
     {
       "kind": "install",
       "runId": "20261112-143411",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-143411",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-143411",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "6beeacfebd3ba50796198e12e7cfcfa851637376752ebbd2709689f566c6b5f4",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:35:54.0361411Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -34411,6 +35391,11 @@
           "sha256": "58ed6e2cd0e81c78f4944e9d1bba03fe82aeb876d7a542abfb981aa304d64564"
         },
         {
+          "name": "summary.json",
+          "bytes": 5011,
+          "sha256": "4e32e121fe412f8f1c19a9953b9992fcd374b2ce29b706b07b5668f1cd7fa619"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "84b824f2a64f15395c7ae0091eadb1919571de3a3ef742f0e76d1adea37659ae"
@@ -34420,11 +35405,19 @@
     {
       "kind": "install",
       "runId": "20261112-144403",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-144403",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-144403",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "6beeacfebd3ba50796198e12e7cfcfa851637376752ebbd2709689f566c6b5f4",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:45:59.7174937Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -34653,6 +35646,11 @@
           "sha256": "43bbfeb801e7f625458bfce6d5048990fe7c1b7867ca80ecbb313a2ed24c096e"
         },
         {
+          "name": "summary.json",
+          "bytes": 5011,
+          "sha256": "184462be3adcd84d08bb1dd183b87a755a0e96e519a5119ab29cecdecd20ccc5"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "90e4d5f733b6db29865690291da009748141c3eba7f8f9a7c4c1aa7e444b9b48"
@@ -34662,11 +35660,19 @@
     {
       "kind": "install",
       "runId": "20261112-145551",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-145551",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-145551",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "dc983dfe9a467a64eaba4027008a46be5a405717a9e465b4b79493d3fb615af4",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T09:57:57.5081435Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -34895,6 +35901,11 @@
           "sha256": "6a8b00180ba68bdcabc77ed0d50be3381b7ee3cae7e40854097e66eb07c3f321"
         },
         {
+          "name": "summary.json",
+          "bytes": 5011,
+          "sha256": "8cda495ecc1fbb8845b8057fa2e4225207207a1bb14c7b9b6a7f91a6bf6b97c4"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "91b351f7c7807c0e6b4cfe44f3c6e1cb4a15072637d7a18f9a0a16d3247a7b79"
@@ -34904,11 +35915,19 @@
     {
       "kind": "install",
       "runId": "20261112-151632",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-151632",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-151632",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "82e387623ce6c9ffa11694e4e87f0a5fed31313301b2f2c5aeaf5c6a47653e6d",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T10:18:34.1765565Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -35137,6 +36156,11 @@
           "sha256": "c5414c964fa14e36318ff54d9e2b9845986f23355936434678f3e6d56794666c"
         },
         {
+          "name": "summary.json",
+          "bytes": 5010,
+          "sha256": "a496ee3ad7f8b2df42e82784a5d0d5a08ea24b25c39afd507aa589496e0bed97"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "7ffb107f164fba4076172ae29d652af5e87a7de0fc389fde00de8d99cd978eb9"
@@ -35146,11 +36170,19 @@
     {
       "kind": "install",
       "runId": "20261112-192507",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-192507",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-192507",
       "rawArtifactsAreGitignored": true,
       "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "4cd7ba5151c3ca88ac02678e5a7f510ce771a8027d5cb73450aac26b3476c6ca",
+        "evidence": "recorded in acceptance summary"
+      },
+      "finishedUtc": "2026-11-12T14:26:52.2082559Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -35379,6 +36411,11 @@
           "sha256": "b79a8176436c571de31029dc48aee5a50237ac7e91fd3f5af1bd867b7801ecf0"
         },
         {
+          "name": "summary.json",
+          "bytes": 5010,
+          "sha256": "dd46722765aa4ad4f906a96ce7d6c3b08a425ada509348312af67f6029b48118"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "74679bf28c9d70599f148129fb403d8fffc387a7e65b342cc5271315c22fd2c0"
@@ -35388,11 +36425,21 @@
     {
       "kind": "install",
       "runId": "20261112-194153",
-      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-194153",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-194153",
       "rawArtifactsAreGitignored": true,
-      "commit": null,
+      "commit": "4f821eed7a57419435e5ed7134d0b919fa426f07",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "4f821eed7a57419435e5ed7134d0b919fa426f07",
+        "installerSha256": "8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T14:43:36.3701482Z",
       "pins": {
         "emulator": null,
+        "image": null,
         "imageRevision": null,
         "dotnet": null
       },
@@ -35621,9 +36668,2283 @@
           "sha256": "50878a0da681bad3c51f60c2e7dd725a4e0a2048b847934fc15c1844271f1f46"
         },
         {
+          "name": "summary.json",
+          "bytes": 5010,
+          "sha256": "4b997a04f15302756f0b9b00c51ef9bb4b85871085af9b5e46c145c1e6981e7b"
+        },
+        {
           "name": "transcript.txt",
           "bytes": 1595,
           "sha256": "c56b539087a8a874afa6b3b68985b18132a4185cf905f6bc52700b7e50c6f9c1"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-210610",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-210610",
+      "rawArtifactsAreGitignored": true,
+      "commit": "f375bdec778142552dc074c75664d858bee37c12",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "f375bdec778142552dc074c75664d858bee37c12",
+        "installerSha256": "7a3650c3208759c60d657b2ef2ffb16aa532fbffed40fad65e5fff8c436d73f3",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T16:08:19.3954970Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 17,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T16:06:14.5750316Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T16:06:14.5968098Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T16:06:14.6191015Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T16:06:26.7653388Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T16:07:54.5499255Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T16:07:54.5604193Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T16:07:54.5933635Z"
+            }
+          ]
+        },
+        "installed.snapshot-json": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.snapshot-json",
+              "passed": true,
+              "detail": "the installed CLI reports structured snapshot results",
+              "atUtc": "2026-11-12T16:07:59.0943817Z"
+            }
+          ]
+        },
+        "local-status-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "local-status-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T16:08:00.7871826Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T16:08:00.8174489Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T16:08:02.9067678Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T16:08:02.9170858Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T16:08:02.9432090Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T16:08:17.2970543Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T16:08:19.3468663Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T16:08:19.3538761Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T16:08:19.3703798Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "installed-snapshot.json",
+          "bytes": 101,
+          "sha256": "7da1697862bb4ad2a13db174c0e6b60be62e8e2673f64e687a4cc14f9dc305f3"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 633838,
+          "sha256": "b3dacd21572b97fce2973f27c908b8370adb45d8ce0e2acf83f88538728c8712"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 117832,
+          "sha256": "638b622d6dbca8db29218e40955cadb1a1179f736da581a1d348205ccd0f49fc"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105560,
+          "sha256": "8fa4d0d23f5a6c4a41475ba4dcd18d764bf7bbcd71e5309bf7572e0a73c8ba43"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 5319,
+          "sha256": "1fce3ea1cac61a710b12075b0854f6ba3666015c616206fb4c0f06463f3c3a96"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1696,
+          "sha256": "4aa06cc2a9edf6a0747ce25aaab4d165902683c103f007288741f10223b89a23"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-212243",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-212243",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T16:22:44.7192866Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 1,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Clean-install acceptance requires a Windows user without an existing Emulator Workspace installation.",
+              "atUtc": "2026-11-12T16:22:43.7421285Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "summary.json",
+          "bytes": 792,
+          "sha256": "9774e4e2b5e3a6f437fabe6ef26fafa0c922a9addb418ac09f0e0119a3730bf1"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 522,
+          "sha256": "634ce2def01b70eb3990d6adbec159fd2da8fba6816f20eb581f67cf80ff8e48"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-212444",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-212444",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T16:26:48.8670818Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 19,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T16:24:50.0216774Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T16:24:50.0546114Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T16:24:50.0744437Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T16:25:02.1916693Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T16:26:19.6746710Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T16:26:19.6932843Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T16:26:19.7348887Z"
+            }
+          ]
+        },
+        "installed.snapshot-json": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.snapshot-json",
+              "passed": true,
+              "detail": "the installed CLI reports structured snapshot results",
+              "atUtc": "2026-11-12T16:26:24.0973245Z"
+            }
+          ]
+        },
+        "installed.simulation-probe": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.simulation-probe",
+              "passed": true,
+              "detail": "route=KO: unknown command, try 'help' battery=True GPS=feature:android.hardware.location.gps",
+              "atUtc": "2026-11-12T16:26:26.6116125Z"
+            }
+          ]
+        },
+        "local-status-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "local-status-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T16:26:28.0719041Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T16:26:28.0981326Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T16:26:30.1655478Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T16:26:30.1720722Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T16:26:30.1912071Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T16:26:44.3031446Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T16:26:47.3534418Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T16:26:47.3627055Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T16:26:47.3742798Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Previous installer failed (exit 1619).",
+              "atUtc": "2026-11-12T16:26:48.5898909Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "installed-simulation.json",
+          "bytes": 2745,
+          "sha256": "c2e80da7f7364d6f5b85d5d8735e08d8be9aaff12798139f32927d2aa8639758"
+        },
+        {
+          "name": "installed-snapshot.json",
+          "bytes": 101,
+          "sha256": "70cc070f469a3cbc260ba1eca190a771e97f2d91feb90b7e31eb301a6e97d854"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 992306,
+          "sha256": "5db93a3e03e1f61a7c06c0aa0d2b8fe797fda599723d4bc9df4c3a4452048994"
+        },
+        {
+          "name": "msi-previous.log",
+          "bytes": 5924,
+          "sha256": "dd12451811ba8af8fe5b8e8b953aa970021cddaa340170c6a1906a5d0e9754c6"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 372038,
+          "sha256": "cb5a6d68a454400a2456347dd75ed1e705303cb2280a1eeab7d45d2ba4ac9897"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105554,
+          "sha256": "9d5366b3f4de1658d6e357cc87cf33f40e09ec9d5b23463d4db69a63bd8ba381"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 6056,
+          "sha256": "69501b5ed1a22020f7db6562e9f6fd17f8cfd963544c60d717c2ca089288f48e"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1963,
+          "sha256": "ada633c7f0fc1d09f475fbdf8672ec973526825101aec50172b45856a299ce3f"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-212707",
+      "rawArtifactRoot": "artifacts/phase3/install/20261112-212707",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+        "installerSha256": "e2620bce693271f433275ad639a0ac9ccc846d42ec61c8d48047261590c5346b",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T16:29:52.0316879Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 21,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T16:27:12.0337686Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T16:27:12.0569588Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T16:27:12.0672193Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T16:27:24.1418831Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T16:28:44.1013425Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T16:28:44.1095829Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T16:28:44.1345357Z"
+            }
+          ]
+        },
+        "installed.snapshot-json": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.snapshot-json",
+              "passed": true,
+              "detail": "the installed CLI reports structured snapshot results",
+              "atUtc": "2026-11-12T16:28:48.2884435Z"
+            }
+          ]
+        },
+        "installed.simulation-probe": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.simulation-probe",
+              "passed": true,
+              "detail": "route=KO: unknown command, try 'help' battery=True GPS=feature:android.hardware.location.gps",
+              "atUtc": "2026-11-12T16:28:51.1525129Z"
+            }
+          ]
+        },
+        "local-status-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "local-status-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T16:28:52.6841572Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T16:28:52.7138662Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T16:28:54.7826844Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T16:28:54.7937205Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T16:28:54.8245295Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T16:29:09.1828594Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T16:29:13.2400632Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T16:29:13.2490152Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T16:29:13.2630357Z"
+            }
+          ]
+        },
+        "upgrade.version-changed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.version-changed",
+              "passed": true,
+              "detail": "0.1.0 -> 0.1.1",
+              "atUtc": "2026-11-12T16:29:40.7360942Z"
+            }
+          ]
+        },
+        "upgrade.managed-profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.managed-profile-kept",
+              "passed": true,
+              "detail": "upgrade-4ef9a0efd00a",
+              "atUtc": "2026-11-12T16:29:44.1912378Z"
+            }
+          ]
+        },
+        "upgrade.uninstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.uninstall",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T16:29:51.7649536Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "installed-simulation.json",
+          "bytes": 2744,
+          "sha256": "e1701e92b89ce0205c1c9205f5b4c2fe29a633115e629368d1407220ec0b8aa7"
+        },
+        {
+          "name": "installed-snapshot.json",
+          "bytes": 100,
+          "sha256": "98a77feeaa6532e141e33046455833dfebc345176bdb35b30e7f75f1152e4851"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 633828,
+          "sha256": "ebd60c1eac8a3062ba5cf09337815a0e82c7380f1316e5d5a372325bf4a4d499"
+        },
+        {
+          "name": "msi-previous.log",
+          "bytes": 633836,
+          "sha256": "ab3d2819ed93c53a6b1eb0c9c4e20ec7a459e6e5dff64b47c13e5d6052cae956"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 372038,
+          "sha256": "aa9ae57c07efcf7f64dee5381966fa34c4aa97415645b035747655e0c8f5adbb"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105560,
+          "sha256": "6fc905aa21db65798ccab587d93feb2942073e58ad552d3bf31aca39901d44bb"
+        },
+        {
+          "name": "msi-version-upgrade-uninstall.log",
+          "bytes": 372096,
+          "sha256": "e6a44d944cbc8488deb1ad96e4339d1533d0c182a3458a407288eae1501d04b8"
+        },
+        {
+          "name": "msi-version-upgrade.log",
+          "bytes": 1135174,
+          "sha256": "66575b595aa566574fa3e5de5851473a00777e2fd6d5378d51d6ced73eb95e1a"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 6591,
+          "sha256": "90aeb32015009a21b6ba0662507433f1b78c2b0773c2d3fa2bf41b61041db365"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2020,
+          "sha256": "0b6ef72be8bf9b1ea62e1807cb4a783b3aeb882f0459396e43ba87a3504dc470"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-152621",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-152621",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T11:04:05.8997908Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 1,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "wsctl wait --name bench-2228 --timeout 600 --root D:\\Phase9Root failed (3): ERROR The supervisor connection closed.",
+              "atUtc": "2026-11-12T11:04:05.8194578Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 2107,
+          "sha256": "a20c162e895696e17e2662f21a55e76ca1ebcce7bb932cdf2e287985afd929a2"
+        },
+        {
+          "name": "host.json",
+          "bytes": 617,
+          "sha256": "3f30c6c884f715e4f22458694f28ce4660ad0da46eec93dd799433381fecbd21"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 3495,
+          "sha256": "3627874e6e275d10b2ccc026978df7966a8d8d378660468446253b08c0739935"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2141,
+          "sha256": "acd12834c14a376f1f99ef8fae2c64987ad91611c3069befb7cfd4f8a8ec4ae5"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-160525",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-160525",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T12:22:41.5629737Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 3,
+      "totalChecks": 5,
+      "lanes": {
+        "lifecycle.cycles": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "lifecycle.cycles",
+              "passed": false,
+              "detail": "30 start/stop cycles with 1 failures",
+              "atUtc": "2026-11-12T12:22:40.9697068Z"
+            }
+          ]
+        },
+        "lifecycle.no-leak": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "lifecycle.no-leak",
+              "passed": true,
+              "detail": "engine count 1 -> 0",
+              "atUtc": "2026-11-12T12:22:40.9787507Z"
+            }
+          ]
+        },
+        "target.boot-overhead": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": true,
+              "detail": "managed cold boot p50 45.88s vs same-engine baseline p50 42.35s = 3.53s overhead (allowed 4.24s)",
+              "atUtc": "2026-11-12T12:22:41.0003120Z"
+            }
+          ]
+        },
+        "target.warm-restore": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": false,
+              "detail": "warm restore p50 48.49s (target <= 8s)",
+              "atUtc": "2026-11-12T12:22:41.0048540Z"
+            }
+          ]
+        },
+        "target.input-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.input-latency",
+              "passed": false,
+              "detail": "only 0 latency samples",
+              "atUtc": "2026-11-12T12:22:41.0171907Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bench-logcat.txt",
+          "bytes": 50999,
+          "sha256": "0abc53861fcf16b96c6c5d886f949860d804b9faa14a80ca79882a2d3ffc8213"
+        },
+        {
+          "name": "benchmark.json",
+          "bytes": 4678,
+          "sha256": "2a450f986690ccd77722c64ccb6eba6a665ee5c688060d5c7093bdb8470bd205"
+        },
+        {
+          "name": "host.json",
+          "bytes": 617,
+          "sha256": "2e0884bb7be76e78b7f629d64ef226e62b88fda079a45531074bff3cf72ecd83"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 8046,
+          "sha256": "2459ade8365993f0a9a7d600bcc7f04563978b79a604cbb24f1547a571d179fb"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 4942,
+          "sha256": "3cbc9e0e3f3e49ceafea4ca17e4762098c5f2238509c88294722d430098528fa"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-173642",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-173642",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T13:50:19.9025939Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 3,
+      "totalChecks": 5,
+      "lanes": {
+        "lifecycle.cycles": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "lifecycle.cycles",
+              "passed": false,
+              "detail": "30 start/stop cycles with 1 failures",
+              "atUtc": "2026-11-12T13:50:19.2558426Z"
+            }
+          ]
+        },
+        "lifecycle.no-leak": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "lifecycle.no-leak",
+              "passed": true,
+              "detail": "engine count 1 -> 0",
+              "atUtc": "2026-11-12T13:50:19.2638843Z"
+            }
+          ]
+        },
+        "target.boot-overhead": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": true,
+              "detail": "managed cold boot p50 39.65s vs same-engine baseline p50 44.92s = -5.27s overhead (allowed 4.49s)",
+              "atUtc": "2026-11-12T13:50:19.2829938Z"
+            }
+          ]
+        },
+        "target.warm-restore": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": false,
+              "detail": "warm restore p50 39.65s (target <= 8s)",
+              "atUtc": "2026-11-12T13:50:19.2870007Z"
+            }
+          ]
+        },
+        "target.input-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.input-latency",
+              "passed": false,
+              "detail": "only 0 latency samples",
+              "atUtc": "2026-11-12T13:50:19.2985374Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bench-logcat.txt",
+          "bytes": 4352,
+          "sha256": "e6b320f632d4b63bef0e9bf7435474084811ca5c6304a57a0dc4fa81a544a6e4"
+        },
+        {
+          "name": "benchmark.json",
+          "bytes": 4683,
+          "sha256": "721b7b5d76f31e49bc24de6528ec5c4a9561a50742624e5b6d8374c8c51062fa"
+        },
+        {
+          "name": "host.json",
+          "bytes": 617,
+          "sha256": "3edb6325b101fc1c417e57aebb6963077a818089c92ca030e347b74e4abf3ee9"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 8052,
+          "sha256": "7b40265398c5f45864a027a7e2d168f60ec9de08f1cb79e930c6f296f8b2c7cb"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5533,
+          "sha256": "36785f0ae5fd838356d6a3569e6a5f9cea6b02e732f0915c75123fde81d3464f"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-185827",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-185827",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T14:00:25.8185421Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "target.boot-overhead": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": true,
+              "detail": "the boot overhead was not measured in this run",
+              "atUtc": "2026-11-12T14:00:18.5727102Z"
+            }
+          ]
+        },
+        "target.warm-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": true,
+              "detail": "the warm restore was not measured in this run",
+              "atUtc": "2026-11-12T14:00:18.5858952Z"
+            }
+          ]
+        },
+        "target.input-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.input-latency",
+              "passed": false,
+              "detail": "input latency p50 158.57ms p95 219.28ms over 20 samples (target p95 <= 100ms)",
+              "atUtc": "2026-11-12T14:00:18.6143841Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bench-logcat.txt",
+          "bytes": 1056,
+          "sha256": "d5995736e775a53064506606b3213b9c0a7ecc06cfec404c75dfcc7c947a208d"
+        },
+        {
+          "name": "benchmark.json",
+          "bytes": 2939,
+          "sha256": "a8eeabb8f6e981a5b232e5078099fe8900739c35649a84731939d56c0a181f75"
+        },
+        {
+          "name": "host.json",
+          "bytes": 617,
+          "sha256": "e013acd8d5b2797e808841523e9bafc0ee9d2c587fe8e532a6b2add3d4a98fc2"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 5174,
+          "sha256": "1a2ad6b7771618b19caecbd94ca8137e7228680121c2552333ae4fa37c19b04f"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2628,
+          "sha256": "e07b7ce5ee627d5647ef3cbec4f58810f083b417bd4de4d5b95706a252377976"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-190940",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-190940",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T14:11:39.4501907Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "target.boot-overhead": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": true,
+              "detail": "the boot overhead was not measured in this run",
+              "atUtc": "2026-11-12T14:11:32.3067874Z"
+            }
+          ]
+        },
+        "target.warm-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": true,
+              "detail": "the warm restore was not measured in this run",
+              "atUtc": "2026-11-12T14:11:32.3169144Z"
+            }
+          ]
+        },
+        "target.input-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.input-latency",
+              "passed": false,
+              "detail": "input latency p50 154.73ms p95 324.76ms over 20 samples (target p95 <= 100ms)",
+              "atUtc": "2026-11-12T14:11:32.3356402Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bench-logcat.txt",
+          "bytes": 802,
+          "sha256": "79405d66fd647707d506c5b8069a399ab3669601b4d9b89d6fc2c42279e89cfc"
+        },
+        {
+          "name": "benchmark.json",
+          "bytes": 3186,
+          "sha256": "41fc6eb059e582b31808d7a53fc33be89169be78b01da0b13851a9c818cec4dd"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "c2bf1b0c46d5ba379e82e098191e1c2ce82c78277ce1065aad4fb3ed49ec6588"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 5457,
+          "sha256": "18f72db6f767edef8d5683e6746f8fcd6b10d5608982be8714395160fd6db235"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2628,
+          "sha256": "c556b15129640ec7680256ee2add1f5bd708846aee95a404ec61068638b1590c"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-204922",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-204922",
+      "rawArtifactsAreGitignored": true,
+      "commit": "806251f854ebb6df98e24370f8669d9fe5a946ab",
+      "harnessCommit": "806251f854ebb6df98e24370f8669d9fe5a946ab",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T15:52:44.9708265Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Could not read the fixture marker on bench-f507a26c8fdc.",
+              "atUtc": "2026-11-12T15:52:43.7329053Z"
+            }
+          ]
+        },
+        "cleanup.bench-f507a26c8fdc": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-f507a26c8fdc",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T15:52:44.9483444Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 8259,
+          "sha256": "fca566490480d288203ea44af3b9a77c5b2a04cff1805cc33c6a63f7b6611939"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "b8f3086a9337a972f09257cd16daa8926dcd0afaf829eb02dc6b3e081ee4ab84"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 11179,
+          "sha256": "e49b25eefa8f2aa47425895585298812dec7574668c779a46c6fa2dae4066bd3"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 727,
+          "sha256": "229df06424408531d2eef895e936d05fe5599da582947cf966c94aad909127e8"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-205244",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-205244",
+      "rawArtifactsAreGitignored": true,
+      "commit": "806251f854ebb6df98e24370f8669d9fe5a946ab",
+      "harnessCommit": "806251f854ebb6df98e24370f8669d9fe5a946ab",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T15:59:57.5277083Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 4,
+      "lanes": {
+        "coverage.two-guest-latency": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "coverage.two-guest-latency",
+              "passed": true,
+              "detail": "valid=20/20 p50=1099.43ms p95=1451.69ms",
+              "atUtc": "2026-11-12T15:59:39.8437736Z"
+            }
+          ]
+        },
+        "target.input-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.input-latency",
+              "passed": false,
+              "detail": "input latency p50 221.11ms p95 553.47ms over 20 samples (target p95 <= 100ms)",
+              "atUtc": "2026-11-12T15:59:48.1959410Z"
+            }
+          ]
+        },
+        "cleanup.bench-23a74fcf4504": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-23a74fcf4504",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T15:59:55.7665879Z"
+            }
+          ]
+        },
+        "cleanup.bench2-8e96c019bce4": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench2-8e96c019bce4",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T15:59:57.4241134Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 109292,
+          "sha256": "88e71aa2e9d984975bf97218b7d3fb1993c77f7d0708a08fac9ac52f5012bc63"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "3305faada9acfe44484679f24848f5adda8fccf98f683236a3fe42c32f93802c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 133661,
+          "sha256": "f06091ae78161d608aa6079e8a00c160b59b0202a249c043e924e26c7afcdf47"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3378,
+          "sha256": "956e6f58c0f600a050365b6403cbe760966c1b7cb95412c0afebf0b12685ee38"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-210012",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-210012",
+      "rawArtifactsAreGitignored": true,
+      "commit": "f375bdec778142552dc074c75664d858bee37c12",
+      "harnessCommit": "f375bdec778142552dc074c75664d858bee37c12",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T16:05:42.2287329Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 4,
+      "lanes": {
+        "coverage.two-guest-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "coverage.two-guest-latency",
+              "passed": false,
+              "detail": "valid=1/1 p50=737.73ms p95=737.73ms",
+              "atUtc": "2026-11-12T16:05:03.7348918Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Soak guest bench-f8024c858742 lost an owned listener.",
+              "atUtc": "2026-11-12T16:05:24.0042893Z"
+            }
+          ]
+        },
+        "cleanup.bench-f8024c858742": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-f8024c858742",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T16:05:34.5005079Z"
+            }
+          ]
+        },
+        "cleanup.bench2-506bcf7c5b68": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench2-506bcf7c5b68",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T16:05:42.2040633Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 10553,
+          "sha256": "e6c681664c15ca27a1ab68c7186ec884fd80fc6c9a6b49628b83e3f97299f3ba"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "541acaf444b39c7b9806484a48c7dd0fb7a0bc51635b294fa345b438da65cea7"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 14849,
+          "sha256": "a79a06575da4375466bb46380ef4d93e6462523479f9573b6ede8120e38661d0"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 996,
+          "sha256": "e6c54601037cb85c64e2e29106fc13025c9220a5aff0c5d98c3d7d56232eb45a"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-210824",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-210824",
+      "rawArtifactsAreGitignored": true,
+      "commit": "f375bdec778142552dc074c75664d858bee37c12",
+      "harnessCommit": "f375bdec778142552dc074c75664d858bee37c12",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": "2026-11-12T16:14:38.2379847Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 3,
+      "totalChecks": 5,
+      "lanes": {
+        "coverage.two-guest-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "coverage.two-guest-latency",
+              "passed": false,
+              "detail": "valid=1/1 p50=838.21ms p95=838.21ms",
+              "atUtc": "2026-11-12T16:12:56.8767262Z"
+            }
+          ]
+        },
+        "soak.responsiveness": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "soak.responsiveness",
+              "passed": true,
+              "detail": "1 minutes, 3 successful paired readiness and package-manager probes",
+              "atUtc": "2026-11-12T16:14:17.4796411Z"
+            }
+          ]
+        },
+        "coverage.single-guest-latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "coverage.single-guest-latency",
+              "passed": false,
+              "detail": "ADB tap to Logcat p50 1058.54ms p95 1058.54ms over 1 samples",
+              "atUtc": "2026-11-12T16:14:26.6953160Z"
+            }
+          ]
+        },
+        "cleanup.bench-e9518d517de1": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "cleanup.bench-e9518d517de1",
+              "passed": false,
+              "detail": "Owned process 18472 is still running after cleanup.",
+              "atUtc": "2026-11-12T16:14:35.3132914Z"
+            }
+          ]
+        },
+        "cleanup.bench2-ec7c6b666f61": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench2-ec7c6b666f61",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-12T16:14:38.1622863Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 9203,
+          "sha256": "29b60d1b80e62588c0d9236f98b181f230116fcf776fa4481407034711582e95"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "20c176760f8c6780bd7203fbab83762824599d2936d3b6922f68e7dcfe2ae12e"
+        },
+        {
+          "name": "soak.jsonl",
+          "bytes": 8485,
+          "sha256": "c0d32c6aacfb6ecde7fdde5a13fdb69334895f0ce8811eefff8cb259f7feddca"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 13450,
+          "sha256": "31e80c442b97ab125042272bf4730f8fce79eee4f74d9fae99e025bed33392a3"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1063,
+          "sha256": "97343eaaaddd4a90c5e2d9d0b68d06485f40f31bab481b1e9358e5787d1d579d"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261112-211317",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261112-211317",
+      "rawArtifactsAreGitignored": true,
+      "commit": "84667666098501e1ef78dcc4ff0255c3662b1acf",
+      "harnessCommit": "84667666098501e1ef78dcc4ff0255c3662b1acf",
+      "harnessSha256": "81EBAF20160CDF3B041844710408B680CD0A78B5BB7F78BA246D139661233743",
+      "candidate": null,
+      "finishedUtc": "2026-11-12T16:13:26.2805243Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 1,
+      "lanes": {
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "Build the sample APK or pass -Apk before benchmarking input.",
+              "atUtc": "2026-11-12T16:13:26.1122226Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 1890,
+          "sha256": "c56377bd977118692aa0f196fcaffdd48673eefedb2da21509b7623f7133a543"
+        },
+        {
+          "name": "host.json",
+          "bytes": 834,
+          "sha256": "cc98982a719e35ae1d80630d64cfa0cc9efff0b13ec14c6c25644063000602e4"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 3114,
+          "sha256": "80ad9ad4c9cb200843e10aad1a4765c2d5d5da05ea58adc9f14a590a39f95809"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 461,
+          "sha256": "c5225580b14a968c85fd8300ab42fb6a422f6f85d96a1155836f08b04203f8a6"
+        }
+      ]
+    },
+    {
+      "kind": "play",
+      "runId": "20261112-211536",
+      "rawArtifactRoot": "artifacts/phase3/play/20261112-211536",
+      "rawArtifactsAreGitignored": true,
+      "commit": "84667666098501e1ef78dcc4ff0255c3662b1acf",
+      "harnessCommit": "84667666098501e1ef78dcc4ff0255c3662b1acf",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-36;google_apis_playstore;x86_64",
+        "imageRevision": "7",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone64_x86_64/emu64xa:16/BE2A.250530.026.D1/13818094:user/release-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-36e9ca0c56c3 foreground: Window{9d2ba4a u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": true,
+              "detail": "recovery=restored installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-36e9ca0c56c3",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "7F286403EF23D62A70F62C8ADEA07828B3C0D798E8A0CA049060E31BA012DDD3",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "create.txt",
+          "bytes": 248,
+          "sha256": "afe94ac95155d212fa99a54a6ae1c8b00356b906b5f6a64c6c965f9ac3e9425c"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "87b47cda2411db8dbb00311acea501d2725f79b6e0d339e93f788bffb5f3f961"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 129943,
+          "sha256": "07727da59ce29376232debe3cbc13ebd9844b21a6952615ea4945633b30de7f8"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "efd5cbdec81e1f4a90b8e3161bebeccb4042279f41f5d4257080811abd266546"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 151,
+          "sha256": "b1d5a5954069c4be1f42793029b87a9e5900f8703c2ae9845cfa4ab89b0fdec6"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 88,
+          "sha256": "6dd0ab24b477b6c29b111c4ab44c756b6e0f2fc41b9132377dde45049a793811"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "41155ab63ee45550fd47ee0871e8032356a3810189f2e9afef80ad5aea456217"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "4c04e9df7d5bb443d184911bdaa9bfb7a3942279b2b3a5dab34c16ed6ac3579e"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "c761d70ecf0e2e90aa1af266e5bdf6399ecc71c5f09b5cf3db4f922b29b44541"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "b55229654af37fe27d2d2f66915c2f4244c294e01f674046da11a04c813bdf77"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2631,
+          "sha256": "d9c9dbc5f7e65b068abe13fa9bc3f7e0e73c0a21fa13ca26916026e33188ed56"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "7faf42b47eb0834e5887c8c5ffbfdd64687f2454ad55c18eed8bdca1919aa1e0"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "2f321b8c162e4f08bb8735b76c4e057524803b965f9702f7ec57fdb3cfd196bb"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 131,
+          "sha256": "c642cf17395de24a55e45c325fa7e66e88d7edebc147823c241f48051324a35c"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1298,
+          "sha256": "e0b33acab7ec8b93b9b30a89099d2aff1507ef8965eeb1a2cb6601cbf3978e11"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "45bfe8840fe69870ea5627c9be1a92d2a7cb2b4e5914828d7542caf09ff6cab1"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2570,
+          "sha256": "797e5e581cc202aae5b91051731fa3fc66de1374896f2a8156f1e1bddc188e5a"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 211,
+          "sha256": "6b6ecc6f5fdf3d6718afd61dbed8e85797cceef9f95a2ea38bbb003cad29f3ee"
+        }
+      ]
+    },
+    {
+      "kind": "play",
+      "runId": "20261112-211808",
+      "rawArtifactRoot": "artifacts/phase3/play/20261112-211808",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessCommit": "8d40469154965e08eb2e511fb70b6a4fff7a927d",
+      "harnessSha256": null,
+      "candidate": null,
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-35;google_apis_playstore_ps16k;x86_64",
+        "imageRevision": "5",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone16k_x86_64/emu64xa16k:15/AE3A.240806.041/12890756:user/dev-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-f997056752f8 foreground: Window{b2b3b62 u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": false,
+              "detail": "recovery=cold_boot installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-f997056752f8",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "ED6461B56E5B6FBE2DD78B18289F31CFCCEF5F046A0CB9D038C9437080AEA4D1",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "create.txt",
+          "bytes": 254,
+          "sha256": "1fc6fd3b5fc7db3a3dd994488fb768d003956ed4ef2ba9b83721c6b725578053"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "6f8932083176c8f5544c46d5fd3ba7f6a14fe695285579c54b42b98192112744"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 128457,
+          "sha256": "f015b94aa70526ad0248921302fac5c20ff4fbf1f4a3da5bfc77c519a57d36f5"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "b82c5b0153f5f0ab0a3cd6780a85ebcb748050bc0c8499eae0e0fb7da7bbc1c3"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 151,
+          "sha256": "dcd733228a5ea64f424ce5bfdd7971d4a98c581eeaf699aaf643bbe2d6593ee1"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 88,
+          "sha256": "704c9e901cfb3f488e0f32ac6c24997eb18b4b0d08769d10c5e03b332d42982b"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "9d2b480db92e1ed243c122b4b352adee7fe3b95b573d5b450829011e6c49468c"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "ccffd2e00c15b83375204a2d526aba12b652ceeed5f8d7bdb6a599118e28b531"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "beef8287a0b58bd40ae0d57b0693aa506cef593f717f20f38280a866206a91e8"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "d79ef42f36711ad3ae9e99b244ddcdaf24c7d2aa4c12c2fef21751b9919d7570"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2631,
+          "sha256": "8eef4785a9a01cf2fc47f2afa7b871b63973b54366bc004ad18caba03f86d4c2"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 101,
+          "sha256": "0959fdb2a22be94557a1af58f844f5b5f749ad6f57a81e15f4157a1334a7cda3"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "88956983f34d54599f995c42c905cc47ac1a1319fb902f1f0bedb493af5e8735"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 132,
+          "sha256": "a777214fbfd3598278e808b8106cef487c4e6898fb3d5ce1e9024547161cec59"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1300,
+          "sha256": "4fa0efc50a9eb158242cc80979a13ef7d2ccbf4a10cd4c24e666321a61fe38c2"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "6ba7a919eaf5515374d586bcdd9b641bf18a7c2040cf23836cb81af890da8dd2"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2575,
+          "sha256": "dd84fd2b43f55f49fd0eeeeeb9ac6d2637d73373c93b8e8f29e8ad09e41c667a"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 209,
+          "sha256": "4a20f132037761e8354bae549ab2961dd89c9f3f735117c8d7cb071776792a7b"
         }
       ]
     }

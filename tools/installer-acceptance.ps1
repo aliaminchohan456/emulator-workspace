@@ -26,6 +26,7 @@ param(
     [int]$BootTimeoutSeconds = 600,
     [switch]$VerifySnapshotJson,
     [switch]$VerifySimulationProbe,
+    [switch]$VerifyDisconnectedReuse,
     [string]$PreviousInstaller = ""
 )
 
@@ -124,6 +125,18 @@ function Get-WorkspaceRegistration([string]$productCode) {
     Get-ItemProperty -LiteralPath $keys -ErrorAction SilentlyContinue | Select-Object -First 1
 }
 
+function Assert-NetworkDisconnected([string]$stage) {
+    $adapters = @(Get-NetAdapter -ErrorAction Stop | Select-Object Name, Status)
+    $routes = @(Get-NetRoute -ErrorAction Stop |
+        Where-Object DestinationPrefix -in @("0.0.0.0/0", "::/0") |
+        Select-Object InterfaceIndex, DestinationPrefix)
+    [pscustomobject]@{ atUtc = [DateTimeOffset]::UtcNow; adapters = $adapters; defaultRoutes = $routes } |
+        ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $out "network-$stage.json") -Encoding UTF8
+    if (($adapters | Where-Object Status -eq "Up") -or $routes) {
+        throw "Disconnected reuse requires the isolated Windows environment to have no active adapter or default route."
+    }
+}
+
 if (-not $Installer) {
     $candidate = Get-ChildItem "D:\Release" -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -140,6 +153,7 @@ $profilesRoot = Join-Path $env:LOCALAPPDATA "EmulatorWorkspace"
 Log "installer acceptance $run installer=$Installer"
 
 try {
+    if ($VerifyDisconnectedReuse) { Assert-NetworkDisconnected "before-install" }
     # ------------------------------------------------------------ clean state
     $candidateIdentity = Read-InstallerIdentity $Installer
     $previousIdentity = if ($PreviousInstaller) { Read-InstallerIdentity $PreviousInstaller }
@@ -226,6 +240,23 @@ try {
         $offlineDetail = $_.Exception.Message
     }
     Add-Check "local-status-reuse" $offlineOk $offlineDetail
+    if ($VerifyDisconnectedReuse) {
+        $package = "dev.emulatorworkspace.sample"
+        $approved = Join-Path $WorkRoot "apps\offline-$guest.apk"
+        New-Item -ItemType Directory -Force (Split-Path -Parent $approved) | Out-Null
+        Copy-Item -LiteralPath (Join-Path $installedRoot "ws-sample.apk") -Destination $approved -ErrorAction Stop
+        Invoke-Ws $wsctlExe @("install", "--name", $guest, "--apk", $approved, "--root", $WorkRoot) | Out-Null
+        Invoke-Ws $wsctlExe @("stop", "--name", $guest, "--root", $WorkRoot) | Out-Null
+        Invoke-Ws $wsctlExe @("start", "--name", $guest, "--root", $WorkRoot) | Out-Null
+        Invoke-Ws $wsctlExe @("wait", "--name", $guest, "--timeout", "$BootTimeoutSeconds", "--root", $WorkRoot) | Out-Null
+        $packageInfo = Invoke-Ws $wsctlExe @("package-info", "--name", $guest, "--package", $package, "--root", $WorkRoot)
+        Invoke-Ws $wsctlExe @("launch", "--name", $guest, "--package", $package, "--root", $WorkRoot) | Out-Null
+        $focus = Invoke-Ws $wsctlExe @("foreground", "--name", $guest, "--root", $WorkRoot)
+        $focus.Text | Set-Content -LiteralPath (Join-Path $out "offline-foreground.txt") -Encoding UTF8
+        Assert-NetworkDisconnected "after-reuse"
+        Add-Check "network-disconnected-reuse" ((Parse-Json $packageInfo.Text).installed -eq $true -and
+            $focus.Text.Contains($package)) "Rebooted the same profile and launched its installed fixture with Windows disconnected."
+    }
 
     # -------------------------------------------------- profile preservation
     $profileMarker = Join-Path $profilesRoot "profiles\acceptance-$([Guid]::NewGuid().ToString('N')).txt"
@@ -291,6 +322,9 @@ catch {
     Log ("fatal: " + $_.Exception.Message)
 }
 finally {
+    if ($approved -and (Test-Path -LiteralPath $approved)) {
+        Remove-Item -LiteralPath $approved
+    }
     if ($profileMarker -and (Test-Path -LiteralPath $profileMarker)) {
         Remove-Item -LiteralPath $profileMarker
     }

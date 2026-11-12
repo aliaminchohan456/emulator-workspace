@@ -30,10 +30,12 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $script:results = New-Object System.Collections.ArrayList
 
 function Log([string]$message) {
@@ -92,6 +94,10 @@ try {
     Invoke-Ws @("wait", "--name", $instance, "--timeout", "600", "--root", $Root) | Out-Null
 
     $apk = Join-Path $Root "apps\ws-sample.apk"
+    if ($env:WS_ACCEPTANCE_PAYLOAD) {
+        New-Item -ItemType Directory -Force (Split-Path -Parent $apk) | Out-Null
+        Copy-Item -LiteralPath (Join-Path $env:WS_ACCEPTANCE_PAYLOAD "ws-sample.apk") -Destination $apk -ErrorAction Stop
+    }
     if (-not (Test-Path $apk)) {
         $found = Get-ChildItem (Join-Path $repo "artifacts") -Recurse -Filter "ws-sample.apk" -ErrorAction SilentlyContinue |
             Select-Object -First 1

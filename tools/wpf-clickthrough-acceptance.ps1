@@ -30,8 +30,9 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$desktopExe = Join-Path $repo "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$desktopExe = Get-AcceptanceBinary "EmulatorWorkspace.Desktop.exe" "src\EmulatorWorkspace.Desktop\bin\Debug\net10.0-windows\EmulatorWorkspace.Desktop.exe"
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
@@ -53,6 +54,7 @@ if (-not $Apk -or -not (Test-Path $Apk)) { throw "No APK was found for the drag-
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $script:results = New-Object System.Collections.ArrayList
 $script:steps = New-Object System.Collections.ArrayList
 
@@ -246,10 +248,7 @@ Log "WPF click-through $run root=$Root apk=$Apk"
 $desktopProcess = $null
 try {
     if (-not $KeepRoot) {
-        Get-Process EmulatorWorkspace.Supervisor, EmulatorWorkspace.Desktop -ErrorAction SilentlyContinue |
-            Stop-Process -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 2
-        Remove-Item $Root -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $Root) { throw "Use a new disposable root or explicitly pass -KeepRoot." }
         New-Item -ItemType Directory -Force $Root | Out-Null
         $apps = Join-Path $Root "apps"
         New-Item -ItemType Directory -Force $apps | Out-Null

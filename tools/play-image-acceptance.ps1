@@ -9,8 +9,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
-$cli = Join-Path $repo "src/EmulatorWorkspace.Cli/bin/Debug/net10.0/wsctl.exe"
-$fixture = Join-Path $repo "artifacts/phase1/sample/ws-sample.apk"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$cli = Get-AcceptanceBinary "wsctl.exe" "src/EmulatorWorkspace.Cli/bin/Debug/net10.0/wsctl.exe"
+$fixture = Get-AcceptanceBinary "ws-sample.apk" "artifacts/phase1/sample/ws-sample.apk"
 $package = "dev.emulatorworkspace.sample"
 $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA "Android/Sdk" }
 $imageDir = Join-Path $sdk ($Image -replace ";", "/")
@@ -24,6 +25,7 @@ $stockHash = (Get-FileHash -LiteralPath $stockRamdisk).Hash
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $guest = "play-$([Guid]::NewGuid().ToString('N').Substring(0, 12))"
 $checks = [System.Collections.Generic.List[object]]::new()
 $created = $false

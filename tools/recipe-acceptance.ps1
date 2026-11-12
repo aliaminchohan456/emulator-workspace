@@ -28,7 +28,8 @@ param(
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
-$wsctl = Join-Path $repo "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
+. (Join-Path $PSScriptRoot "fixtures/acceptance-payload.ps1")
+$wsctl = Get-AcceptanceBinary "wsctl.exe" "src\EmulatorWorkspace.Cli\bin\Debug\net10.0\wsctl.exe"
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
 $adb = Join-Path $sdk "platform-tools\adb.exe"
@@ -38,6 +39,7 @@ $env:ANDROID_SDK_ROOT = $sdk
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
 New-Item -ItemType Directory -Force $out | Out-Null
+Write-AcceptanceContext $out
 $script:results = New-Object System.Collections.ArrayList
 $fixtureProcess = $null
 
@@ -291,19 +293,21 @@ try {
         Add-Check "host" "unit-tests" ($LASTEXITCODE -eq 0) ([regex]::Match($tests, "Passed:\s+\d+").Value)
     }
 
-    $approved = Join-Path $repo "artifacts\phase1\sample\ws-sample.apk"
+    $approved = Get-AcceptanceBinary "ws-sample.apk" "artifacts\phase1\sample\ws-sample.apk"
     New-Item -ItemType Directory -Force (Join-Path $Root "apps") | Out-Null
     Copy-Item $approved (Join-Path $Root "apps\ws-sample.apk") -Force
     Add-Check "host" "approved-apk" $true ((Get-FileHash $approved -Algorithm SHA256).Hash)
 
     # Login fixture for the sample's HTTP login.
-    $fixtureScript = Join-Path $repo "tools\fixtures\login_fixture.py"
-    $env:FIXTURE_BODY_BYTES = "65536"
-    $env:FIXTURE_LOG = Join-Path $out "fixture.jsonl"
-    $fixtureProcess = Start-Process -FilePath "py" -ArgumentList "-3", $fixtureScript -PassThru -WindowStyle Hidden
-    Start-Sleep -Seconds 3
-    $fixtureReady = (Invoke-Adb @("-s", "127.0.0.1", "shell", "true") -ErrorAction SilentlyContinue) -ne $null
-    Add-Check "fixture" "started" ($null -ne $fixtureProcess) "login fixture on 127.0.0.1:8765"
+    $fixtureProcess = Start-AcceptanceLoginFixture (Join-Path $out "fixture.jsonl") 65536
+    $deadline = [DateTimeOffset]::UtcNow.AddSeconds(15)
+    do {
+        $fixtureReady = Get-NetTCPConnection -LocalPort 8765 -OwningProcess $fixtureProcess.Id -State Listen -ErrorAction SilentlyContinue
+        if ($fixtureReady -or $fixtureProcess.HasExited) { break }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTimeOffset]::UtcNow -lt $deadline)
+    Add-Check "fixture" "started" ([bool]$fixtureReady) "login fixture on port 8765"
+    if (-not $fixtureReady) { throw "The owned login fixture did not bind port 8765." }
 
     Invoke-Ws @("create", "--name", $Template, "--root", $Root) | Out-Null
     $pairTarget = Invoke-Ws @("agent-pair", "--client-name", "recipe-target", "--template", $Template, "--out", "$Root\target-session.json", "--root", $Root)

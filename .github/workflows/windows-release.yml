@@ -62,14 +62,17 @@ jobs:
       - name: Resolve the version
         id: version
         shell: pwsh
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+          RELEASE_INPUT_VERSION: ${{ inputs.version }}
         run: |
-          $tag = "${{ github.ref_name }}"
-          if ($tag -like "v*") { $version = $tag.Substring(1) }
-          elseif ("${{ inputs.version }}" -ne "") { $version = "${{ inputs.version }}" }
+          if ($env:GITHUB_REF_TYPE -eq "tag") { $version = $env:RELEASE_REF.Substring(1) }
+          elseif ($env:RELEASE_INPUT_VERSION) { $version = $env:RELEASE_INPUT_VERSION }
           else {
             $props = Get-Content Directory.Build.props -Raw
             $version = ([regex]::Match($props, '<VersionPrefix>([^<]+)</VersionPrefix>')).Groups[1].Value
           }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Use a numeric MSI version." }
           "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Install the WiX toolset
@@ -77,8 +80,11 @@ jobs:
 
       - name: Package the release candidate
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_INSTALLER: ${{ github.event_name != 'workflow_dispatch' || inputs.package }}
         run: |
-          $version = "${{ steps.version.outputs.version }}"
+          $version = $env:RELEASE_VERSION
           $out = Join-Path $env:GITHUB_WORKSPACE "release"
           New-Item -ItemType Directory -Force $out | Out-Null
           $arguments = @(
@@ -87,11 +93,12 @@ jobs:
             "-Version", $version,
             "-OutDir", $out
           )
-          if ("${{ inputs.package }}" -ne "true") { $arguments += "-SkipInstaller" }
+          if ($env:BUILD_INSTALLER -ne "true") { $arguments += "-SkipInstaller" }
           & powershell @arguments
           if ($LASTEXITCODE -ne 0) { throw "the packaging job failed" }
 
       - name: Verify the release candidate
+        if: github.event_name != 'workflow_dispatch' || inputs.package
         shell: pwsh
         run: |
           $release = Get-ChildItem "release" -Recurse -Filter "release.json" | Select-Object -First 1
@@ -138,14 +145,11 @@ jobs:
 
       - name: Build and test
         run: |
-          dotnet build EmulatorWorkspace.slnx -c Release
-          dotnet test EmulatorWorkspace.slnx -c Release --no-build
+          dotnet build EmulatorWorkspace.slnx -c Debug
+          dotnet test EmulatorWorkspace.slnx -c Debug --no-build
+          powershell -NoProfile -ExecutionPolicy Bypass -File sample\build-sample-apk.ps1
 
-      - name: Phase 2 regression
-        shell: pwsh
-        run: powershell -ExecutionPolicy Bypass -File tools\phase2-acceptance.ps1 -Root D:\HwPhase2Root
-
-      - name: Phase 3 acceptance
+      - name: Phase 3 acceptance including paired Phase 2 regression
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File tools\phase3-acceptance.ps1 -Root D:\HwPhase3Root
 

@@ -48,11 +48,16 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 
 ```powershell
 # the installer, the SBOM, the notices and the provenance
-powershell -ExecutionPolicy Bypass -File tools\package-release.ps1 -Version 0.1.0 -OutDir D:\Release
+powershell -ExecutionPolicy Bypass -File tools\package-release.ps1 -Version 0.1.1 -OutDir D:\Release
 
-# clean install, first launch and boot, offline reuse, upgrade, uninstall
-powershell -ExecutionPolicy Bypass -File tools\installer-acceptance.ps1 -Installer D:\Release\emulator-workspace-0.1.0-<stamp>\EmulatorWorkspace-0.1.0.msi
+# clean install, first launch and boot, and uninstall
+powershell -ExecutionPolicy Bypass -File tools\installer-acceptance.ps1 -Installer D:\Release\emulator-workspace-0.1.1-<stamp>\EmulatorWorkspace-0.1.1.msi
 ```
+
+The preserved 0.1.1 candidate and exact acceptance are listed in
+[release notes](docs/release-notes.md). The disconnected check uses
+`-VerifyDisconnectedReuse` inside an isolated Windows environment.
+[Run commands and evidence](task.md)
 
 ## Prerequisites
 
