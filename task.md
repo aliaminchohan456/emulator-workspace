@@ -481,3 +481,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   bounded wait confirms that the exact process exited and retains the raw
   engine log even when teardown fails. Rerun the 20 pairs and monitor the
   transcript through both cleanup checks before candidate regression.
+- Matched comparison `artifacts/phase3/bench/20261113-021146` ran from
+  `87fcbd0`, harness PID 7072 in `D:/WS-Raw-011-20261113-021143`. All 20
+  raw trials passed with p50 41.41 s and p95 47.27 s. The first managed
+  trial's `wsctl wait` returned before a focused window was available.
+  The harness now polls for an actual focused window through the deadline.
+  Resume the managed arm using `-RawControlRun artifacts/phase3/bench/20261113-021146`
+  with the same matched settings and candidate. The harness verifies and
+  hashes the prior raw records before reuse.
+- Both `Containers-DisposableClientVM` and `Microsoft-Hyper-V-Tools-All`
+  still report WMI `InstallState=2` after the canceled elevation. The
+  authorized feature change requires an elevated Windows token. Run the
+  prepared command after the timed host workloads and verify whether
+  Windows requests a restart.

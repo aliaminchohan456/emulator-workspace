@@ -40,6 +40,7 @@ param(
     [switch]$SkipLifecycle,
     [switch]$SkipBaseline,
     [switch]$RawBaseline,
+    [string]$RawControlRun = "",
     [switch]$SkipColdBoot,
     [switch]$SkipLatency,
     [switch]$SkipRestore
@@ -80,6 +81,9 @@ if ($RestoreAttempts -gt 0 -and $RestoreAttempts -lt $Samples) {
 }
 if ($RawBaseline -and ($SkipBaseline -or $SkipColdBoot)) {
     throw "A raw comparison requires both cold-boot scenarios."
+}
+if ($RawControlRun -and -not ($RawBaseline -and $candidate)) {
+    throw "Reusing a raw control requires -RawBaseline and the verified candidate inputs."
 }
 
 function Log([string]$message) {
@@ -298,6 +302,40 @@ function Get-BootProfileConfig($profile) {
     Get-Content -LiteralPath $config -ErrorAction Stop | ForEach-Object {
         if ($_ -match $pattern) { "$($Matches[1])=$($Matches[2].Trim())" }
     } | Sort-Object
+}
+
+function Read-RawControl([string]$directory, [string[]]$config) {
+    $directory = (Resolve-Path -LiteralPath $directory -ErrorAction Stop).ProviderPath
+    $benchmarkPath = Join-Path $directory "benchmark.json"
+    $samplesPath = Join-Path $directory "cold-boot.jsonl"
+    $prior = Get-Content -LiteralPath $benchmarkPath -Raw -ErrorAction Stop | ConvertFrom-Json
+    $samples = @(Get-Content -LiteralPath $samplesPath -ErrorAction Stop |
+        ForEach-Object { $_ | ConvertFrom-Json } | Where-Object arm -eq "raw")
+    if ($samples.Count -ne $Samples -or $prior.scenarios.rawBoot.samples -ne $Samples -or
+        $prior.candidate.installerSha256 -ne $candidate.installerSha256 -or
+        $prior.candidate.sourceCommit -ne $candidate.sourceCommit -or $prior.fixtureSha256 -ne $report.fixtureSha256 -or
+        ($config -join "`n") -ne ($prior.matchedAvdConfig -join "`n")) {
+        throw "The saved raw control does not match the sample count, candidate, fixture or AVD settings."
+    }
+    foreach ($key in @('machine', 'osBuild', 'osVersion', 'cpu', 'gpu', 'gpuDriver', 'emulatorVersion', 'whpx')) {
+        if ($prior.host.$key -ne $hostInfo[$key]) { throw "The raw control's host property '$key' changed." }
+    }
+    for ($i = 0; $i -lt $samples.Count; $i++) {
+        $sample = $samples[$i]
+        if ($sample.trial -ne ($i + 1) -or $sample.seconds -le 0 -or -not $sample.launcherPid -or
+            -not $sample.qemuPids -or $sample.transportId -notmatch '^\d+$') {
+            throw "The raw control has an invalid sample at row $($i + 1)."
+        }
+    }
+    $report.rawControl = [ordered]@{
+        runId = $prior.runId
+        directory = $directory
+        sourceCommit = $prior.sourceCommit
+        harnessSha256 = $prior.harnessSha256
+        benchmarkSha256 = (Get-FileHash -LiteralPath $benchmarkPath).Hash
+        samplesSha256 = (Get-FileHash -LiteralPath $samplesPath).Hash
+    }
+    return $samples
 }
 
 function Stop-RawProcess($process) {
@@ -519,30 +557,42 @@ try {
     # The historical baseline is a second supervisor-managed profile. This
     # comparison measures run-to-run variation on the managed path.
     if (-not $SkipBaseline) {
-    $baseline = New-BenchmarkGuest "bench-base"
     if ($RawBaseline) {
-        $profile = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--json", "--root", $Root)).Text
+        $baseline = if (-not $RawControlRun) { New-BenchmarkGuest "bench-base" }
         $guest = New-BenchmarkGuest "bench"
         $managedProfile = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
-        $rawConfig = @(Get-BootProfileConfig $profile)
         $managedConfig = @(Get-BootProfileConfig $managedProfile)
-        $report.avdConfig = @{ raw = $rawConfig; managed = $managedConfig }
-        if ($rawConfig.Count -ne 8 -or ($rawConfig -join "`n") -ne ($managedConfig -join "`n")) {
-            throw "Raw and managed AVD settings did not match. See avdConfig in benchmark.json."
-        }
-        $report.matchedAvdConfig = $rawConfig
-        $report.rawBootTrials = @()
         $report.bootEndpoint = "host dispatch through boot_completed=1 and a current foreground Window"
-        for ($sample = 1; $sample -le $Samples; $sample++) {
-            $trial = Measure-RawBoot $profile $sample
-            $report.rawBootTrials += $trial
-            $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
-            [void]$baselineBootSamples.Add($trial.seconds)
-            Log ("raw cold boot {0}/{1}: {2:N2}s" -f $sample, $Samples, $trial.seconds)
-            Start-Sleep -Seconds 3
+        if ($RawControlRun) {
+            $report.rawBootTrials = @(Read-RawControl $RawControlRun $managedConfig)
+            $report.matchedAvdConfig = $managedConfig
+            foreach ($trial in $report.rawBootTrials) {
+                $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
+                [void]$baselineBootSamples.Add($trial.seconds)
+            }
+            Log "Reused $Samples raw trials from $($report.rawControl.runId) on the same matched host and profile."
+        }
+        else {
+            $profile = Parse-Json (Invoke-Ws @("status", "--name", $baseline, "--json", "--root", $Root)).Text
+            $rawConfig = @(Get-BootProfileConfig $profile)
+            $report.avdConfig = @{ raw = $rawConfig; managed = $managedConfig }
+            if ($rawConfig.Count -ne 8 -or ($rawConfig -join "`n") -ne ($managedConfig -join "`n")) {
+                throw "Raw and managed AVD settings did not match. See avdConfig in benchmark.json."
+            }
+            $report.matchedAvdConfig = $rawConfig
+            $report.rawBootTrials = @()
+            for ($sample = 1; $sample -le $Samples; $sample++) {
+                $trial = Measure-RawBoot $profile $sample
+                $report.rawBootTrials += $trial
+                $trial | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
+                [void]$baselineBootSamples.Add($trial.seconds)
+                Log ("raw cold boot {0}/{1}: {2:N2}s" -f $sample, $Samples, $trial.seconds)
+                Start-Sleep -Seconds 3
+            }
         }
     }
     else {
+    $baseline = New-BenchmarkGuest "bench-base"
     for ($sample = 1; $sample -le $Samples; $sample++) {
         $started = Get-Date
         Invoke-Ws @("start", "--name", $baseline, "--root", $Root) | Out-Null
@@ -589,12 +639,18 @@ try {
         if ($RawBaseline) {
             if ($ready.Code -ne 0) { throw "Managed cold boot trial $sample failed readiness." }
             $target = Get-GuestIdentity $guest
-            $windows = Invoke-GuestAdb $target @("shell", "dumpsys", "window")
-            if ($windows -notmatch '(?m)^\s*mCurrentFocus=Window\{') {
+            $focus = $null
+            do {
+                $windows = Invoke-GuestAdb $target @("shell", "dumpsys", "window") 20000
+                $focus = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
+                if ($focus) { break }
+                Start-Sleep -Milliseconds 700
+            } while ($timer.Elapsed.TotalSeconds -lt 600)
+            if (-not $focus) {
                 throw "Managed cold boot trial $sample has no foreground window."
             }
             $reported = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
-            [pscustomobject]@{ trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId } |
+            [pscustomobject]@{ trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId; focus = $focus } |
                 ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
         }
         if ($reported -gt 0) { [void]$bootSamples.Add($reported) }
@@ -606,7 +662,7 @@ try {
     Log ("cold boot p50={0}s p95={1}s over {2} samples" -f $report.scenarios["coldBoot"].p50, $report.scenarios["coldBoot"].p95, $report.scenarios["coldBoot"].samples)
 
     # ------------------------------------------------------------- warm restore
-    if (-not ($SkipRestore -and $SkipLatency -and $SkipTwoGuest -and $SkipLifecycle)) {
+    if (-not ($SkipRestore -and $SkipLatency -and $SkipTwoGuest)) {
         Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
         Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) | Out-Null
     }
@@ -729,17 +785,39 @@ try {
     if (-not $SkipLifecycle) {
         Stop-OwnedGuest $guest
         $before = Get-MemorySnapshot
+        $profile = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
+        $ports = @($profile.consolePort, ($profile.consolePort + 1), $profile.grpcPort)
         $cycleTimes = New-Object System.Collections.ArrayList
         $failures = 0
         for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
-            $started = Get-Date
+            $timer = [Diagnostics.Stopwatch]::StartNew()
+            $wait = $null
             $start = Invoke-Ws @("start", "--name", $guest, "--root", $Root) -AllowFailure
-            if ($start.Code -ne 0) { $failures++ }
-            $wait = Invoke-Ws @("wait", "--name", $guest, "--timeout", "300", "--root", $Root) -AllowFailure
-            if ($wait.Code -ne 0) { $failures++ }
+            if ($start.Code -eq 0) {
+                $wait = Invoke-Ws @("wait", "--name", $guest, "--timeout", "300", "--root", $Root) -AllowFailure
+            }
             $stop = Invoke-Ws @("stop", "--name", $guest, "--force", "--root", $Root) -AllowFailure
-            if ($stop.Code -ne 0) { $failures++ }
-            [void]$cycleTimes.Add(((Get-Date) - $started).TotalSeconds)
+            $timer.Stop()
+            $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root)).Text
+            $listeners = @(Get-NetTCPConnection -State Listen -ErrorAction Stop | Where-Object LocalPort -in $ports |
+                Select-Object LocalAddress, LocalPort, OwningProcess)
+            $trial = [pscustomobject]@{
+                cycle = $cycle
+                wallSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+                start = $start
+                wait = $wait
+                stop = $stop
+                engineAliveAfterStop = $status.engineAlive
+                remainingListeners = $listeners
+                passed = $start.Code -eq 0 -and $wait -and $wait.Code -eq 0 -and $stop.Code -eq 0 -and
+                    $status.engineAlive -eq $false -and $listeners.Count -eq 0
+            }
+            $trial | ConvertTo-Json -Depth 5 -Compress | Add-Content -LiteralPath (Join-Path $out "lifecycle.jsonl") -Encoding UTF8
+            if (-not $trial.passed) {
+                $failures++
+                Log "cycle $cycle failed start=$($start.Code) wait=$($wait.Code) stop=$($stop.Code) listeners=$($listeners.Count)"
+            }
+            [void]$cycleTimes.Add($trial.wallSeconds)
             if ($cycle % 5 -eq 0) {
                 $now = Get-MemorySnapshot
                 Log ("cycle {0}/{1}: engines={2} freeRam={3} MB" -f $cycle, $Cycles, $now.engines, $now.freePhysicalMB)
@@ -758,7 +836,7 @@ try {
             freeVirtualAfterMB = $after.freeVirtualMB
         }
         Add-Check "lifecycle.cycles" ($failures -eq 0) "$Cycles start/stop cycles with $failures failures"
-        Add-Check "lifecycle.no-leak" ($after.engines -le $before.engines + 1) "engine count $($before.engines) -> $($after.engines)"
+        Add-Check "lifecycle.no-leak" ($after.engines -le $before.engines) "engine count $($before.engines) -> $($after.engines)"
     }
 
     # ------------------------------------------------------------------ targets
