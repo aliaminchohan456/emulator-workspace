@@ -664,9 +664,16 @@ internal static class SupervisorCommands
                 break;
             case "snapshot-save":
             case "snapshot-load":
-                Console.WriteLine(
-                    $"snapshot {(command == "snapshot-save" ? "save" : "load")} {name} " +
-                    $"tag={data["tag"]} via=adb in {data["seconds"]}s");
+                if (args.Has("json"))
+                {
+                    Console.WriteLine(data.ToJsonString());
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"snapshot {(command == "snapshot-save" ? "save" : "load")} {name} " +
+                        $"tag={data["tag"]} via=adb in {data["seconds"]}s");
+                }
                 break;
             case "verify-target":
                 Console.WriteLine($"instance       : {data["name"]}");

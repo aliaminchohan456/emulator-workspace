@@ -18,18 +18,19 @@ def load(path: pathlib.Path):
 
 
 def merge(runs: list[dict]) -> dict:
-    merged = {"host": {}, "scenarios": {}, "lifecycle": None, "checks": []}
+    merged = {"host": {}, "scenarios": {}, "lifecycle": None, "run_ids": []}
     for run in runs:
         report = run.get("benchmark", {})
+        merged["run_ids"].append(run["runId"])
         if report.get("host") and not merged["host"]:
             merged["host"] = report["host"]
         for name, data in (report.get("scenarios") or {}).items():
+            if name == "warmRestore" and "restoreTrials" not in report:
+                name = "historicalRestore"
             if data.get("samples"):
                 merged["scenarios"][name] = data
         if report.get("lifecycle"):
             merged["lifecycle"] = report["lifecycle"]
-        for check in run.get("checks", []):
-            merged["checks"].append(check)
     return merged
 
 
@@ -56,9 +57,11 @@ def main() -> int:
     lines = [
         "# Benchmark results",
         "",
-        "This document is generated from the measured runs; the numbers cannot",
-        "drift from the evidence. The raw samples, the host report and the",
-        "transcript are in the run directories.",
+        "Run directories under `artifacts/phase3/bench/` contain the raw evidence.",
+        "",
+        "Runs used for this report: " + ", ".join(f"`{run_id}`" for run_id in report["run_ids"]) + ".",
+        "",
+        "Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.",
         "",
         "## Reference host",
         "",
@@ -77,36 +80,32 @@ def main() -> int:
         "",
         "## Method",
         "",
-        "* The host is declared before anything is measured.",
-        "* Every scenario collects at least 20 valid samples; the p50 and p95 are",
-        "  computed over those samples with a monotonic clock.",
-        "* The baseline is the same engine with the same image and the same",
-        "  allocation, started outside the supervisor, so the boot overhead is",
-        "  measured against the engine itself.",
-        "* The cold boot and the warm restore are reported separately.",
-        "* The single-guest and the two-guest scenarios are measured separately.",
-        "* The lifecycle scenario runs 30 start/stop cycles and watches the engine",
-        "  count and the free memory before and after.",
-        "* The input latency is measured from the dispatch of a tap to the log",
-        "  line the guest writes for that tap, which is the first observable",
-        "  response of the guest to the input.",
+        "* Cold-boot rows come from two supervisor-managed profiles. The raw",
+        "  Android Emulator control and the boot overhead gate remain open.",
+        "* The historical restore harness could reuse cold-boot readiness after",
+        "  a load. The corrected harness times each load with a monotonic clock,",
+        "  records fallback and verifies a guest-state marker independently.",
+        "* Logcat latency runs from ADB tap dispatch to host receipt of a fresh",
+        "  fixture marker. WPF dispatch-to-composition needs its own measurement.",
+        "* One-shot PNG cost includes the CLI, capture and output write. The",
+        "  historical RGB viewport delivered 29.4 FPS in WPF.",
         "",
         "## Scenarios",
         "",
         "| Scenario | Valid samples | p50 | p95 | Target |",
         "| --- | --- | --- | --- | --- |",
-        row("Cold boot to interactive readiness (managed)", scenarios.get("coldBoot", {}),
-            "overhead within the larger of 10% or 1 s over the same-engine baseline"),
-        row("Cold boot to interactive readiness (same-engine baseline)",
-            scenarios.get("baselineBoot", {}), "the reference of the boot overhead"),
-        row("Warm restore to interactive readiness", scenarios.get("warmRestore", {}),
-            "median within 8 s"),
-        row("Input latency, dispatch to the guest response (ms)",
-            scenarios.get("inputLatencyMs", {}), "p95 at most 100 ms"),
-        row("Input latency with two guests (ms)",
-            scenarios.get("twoGuestLatencyMs", {}), "p95 at most 100 ms"),
-        row("Capture path, one frame (ms)", scenarios.get("captureMs", {}),
-            "the limiter of the delivered frame rate"),
+        row("Cold boot to interactive readiness (managed, s)", scenarios.get("coldBoot", {}),
+            "raw CLI comparison pending"),
+        row("Cold boot (second managed profile, s)", scenarios.get("baselineBoot", {}), "historical control"),
+        row("Historical restore reading (s)", scenarios.get("historicalRestore", {}), "invalid endpoint"),
+        row("Verified warm restore (s)", scenarios.get("warmRestore", {}), "median at most 8 s, 20 samples"),
+        row("Restore attempt to readiness, including fallback (s)",
+            scenarios.get("restoreAttemptWallSeconds", {}), "reports recovery cost"),
+        row("ADB tap to Logcat, single guest (ms)",
+            scenarios.get("inputLatencyMs", {}), "diagnostic"),
+        row("ADB tap to Logcat, two guests (ms)",
+            scenarios.get("twoGuestLatencyMs", {}), "diagnostic"),
+        row("CLI one-shot PNG (ms)", scenarios.get("captureMs", {}), "diagnostic"),
         "",
         "## Lifecycle",
         "",
@@ -127,73 +126,19 @@ def main() -> int:
     else:
         lines.append("The lifecycle scenario was not part of these runs.")
 
-    lines += ["", "## Verdict against the targets", "",
-              "| Target | Result | Detail |", "| --- | --- | --- |"]
-    # A target keeps the verdict of the run that measured its scenario.
-    target_scenarios = {
-        "target.boot-overhead": ("coldBoot", "baselineBoot"),
-        "target.warm-restore": ("warmRestore",),
-        "target.input-latency": ("inputLatencyMs",),
-    }
-    verdicts: dict[str, dict] = {}
-    for check in report["checks"]:
-        name = str(check.get("Check", ""))
-        if not name.startswith("target."):
-            continue
-        detail = str(check.get("Detail", ""))
-        if "was not measured in this run" in detail:
-            continue
-        wanted = target_scenarios.get(name)
-        measured = True
-        if wanted:
-            measured = all((scenarios.get(scenario) or {}).get("samples") for scenario in wanted)
-        # The first run that measured the target keeps the verdict.
-        if name in verdicts:
-            continue
-        verdicts[name] = check
-
-    for name in sorted(verdicts):
-        check = verdicts[name]
-        verdict = "met" if check.get("Passed") else "**not met**"
-        lines.append(f"| {name} | {verdict} | {check.get('Detail')} |")
-
     lines += [
         "",
-        "## What the measurements say",
-        "",
-        "* **The boot overhead target is met.** The managed cold boot is not",
-        "  slower than the same engine started outside the supervisor, so the",
-        "  supervisor adds no measurable boot cost on this host.",
-        "* **The warm restore target is not met.** The restore of a named",
-        "  snapshot is bimodal: a quickboot restore brings the guest back in",
-        "  about 10 to 13 seconds, but a restore that does not bring the guest",
-        "  back within the supervisor's 90 second window falls back to a cold",
-        "  boot, which costs about 40 to 50 seconds. The median therefore lands",
-        "  far above the 8 second target.",
-        "* **The input latency target is not met.** The dispatch-to-response",
-        "  latency is around 160 ms at the median and 220 ms at p95, which is",
-        "  more than twice the 100 ms target.",
-        "* **The capture path is the frame-rate limiter.** A single captured",
-        "  frame costs about 500 to 620 ms on this host, so the engine's PNG",
-        "  capture path, not the WPF decode or the pipe, bounds the delivered",
-        "  frame rate. The 60 FPS target is therefore out of reach with this",
-        "  capture path, exactly as the earlier Phase 1 measurements showed.",
-        "* **The lifecycle is stable.** Thirty start/stop cycles leave no engine",
-        "  process behind and the free memory does not shrink.",
-        "",
-        "## How to reproduce",
+        "## Reproduce the corrected benchmarks",
         "",
         "```powershell",
-        "# the full plan",
-        "powershell -ExecutionPolicy Bypass -File tools\\benchmark.ps1 -Root D:\\Phase9Root -Samples 20 -Cycles 30",
+        "dotnet build",
+        "powershell -ExecutionPolicy Bypass -File tools/benchmark.ps1 -Root D:/WSBench -Samples 20 `",
+        "  -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle",
         "",
-        "# a single scenario",
-        "powershell -ExecutionPolicy Bypass -File tools\\benchmark.ps1 -Root D:\\Phase9Root -Samples 20 `",
-        "  -SkipBaseline -SkipColdBoot -SkipRestore -SkipLifecycle -SkipTwoGuest",
+        "# Include restore trials by omitting -SkipRestore. For the four-hour",
+        "# soak, add -SoakMinutes 240 and monitor soak.jsonl through cleanup.",
         "```",
         "",
-        "The raw samples are kept in the run directories; the host report is in",
-        "`host.json` and the transcript in `transcript.txt`.",
     ]
 
     output.write_text("\n".join(lines), encoding="utf-8")
