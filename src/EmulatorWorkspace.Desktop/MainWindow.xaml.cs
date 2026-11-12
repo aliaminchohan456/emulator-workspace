@@ -15,10 +15,10 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private Point? _dragStart;
+    private (string? Subscription, int GuestWidth, int GuestHeight, double Width, double Height) _dragViewport;
 
     /// <summary>The view model behind the window, for the automation modes.</summary>
     public MainViewModel ViewModel => _viewModel;
-    private Point? _dragCurrent;
 
     public MainWindow()
     {
@@ -135,7 +135,8 @@ public partial class MainWindow : Window
     }
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is nameof(MainViewModel.Frame)
+        if (args.PropertyName is nameof(MainViewModel.FrameWidth)
+            or nameof(MainViewModel.FrameHeight)
             or nameof(MainViewModel.ZoomMode)
             or nameof(MainViewModel.ZoomFactor))
         {
@@ -215,18 +216,14 @@ public partial class MainWindow : Window
         }
 
         _dragStart = e.GetPosition(ViewportImage);
-        _dragCurrent = _dragStart;
+        _dragViewport = CurrentViewport;
         ViewportImage.CaptureMouse();
         e.Handled = true;
     }
 
-    private void OnViewportMouseMove(object sender, MouseEventArgs e)
-    {
-        if (_dragStart is not null && e.LeftButton == MouseButtonState.Pressed)
-        {
-            _dragCurrent = e.GetPosition(ViewportImage);
-        }
-    }
+    private (string? Subscription, int GuestWidth, int GuestHeight, double Width, double Height) CurrentViewport =>
+        (_viewModel.ViewportSubscription, _viewModel.GuestWidth, _viewModel.GuestHeight,
+            ViewportImage.ActualWidth, ViewportImage.ActualHeight);
 
     private async void OnViewportMouseUp(object sender, MouseButtonEventArgs e)
     {
@@ -237,10 +234,10 @@ public partial class MainWindow : Window
 
         var end = e.GetPosition(ViewportImage);
         _dragStart = null;
-        _dragCurrent = null;
         ViewportImage.ReleaseMouseCapture();
 
-        if (!TryMapToGuest(start, out var x1, out var y1) || !TryMapToGuest(end, out var x2, out var y2))
+        if (_dragViewport != CurrentViewport || !TryMapToGuest(start, out var x1, out var y1)
+            || !TryMapToGuest(end, out var x2, out var y2))
         {
             return;
         }

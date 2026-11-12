@@ -145,7 +145,6 @@
                                    RenderOptions.BitmapScalingMode="HighQuality"
                                    MouseLeftButtonDown="OnViewportMouseDown"
                                    MouseLeftButtonUp="OnViewportMouseUp"
-                                   MouseMove="OnViewportMouseMove"
                                    AutomationProperties.Name="Embedded Android viewport"
                                    Source="{Binding Frame}" />
                         </Grid>

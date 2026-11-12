@@ -127,7 +127,10 @@ public sealed class SupervisorConnection : IAsyncDisposable
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (envelope is not null)
                     {
-                        Trace?.Invoke($"event {envelope.Event} sub={envelope.Subscription}");
+                        if (envelope.Event is not (EventNames.Frame or EventNames.Logcat))
+                        {
+                            Trace?.Invoke($"event {envelope.Event} sub={envelope.Subscription}");
+                        }
                         EventReceived?.Invoke(envelope);
                     }
                 }

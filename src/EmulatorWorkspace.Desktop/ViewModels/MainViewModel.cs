@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json.Nodes;
+using System.Threading.Channels;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -26,24 +27,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly ConcurrentQueue<LogEntryViewModel> _logInbox = new();
     private readonly List<double> _frameIntervals = new();
     private readonly List<double> _inputLatencies = new();
-    private readonly SemaphoreSlim _frameSignal = new(0, 1);
+    private readonly Channel<PendingFrame> _frames = Channel.CreateBounded<PendingFrame>(new BoundedChannelOptions(1)
+    {
+        FullMode = BoundedChannelFullMode.DropOldest,
+        SingleReader = true,
+    });
     private readonly SemaphoreSlim _subscribeGate = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
 
     private SupervisorConnection? _connection;
-    private string? _framePath;
-    private PendingFrame? _pendingFrame;
     private int _frameSequence;
     private string? _frameSubscription;
+    private bool _frameSubscribePending;
     private string? _logcatSubscription;
     private bool _frameLoopRunning;
     private PendingInput? _pendingInput;
     private ProbeState? _probe;
-    private string ViewportWidthHint = "n/a";
-    private int? _lastMarkerColor;
     private DateTimeOffset _lastFramePresented;
+    private DateTimeOffset _lastFrameInfoUpdated;
     private int _droppedFrames;
-    private int _presentedFrames;
     private bool _initialized;
 
     public MainViewModel()
@@ -295,9 +297,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         get => _frame;
         private set
         {
-            if (SetProperty(ref _frame, value))
+            var hadFrame = _frame is not null;
+            if (SetProperty(ref _frame, value) && hadFrame != HasFrame)
             {
                 OnPropertyChanged(nameof(HasFrame));
+                if (!HasFrame)
+                {
+                    OnPropertyChanged(nameof(FrameInfo));
+                }
             }
         }
     }
@@ -324,19 +331,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         private set => SetProperty(ref _frameHeight, value);
     }
 
-    private double _framesPerSecond;
+    public double FramesPerSecond { get; private set; }
 
-    public double FramesPerSecond
-    {
-        get => _framesPerSecond;
-        private set
-        {
-            if (SetProperty(ref _framesPerSecond, value))
-            {
-                OnPropertyChanged(nameof(FrameInfo));
-            }
-        }
-    }
+    internal string? ViewportSubscription => _frameSubscription;
 
     public string FrameInfo => Frame is null
         ? "no frame"
@@ -635,14 +632,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private async Task OnDeviceSelectedAsync(DeviceItemViewModel? device)
     {
         DesktopLog.Write($"select {device?.Name}");
-        await StopLogcatAsync().ConfigureAwait(true);
-        await UnsubscribeFramesAsync().ConfigureAwait(true);
+        var unsubscribe = UnsubscribeFramesAsync();
         Frame = null;
         FrameWidth = 0;
         FrameHeight = 0;
-        _lastMarkerColor = null;
+        GuestWidth = 0;
+        GuestHeight = 0;
+        _frameSequence = 0;
+        _droppedFrames = 0;
+        _lastFramePresented = default;
+        _lastFrameInfoUpdated = default;
+        FramesPerSecond = 0;
+        _frameIntervals.Clear();
         _pendingInput = null;
         ErrorMessage = "";
+        await StopLogcatAsync().ConfigureAwait(true);
+        await unsubscribe.ConfigureAwait(true);
 
         if (device is null)
         {
@@ -1234,18 +1239,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         await _subscribeGate.WaitAsync().ConfigureAwait(true);
         try
         {
-            if (_frameSubscription is not null || !device.IsRunning)
+            if (_frameSubscription is not null || !device.IsRunning || SelectedDevice?.Name != device.Name)
             {
                 return;
             }
             DesktopLog.Write("subscribe request");
+            Volatile.Write(ref _frameSubscribePending, true);
             var data = await RequestAsync(
                 OperationNames.FrameSubscribe,
                 new JsonObject { ["name"] = device.Name, ["format"] = "rgb", ["width"] = 540, ["height"] = 1200 },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
-            _frameSubscription = data["subscription"]!.GetValue<string>();
-            _framePath = data["path"]?.GetValue<string>();
-            DesktopLog.Write($"frame subscribed {device.Name} sub={_frameSubscription} path={_framePath}");
+            var subscription = data["subscription"]!.GetValue<string>();
+            if (SelectedDevice?.Name != device.Name)
+            {
+                await RequestAsync(OperationNames.FrameUnsubscribe,
+                    new JsonObject { ["subscription"] = subscription }, TimeSpan.FromSeconds(15)).ConfigureAwait(true);
+                return;
+            }
+
+            Volatile.Write(ref _frameSubscription, subscription);
+            DesktopLog.Write($"frame subscribed {device.Name} sub={subscription}");
             StartFrameLoop();
         }
         catch (Exception ex)
@@ -1254,6 +1267,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         finally
         {
+            Volatile.Write(ref _frameSubscribePending, false);
             _subscribeGate.Release();
         }
     }
@@ -1266,7 +1280,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         var subscription = _frameSubscription;
-        _frameSubscription = null;
+        Volatile.Write(ref _frameSubscription, null);
         try
         {
             await RequestAsync(
@@ -1292,7 +1306,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OperationNames.LogcatSubscribe,
                 new JsonObject { ["name"] = SelectedDevice.Name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
-            _logcatSubscription = data["subscription"]!.GetValue<string>();
+            Volatile.Write(ref _logcatSubscription, data["subscription"]!.GetValue<string>());
         }
         catch (Exception ex)
         {
@@ -1308,7 +1322,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         var subscription = _logcatSubscription;
-        _logcatSubscription = null;
+        Volatile.Write(ref _logcatSubscription, null);
         try
         {
             await RequestAsync(
@@ -1326,34 +1340,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         switch (envelope.Event)
         {
             case EventNames.Frame:
-                if (envelope.Data is JsonObject frame)
+                if ((envelope.Subscription == Volatile.Read(ref _frameSubscription) || Volatile.Read(ref _frameSubscribePending))
+                    && envelope.Data is JsonObject frame && frame["path"]?.GetValue<string>() is { } path)
                 {
-                    var path = frame["path"]?.GetValue<string>();
                     var format = frame["format"]?.GetValue<string>() ?? "png";
                     var frameWidth = frame["width"]?.GetValue<int>() ?? 0;
                     var frameHeight = frame["height"]?.GetValue<int>() ?? 0;
                     var stride = frame["stride"]?.GetValue<int>() ?? frameWidth * 3;
-                    var guestWidth = frame["guestWidth"]?.GetValue<int>() ?? GuestWidth;
-                    var guestHeight = frame["guestHeight"]?.GetValue<int>() ?? GuestHeight;
+                    var guestWidth = frame["guestWidth"]?.GetValue<int>() ?? 0;
+                    var guestHeight = frame["guestHeight"]?.GetValue<int>() ?? 0;
                     var dropped = frame["dropped"]?.GetValue<int>() ?? 0;
-                    _dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
-                    {
-                        _droppedFrames += dropped;
-                        _frameSequence = frame["seq"]?.GetValue<int>() ?? _frameSequence;
-                        GuestWidth = guestWidth;
-                        GuestHeight = guestHeight;
-                        if (path is not null)
-                        {
-                            _framePath = path;
-                            QueueFrame(new PendingFrame(path, format, frameWidth, frameHeight, stride));
-                        }
-                    });
+                    var sequence = frame["seq"]?.GetValue<int>() ?? 0;
+                    _frames.Writer.TryWrite(new PendingFrame(envelope.Subscription, path, format, frameWidth, frameHeight,
+                        stride, guestWidth, guestHeight, sequence, dropped));
                 }
 
                 break;
 
             case EventNames.Logcat:
-                if (envelope.Data is JsonObject entry && !LogPaused)
+                if (envelope.Subscription == Volatile.Read(ref _logcatSubscription)
+                    && envelope.Data is JsonObject entry && !LogPaused)
                 {
                     _logInbox.Enqueue(LogEntryViewModel.From(entry));
                 }
@@ -1380,15 +1386,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void QueueFrame(PendingFrame frame)
-    {
-        _pendingFrame = frame;
-        if (_frameSignal.CurrentCount == 0)
-        {
-            _frameSignal.Release();
-        }
-    }
-
     private void StartFrameLoop()
     {
         if (_frameLoopRunning)
@@ -1402,24 +1399,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task FrameLoopAsync()
     {
-        while (!_lifetime.IsCancellationRequested)
+        await foreach (var pending in _frames.Reader.ReadAllAsync(_lifetime.Token).ConfigureAwait(false))
         {
-            await _frameSignal.WaitAsync(_lifetime.Token).ConfigureAwait(false);
-            var pending = Interlocked.Exchange(ref _pendingFrame, null);
-            if (pending is null)
-            {
-                continue;
-            }
-
             try
             {
                 var bitmap = LoadFrame(pending);
-                if (bitmap.PixelWidth > 0)
+                if (bitmap is not null)
                 {
-                    DesktopLog.Write($"decoded {bitmap.PixelWidth}x{bitmap.PixelHeight}");
+                    var now = DateTimeOffset.UtcNow;
+                    await _dispatcher.InvokeAsync(() => PresentFrame(bitmap, pending, now), DispatcherPriority.Render);
                 }
-                var now = DateTimeOffset.UtcNow;
-                await _dispatcher.InvokeAsync(() => PresentFrame(bitmap, now));
             }
             catch (Exception ex)
             {
@@ -1474,12 +1463,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return image;
     }
 
-    private void PresentFrame(BitmapSource bitmap, DateTimeOffset received)
+    private void PresentFrame(BitmapSource bitmap, PendingFrame source, DateTimeOffset received)
     {
-        if (_frameSequence % 60 == 0)
+        if (source.Subscription != _frameSubscription)
         {
-
+            return;
         }
+        _droppedFrames += _frameSequence > 0 && source.Sequence > _frameSequence
+            ? source.Sequence - _frameSequence - 1
+            : source.Dropped;
+        _frameSequence = source.Sequence;
+        GuestWidth = source.GuestWidth > 0 ? source.GuestWidth : GuestWidth;
+        GuestHeight = source.GuestHeight > 0 ? source.GuestHeight : GuestHeight;
         Frame = bitmap;
         var widthChanged = FrameWidth != bitmap.PixelWidth || FrameHeight != bitmap.PixelHeight;
         FrameWidth = bitmap.PixelWidth;
@@ -1502,11 +1497,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         _lastFramePresented = received;
-        OnPropertyChanged(nameof(FrameInfo));
-
-        if (widthChanged)
+        if (widthChanged || (received - _lastFrameInfoUpdated).TotalMilliseconds >= 250)
         {
-            OnPropertyChanged(nameof(HasFrame));
+            _lastFrameInfoUpdated = received;
+            OnPropertyChanged(nameof(FrameInfo));
         }
 
         if (_pendingInput is { } pending)
@@ -1530,12 +1524,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             probe.FrameAvailableMs = probe.Clock.Elapsed.TotalMilliseconds;
         }
 
-        _lastMarkerColor = SampleMarkerColor();
-
-        if (!HasFrame)
-        {
-            OnPropertyChanged(nameof(HasFrame));
-        }
     }
 
     /// <summary>Colour of the sample app marker at (w/2, h*0.30), BGRA packed.</summary>
@@ -1778,7 +1766,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public double? FrameAvailableMs { get; set; }
     }
 
-    private sealed record PendingFrame(string Path, string Format, int Width, int Height, int Stride);
+    private sealed record PendingFrame(string Subscription, string Path, string Format, int Width, int Height, int Stride,
+        int GuestWidth, int GuestHeight, int Sequence, int Dropped);
 }
 
 public sealed class SupervisorRequestException(string code, string message) : Exception(message)
