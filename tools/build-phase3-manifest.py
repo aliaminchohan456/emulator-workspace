@@ -100,7 +100,7 @@ def verified_harness_commit(directory: pathlib.Path, record: dict, script: str) 
     return None
 
 
-def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | None:
+def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path, harness_commit: str | None = None) -> dict | None:
     summary_path = directory / "summary.json"
     if not summary_path.exists():
         return None
@@ -125,7 +125,7 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path) -> dict | No
                 "evidence": "recorded in acceptance summary",
             }
     source_commit = versions.get("commit") or benchmark.get("sourceCommit") or summary.get("sourceCommit")
-    harness_commit = source_commit
+    harness_commit = source_commit or harness_commit
     if benchmark.get("harnessSha256"):
         harness_commit = verified_harness_commit(directory, benchmark, "tools/benchmark.ps1")
     elif kind == "wpf" and summary.get("harnessSha256"):
@@ -179,6 +179,14 @@ def main() -> int:
             entry = collect(directory, kind, repo)
             if entry is not None:
                 runs.append(entry)
+                if kind == "candidate":
+                    for child in sorted(directory.rglob("summary.json")):
+                        if child.parent != directory:
+                            relative_lane = child.relative_to(directory).parts[0]
+                            lane_kind = "phase2" if "phase2" in child.relative_to(directory).parts else relative_lane
+                            lane = collect(child.parent, lane_kind, repo, entry["harnessCommit"])
+                            if lane is not None:
+                                runs.append(lane)
 
     if not runs:
         print("no phase 3 runs found", file=sys.stderr)

@@ -357,4 +357,10 @@ install path. Its Release build passed all 58 tests. The separate unsigned
 upgrade preserving a managed profile from 0.1.1. The preserved 0.1.1
 installer still has its original hash. Candidate runtime regression and
 disconnected reuse remain open.
+
+The packaged 0.1.2 viewport delivered 21.82 FPS and 789.56 ms p95 on
+25 valid single-guest trials. The separately measured controller RGB stream
+delivered 49.08 FPS and guest H.264 delivered 21.12 FPS. The next desktop
+build coalesces frames before UI dispatch and excludes stale subscriptions.
+Measure that build independently and repeat the two-guest case.
 [Benchmark evidence](docs/benchmark.md)

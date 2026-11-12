@@ -529,8 +529,30 @@ All tasks start open. Check off an implementation task after its scoped verifica
   installer, SDK and JDK inputs are mapped read-only. It has yet to launch
   because Windows still requires elevated feature enablement.
 - The exact 0.1.2 WPF and capture run is `artifacts/phase3/wpf/20261113-025638`.
-  After cleanup, run `tools/candidate-regression.ps1` against the new
-  release and stage, using its packaged MCP executable.
+  It collected 25/25 trials. Composition proxy p50 was 667.09 ms and p95
+  was 789.56 ms. The supervisor reply arrived at 546.72 ms p95. WPF delivered
+  21.82 FPS with 87 stream sequence drops. The separate controller RGB run
+  reached 49.08 FPS, and targeted guest H.264 capture reached 21.12 FPS.
+  Guest `gfxinfo` reports Skia OpenGL and 33.24% janky frames. Both WPF
+  targets remain open. The owned guest and supervisor were cleaned up.
+- The nine-lane regression against the exact 0.1.2 stage is running in
+  `artifacts/phase3/candidate/20261113-025947`. It uses the packaged MCP
+  executable and separate workspace roots per lane. Follow the nested
+  transcripts through cleanup and keep the recorded failures visible.
+- Nested Phase 2 passed 43/43. Phase 3 passed 53/54 and removed all owned
+  guests. The supervised split APK install targeted `emulator-5560`,
+  transport 491, with no package change on the other guest. The malformed
+  set returned the typed `install_failed`. Maestro's launch succeeded, then
+  its fixture assertion saw `Quickstep isn't responding` in the target
+  guest hierarchy. The runner now verifies the fixture is foreground before
+  running the flow, waits up to 30 s for the title, and saves debug evidence
+  in the run directory. Rerun the Phase 3 lane after the other lanes finish.
+- A separate source change removes synchronous trace writes from the frame
+  and Logcat reader, queues one latest frame before UI dispatch, rejects
+  late frames and gestures from previous viewport subscriptions, and
+  avoids resizing the WPF image on every frame. Build and measure the
+  change after the candidate regression. Keep its diagnostic provenance
+  separate from the 0.1.2 MSI.
 - Both `Containers-DisposableClientVM` and `Microsoft-Hyper-V-Tools-All`
   still report WMI `InstallState=2` after the canceled elevation. The
   authorized feature change requires an elevated Windows token. Run the

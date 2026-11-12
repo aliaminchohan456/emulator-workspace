@@ -62,7 +62,7 @@ def main() -> int:
         if (directory / "verified-progress.json").is_file()
     ]
     presentation = [
-        (load(directory / "summary.json"), load(directory / "presentation.json"))
+        (directory, load(directory / "summary.json"), load(directory / "presentation.json"))
         for directory in directories
         if (directory / "presentation.json").is_file()
     ]
@@ -169,7 +169,9 @@ def main() -> int:
             handles = " / ".join(str(metrics[stage]["handles"]) for stage in ("first", "last", "peaks"))
             lines.append(f"| `{name}` | {private} | {handles} |")
 
-    for summary, probe in presentation:
+    if presentation:
+        lines += ["", "## WPF dispatch-to-composition"]
+    for directory, summary, probe in presentation:
         trace = (probe.get("frameTrace") or {}).get("samples") or []
         frame_intervals = [sample["intervalMs"] for sample in trace if sample["intervalMs"] > 0]
         composition_intervals = [
@@ -178,11 +180,13 @@ def main() -> int:
         ]
 
         candidate = summary.get("candidate") or {}
+        acknowledged = [sample["tapAcknowledgedMs"] for sample in probe["samples"]
+                        if not sample["timeout"] and "tapAcknowledgedMs" in sample]
         lines += [
             "",
-            "## WPF dispatch-to-composition",
+            f"### Run `{summary['runId']}`",
             "",
-            f"Run `{summary['runId']}` used desktop `{summary.get('desktopVersion')}` "
+            f"This run used desktop `{summary.get('desktopVersion')}` "
             f"with the hash-verified CLI, supervisor and fixture from `{candidate.get('sourceCommit')}`.",
             "The endpoint is the WPF composition callback after the changed frame became available.",
             "",
@@ -196,6 +200,17 @@ def main() -> int:
             f"{probe['deliveredWidth']} × {probe['deliveredHeight']} |",
             f"| Dropped stream sequences | {probe['dropped']} |",
         ]
+        if acknowledged:
+            lines.append(f"| Desktop dispatch to supervisor reply p95 | {p95(acknowledged)} ms |")
+        if (directory / "rgb-capture.json").is_file() and (directory / "encoded-capture.json").is_file():
+            rgb = load(directory / "rgb-capture.json")
+            encoded = load(directory / "encoded-capture.json")
+            lines += [
+                "",
+                f"Separate capture diagnostics measured {rgb['fps']} FPS in the direct controller RGB stream "
+                f"and {encoded['framesPerWallSecond']} FPS in the guest H.264 stream.",
+                "Both used the same 540 × 1200 foreground fixture. Guest HWUI timing is in `guest-framestats.txt`.",
+            ]
 
     for run in runs:
         data = run.get("benchmark") or {}

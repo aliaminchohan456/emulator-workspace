@@ -563,7 +563,9 @@ try {
 appId: dev.emulatorworkspace.sample
 ---
 - launchApp
-- assertVisible: "Emulator Workspace QA fixture"
+- extendedWaitUntil:
+    visible: "Emulator Workspace QA fixture"
+    timeout: 30000
 - tapOn: "Duplicate A"
 - assertVisible: "DUP_TAPS=1"
 "@ | Set-Content $flow -Encoding UTF8
@@ -576,14 +578,24 @@ appId: dev.emulatorworkspace.sample
             $listing = (Invoke-Adb @("devices", "-l")).Text
             $listed = $listing -match ("(?m)^" + [regex]::Escape($runnerSerial) + "\s+device")
             if (-not $listed) {
-                Invoke-Adb @("reconnect", $runnerSerial) | Out-Null
+                Invoke-Adb @("-s", $runnerSerial, "reconnect") | Out-Null
                 Start-Sleep -Seconds 5
                 $listing = (Invoke-Adb @("devices", "-l")).Text
                 $listed = $listing -match ("(?m)^" + [regex]::Escape($runnerSerial) + "\s+device")
             }
             Save-Text "maestro-devices.txt" $listing
             Add-Check "runner" "device-visible-to-runner" $listed "serial=$runnerSerial listed for the external runner"
-            $maestroRun = (& $maestroBat test --device $runnerSerial $flow 2>&1 | Out-String)
+            $maestroEvidence = Join-Path $out "maestro-evidence"
+            New-Item -ItemType Directory -Path $maestroEvidence -Force | Out-Null
+            $launchArgs = Join-Path $out "maestro-launch.json"
+            @{ name = "p3-dup"; package = "dev.emulatorworkspace.sample"; focusWaitSeconds = 45 } |
+                ConvertTo-Json | Set-Content -LiteralPath $launchArgs -Encoding UTF8
+            $preflight = Invoke-Ws @("call", "--op", "app.launch", "--args-file", $launchArgs, "--root", $Root) -AllowFailure
+            $focus = Invoke-Ws @("foreground", "--name", "p3-dup", "--root", $Root) -AllowFailure
+            Save-Text "maestro-foreground.txt" $preflight.Text
+            Add-Check "runner" "fixture-foreground" ($preflight.Code -eq 0 -and $focus.Code -eq 0 -and
+                $focus.Text -match 'dev\.emulatorworkspace\.sample') "scoped launch exit=$($preflight.Code)"
+            $maestroRun = (& $maestroBat test --device $runnerSerial --debug-output $maestroEvidence $flow 2>&1 | Out-String)
             $maestroCode = $LASTEXITCODE
             Save-Text "maestro-run.txt" $maestroRun
             Add-Check "runner" "maestro-flow" ($maestroCode -eq 0) "exit=$maestroCode"

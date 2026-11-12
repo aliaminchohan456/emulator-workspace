@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-12T21:50:25.3093627Z",
-  "headCommit": "76454c9",
-  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md\n M tools/build-benchmark-doc.py\n M tools/build-phase3-manifest.py",
+  "latestFinishedUtc": "2026-11-12T21:59:29.8809287+00:00",
+  "headCommit": "47daa36",
+  "trackedWorkTree": "M docs/benchmark.md\n M src/EmulatorWorkspace.Core/Supervisor/SupervisorConnection.cs\n M src/EmulatorWorkspace.Desktop/MainWindow.xaml\n M src/EmulatorWorkspace.Desktop/MainWindow.xaml.cs\n M src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs\n M task.md\n M tools/build-benchmark-doc.py",
   "runs": [
     {
       "kind": "phase3",
@@ -34251,6 +34251,165 @@
       ]
     },
     {
+      "kind": "wpf",
+      "runId": "20261113-025638",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-025638",
+      "rawArtifactsAreGitignored": true,
+      "commit": "76454c91a8a972eb43b2633cb7d69982ed73d90a",
+      "harnessCommit": "76454c91a8a972eb43b2633cb7d69982ed73d90a",
+      "harnessSha256": "7F6D12C45797C66FD4F9643F12EBA6E5CD20C94609E419D89BD03708781DF78C",
+      "candidate": {
+        "sourceCommit": "76454c91a8a972eb43b2633cb7d69982ed73d90a",
+        "installerSha256": "601dd19bf243ae3d2f1e02ad1c1aa9ea565bc1701022b5252f1019a2897e761e",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload"
+      },
+      "desktop": {
+        "sha256": "BFD6EB24246DEC12B0C3219C938E48276C7A466F72EA72552F8BA53C4A349464",
+        "assemblySha256": "DB71E3553732371C428A87832F7DBADD9C1FE6311E73D18A3A9C4A81F233DB91",
+        "version": "0.1.2+76454c91a8a972eb43b2633cb7d69982ed73d90a",
+        "override": false
+      },
+      "finishedUtc": "2026-11-12T21:59:29.8809287+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-WPF-012-20261113-025638",
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 6,
+      "lanes": {
+        "presentation.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "presentation.coverage",
+              "passed": true,
+              "detail": "25/25 valid samples",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.latency",
+              "passed": false,
+              "detail": "p95=789.56 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.throughput": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.throughput",
+              "passed": false,
+              "detail": "viewport-delivered FPS=21.82, see workload evidence before evaluating the release gate",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture.rgb": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture.rgb",
+              "passed": true,
+              "detail": "Saved raw controller stream evidence.",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture.h264": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture.h264",
+              "passed": true,
+              "detail": "Saved encoded guest stream evidence.",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-025638",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 210083,
+          "sha256": "43d72861213b2d8cf6f80da2bf5b557ae228a9bfb37b30e562d582a15df8f0ef"
+        },
+        {
+          "name": "encoded-capture.json",
+          "bytes": 483,
+          "sha256": "f22ed341b50cf871b212a88a601f625d8291af3d79d56248e280ad9d38d6ec46"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 36102,
+          "sha256": "8b9db0aab4f345b855c6ceb86a781c5075bd0c1a38f1e5618adbe3dd2053812c"
+        },
+        {
+          "name": "guest.h264",
+          "bytes": 284780,
+          "sha256": "f2beffe9a9fbabc0b264829240c0b8cda3d1873cd3053b74fa8c8e369b8e770d"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 146373,
+          "sha256": "889f655b8c48f37f356bb05def6c8970b8a36ac1845164b1e837510a37583f79"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 3827,
+          "sha256": "19486cb200fd4e53d5e9ebc8a1ade161a58ad664aadfd25f91b757ccf3c734c1"
+        },
+        {
+          "name": "rgb-capture.json",
+          "bytes": 98893,
+          "sha256": "cbef1aa968307bee6d825172e1311c5611c7ef65fb2aba35654f0726cfe8f0e0"
+        },
+        {
+          "name": "rgb-capture.json.raw",
+          "bytes": 1944000,
+          "sha256": "583f0e1b85e95618a2f4f63d99d8e9d2cd0594212a55b26db4260f0bb254e703"
+        },
+        {
+          "name": "screenrecord-stderr.txt",
+          "bytes": 5,
+          "sha256": "f01a374e9c81e3db89b3a42940c4d6a5447684986a1296e42bf13f196eed6295"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2349,
+          "sha256": "5541b1e14525dbe4e2e8546b3e341235c7c54f6bb3c8c09c0dc06ab47a73b7d4"
+        }
+      ]
+    },
+    {
       "kind": "devtools",
       "runId": "20261112-095717",
       "rawArtifactRoot": "artifacts/phase3/devtools/20261112-095717",
@@ -37833,6 +37992,365 @@
           "name": "transcript.txt",
           "bytes": 2020,
           "sha256": "0b6ef72be8bf9b1ea62e1807cb4a783b3aeb882f0459396e43ba87a3504dc470"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261113-025335",
+      "rawArtifactRoot": "artifacts/phase3/install/20261113-025335",
+      "rawArtifactsAreGitignored": true,
+      "commit": "76454c91a8a972eb43b2633cb7d69982ed73d90a",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "76454c91a8a972eb43b2633cb7d69982ed73d90a",
+        "installerSha256": "601dd19bf243ae3d2f1e02ad1c1aa9ea565bc1701022b5252f1019a2897e761e",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-12T21:56:20.3157328Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 22,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T21:53:39.9385244Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T21:53:39.9742889Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T21:53:39.9849053Z"
+            }
+          ]
+        },
+        "installed.mcp-stdio": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.mcp-stdio",
+              "passed": true,
+              "detail": "initialized and listed scoped MCP tools through the installed executable",
+              "atUtc": "2026-11-12T21:53:43.6027998Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T21:53:55.6699658Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T21:55:13.1541476Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T21:55:13.1681220Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T21:55:13.1939128Z"
+            }
+          ]
+        },
+        "installed.snapshot-json": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.snapshot-json",
+              "passed": true,
+              "detail": "the installed CLI reports structured snapshot results",
+              "atUtc": "2026-11-12T21:55:17.2917818Z"
+            }
+          ]
+        },
+        "installed.simulation-probe": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.simulation-probe",
+              "passed": true,
+              "detail": "route=KO: unknown command, try 'help' battery=True GPS=feature:android.hardware.location.gps",
+              "atUtc": "2026-11-12T21:55:19.3476431Z"
+            }
+          ]
+        },
+        "local-status-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "local-status-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T21:55:20.9092011Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T21:55:20.9313634Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T21:55:23.0082657Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T21:55:23.0158085Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T21:55:23.0379283Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T21:55:37.1629903Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T21:55:41.2147468Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T21:55:41.2314704Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T21:55:41.2508274Z"
+            }
+          ]
+        },
+        "upgrade.version-changed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.version-changed",
+              "passed": true,
+              "detail": "0.1.1 -> 0.1.2",
+              "atUtc": "2026-11-12T21:56:08.8210835Z"
+            }
+          ]
+        },
+        "upgrade.managed-profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.managed-profile-kept",
+              "passed": true,
+              "detail": "upgrade-00f40cb7a3fb",
+              "atUtc": "2026-11-12T21:56:12.4354376Z"
+            }
+          ]
+        },
+        "upgrade.uninstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.uninstall",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T21:56:20.0318621Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "installed-mcp.json",
+          "bytes": 1011,
+          "sha256": "f8137fc61236d6a4ceec5262fab31e20096bae2f527c2430f0a080f007408389"
+        },
+        {
+          "name": "installed-simulation.json",
+          "bytes": 2745,
+          "sha256": "b85e210d6f3e883799ec7899408ac921d271e2ed9150181d83a03f491e99e863"
+        },
+        {
+          "name": "installed-snapshot.json",
+          "bytes": 101,
+          "sha256": "bef66737961fc017b89c6d394036ca49e88b8df026e052afc06b351d30d71506"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 638618,
+          "sha256": "6c024f0570bad822c13d26c36d0e2fa8945b487c0169b51ccdcf321943cf912b"
+        },
+        {
+          "name": "msi-previous.log",
+          "bytes": 633718,
+          "sha256": "f23e9c1b73382d6922440de29bfa4fd6cd66ea75491c8790f558c1a270fb3ed4"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 373956,
+          "sha256": "6f78521159c3f448ed8193ae100658d2696fc78566ac7ad138a71a5e4983e520"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105440,
+          "sha256": "6b3c1d2271a5b9b3fb8870c422981f06d018da042966654f1d6342d8213ee91a"
+        },
+        {
+          "name": "msi-version-upgrade-uninstall.log",
+          "bytes": 374020,
+          "sha256": "76248b4a53b0f69dfba2a1ce53754967f5a8f877ecc2e133e8390414d221131b"
+        },
+        {
+          "name": "msi-version-upgrade.log",
+          "bytes": 1139846,
+          "sha256": "c9d2e70d4de483424c7aa4d668001a329ee5ee8944cd7e46c00ed3ef4de7dda2"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 6907,
+          "sha256": "7adf8efc98aa4aac117ed3832ff15682b5f178b786117f594a26049752d1698c"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2131,
+          "sha256": "cd104cd9a7d61c190217c5751316fc0963de137c0c80b71c06cef2c18d208249"
         }
       ]
     },
