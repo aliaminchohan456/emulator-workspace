@@ -446,6 +446,46 @@ Run `20261112-100421`: **9 checks, 0 failures**.
 | bugreport | a 4 242 234-byte bug report with its SHA-256 was written |
 | cleanup | the lab guest was removed |
 
+### Windows installer acceptance — `tools/installer-acceptance.ps1`
+
+Run `20261112-151632`: **16 checks, 0 failures**. The candidate is the
+per-user MSI `EmulatorWorkspace-0.1.0.msi` (55 363 808 bytes,
+SHA-256 `82e387623ce6c9ffa11694e4e87f0a5fed31313301b2f2c5aeaf5c6a47653e6d`),
+built from commit `2f22ad2` by `tools/package-release.ps1`.
+
+| Check | Result |
+| --- | --- |
+| install.clean | `msiexec /i` exited with 0 |
+| install.files | the desktop, the supervisor and the CLI are installed under `%LOCALAPPDATA%\Programs\Emulator Workspace` |
+| install.sample-apk | the approved sample APK ships with the package |
+| first-launch | the installed desktop starts and stays up |
+| first-boot | the guest created by the installed CLI reached interactive readiness |
+| first-boot.state / first-boot.image | the guest reports `Running` on the pinned `system-images;android-35;default;x86_64` |
+| offline-reuse | the installed CLI answers with the guest running and no network dependency |
+| upgrade.profile-before / upgrade.profile-kept / upgrade.files | a profile marker survives the upgrade and the installed files stay in place |
+| uninstall.registered / uninstall.clean | the package is registered and `msiexec /x` exits with 0 |
+| uninstall.files-removed | the installed binaries are gone |
+| uninstall.profiles-kept | the operator profiles were not touched |
+
+The package is a **per-user** MSI: it installs into the user profile, so no
+elevation is needed, and it never touches the workspace state in
+`%LOCALAPPDATA%\EmulatorWorkspace`.
+
+Three packaging defects were found and fixed while building it:
+
+1. The three published applications were copied into one flat payload, and the
+   CLI's facade assemblies overwrote the desktop's real WPF implementation, so
+   the installed desktop could not load `WindowsBase`. The first publish now
+   owns the shared files and the later ones only add what is missing.
+2. A per-user package needs a registry key path on every component that lands
+   in the profile, so the payload is generated as explicit components by
+   `tools/generate-payload-wxs.py`.
+3. Windows Installer does not delete the files of a per-user package on its
+   own; the uninstall now removes the install folder with an explicit action.
+
+The release candidate is **unsigned**: no user-owned code-signing certificate
+was supplied, and the provenance record states that truthfully.
+
 ## Remaining gaps
 
 | Item | State | Next action |

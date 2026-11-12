@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "88770c9",
-  "workTree": "M docs/phase3-evidence.md\n M src/EmulatorWorkspace.Desktop/App.xaml.cs\n M src/EmulatorWorkspace.Desktop/MainWindow.xaml.cs\n M tools/build-phase3-manifest.py\n M tools/wpf-clickthrough-acceptance.ps1",
+  "headCommit": "2f22ad2",
+  "workTree": "M docs/phase3-evidence.md\n M packaging/Product.wxs\n M tools/build-phase3-manifest.py\n M tools/generate-payload-wxs.py",
   "runs": [
     {
       "kind": "phase3",
@@ -33512,6 +33512,1634 @@
           "name": "transcript.txt",
           "bytes": 1197,
           "sha256": "89e402f4c34180c51ea09e8441688a08e73fb4e315af329ed5d0240a64de0771"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-134818",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-134818",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 4,
+      "lanes": {
+        "install.clean": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": false,
+              "detail": "msiexec exited with 1603",
+              "atUtc": "2026-11-12T08:48:23.1023507Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": false,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Program Files\\Emulator Workspace",
+              "atUtc": "2026-11-12T08:48:23.1255100Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": false,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T08:48:23.1376301Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "This command cannot be run due to the error: The system cannot find the file specified.",
+              "atUtc": "2026-11-12T08:48:23.1619086Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 205054,
+          "sha256": "adf8e33b7cd5940649a148498c593d9e9b7c09ab57bbf2c42277a120cbb81d7f"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 763,
+          "sha256": "f7482bfdd542e19de987b8ddee88bf21c96e1c0a2f43686e838dfe88e40a8435"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-140028",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-140028",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 3,
+      "totalChecks": 4,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:00:34.8243907Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": false,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:00:34.8538955Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": false,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:00:34.8678224Z"
+            }
+          ]
+        },
+        "harness.fatal": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "harness.fatal",
+              "passed": false,
+              "detail": "This command cannot be run due to the error: The system cannot find the file specified.",
+              "atUtc": "2026-11-12T09:00:34.9045576Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 598374,
+          "sha256": "c53bb2a3b36530fdb0df51fc750576957584cb7890078eb49a99393a10774846"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 781,
+          "sha256": "cf623f92bee2cc5c615fda382a7da37eb73bf50b75372fbd38df393b306c3760"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-141005",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-141005",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 5,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:10:11.5567522Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:10:11.5766127Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:10:11.5899948Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": false,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T09:10:23.6777460Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": false,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T09:11:32.6675369Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": false,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T09:11:34.5955894Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": false,
+              "detail": "the guest uses ",
+              "atUtc": "2026-11-12T09:11:34.6088507Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T09:11:36.8653008Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T09:11:36.8918484Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T09:11:38.9776986Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T09:11:38.9885078Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T09:11:39.0155449Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T09:11:49.1994237Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T09:11:50.2337338Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": false,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T09:11:50.2408246Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T09:11:50.2543737Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 307,
+          "sha256": "77aa0711707fdbce29359dc57d65337d8a37e7b9b0140f62375aa73a0234bb63"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 633652,
+          "sha256": "e88139f5551959e414d1f06ce8b8c770eb5b652830aa9b64e39fe1d8040f46a2"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 111660,
+          "sha256": "879abc0b53af4007b6bb37b89fcc618ee21033fa40ad66e1eeb25fa97f7daa06"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105378,
+          "sha256": "20539f07713811d71fda669012e0908213ea09de173428956bec94ebb9815781"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1556,
+          "sha256": "87775e6601770e257be290feaacaa7a5f1f2be3f6a55d97f6811dfa401a3503b"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-142303",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-142303",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:23:09.5166853Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:23:09.5471086Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:23:09.5626009Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T09:23:21.6525624Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": false,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T09:24:46.4073963Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": false,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T09:24:47.8437573Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": false,
+              "detail": "the guest uses ",
+              "atUtc": "2026-11-12T09:24:47.8559583Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T09:24:49.2352866Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T09:24:49.2529262Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T09:24:51.3162742Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T09:24:51.3239416Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T09:24:51.3526217Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T09:25:01.4295001Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T09:25:02.4525095Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": false,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T09:25:02.4581090Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T09:25:02.4738196Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 626548,
+          "sha256": "7c7f8c7e058361f045650f53ebb3456412bd40935edb919d12e5ccffbc539881"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 116166,
+          "sha256": "0c42e090af7f8ba78156298eb06f250d748208f9a50edfdb8d24240e35033338"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105378,
+          "sha256": "53b4972f2dc532972ddeef7c149d62d49028bcfba8c6267a833fc5d8605ec6dd"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1556,
+          "sha256": "7b9b90ebab428bea09160f8730963141e94c841086e51cb2cd7a93a450cb09a4"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-143411",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-143411",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:34:17.4591549Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:34:17.4886350Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:34:17.5003838Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T09:34:29.6042902Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T09:35:38.6820432Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T09:35:38.6922752Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T09:35:38.7160314Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T09:35:40.6807778Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T09:35:40.7008664Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T09:35:42.7840678Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T09:35:42.7936926Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T09:35:42.8211825Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T09:35:52.9352415Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T09:35:53.9634996Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": false,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T09:35:53.9853699Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T09:35:54.0099505Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 626420,
+          "sha256": "814e114f36396fab020dd27aac0c3fe4603f22080cec8340204d2d7fa770bb1f"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 116166,
+          "sha256": "8e2de837f5dfd534a848b1fcdae92ac410611df53845f0aed8af9be84e80b372"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105378,
+          "sha256": "58ed6e2cd0e81c78f4944e9d1bba03fe82aeb876d7a542abfb981aa304d64564"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1595,
+          "sha256": "84b824f2a64f15395c7ae0091eadb1919571de3a3ef742f0e76d1adea37659ae"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-144403",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-144403",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:44:08.2559918Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:44:08.2790743Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:44:08.2895671Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T09:44:20.3693020Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T09:45:38.1631693Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T09:45:38.1739819Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T09:45:38.1974398Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T09:45:40.0696151Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T09:45:40.0883313Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T09:45:41.1429314Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T09:45:41.1512355Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T09:45:41.1736697Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T09:45:58.5285769Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T09:45:59.5627695Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": false,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T09:45:59.6772593Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T09:45:59.6919807Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 626420,
+          "sha256": "225874fe6c89375fdbd1e127eb6ad37f13cfcea97ee519cab22459db6e1277cb"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 116172,
+          "sha256": "ff66c666838d2aaf4b8ab7826cd6b4b0a40d77eec8c3da233d0ca72d0fd11220"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105378,
+          "sha256": "43bbfeb801e7f625458bfce6d5048990fe7c1b7867ca80ecbb313a2ed24c096e"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1595,
+          "sha256": "90e4d5f733b6db29865690291da009748141c3eba7f8f9a7c4c1aa7e444b9b48"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-145551",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-145551",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T09:55:57.6771007Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T09:55:57.7043033Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T09:55:57.7173832Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T09:56:09.8172024Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T09:57:35.0448297Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T09:57:35.0556841Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T09:57:35.0780162Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T09:57:36.9336647Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T09:57:36.9513809Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T09:57:39.0078595Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T09:57:39.0157278Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T09:57:39.0435483Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T09:57:56.4101728Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T09:57:57.4459187Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": false,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T09:57:57.4583510Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T09:57:57.4832596Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 633656,
+          "sha256": "6139856b0c47f70ca1f7b7e0afc2f6bbb155a4ccb70cf418e86377500fcaea48"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 116172,
+          "sha256": "d398fe1fa70794282c3a84e4b361108f74f05a0165261c9caeb712db542bbf8e"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105372,
+          "sha256": "6a8b00180ba68bdcabc77ed0d50be3381b7ee3cae7e40854097e66eb07c3f321"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1595,
+          "sha256": "91b351f7c7807c0e6b4cfe44f3c6e1cb4a15072637d7a18f9a0a16d3247a7b79"
+        }
+      ]
+    },
+    {
+      "kind": "install",
+      "runId": "20261112-151632",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\install\\20261112-151632",
+      "rawArtifactsAreGitignored": true,
+      "commit": null,
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 16,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-12T10:16:39.9649933Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-12T10:16:39.9858646Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-12T10:16:39.9943825Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-12T10:16:52.0824578Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-12T10:18:10.5727995Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-12T10:18:10.5854930Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-12T10:18:10.6086161Z"
+            }
+          ]
+        },
+        "offline-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "offline-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-12T10:18:12.6051042Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-12T10:18:12.6203771Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-12T10:18:14.6777678Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-12T10:18:14.6853280Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-12T10:18:14.7117239Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-12T10:18:32.0741190Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-12T10:18:34.1264062Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-12T10:18:34.1354806Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-12T10:18:34.1501329Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 633838,
+          "sha256": "aaf7816f86c33117582d134cfa3ed7bfa57a71925509b411f0b939137377ddc2"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 117832,
+          "sha256": "45b35845f4626cf7b0f3eab5d337358a3bf04308c8b6ba17b226472235c8c710"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105560,
+          "sha256": "c5414c964fa14e36318ff54d9e2b9845986f23355936434678f3e6d56794666c"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1595,
+          "sha256": "7ffb107f164fba4076172ae29d652af5e87a7de0fc389fde00de8d99cd978eb9"
         }
       ]
     }

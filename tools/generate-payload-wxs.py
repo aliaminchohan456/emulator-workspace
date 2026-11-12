@@ -118,11 +118,36 @@ def main() -> int:
             file_id = identifier("file", relative)
             lines.append(f'        <File Id="{file_id}" Source="{source}" '
                          f'Name="{escape(name)}" />')
+            # A file in the user profile is only removed on uninstall when it
+            # is listed in the RemoveFile table (ICE64).
+            lines.append(f'        <RemoveFile Id="{identifier("rmfile", relative)}" '
+                         f'Name="{escape(name)}" On="uninstall" />')
         lines.append("      </Component>")
     lines.append("    </ComponentGroup>")
     lines.append("  </Fragment>")
     lines.append("")
 
+    # The directories of the payload are in the user profile, so they are
+    # listed in the RemoveFile table as well (ICE64).
+    lines.append("  <Fragment>")
+    lines.append('    <ComponentGroup Id="RemovePayloadDirectories" Directory="INSTALLFOLDER">')
+    for directory in sorted(directories):
+        parent = "/".join(directory.split("/")[:-1])
+        parent_id = "INSTALLFOLDER" if not parent else directory_id[parent]
+        name = directory.split("/")[-1]
+        lines.append(f'      <Component Id="{identifier("cmp_rm", directory)}" Directory="{parent_id}" '
+                     f'Guid="{component_guid("remove:" + directory)}">')
+        lines.append('        <RegistryValue Root="HKCU"')
+        lines.append('                       Key="Software\\Emulator Workspace\\Payload"')
+        lines.append(f'                       Name="{escape(identifier("rm", directory))}"')
+        lines.append('                       Type="integer"')
+        lines.append('                       Value="1"')
+        lines.append('                       KeyPath="yes" />')
+        lines.append(f'        <RemoveFile Id="{identifier("rmdir", directory)}" '
+                     f'Name="{escape(name)}" Directory="{directory_id[directory]}" On="uninstall" />')
+        lines.append("      </Component>")
+    lines.append("    </ComponentGroup>")
+    lines.append("  </Fragment>")
     lines.append("</Wix>")
 
     output.write_text("\n".join(lines), encoding="utf-8")

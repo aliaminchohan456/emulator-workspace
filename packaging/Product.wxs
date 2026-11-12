@@ -13,8 +13,6 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of Emulator Workspace is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-    <Launch Condition="Installed OR VersionNT >= 603" Message="Emulator Workspace requires Windows 10 version 1809 or newer." />
-
     <Property Id="ARPPRODUCTICON" Value="EmulatorWorkspace.exe" />
     <Property Id="ARPURLINFOABOUT" Value="https://localhost/emulator-workspace" />
     <Property Id="ARPNOREPAIR" Value="1" />
@@ -30,6 +28,21 @@
     </Feature>
 
     <ui:WixUI Id="WixUI_FeatureTree" />
+
+    <!-- The package installs into the user profile, where the installer keeps
+         the files of a per-user package. They are removed by an explicit
+         action, so an uninstall never leaves anything behind. -->
+    <CustomAction Id="RemoveInstallFolder"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand='cmd.exe /c rmdir /s /q "[INSTALLFOLDER]"'
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="RemoveInstallFolder" Before="RemoveFiles"
+              Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE' />
+    </InstallExecuteSequence>
   </Package>
 
   <Fragment>
