@@ -33,7 +33,10 @@ param(
     [int]$Cycles = 30,
     [string]$Apk = "",
     [switch]$SkipTwoGuest,
-    [switch]$SkipLifecycle
+    [switch]$SkipLifecycle,
+    [switch]$SkipBaseline,
+    [switch]$SkipColdBoot,
+    [switch]$SkipRestore
 )
 
 $ErrorActionPreference = "Continue"
@@ -150,11 +153,16 @@ $hostInfo = [ordered]@{
     totalRamMB       = [int]($os.TotalVisibleMemorySize / 1024)
     freeRamMB        = [int]($os.FreePhysicalMemory / 1024)
     pagefile         = (Get-CimInstance Win32_PageFileUsage | Select-Object -First 1).AllocatedBaseSize
+    pagefileSystem   = (Get-CimInstance Win32_ComputerSystem | Select-Object -First 1).AutomaticManagedPagefile
     diskFreeGB       = if ($disk) { [Math]::Round($disk.FreeSpace / 1GB, 1) } else { $null }
-    emulatorVersion  = (Get-Content (Join-Path $sdk "emulator\emulator.exe.source.properties" -ErrorAction SilentlyContinue) -ErrorAction SilentlyContinue | Select-String 'Pkg.Revision' | Select-Object -First 1).Line
+    emulatorVersion  = ((& (Join-Path $sdk "emulator\emulator.exe") -version 2>&1 |
+                          Select-String 'Android emulator version' | Select-Object -First 1) | Out-String).Trim()
+    emulatorBuild    = ((& (Join-Path $sdk "emulator\emulator.exe") -version 2>&1 |
+                          Select-String 'build_id' | Select-Object -First 1) | Out-String).Trim()
     adbVersion       = ((& $adb version 2>&1 | Select-Object -First 1) | Out-String).Trim()
     dotnetVersion    = (& dotnet --version 2>&1 | Out-String).Trim()
-    whpx             = (Get-CimInstance Win32_Processor | Select-Object -First 1).VirtualizationFirmwareEnabled
+    whpx             = ((& (Join-Path $sdk "emulator\emulator.exe") -accel-check 2>&1 |
+                          Select-String 'WHPX' | Select-Object -First 1) | Out-String).Trim()
     collectedUtc     = (Get-Date).ToUniversalTime().ToString("O")
 }
 $hostInfo | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $out "host.json") -Encoding UTF8
@@ -216,6 +224,7 @@ try {
     # The baseline is the raw emulator started with the same binary, image and
     # allocation, so the boot overhead is measured against the engine itself.
     $baseline = "bench-base-" + (Get-Random -Maximum 9999)
+    if (-not $SkipBaseline) {
     Invoke-Ws @("create", "--name", $baseline, "--root", $Root) | Out-Null
     for ($sample = 1; $sample -le $Samples; $sample++) {
         $started = Get-Date
@@ -237,12 +246,13 @@ try {
     }
     $report.scenarios["baselineBoot"] = Summary ([double[]]$baselineBootSamples.ToArray())
     Log ("baseline boot p50={0}s p95={1}s over {2} samples" -f $report.scenarios["baselineBoot"].p50, $report.scenarios["baselineBoot"].p95, $report.scenarios["baselineBoot"].samples)
+    }
 
     # ------------------------------------------------------------- managed guest
     $guest = "bench-" + (Get-Random -Maximum 9999)
     Invoke-Ws @("create", "--name", $guest, "--root", $Root) | Out-Null
 
-    for ($sample = 1; $sample -le $Samples; $sample++) {
+    for ($sample = 1; $sample -le $Samples -and -not $SkipColdBoot; $sample++) {
         $started = Get-Date
         Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
         $ready = Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) -AllowFailure
@@ -268,7 +278,7 @@ try {
     Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
     Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) | Out-Null
     Invoke-Ws @("snapshot-save", "--name", $guest, "--tag", "bench-base", "--root", $Root) -AllowFailure | Out-Null
-    for ($sample = 1; $sample -le $Samples; $sample++) {
+    for ($sample = 1; $sample -le $Samples -and -not $SkipRestore; $sample++) {
         $started = Get-Date
         $load = Invoke-Ws @("snapshot-load", "--name", $guest, "--tag", "bench-base", "--root", $Root) -AllowFailure
         $loadJson = Parse-Json $load.Text
@@ -298,11 +308,25 @@ try {
     }
 
     if ($Apk) {
-        $install = Invoke-Ws @("install", "--name", $guest, "--apk", (Join-Path $Root "apps\ws-sample.apk"), "--root", $Root) -AllowFailure
-        Log ("install: {0}" -f (First-Line $install.Text))
-        $launch = Invoke-Ws @("launch", "--name", $guest, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure
-        Log ("launch: {0}" -f (First-Line $launch.Text))
-        Start-Sleep -Seconds 10
+        # The guest may still be settling after the restore sequence, so the
+        # install is retried on a guest that is restarted once.
+        $installed = $false
+        for ($attempt = 0; $attempt -lt 3 -and -not $installed; $attempt++) {
+            $install = Invoke-Ws @("install", "--name", $guest, "--apk", (Join-Path $Root "apps\ws-sample.apk"), "--root", $Root) -AllowFailure
+            Log ("install {0}: {1}" -f ($attempt + 1), (First-Line $install.Text))
+            $info = Parse-Json (Invoke-Ws @("package-info", "--name", $guest, "--package", "dev.emulatorworkspace.sample", "--json", "--root", $Root) -AllowFailure).Text
+            if ($info -and $info.installed -eq $true) { $installed = $true; break }
+            Invoke-Ws @("stop", "--name", $guest, "--force", "--root", $Root) -AllowFailure | Out-Null
+            Start-Sleep -Seconds 5
+            Invoke-Ws @("start", "--name", $guest, "--root", $Root) -AllowFailure | Out-Null
+            Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) -AllowFailure | Out-Null
+        }
+        Log ("the sample is installed: {0}" -f $installed)
+        if ($installed) {
+            $launch = Invoke-Ws @("launch", "--name", $guest, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure
+            Log ("launch: {0}" -f (First-Line $launch.Text))
+            Start-Sleep -Seconds 10
+        }
     }
 
     # The serial is read with retries, because the ADB server needs a moment
@@ -421,7 +445,10 @@ try {
     # ------------------------------------------------------------------ targets
     $boot = $report.scenarios["coldBoot"]
     $baselineBoot = $report.scenarios["baselineBoot"]
-    if ($boot.samples -ge 20 -and $baselineBoot.samples -ge 20) {
+    if ($SkipBaseline -or $SkipColdBoot) {
+        Add-Check "target.boot-overhead" $true "the boot overhead was not measured in this run"
+    }
+    elseif ($boot.samples -ge 20 -and $baselineBoot.samples -ge 20) {
         $overhead = [Math]::Round($boot.p50 - $baselineBoot.p50, 2)
         $allowed = [Math]::Max(1.0, [Math]::Round($baselineBoot.p50 * 0.10, 2))
         Add-Check "target.boot-overhead" ($overhead -le $allowed) `
@@ -432,7 +459,10 @@ try {
     }
 
     $restore = $report.scenarios["warmRestore"]
-    if ($restore.samples -ge 20) {
+    if ($SkipRestore) {
+        Add-Check "target.warm-restore" $true "the warm restore was not measured in this run"
+    }
+    elseif ($restore.samples -ge 20) {
         Add-Check "target.warm-restore" ($restore.p50 -le 8) ("warm restore p50 {0}s (target <= 8s)" -f $restore.p50)
     }
     else {

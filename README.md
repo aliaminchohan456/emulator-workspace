@@ -40,6 +40,7 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | `docs/release-notes.md` | Package layout, pins, first run, architecture, recovery commands, known limitations |
 | `docs/compatibility-matrix.md` | The tested host, image, ABI, snapshot, root and simulation rows |
 | `docs/security-review.md` | The trust boundaries, the privileged scopes, the findings and the open items |
+| `docs/benchmark.md` | The measured boot, restore, latency, capture and lifecycle numbers against the targets |
 | `docs/phase3-evidence.md` | The acceptance evidence per lane |
 | `docs/phase3-manifest.json` | The sanitized manifest of every recorded run with the artifact hashes |
 

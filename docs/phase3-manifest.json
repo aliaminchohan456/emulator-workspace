@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "2f22ad2",
-  "workTree": "M docs/phase3-evidence.md\n M packaging/Product.wxs\n M tools/build-phase3-manifest.py\n M tools/generate-payload-wxs.py",
+  "headCommit": "a34325b",
+  "workTree": "M README.md\n M plan.md\n M task.md\n M tools/benchmark.ps1\n M tools/build-benchmark-doc.py\n?? docs/benchmark.md",
   "runs": [
     {
       "kind": "phase3",

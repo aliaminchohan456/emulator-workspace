@@ -209,6 +209,13 @@ profiles.
 `docs/compatibility-matrix.md` and `docs/security-review.md` record what was
 verified and what is still open.
 
+The benchmark plan was run and published in `docs/benchmark.md`: the boot
+overhead target is met (the managed cold boot is not slower than the same
+engine started outside the supervisor), the warm restore and the input latency
+targets are not met (39.65 s against 8 s, and p95 324.76 ms against 100 ms),
+the engine's PNG capture path is the frame-rate limiter (p50 498 ms per frame),
+and thirty start/stop cycles leave no engine process behind.
+
 The Root Lab ADB daemon workflow is implemented and verified on the pinned
 userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 10 of 10 checks):
 the targeted UID transition 2000 → 0 → 2000, the transport reattachment after
