@@ -184,7 +184,7 @@ def main() -> int:
                         if not sample["timeout"] and "tapAcknowledgedMs" in sample]
         lines += [
             "",
-            f"### Run `{summary['runId']}`",
+            f"### Run `{summary['runId']}` ({summary.get('guestCount', 1)} guest(s))",
             "",
             f"This run used desktop `{summary.get('desktopVersion')}` "
             f"with the hash-verified CLI, supervisor and fixture from `{candidate.get('sourceCommit')}`.",
@@ -198,7 +198,7 @@ def main() -> int:
             f"| Supervisor frame arrival interval p95 | {p95(frame_intervals)} ms |",
             f"| Viewport throughput | {probe['deliveredFps']} FPS at "
             f"{probe['deliveredWidth']} × {probe['deliveredHeight']} |",
-            f"| Dropped stream sequences | {probe['dropped']} |",
+            f"| Dropped sequences | {probe['dropped']} |",
         ]
         if acknowledged:
             lines.append(f"| Desktop dispatch to supervisor reply p95 | {p95(acknowledged)} ms |")

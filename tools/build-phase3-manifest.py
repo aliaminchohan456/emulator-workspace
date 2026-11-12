@@ -179,14 +179,15 @@ def main() -> int:
             entry = collect(directory, kind, repo)
             if entry is not None:
                 runs.append(entry)
-                if kind == "candidate":
-                    for child in sorted(directory.rglob("summary.json")):
-                        if child.parent != directory:
-                            relative_lane = child.relative_to(directory).parts[0]
-                            lane_kind = "phase2" if "phase2" in child.relative_to(directory).parts else relative_lane
-                            lane = collect(child.parent, lane_kind, repo, entry["harnessCommit"])
-                            if lane is not None:
-                                runs.append(lane)
+            if kind == "candidate":
+                for child in sorted(directory.rglob("summary.json")):
+                    if child.parent == directory:
+                        continue
+                    lane_path = child.relative_to(directory).parts
+                    lane_kind = "phase2" if "phase2" in lane_path else lane_path[0]
+                    lane = collect(child.parent, lane_kind, repo, (entry or {}).get("harnessCommit"))
+                    if lane is not None:
+                        runs.append(lane)
 
     if not runs:
         print("no phase 3 runs found", file=sys.stderr)

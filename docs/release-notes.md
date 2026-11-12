@@ -45,6 +45,13 @@ Installer run `20261113-025335` passed 22/22 checks, including installed
 MCP stdio, real upgrade from the preserved 0.1.1 MSI, managed profile
 retention, and uninstall. Runtime regression and disconnected reuse remain open.
 
+Version 0.1.3 packages the recipe readiness fix and the viewport changes
+from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`. Its unsigned MSI is
+`D:/Release/emulator-workspace-0.1.3-20261113-032433/EmulatorWorkspace-0.1.3.msi`,
+SHA-256 `11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34`.
+Installer run `20261113-040915` passed 22/22, with packaged MCP and managed
+profile retention through the 0.1.2 upgrade. Hardware regression is running.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
 ```

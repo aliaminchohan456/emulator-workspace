@@ -535,10 +535,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
   reached 49.08 FPS, and targeted guest H.264 capture reached 21.12 FPS.
   Guest `gfxinfo` reports Skia OpenGL and 33.24% janky frames. Both WPF
   targets remain open. The owned guest and supervisor were cleaned up.
-- The nine-lane regression against the exact 0.1.2 stage is running in
-  `artifacts/phase3/candidate/20261113-025947`. It uses the packaged MCP
-  executable and separate workspace roots per lane. Follow the nested
-  transcripts through cleanup and keep the recorded failures visible.
+- The nine-lane regression against the exact 0.1.2 stage finished in
+  `artifacts/phase3/candidate/20261113-025947`. It used the packaged MCP and
+  separate workspace roots. Seven passed: fixture-baseline recipe (37/37,
+  cold-boot fallback independently verified), Root Lab (10/10), AVD import
+  (9/9), developer tools (9/9), WPF click-through (16/16), Play API 36 (8/8)
+  and Play API 35 16 KB (8/8). Both Play snapshots restored. Phase 3 and
+  the launcher-baseline recipe failed as detailed below. ADB showed no
+  attached devices after the suite.
 - Nested Phase 2 passed 43/43. Phase 3 passed 53/54 and removed all owned
   guests. The supervised split APK install targeted `emulator-5560`,
   transport 491, with no package change on the other guest. The malformed
@@ -554,6 +558,19 @@ All tasks start open. Check off an implementation task after its scoped verifica
   and reuses them for the read-only assertion. Preserve
   `artifacts/phase3/candidate/20261113-025947/recipe-launcher/20261113-031459/recipe-replay.json`
   and rerun both baselines against a new package containing the fix.
+- The next unsigned candidate is 0.1.3 from
+  `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`. The installer is
+  `D:/Release/emulator-workspace-0.1.3-20261113-032433/EmulatorWorkspace-0.1.3.msi`,
+  SHA-256 `11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34`.
+  The stage is `D:/Release/stage-20261113-032433/payload`. Quiet-host WPF
+  collected 25/25 samples in both runs and completed scoped cleanup.
+  Run `20261113-040149` (single guest) measured p50/p95 547.22/719.67 ms
+  and 27.04 FPS. Run `20261113-040351` (two guests) measured p50/p95
+  871.73/1,147.53 ms and 15.82 FPS. Both targets remain open. Install
+  acceptance `20261113-040915` passed 22/22 using the exact 0.1.2 MSI as
+  predecessor. The nine-lane 0.1.3 regression is running in
+  `artifacts/phase3/candidate/20261113-041225`, beginning with the two
+  recipe baselines, with packaged MCP and isolated roots per lane.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
@@ -565,3 +582,10 @@ All tasks start open. Check off an implementation task after its scoped verifica
   authorized feature change requires an elevated Windows token. Run the
   prepared command after the timed host workloads and verify whether
   Windows requests a restart.
+- The network-disabled 0.1.3 Sandbox kit is ready at
+  `D:/WS-OfflineSandbox-013-20261113-041247/offline-acceptance.wsb`.
+  Its copied MSI was rehashed and its SDK, JDK and installer mappings are
+  read-only. After successful feature enablement and any required restart,
+  launch this file and retain the isolated `output` directory. The first
+  gate is `emulator -accel-check` inside the sandbox. If it cannot use WHPX,
+  use an isolated Windows 11 x64 VM with virtualization extensions exposed.

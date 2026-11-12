@@ -355,12 +355,16 @@ overhead. The latest source includes the readiness fix and supervisor split
 install path. Its Release build passed all 58 tests. The separate unsigned
 0.1.2 MSI passed 22 installer checks, including packaged MCP and a real
 upgrade preserving a managed profile from 0.1.1. The preserved 0.1.1
-installer still has its original hash. Candidate runtime regression and
-disconnected reuse remain open.
+installer still has its original hash. The 0.1.2 runtime suite passed
+seven of nine lanes and exposed a recipe retry bug and a Maestro launcher
+ANR. The recipe fix and viewport changes are in the separate unsigned
+0.1.3 build. Verify both on the new stage. Disconnected reuse remains open.
 
 The packaged 0.1.2 viewport delivered 21.82 FPS and 789.56 ms p95 on
 25 valid single-guest trials. The separately measured controller RGB stream
 delivered 49.08 FPS and guest H.264 delivered 21.12 FPS. The next desktop
 build coalesces frames before UI dispatch and excludes stale subscriptions.
-Measure that build independently and repeat the two-guest case.
+The 0.1.3 payload delivered 27.04 FPS and 719.67 ms p95 with one guest,
+and 15.82 FPS and 1,147.53 ms p95 with two. All 50 trials were valid and
+the three test guests were removed. Both performance gates remain open.
 [Benchmark evidence](docs/benchmark.md)

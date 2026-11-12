@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-015728`, `20261113-025638`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -71,7 +71,7 @@ Minimum free physical RAM was 13,909 MiB. Minimum free virtual memory was 14,101
 
 ## WPF dispatch-to-composition
 
-### Run `20261113-015728`
+### Run `20261113-015728` (1 guest(s))
 
 This run used desktop `0.1.0+526fb72cf42700abc505d46ea443c50bc23b9e7a` with the hash-verified CLI, supervisor and fixture from `8d40469154965e08eb2e511fb70b6a4fff7a927d`.
 The endpoint is the WPF composition callback after the changed frame became available.
@@ -83,9 +83,9 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Frame availability to composition p95 | 3.42 ms |
 | Supervisor frame arrival interval p95 | 82.70 ms |
 | Viewport throughput | 22.01 FPS at 540 × 1200 |
-| Dropped stream sequences | 86 |
+| Dropped sequences | 86 |
 
-### Run `20261113-025638`
+### Run `20261113-025638` (1 guest(s))
 
 This run used desktop `0.1.2+76454c91a8a972eb43b2633cb7d69982ed73d90a` with the hash-verified CLI, supervisor and fixture from `76454c91a8a972eb43b2633cb7d69982ed73d90a`.
 The endpoint is the WPF composition callback after the changed frame became available.
@@ -97,11 +97,41 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Frame availability to composition p95 | 4.42 ms |
 | Supervisor frame arrival interval p95 | 85.39 ms |
 | Viewport throughput | 21.82 FPS at 540 × 1200 |
-| Dropped stream sequences | 87 |
+| Dropped sequences | 87 |
 | Desktop dispatch to supervisor reply p95 | 546.72 ms |
 
 Separate capture diagnostics measured 49.08 FPS in the direct controller RGB stream and 21.12 FPS in the guest H.264 stream.
 Both used the same 540 × 1200 foreground fixture. Guest HWUI timing is in `guest-framestats.txt`.
+
+### Run `20261113-040149` (1 guest(s))
+
+This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d` with the hash-verified CLI, supervisor and fixture from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 25 / 25 |
+| Dispatch to composition p50 / p95 | 547.22 / 719.67 ms |
+| Frame availability to composition p95 | 2.50 ms |
+| Supervisor frame arrival interval p95 | 53.60 ms |
+| Viewport throughput | 27.04 FPS at 540 × 1200 |
+| Dropped sequences | 292 |
+| Desktop dispatch to supervisor reply p95 | 544.21 ms |
+
+### Run `20261113-040351` (2 guest(s))
+
+This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d` with the hash-verified CLI, supervisor and fixture from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 25 / 25 |
+| Dispatch to composition p50 / p95 | 871.73 / 1147.53 ms |
+| Frame availability to composition p95 | 1.76 ms |
+| Supervisor frame arrival interval p95 | 86.62 ms |
+| Viewport throughput | 15.82 FPS at 540 × 1200 |
+| Dropped sequences | 349 |
+| Desktop dispatch to supervisor reply p95 | 891.31 ms |
 
 ## Matched cold-boot comparison
 
