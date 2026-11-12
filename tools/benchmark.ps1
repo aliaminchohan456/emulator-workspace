@@ -309,9 +309,10 @@ function Read-RawControl([string]$directory, [string[]]$config) {
     $benchmarkPath = Join-Path $directory "benchmark.json"
     $samplesPath = Join-Path $directory "cold-boot.jsonl"
     $prior = Get-Content -LiteralPath $benchmarkPath -Raw -ErrorAction Stop | ConvertFrom-Json
-    $samples = @(Get-Content -LiteralPath $samplesPath -ErrorAction Stop |
+    $records = @(Get-Content -LiteralPath $samplesPath -ErrorAction Stop |
         ForEach-Object { $_ | ConvertFrom-Json } | Where-Object arm -eq "raw")
-    if ($samples.Count -ne $Samples -or $prior.scenarios.rawBoot.samples -ne $Samples -or
+    $report.avdConfig = @{ raw = $prior.matchedAvdConfig; managed = $config }
+    if ($records.Count -ne $Samples -or $prior.scenarios.rawBoot.samples -ne $Samples -or
         $prior.candidate.installerSha256 -ne $candidate.installerSha256 -or
         $prior.candidate.sourceCommit -ne $candidate.sourceCommit -or $prior.fixtureSha256 -ne $report.fixtureSha256 -or
         ($config -join "`n") -ne ($prior.matchedAvdConfig -join "`n")) {
@@ -320,8 +321,8 @@ function Read-RawControl([string]$directory, [string[]]$config) {
     foreach ($key in @('machine', 'osBuild', 'osVersion', 'cpu', 'gpu', 'gpuDriver', 'emulatorVersion', 'whpx')) {
         if ($prior.host.$key -ne $hostInfo[$key]) { throw "The raw control's host property '$key' changed." }
     }
-    for ($i = 0; $i -lt $samples.Count; $i++) {
-        $sample = $samples[$i]
+    for ($i = 0; $i -lt $records.Count; $i++) {
+        $sample = $records[$i]
         if ($sample.trial -ne ($i + 1) -or $sample.seconds -le 0 -or -not $sample.launcherPid -or
             -not $sample.qemuPids -or $sample.transportId -notmatch '^\d+$') {
             throw "The raw control has an invalid sample at row $($i + 1)."
@@ -335,7 +336,7 @@ function Read-RawControl([string]$directory, [string[]]$config) {
         benchmarkSha256 = (Get-FileHash -LiteralPath $benchmarkPath).Hash
         samplesSha256 = (Get-FileHash -LiteralPath $samplesPath).Hash
     }
-    return $samples
+    return $records
 }
 
 function Stop-RawProcess($process) {
