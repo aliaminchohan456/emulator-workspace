@@ -571,21 +571,24 @@ public sealed class RecipeService
         return resolved;
     }
 
-/// <summary>
-    /// Decides whether a restored baseline needs its fixture relaunched. When
-    /// the recipe installs or launches the fixture after the baseline, those
-    /// recorded steps carry that work and the guest only has to be interactive
-    /// again. A baseline that already contains the fixture must be brought back
-    /// by the runner.
+    /// <summary>
+    /// Decides whether the runner needs to restore the fixture foreground
+    /// before replay. A recorded launch before the first UI step owns that
+    /// transition and runs after baseline verification.
     /// </summary>
     public static bool NeedsFixtureRelaunch(JsonArray steps, int baselineIndex)
     {
         for (var index = baselineIndex + 1; index < steps.Count; index++)
         {
             var op = steps[index]?["op"]?.GetValue<string>() ?? "";
-            if (op is "app.launch" or "app.install")
+            if (op == OperationNames.AppLaunch)
             {
                 return false;
+            }
+
+            if (op is OperationNames.InputText or OperationNames.InputTap or OperationNames.UiAssert)
+            {
+                break;
             }
         }
 

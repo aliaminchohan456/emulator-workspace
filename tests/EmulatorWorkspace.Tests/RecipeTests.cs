@@ -196,6 +196,18 @@ public sealed class RecipeServiceTests
     }
 
     [Fact]
+    public void Baseline_needs_relaunch_if_input_precedes_the_next_recorded_launch()
+    {
+        var steps = new JsonArray(
+            new JsonObject { ["op"] = "snapshot.save" },
+            new JsonObject { ["op"] = "app.install" },
+            new JsonObject { ["op"] = "input.tap" },
+            new JsonObject { ["op"] = "app.launch" });
+
+        Assert.True(RecipeService.NeedsFixtureRelaunch(steps, 0));
+    }
+
+    [Fact]
     public void Unsupported_operations_are_rejected_as_recipe_steps()
     {
         Assert.False(RecipeService.IsSupportedOperation("host.exec"));

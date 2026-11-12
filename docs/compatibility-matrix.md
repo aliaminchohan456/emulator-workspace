@@ -8,10 +8,10 @@ of documentation alone.
 
 | Property | Value |
 | --- | --- |
-| Machine | DESKTOP-EMULATOR (Windows 11 Pro 10.0.26300, build 26300) |
+| Machine | ALI_HP (Windows 11 Pro 10.0.26300, build 26300) |
 | CPU | Intel Core i5-8265U @ 1.60 GHz, 4 cores / 8 logical |
 | GPU | Intel UHD Graphics 620, driver 31.0.101.2135 |
-| RAM | 31.8 GB, page file 14.1 GB (system managed) |
+| RAM | 31.8 GiB, system-managed page file. Per-run sizes and headroom are in the raw benchmark records |
 | Acceleration | WHPX (Windows Hypervisor Platform), hardware virtualization enabled in firmware |
 | Android SDK | `%LOCALAPPDATA%\Android\Sdk` |
 | Emulator | 37.2.12.0, build 16428233 (`Pkg.Revision 37.2.12.0`) |
@@ -24,7 +24,7 @@ of documentation alone.
 | --- | --- | --- | --- |
 | `system-images;android-35;default;x86_64` (AOSP API 35, revision 2) | x86_64 | **Yes** | The regression baseline. Every Phase 1, 2 and 3 acceptance run uses it. |
 | `system-images;android-35;google_apis;x86_64` | x86_64 | **Yes** | The `adb root` workflow needs a userdebug image; the Google APIs image is userdebug and was verified for the ADB daemon transitions. |
-| `system-images;android-35;google_apis_playstore_ps16k;x86_64` revision 5 | x86_64 | **Partial** | Boot, APK, foreground and PNG verified. Snapshot state rolled back with cold-boot recovery. |
+| `system-images;android-35;google_apis_playstore_ps16k;x86_64` revision 5 | x86_64 | **Yes, tested workflows** | Boot, APK, foreground and PNG verified. Named restore passed on 0.1.2 after an earlier cold-boot fallback. |
 | `system-images;android-36;google_apis_playstore;x86_64` revision 7 | x86_64 | **Yes, tested workflows** | Boot, APK, foreground, PNG and named snapshot rollback verified. |
 | `system-images;android-36.1;google_apis_playstore;x86_64` | x86_64 | **No** | Installed but not exercised. |
 | `system-images;android-37.1;google_apis_playstore_ps16k;x86_64` | x86_64 | **No** | Installed but not exercised. |
@@ -38,8 +38,11 @@ ADB daemon UID 2000. Their stock ramdisk hashes matched before and after.
 | --- | --- | --- | --- |
 | API 36 revision 7 | `20261112-211536`, 8/8 | `BE2A.250530.026.D1/13818094` | `recovery=restored`, fixture absent after load |
 | API 35 16 KB revision 5 | `20261112-211808`, 7/8 | `AE3A.240806.041/12890756` | `recovery=cold_boot`, fixture absent after fallback |
+| API 36 revision 7 | `20261113-035552`, 8/8 on 0.1.2 | `BE2A.250530.026.D1/13818094` | `recovery=restored`, fixture absent after load |
+| API 35 16 KB revision 5 | `20261113-035829`, 8/8 on 0.1.2 | `AE3A.240806.041/12890756` | `recovery=restored`, fixture absent after load |
 
-Raw status, probe, snapshot and cleanup records are in `artifacts/phase3/play/`.
+The 0.1.2 results are in `artifacts/phase3/candidate/20261113-025947`.
+Historical raw records are in `artifacts/phase3/play/`. [Source and MSI identities](phase3-manifest.json)
 The original simulation output exposed a false-positive console status for
 `route` and `power capacity`. The corrected probe distinguishes console
 rejections, reads the battery state using `power display`, and reads the
@@ -53,7 +56,7 @@ and simulation mutations require separate checks on those profiles.
 | Capability | AOSP API 35 x86_64 | Google APIs API 35 x86_64 | Google Play image |
 | --- | --- | --- | --- |
 | Cold boot to interactive readiness | Verified (see `docs/phase3-evidence.md`) | Verified | Verified on both tested images |
-| Warm snapshot restore | Verified | Not verified | API 36 restored. API 35 16 KB used cold-boot recovery |
+| Warm snapshot restore | Verified | Not verified | Both images restored on 0.1.2. An earlier API 35 16 KB run used cold-boot fallback |
 | Frame capture and streaming | Verified | Not verified | One-shot PNG verified on both tested images |
 | Input (tap, text, key, swipe) | Verified | Not verified | Not verified |
 | ADB daemon as root (`adb root`) | Verified (`ro.build.type=userdebug`) | Verified | Both tested images report user build and root unavailable |

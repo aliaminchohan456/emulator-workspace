@@ -539,14 +539,8 @@ public sealed class OperationDispatcher
                         // guest is back or the bound is exhausted.
                         var package = recipe["app"]?["package"]?.GetValue<string>();
 
-                        // A baseline that is followed by install/launch steps
-                        // carries those steps in the recipe, so the guest only has
-                        // to be interactive again. Otherwise the fixture belonged
-                        // to the recorded state and must be brought back here.
-                        // A baseline that is followed by install/launch steps
-                        // carries those steps in the recipe, so the guest only has
-                        // to be interactive again. Otherwise the fixture belonged
-                        // to the recorded state and must be brought back here.
+                        // A recorded launch can bring up the fixture after the
+                        // baseline. Otherwise restore the fixture foreground here.
                         var relaunchNeeded = RecipeService.NeedsFixtureRelaunch(steps, stepIndex);
                         var uiReady = !relaunchNeeded;
                         if (relaunchNeeded)
@@ -641,7 +635,10 @@ public sealed class OperationDispatcher
                                 .ConfigureAwait(false);
                         }
 
-                        stepReport["baselineAppRelaunched"] = package;
+                        if (relaunchNeeded)
+                        {
+                            stepReport["baselineAppRelaunched"] = package;
+                        }
                         stepReport["guestUiReady"] = uiReady;
 
                         // Baseline verification: a recovered guest proceeds only
@@ -679,7 +676,7 @@ public sealed class OperationDispatcher
                         // The generic marker is not enough: the fixture's first
                         // targeted control must resolve before any app-targeted
                         // step runs, otherwise the step races the activity.
-                        var readinessSelector = RecipeService.FirstAppSelector(steps, stepIndex);
+                        var readinessSelector = relaunchNeeded ? RecipeService.FirstAppSelector(steps, stepIndex) : null;
                         if (baselineVerified && readinessSelector is not null)
                         {
                             var readinessArgs = new JsonObject { ["name"] = session.Instance, ["selector"] = readinessSelector };

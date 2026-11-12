@@ -571,6 +571,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
   predecessor. The nine-lane 0.1.3 regression is running in
   `artifacts/phase3/candidate/20261113-041225`, beginning with the two
   recipe baselines, with packaged MCP and isolated roots per lane.
+- The 0.1.3 launcher-baseline rerun passed the restored-state assertion
+  and reached the selector wait without the JSON ownership exception.
+  It exposed a second bug: the harness expected a fixture control while
+  the recipe was still at its launcher baseline, before recorded install
+  and launch. The supervisor now checks a fixture control during recovery
+  when it owns the relaunch, and lets a recorded launch before the first
+  UI step establish foreground for the launcher baseline. Verify on a
+  separately packaged build. The 0.1.3 run continues through the other lanes.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
