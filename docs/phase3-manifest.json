@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "generatedUtc": null,
-  "headCommit": "89a09c7",
-  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M src/EmulatorWorkspace.Cli/SupervisorCommands.cs\n M src/EmulatorWorkspace.Contracts/SupervisorProtocol.cs\n M src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs\n M src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs\n M tools/build-phase3-manifest.py\n?? tools/root-lab-acceptance.ps1",
+  "headCommit": "0aa9157",
+  "workTree": "M docs/phase3-evidence.md\n M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -24345,6 +24345,4221 @@
           "name": "versions.json",
           "bytes": 522,
           "sha256": "80eb23481275ba97de4f4dc5b67b033186565bb4686561cf704c85f2b97a7dc9"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261111-223756",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-223756",
+      "rawArtifactsAreGitignored": true,
+      "commit": "e793b63",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 389262524416,
+      "failedChecks": 3,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=362.5 GB",
+              "atUtc": "2026-11-11T17:37:57.7416759Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T17:38:00.8941348Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T17:38:04.8089611Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T17:38:04.8979339Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T17:38:08.1492367Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-57324f bystander=ag-fc0c0d replay=ag-e58ed2",
+              "atUtc": "2026-11-11T17:38:22.0550585Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T17:40:19.0523797Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T17:59:19.7065092Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T17:59:19.7251261Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/307 bystander=emulator-5558/308",
+              "atUtc": "2026-11-11T17:40:21.7211849Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T17:40:51.7464993Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T17:41:35.8945542Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-59214cc26c instance=ag-57324f",
+              "atUtc": "2026-11-11T17:41:37.4011980Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T17:42:44.9259262Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T17:43:09.5232522Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T17:43:34.1109245Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T17:43:42.2135027Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T17:43:43.6733986Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T17:43:43.7240615Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 6,
+          "failed": 2,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T17:43:53.4630121Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T17:45:28.1388980Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T17:45:28.6569794Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T17:45:30.2540693Z"
+            },
+            {
+              "check": "completed",
+              "passed": false,
+              "detail": "steps=3 baseline=created recovery=restored verified=False",
+              "atUtc": "2026-11-11T17:55:39.3044766Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": false,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T17:55:39.3289451Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=not_required",
+              "atUtc": "2026-11-11T17:55:39.4072809Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_not_verified",
+              "atUtc": "2026-11-11T17:55:39.5827396Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T17:55:48.3683459Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T17:55:48.4041173Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T17:56:26.5675351Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T17:56:26.6553217Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T17:57:35.8932208Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": false,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T17:59:18.0546092Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-fc0c0d', not 'ag-57324f'.",
+              "atUtc": "2026-11-11T17:59:18.3914772Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T17:59:18.7108578Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T17:59:19.0311246Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T17:59:19.7009807Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T17:59:42.4952617Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T17:59:42.5004674Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-e9cc4e.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-61c5b5.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-ac4c87.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-4a10c8.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-eaa65d.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-813a38.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-3b284e.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-a99cfd.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-61e671.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-ada625.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-459764.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-ea6c6a.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-75ada3.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-bb4052.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-7e20c2.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-fd5a65.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-443992.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-b5ed8f.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-7e505e.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-c9ca61.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-c09c51.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "a291ad0a0d9dc909c1a0bd4d454b720e2b0ea96e778113a8268bad7b9f4846ef"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "86e4522aa933298d65e40e2462457d56079b414df1327ab27dcf40d2413e88b4"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9349,
+          "sha256": "efb10be0f39181ef4d779394e385b07653cafd0e25d2da575c52219a681dc726"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "426dfd4d5e08b79097c7687daee0081fc94d4eb792726d3725405112c36a596c"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "91609183da7467e0583e7ce951a418831cc13d0555343a433038f5475d77a122"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 993,
+          "sha256": "ca0c3c471fb7674c1e91e7778215f8fca304ab3b410be67e7f2fe795b2b2054c"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 1085,
+          "sha256": "8cebc737279981167b65816cb0b1cf4a1298f6597cab3c9a0aa836be89803f8d"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "9e984b3964633dcedec58837bc61eaf2d74fa5371f9cf4e5bd3628164e1c327b"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "3325f247245c75eece7c1ddaa825e15bf8e2b17a4ccfe80f5cb3b6ddf6e8ae8e"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3666,
+          "sha256": "b88e9eb11daf4e12ca776fbfd74e52f44f0d3ad76890169b76a6154a3b5674ef"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 416,
+          "sha256": "024fc5107f25e467c758f33c04302c7488b91e24f2951f3feaeb6415e6bf2af6"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261111-230348",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-230348",
+      "rawArtifactsAreGitignored": true,
+      "commit": "e793b63",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 389262524416,
+      "failedChecks": 1,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=362.5 GB",
+              "atUtc": "2026-11-11T18:03:49.0747506Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T18:03:52.0141099Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T18:03:56.1388447Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T18:03:56.2447133Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T18:03:59.5441633Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-023577 bystander=ag-e8aa15 replay=ag-8442f5",
+              "atUtc": "2026-11-11T18:04:14.8191783Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T18:06:10.9923279Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T18:23:38.6136241Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T18:23:38.6780882Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/313 bystander=emulator-5558/314",
+              "atUtc": "2026-11-11T18:06:13.0612566Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T18:06:45.5331278Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T18:07:24.9566074Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-9d8cdca766 instance=ag-023577",
+              "atUtc": "2026-11-11T18:07:26.2367788Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T18:08:24.3973030Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T18:08:47.1442558Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T18:09:07.4201983Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T18:09:15.2138944Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T18:09:16.7601704Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T18:09:16.7920402Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T18:09:26.4823072Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T18:11:22.8248097Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T18:11:23.2493811Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T18:11:24.6437293Z"
+            },
+            {
+              "check": "completed",
+              "passed": true,
+              "detail": "steps=15 baseline=created recovery=cold_boot verified=True",
+              "atUtc": "2026-11-11T18:16:36.2665634Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": true,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T18:16:36.3107876Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-11T18:16:36.3634960Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_restored,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok",
+              "atUtc": "2026-11-11T18:16:36.4457982Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T18:16:45.0855804Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T18:16:45.1389582Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T18:17:15.0154616Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T18:17:15.0800837Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T18:18:47.4792062Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T18:23:27.2091942Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-e8aa15', not 'ag-023577'.",
+              "atUtc": "2026-11-11T18:23:29.3309793Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T18:23:31.4004134Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T18:23:33.8411679Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T18:23:38.5695831Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": false,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T18:24:47.3925780Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T18:24:47.3966296Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-516cd7.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-ad3059.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-1e8644.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-17cd04.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-8e9181.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-12f143.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-612584.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-f3a549.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-2da512.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-846f6e.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-614ed9.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-de6fb9.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-63df4f.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-09bbec.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-b2c9cc.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-e90153.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-51fa30.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-2c2303.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-ef5e86.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-e0e1e8.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-20bbf8.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "6752860e2a87cc068eb6ee07b999a8bd68d6dbbb092c1e50118a771e2c2574f1"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "c7efb052b873e33613186d090a7618a99b9ab2bcdf4d9a53343af584402c50b4"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 164,
+          "sha256": "ea38e0d1376821f1a66ca7c6bd44d99e6c1c570f4d2e49130e4ce2bcf6ae8b17"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9349,
+          "sha256": "313d8785a5ab01581a07cec796a606866550b6d78ae2f26fc44d8ad48adf5a62"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "889fd82ae8a06741fbd541dd2c30f823e31aead6f6b958b842c7e2771edbfb56"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "e079e10d1568f0bdc7584ea5a4fe2fb1884900a1ef31a82957b0ecb92ed9b8bf"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2602,
+          "sha256": "2ad60eb735d113fa313629ff8e274e19e7a3913180b6fa373c99919e03772999"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2602,
+          "sha256": "d621c4d82c66f2f416c8076959b07923c7e764607c0784eb0338b3ab64bad651"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "ff3b5358f61b5e1ae4b9819242c5d7134a4c98996f893121627b1319534103a8"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "c94b3043e418cb3b14569b62b43d28843ea8d611d2541ad46f284952198f2f43"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 4270,
+          "sha256": "bfb6cbc52963094d3c34235192db985860dc18173a3e7626545298c7c1c689a7"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 812,
+          "sha256": "c8c9aa06afe6a0a0084ef70a8a2af6eee6f5c1a8002d4b6de70e74134401533a"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261111-232956",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-232956",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ff2893e",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 389262000128,
+      "failedChecks": 1,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=362.5 GB",
+              "atUtc": "2026-11-11T18:29:57.2266969Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T18:30:14.5011173Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T18:30:21.0206672Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T18:30:21.1482883Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T18:30:24.4571768Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-97b1b5 bystander=ag-cf5360 replay=ag-f50dd2",
+              "atUtc": "2026-11-11T18:30:41.6923054Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T18:32:39.3841964Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T18:57:13.4083128Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T18:57:13.5028049Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/322 bystander=emulator-5558/323",
+              "atUtc": "2026-11-11T18:32:44.1751350Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T18:33:26.3997540Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T18:34:05.9624118Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-640043598d instance=ag-97b1b5",
+              "atUtc": "2026-11-11T18:34:07.7847209Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T18:35:07.1420426Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T18:35:29.3390069Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T18:35:50.5109034Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T18:35:57.6992528Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T18:35:59.5667405Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T18:35:59.5929883Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T18:36:09.6311233Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T18:38:06.5223286Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T18:38:06.9057966Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T18:38:08.0735090Z"
+            },
+            {
+              "check": "completed",
+              "passed": true,
+              "detail": "steps=15 baseline=created recovery=restored verified=True",
+              "atUtc": "2026-11-11T18:40:18.8847436Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": true,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T18:40:19.2298497Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-11T18:40:19.3984159Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_restored,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok",
+              "atUtc": "2026-11-11T18:40:19.4894087Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T18:40:26.4824972Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T18:40:26.5216383Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T18:40:51.8308301Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T18:40:51.8491936Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T18:42:02.6322591Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": false,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T18:57:04.2695699Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-cf5360', not 'ag-97b1b5'.",
+              "atUtc": "2026-11-11T18:57:05.9864078Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T18:57:07.8483999Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T18:57:09.7905072Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T18:57:13.2647513Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T18:57:38.1780978Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T18:57:38.1854678Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-29512a.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-f41f17.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-61d213.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-34d7e2.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-405613.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-baf79d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-178b50.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-9a218d.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-45b78b.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-e3cee4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-de362e.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-ad6239.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-026550.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-d2aa04.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-aa733c.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-7b07e3.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-8f6d22.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-b9a9b0.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-10a706.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-c8fc08.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-9ec42b.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 21788,
+          "sha256": "e8b9643bd676b90d4472c5eae5914c65af050f2da02b3414c31bba91a2e935d6"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "2741d207563e5812b019463e7b996193c62d459fc2d4f310ae5756647acf3391"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9350,
+          "sha256": "6bef4e6c291a4d4e1c4a912f2950ad2ccd4717dc5f6252612133aa707b54d46b"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "7b938d91d50eae3c44af18750905c0e215993bc9674761ee7e34f1ebf78ca142"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "b5a5c665fa60c21dcfc0918b3164b6ac686b0b1fdedb95ddc25df635483a3d89"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2597,
+          "sha256": "d4bd8a8c3b209af958f38222928219ac979d434ff2afbcc7de2725633021550a"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 5,
+          "sha256": "f01a374e9c81e3db89b3a42940c4d6a5447684986a1296e42bf13f196eed6295"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "3c3ae35ab896d3468cd15e52cd948b7b438da743fb392450c3ff1ec00321d867"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "9834927902824202caf401d6ba40364e4c36d5543838752c2903f1995a67340d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3694,
+          "sha256": "697a58d461ffd45b454aa33d66a1cc0f37694a33eaf4bd7fe8a7d25d1aed4042"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 236,
+          "sha256": "d1a54610a812cafdfc9312ca8de12bca0598e760d02cd47f95ecc883b944f9c7"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261111-235944",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261111-235944",
+      "rawArtifactsAreGitignored": true,
+      "commit": "795c293",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 386040709120,
+      "failedChecks": 4,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=359.5 GB",
+              "atUtc": "2026-11-11T18:59:45.5516632Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T18:59:50.3124641Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T18:59:56.3684216Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T18:59:56.5225255Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T18:59:59.8793217Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-865daf bystander=ag-0723c2 replay=ag-859b75",
+              "atUtc": "2026-11-11T19:00:22.6677347Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T19:02:21.8838825Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T19:36:28.6096831Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T19:36:28.6381113Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/330 bystander=emulator-5558/331",
+              "atUtc": "2026-11-11T19:02:27.1436222Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T19:03:09.1679213Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T19:03:50.7180420Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-e32860b025 instance=ag-865daf",
+              "atUtc": "2026-11-11T19:03:52.4693816Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T19:04:55.4249185Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T19:05:20.1626212Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T19:05:43.6250345Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T19:05:50.9700982Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T19:05:52.3515767Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T19:05:52.3754837Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 5,
+          "failed": 3,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T19:06:01.9053786Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T19:08:11.5638325Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T19:08:12.2487407Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T19:08:14.8067863Z"
+            },
+            {
+              "check": "completed",
+              "passed": false,
+              "detail": "steps=15 baseline=created recovery=none verified=False",
+              "atUtc": "2026-11-11T19:09:34.7070552Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": false,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T19:09:34.7487337Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-11T19:09:34.8040576Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": false,
+              "detail": "ok,failed,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped",
+              "atUtc": "2026-11-11T19:09:34.9355931Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T19:09:45.3451839Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T19:09:45.3923832Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T19:10:27.6233056Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T19:10:27.7293175Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T19:11:45.8998783Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": false,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T19:36:25.9757408Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-0723c2', not 'ag-865daf'.",
+              "atUtc": "2026-11-11T19:36:26.4743127Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T19:36:26.9593423Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T19:36:27.4661234Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T19:36:28.6036382Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T19:36:51.6210664Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T19:36:51.6258578Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-a9105f.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-1929b6.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-d653ce.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-dbf82f.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-a64318.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-35f36c.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-35fdf5.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-ccc64f.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-10925f.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-e82d2c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-20ec45.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-e6fdf3.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-067c41.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-f3a28f.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-d0cec1.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-2ccb2f.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-11fe5c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-6dbbde.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-68920d.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-233198.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-652419.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "91f8be88edda65e118658b241c0d0d9a055ae6425be6bde531ce061358fd17b8"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "6e4dfc31569c9c8a781dca5a3eb3e35635c4814870c7b3733754460eaeb3f35c"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9349,
+          "sha256": "1efb1988e0da4acf760b51d08e5b3f9fe2c14bcb7c8317fe24731c42852328b7"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "a1546b2dd3f935305e167ca179bb07fdd2ce7f89e15d9fbb5b5739006be43fae"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "537bdd2999acc10b502d01ed209092d6e14158cd5003a55cc8f93892e5be5790"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2183,
+          "sha256": "e9862fa7a6ea7368026956e4ed16294eb256f35cfabdc25931a192ae58799137"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2073,
+          "sha256": "92ac9889c1fb6c2e81ea1e2629a85142b39f8a0941058d890a89363c69c5ebaa"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "aaa109dd8e493d9000230936d3af525ba5687009041805b65a4155d9ceb7a2df"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "9daf29b492607155d9c8e3c1666be897edde000fe2a280c4da8347dc7655c6ab"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3745,
+          "sha256": "130c40b7b7d1843f87fdaf8a5b4c6e87b72862344bcda9f1bcd447bb772aff58"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 417,
+          "sha256": "d4432d9acfc0efd36d6faf093d83105905d354af8ee0852259b92e12b80f0180"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261112-004305",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-004305",
+      "rawArtifactsAreGitignored": true,
+      "commit": "8c68319",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 382307782656,
+      "failedChecks": 3,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=356.1 GB",
+              "atUtc": "2026-11-11T19:43:06.1737140Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T19:43:18.0424509Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T19:43:24.0026499Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T19:43:24.1398735Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T19:43:27.4343332Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-362496 bystander=ag-8d5d4f replay=ag-15d229",
+              "atUtc": "2026-11-11T19:43:42.4285387Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T19:45:33.1771670Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T20:06:54.5791336Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T20:06:54.6519828Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/335 bystander=emulator-5558/336",
+              "atUtc": "2026-11-11T19:45:34.6499116Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T19:46:06.4582717Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T19:46:47.7071272Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-8758930001 instance=ag-362496",
+              "atUtc": "2026-11-11T19:46:49.2044464Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T19:47:48.1404050Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T19:48:11.1288740Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T19:48:31.5724355Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T19:48:38.7736670Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T19:48:40.3032544Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T19:48:40.3326438Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 6,
+          "failed": 2,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T19:48:49.9156682Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T19:50:19.1526135Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T19:50:19.5270462Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T19:50:21.4020326Z"
+            },
+            {
+              "check": "completed",
+              "passed": false,
+              "detail": "steps=3 baseline=created recovery=restored verified=False",
+              "atUtc": "2026-11-11T20:02:53.5641161Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": false,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T20:02:53.5711885Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=not_required",
+              "atUtc": "2026-11-11T20:02:53.5925003Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_not_verified",
+              "atUtc": "2026-11-11T20:02:53.6206020Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T20:02:57.2022249Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T20:02:57.2141586Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T20:03:20.4740548Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T20:03:20.4861813Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T20:04:26.3636087Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": false,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T20:06:45.2801605Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-8d5d4f', not 'ag-362496'.",
+              "atUtc": "2026-11-11T20:06:46.8789126Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T20:06:48.2591529Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T20:06:50.3982772Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T20:06:54.5059460Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T20:07:19.9369345Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T20:07:19.9401818Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-583bb1.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-b397e8.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-74cb81.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-81fbcf.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-a9abf5.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-7122ce.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-b45dc8.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-e23867.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-0c7ba8.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-dcdfac.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-156b24.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-17d681.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-1dddb2.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-479670.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-246d94.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-92835d.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-15cc43.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-bf1335.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-ae230f.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-4eab98.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-46d80f.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 21788,
+          "sha256": "8b4b7abc39f45eb0eaf6d506cf3586102befff9982094c6ee10e4843fc060c18"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "ebd6520efd85fdf1fe17a65c627a26941110155ac58a1925323680aa10b8a2fe"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9348,
+          "sha256": "3977137a74b66f789c8d82eec8de8abc18ce68f72fd0685e99e7c33764259978"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "d5a4c8490a676ec1d71336a258e9c408290b69a73a22ef008063a7d73df7ee2e"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "6317ce7ada66c11a9655bbb70ab11466a50b42430e5388f9b06e41e1849dbcb8"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 1039,
+          "sha256": "e54b5a4d4a937d2dfab555362b7e3a0b17a03d4233ba00dde61406dfdf45914b"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2100,
+          "sha256": "6b1732790abe67b3302374c0376c8e8b662ad7cbe133da14daffcbf8c523605d"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "cd1fc8c938e3567671c93b073a394043b9eecbf90e381e57e5f6dea549b2fe53"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "6f79ee6bbcf32d0367e9e577eba8346946b38f73563e66de30fd2c7ef24a047a"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3666,
+          "sha256": "aa0f716c8e6340c960a37bbada92dd5a23c0f6acca845f6bf83915202ca52e48"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 236,
+          "sha256": "8be70d1a59bdb566dc5fd77c6cb6a4215c11a3071cb3f13f402d237b78f1123d"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261112-011138",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-011138",
+      "rawArtifactsAreGitignored": true,
+      "commit": "c9af9fc",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 379085967360,
+      "failedChecks": 3,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=353.1 GB",
+              "atUtc": "2026-11-11T20:11:39.7528315Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T20:12:00.2605752Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T20:12:07.2142968Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T20:12:07.3692890Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T20:12:10.6881224Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-fdc18a bystander=ag-f88613 replay=ag-0c2ca9",
+              "atUtc": "2026-11-11T20:12:26.7656050Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T20:14:18.5767273Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T20:25:24.2187804Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T20:25:24.2734105Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/341 bystander=emulator-5558/342",
+              "atUtc": "2026-11-11T20:14:24.0795003Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T20:15:04.4928465Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T20:15:42.1740222Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-f210f8c226 instance=ag-fdc18a",
+              "atUtc": "2026-11-11T20:15:43.2871512Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T20:16:44.1233020Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T20:17:06.6642605Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T20:17:30.6404646Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T20:17:39.2906361Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T20:17:40.7350692Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T20:17:40.7588385Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 5,
+          "failed": 3,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T20:17:50.6816978Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-11T20:19:21.3228415Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T20:19:22.1602364Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T20:19:23.6358266Z"
+            },
+            {
+              "check": "completed",
+              "passed": false,
+              "detail": "steps=15 baseline=created recovery=none verified=False",
+              "atUtc": "2026-11-11T20:20:25.8102956Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": false,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T20:20:25.8199582Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-11T20:20:25.8558815Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": false,
+              "detail": "ok,failed,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped,skipped",
+              "atUtc": "2026-11-11T20:20:25.9083065Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T20:20:30.4676901Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T20:20:30.4885877Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-11T20:21:05.8443670Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T20:21:05.8838834Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-11T20:22:52.3397612Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T20:25:17.0043094Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-f88613', not 'ag-fdc18a'.",
+              "atUtc": "2026-11-11T20:25:18.4349456Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T20:25:20.1483138Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T20:25:21.6235380Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T20:25:24.2018603Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T20:25:48.0274616Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T20:25:48.0345368Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-cada0c.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-814ffb.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-a77f5f.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-1c3e38.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-02587c.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-5c1f9e.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-9c7d31.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-029583.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-207946.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-bf7f5b.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-ff7221.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-c076e4.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-29da1c.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-11980b.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-876819.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-4ddc66.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-972d37.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-a9696e.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-6a97df.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-f8416e.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-5eeec3.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 21788,
+          "sha256": "9b3be680ba339d687e6fffb673bc7bac6796a6df10b68ddb4f222c5d5fcdabc5"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "173895d879d4a5377c62ffc187bdf876ea0016ec4fbc4ab891975f4356867c16"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9347,
+          "sha256": "c3d96211c5ca9a44c9749577c57ecf7b17bd42dbdfe5ea1838dc518c14212ef5"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "b6880e804a5586ec874eaea230e8ca4e57466442d6ca50caacdfccbe528d06a8"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "29edbdf60a23aaf1baf9f4d16dde87d76f54bfd52ba0241f62bf1c412f49d031"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2208,
+          "sha256": "c901662eb48fd67f954f5046d9a68be65a93e3456a8ee52881d6092f909d667f"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2636,
+          "sha256": "bde54322b8a6e305ef5f779b9c65dceef9edda23a9cf0d22fe82e2f92091cd0d"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "f2e832e36bb80241427692d290ed63e15758542ed62373dc5770e56ec32dcd89"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "a82c94616e400dfc3e6cff909d4109db9534c52bb6b3f91527f2bce467827d0d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3745,
+          "sha256": "9d93523576ba36f89f35f9bfe9be743a0ed753ed9625d4e341a7616fe83f30e2"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 236,
+          "sha256": "331e9df54f4a8ee3f610a897441e94782a0f87fd275ddd80145b2bce94eb221b"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261112-014149",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-014149",
+      "rawArtifactsAreGitignored": true,
+      "commit": "c9af9fc",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 379085967360,
+      "failedChecks": 1,
+      "totalChecks": 7,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=353.1 GB",
+              "atUtc": "2026-11-11T20:42:00.8857919Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T20:43:15.9205436Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T20:43:41.9321873Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T20:43:42.5447644Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T20:43:48.3457478Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-468d7a bystander=ag-625bfd replay=ag-fa0f2a",
+              "atUtc": "2026-11-11T20:44:38.1337812Z"
+            }
+          ]
+        },
+        "harness": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "fatal",
+              "passed": false,
+              "detail": "wsctl wait --name ag-625bfd --timeout 600 --token-file D:\\Phase4Root\\bystander-session.json --root D:\\Phase4Root failed (5): FAILED [instance_not_running] Engin",
+              "atUtc": "2026-11-11T20:47:20.7142827Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "356c8c8685f13e541462de3fa2a849584f68c1579bc9a1dafecc1bcfa83cdd67"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 348,
+          "sha256": "6010e7a60880b43864900e2588aa4301f322921604ed0e24d210c72cfc3cbdf8"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 997,
+          "sha256": "7575743d283ad3845ae87df48a7c31d66529337eaae2cd3bee2abdc3b763bf96"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 322,
+          "sha256": "b090cd96e5be4774248568101ccfc2754a7a9962011b5ce6f78413c55dabc192"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261112-020804",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-020804",
+      "rawArtifactsAreGitignored": true,
+      "commit": "c9af9fc",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 379085967360,
+      "failedChecks": 4,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=353.1 GB",
+              "atUtc": "2026-11-11T21:08:05.2190619Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-11T21:08:12.8747604Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-11T21:08:23.3287632Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-11T21:08:23.4697333Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-11T21:08:26.8285019Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-bb1ad9 bystander=ag-74aa89 replay=ag-1f6bbd",
+              "atUtc": "2026-11-11T21:08:48.3882998Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-11T21:12:16.2676465Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-11T21:29:54.1959190Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-11T21:29:54.2766156Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5558/351 bystander=emulator-5560/352",
+              "atUtc": "2026-11-11T21:12:18.3769975Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-11T21:13:01.7113130Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-11T21:13:50.3603355Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-2165907264 instance=ag-bb1ad9",
+              "atUtc": "2026-11-11T21:13:53.0025998Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-11T21:15:13.6348197Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-11T21:15:44.6048398Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-11T21:16:13.4834634Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-11T21:16:27.4569663Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-11T21:16:30.7967307Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-11T21:16:30.8483541Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 5,
+          "failed": 3,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-11T21:16:42.4866184Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5562",
+              "atUtc": "2026-11-11T21:18:55.8270892Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-11T21:18:56.4583703Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-11T21:18:59.0759347Z"
+            },
+            {
+              "check": "completed",
+              "passed": false,
+              "detail": "steps=1 baseline= recovery= verified=",
+              "atUtc": "2026-11-11T21:21:27.6569992Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": false,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-11T21:21:27.8290908Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": false,
+              "detail": "networkRestored=",
+              "atUtc": "2026-11-11T21:21:27.9666381Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "",
+              "atUtc": "2026-11-11T21:21:28.2007065Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-11T21:21:39.9710365Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-11T21:21:40.2955164Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": false,
+              "detail": "jobState=Completed",
+              "atUtc": "2026-11-11T21:22:08.3460672Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-11T21:22:08.3731591Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5562",
+              "atUtc": "2026-11-11T21:24:01.3985708Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-11T21:29:42.0642566Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-74aa89', not 'ag-bb1ad9'.",
+              "atUtc": "2026-11-11T21:29:44.5124301Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-11T21:29:47.1610515Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-11T21:29:49.2897081Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-11T21:29:54.1477312Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-11T21:30:23.6575483Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-11T21:30:23.6641108Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-c55ad8.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-eb9a9d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-cf070b.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-33dd4b.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-84a93f.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-7e58d2.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-d3b91b.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-c770b8.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-2b36ae.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-c94d0e.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-5f2c10.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-6e546f.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-e5a19e.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-8f24b5.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-98a467.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-ba1713.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-6673ea.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-fff021.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-410a6f.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-9d11bc.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-b4309d.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "51695c65c206fbdc761028905aa1a9084073435709857a12bf611b93b0741151"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 545,
+          "sha256": "fe532a83661d7156a68b469fe6e9de3475fc63d59d672c9d35f1d9960ad09292"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "8768d7ac79807ad40a0f5ad5e6afa29c547f3290b497b006139349535dfd1c9d"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9368,
+          "sha256": "8b29fc8220ae1f4fd9eeaca0300a57b1de8065603289940a862f7afe8ffacebb"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "2590643556180d9a95136bf88dff2b24f97b54846947de299ae18a46ee0f97e9"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "4b65d488f2189bbfcf35400efa5dc449eea9d398e498101b8b0511bd2d287367"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 261,
+          "sha256": "c26eb1c647e8143509cb22e95eb8f978424b4b301ba969e22fb36fef770d6d3b"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2639,
+          "sha256": "d658ab3b61c9baedd896a12e5fe36122c629d6b39381f476ce3c1bdd30776f49"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "cf89b65f11876bf654cde6682d0ee52595f2b7604774c3200146d10355d9b143"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 351,
+          "sha256": "06c75be759897dd8940451a589b3906c384d8b68bac875038365747e3a7bf693"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3609,
+          "sha256": "bf167414756ae332a35b101d6310c63db35f8de427aedef7e26377c031602db7"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 356,
+          "sha256": "20465aeb4dc3daa1aea83d9daa77ea6949048e44077249cbf725f6c3d4f3a808"
+        }
+      ]
+    },
+    {
+      "kind": "recipe",
+      "runId": "20261112-092743",
+      "rawArtifactRoot": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\artifacts\\phase3\\recipe\\20261112-092743",
+      "rawArtifactsAreGitignored": true,
+      "commit": "0aa9157",
+      "pins": {
+        "emulator": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:\\Phase4Root",
+      "freeBytesAtStart": 388757159936,
+      "failedChecks": 0,
+      "totalChecks": 39,
+      "lanes": {
+        "host": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=362.1 GB",
+              "atUtc": "2026-11-12T04:27:44.0619097Z"
+            },
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "dotnet build exit=0",
+              "atUtc": "2026-11-12T04:27:49.6819745Z"
+            },
+            {
+              "check": "unit-tests",
+              "passed": true,
+              "detail": "Passed:    56",
+              "atUtc": "2026-11-12T04:27:58.3971615Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-12T04:27:58.5217254Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on 127.0.0.1:8765",
+              "atUtc": "2026-11-12T04:28:01.8703479Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-c312d7 bystander=ag-ae0bb3 replay=ag-169910",
+              "atUtc": "2026-11-12T04:28:16.7183648Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-12T04:30:02.2958751Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-12T04:45:16.2327216Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-12T04:45:16.2978730Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/1 bystander=emulator-5558/2",
+              "atUtc": "2026-11-12T04:30:03.7012490Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-12T04:30:33.5881160Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-12T04:31:09.6332326Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-0c91c53bfa instance=ag-c312d7",
+              "atUtc": "2026-11-12T04:31:11.7928335Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-12T04:32:16.3836193Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-12T04:32:41.9959477Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-12T04:33:05.8840518Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-12T04:33:16.7713219Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-12T04:33:18.7332701Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-12T04:33:18.8111078Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-12T04:33:29.8687626Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-12T04:35:57.4960736Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-12T04:35:59.1523512Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-12T04:36:01.3232780Z"
+            },
+            {
+              "check": "completed",
+              "passed": true,
+              "detail": "steps=15 baseline=created recovery=restored verified=True",
+              "atUtc": "2026-11-12T04:38:36.2533862Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": true,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-12T04:38:36.3521236Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-12T04:38:36.4192945Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_restored,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok",
+              "atUtc": "2026-11-12T04:38:36.7455858Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-12T04:38:49.0415544Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-12T04:38:49.1620145Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-12T04:39:23.0017241Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-12T04:39:23.0784291Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-12T04:41:50.8767969Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-12T04:45:06.4803648Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-ae0bb3', not 'ag-c312d7'.",
+              "atUtc": "2026-11-12T04:45:08.2893746Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-12T04:45:10.1587251Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-12T04:45:12.2448195Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-12T04:45:16.2000686Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-12T04:45:42.1445742Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-12T04:45:42.1485800Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-7e15f5.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-8e6457.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-b55f2e.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-44034e.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-8dd2a8.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-693fa5.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-9a445f.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-62c011.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-33cd82.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-c045b6.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-00d922.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-6803ac.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-c06275.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-1db925.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-bystander-2-09c7c7.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-target-2cde8f.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-e40540.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-15b63a.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-ba81c7.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-9719fd.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-60889b.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "build.txt",
+          "bytes": 87,
+          "sha256": "60faa40cc3347ebbcc2176cdba248be81872e2dd9c2f16f17e419e6396274942"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 834,
+          "sha256": "fa911d2c5f6c184b9ef274215103b965c337553fb5768edf0da43c02e713c8bb"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 544,
+          "sha256": "3f52337ebfe2543ff94a3d6b8c1d972057a4ac76cbe51d9225ea3c6217a4af10"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9335,
+          "sha256": "2843e2bf1392a3c27b2c77d48a06b27a1a7526d3c9a95db5e23128ff40362b21"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4176,
+          "sha256": "d320949bfa915edb49d0c6c6278eb08180a5bece8ebc1aa6085d7f95c7f34750"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "3ce0ac465d8de2d396e3aa5b61bbe912b6dbfe4d338cf64002cd8a6a22c16c30"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2633,
+          "sha256": "a74705d07934f052e7af93fc864dff916774a26fe8eb081fe44e95d91f4e1b38"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2636,
+          "sha256": "956805375fa45052dc212756839ded5f3781507f33cf4478062f0cd5ca10e6a1"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 244,
+          "sha256": "223385452657bc58b45b6b05a4c30151aaf8b3359623b7a26ed0c9ed5beb14e9"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "tests.txt",
+          "bytes": 348,
+          "sha256": "c2b795640d043a5b95642acb7a953bb1e2a9aebf3806a8ebea296cf0ad4ac98c"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3690,
+          "sha256": "c5e5c75174aece92ce4b2bcc7bf7a5751662186f1b590e883ca8f5a4c583a3f4"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 236,
+          "sha256": "7cbcfc0e1542785bc448ae27c71319d11e100f9b258bef1907d7ca998fe12a36"
         }
       ]
     },

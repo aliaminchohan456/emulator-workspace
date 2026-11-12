@@ -214,7 +214,7 @@ Implementation:
 | `20261111-140516` | 37 | 36 | primary workflow green; the retry after an interruption still failed because the interrupted run had left guest shaping behind |
 | `20261111-143213` | **38** | **37** | **authoritative for the recipe lane**: the full primary workflow green, the only failure a stopped instance left behind after cleanup (the destroy is now retried with a bounded loop) |
 | `20261111-184156` | **39** | **39** | **dedicated launcher-visible baseline run, fully green** |
-| `20261111-184903` | 39 | pending | dedicated fixture-foreground baseline run |
+| `20261112-092743` | **39** | **39** | **dedicated fixture-foreground baseline run, fully green** |
 
 The earlier "36/37" figure in the plan and checklist referred to run
 `20261111-140516`; the authoritative count for the recipe lane is **38 checks
@@ -244,7 +244,7 @@ The two baseline variants are separate runs:
 | Variant | Baseline content | Run | Result |
 | --- | --- | --- | --- |
 | `LauncherVisible` | the baseline is saved before the fixture is installed, so the restored guest shows the launcher | `20261111-184156` | **39/39 checks passed** |
-| `FixtureForeground` | the baseline is saved with the fixture in the foreground | `20261111-215921` | **38 of 39**: the restore, the cold-boot recovery (`recovery=cold_boot`), the recorded install re-execution, the package-manager readiness wait, the independent baseline verification (`verified=true`) and all 15 replayed steps are green (`WELCOME` → `NETWORK TIMEOUT` → `WELCOME`). The remaining failure is the retry after an interrupted replay: the launch step on the re-established guest does not reach the foreground within the bounded wait |
+| `FixtureForeground` | the baseline is saved with the fixture in the foreground | `20261112-092743` | **39 of 39, fully green**: the restore (`recovery=restored`), the recorded install re-execution, the package-manager readiness wait, the independent baseline verification (`verified=true`), the network reset (`networkRestored=restored`), all 15 replayed steps (`ok,ok,baseline_restored,ok,…`), the live bystander (`DUP_TAPS=2`, network profile intact), the interrupted run with a clean retry, and the typed negatives |
 
 The `LauncherVisible` run is fully green: the recipe is recorded and exported
 redacted, the clone creates and restores its own baseline, all 15 replayed steps
@@ -256,17 +256,37 @@ disposables are removed.
 
 ### What the fixture-foreground run needed
 
-Three product defects were fixed for that variant:
+Seven product defects were found and fixed for that variant, each verified by
+a rerun of the same harness:
 
-1. The launch operation now dismisses the keyguard. A headless guest boots with
-   the keyguard up, so the launched activity was never the focused window and
-   every foreground assertion failed.
-2. The baseline branch waits for the guest's package manager before re-running
-   the recorded install step, because a restore reverts userdata and an install
-   against a package manager that is still starting blocks on the device.
-3. The baseline is verified against the recipe's *first targeted control*
-   (`RecipeService.FirstAppSelector`), not only against a generic marker, so a
-   step can no longer race the activity that owns the control.
+1. **The keyguard.** The launch operation now dismisses the keyguard. A
+   headless guest boots with the keyguard up, so the launched activity was
+   never the focused window and every foreground assertion failed.
+2. **The package manager.** The baseline branch waits for the guest's package
+   manager before re-running the recorded install step, because a restore
+   reverts userdata and an install against a package manager that is still
+   starting blocks on the device.
+3. **The readiness contract.** The baseline is verified against the recipe's
+   *first targeted control* (`RecipeService.FirstAppSelector`), not only
+   against a generic marker, so a step can no longer race the activity that
+   owns the control.
+4. **The system dialog.** A SystemUI ANR dialog can hold the focus away from
+   the launched activity. The launch now closes the system dialog.
+5. **The launcher.** The launcher takes the focus back on a guest that is
+   still settling, so the launch re-issues the start until the application
+   really owns the foreground.
+6. **The repeated install.** The baseline branch only repeats the recorded
+   install when the package is genuinely missing; reinstalling a package that
+   is present blocks the ADB client on a guest that is still settling.
+7. **The untyped console error.** An emulator console failure escaped as an
+   untyped exception and aborted a whole replay without a report. It is now a
+   typed `instance_unavailable` error, and the network restore degrades
+   instead of losing the report.
+
+The harness was hardened at the same time: a guest that does not reach boot is
+recovered with a bounded number of sequential starts, and a replay is waited
+for with a 40-minute client budget, because a restore with a cold-boot
+fallback plus a relaunch legitimately takes minutes.
 
 ### Host hygiene note
 

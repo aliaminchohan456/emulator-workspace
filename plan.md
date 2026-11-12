@@ -181,14 +181,16 @@ external SDK AVD outside the workspace, previews it, imports an independent
 managed copy and proves the source configuration and writable disks are
 unchanged.
 
-The fixture-foreground baseline variant now runs end to end as well
-(`artifacts/phase3/recipe/20261111-215921`, 38 of 39 checks): the launch
-operation dismisses the keyguard and any system dialog that holds the focus,
-the baseline branch waits for the package manager, repeats the recorded install
-only when the package is genuinely missing, and the baseline is verified against
-the recipe's first targeted control. The baseline branch is the one open check;
-the harness now waits up to 40 minutes for a replay, because a restore with a
-cold-boot fallback plus a relaunch legitimately takes minutes.
+The fixture-foreground baseline variant is green as well
+(`artifacts/phase3/recipe/20261112-092743`, 39 of 39 checks). Both dedicated
+baseline runs are fully green, so the recipe lane is complete. Seven product
+defects were fixed to get there: the keyguard, the package-manager readiness,
+the readiness contract, the SystemUI ANR dialog, the launcher that takes the
+focus back, the repeated install of a package that is still present, and the
+untyped emulator-console error that aborted a replay without a report. The
+harness now recovers a guest that does not boot with a bounded number of
+sequential starts and waits up to 40 minutes for a replay, because a restore
+with a cold-boot fallback plus a relaunch legitimately takes minutes.
 
 The release track is implemented and produces a real installer: `tools/package-release.ps1`
 publishes the desktop, the supervisor and the CLI self-contained for win-x64,
