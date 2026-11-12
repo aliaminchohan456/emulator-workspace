@@ -1699,6 +1699,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         InstallApkCommand.RaiseCanExecuteChanged();
         LaunchSampleCommand.RaiseCanExecuteChanged();
         RotateCommand.RaiseCanExecuteChanged();
+        AdbRootCommand.RaiseCanExecuteChanged();
+        AdbUnrootCommand.RaiseCanExecuteChanged();
+        RefreshAdbStateCommand.RaiseCanExecuteChanged();
     }
 
     private static double Percentile(List<double> values, double fraction)

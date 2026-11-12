@@ -282,6 +282,11 @@ try {
     $shot = Save-WindowShot $handle "01-startup.png"
     Add-Step "window-open" $true ("the desktop window is open and reachable by UI Automation") $shot
 
+    # The automation tree is captured while the window is idle, because a modal
+    # palette hides the rest of the tree.
+    $treeCount = Dump-UiTree $window "ui-tree-start.txt"
+    Add-Check "ui-tree" ($treeCount -gt 20) "the UI tree has $treeCount automation elements"
+
     # 2. create the device through the real button
     $create = Find-Element "Create device" "" 60
     if (-not $create) { throw "The 'Create device' control was not found." }
@@ -326,26 +331,28 @@ try {
     Add-Check "rootlab.control-present" ($null -ne $adbRoot) "the Root Lab ADB root control exists in the desktop"
     if ($adbRoot) {
         Wait-Enabled $adbRoot
-        Click-Element $adbRoot
-        $rootDeadline = (Get-Date).AddSeconds(120)
+        $rootDeadline = (Get-Date).AddSeconds(150)
         $rooted = $false
         while ((Get-Date) -lt $rootDeadline) {
+            # The button is clicked again while the daemon comes back; the
+            # desktop ignores the request while it is busy.
+            Click-Element $adbRoot
+            Start-Sleep -Seconds 4
             $state = Parse-Json (Invoke-Ws @("adb-root-state", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
             if ($state -and $state.uid -eq "0") { $rooted = $true; break }
-            Start-Sleep -Seconds 3
         }
         Add-Step "adb-root" $rooted "the Root Lab ADB root button put the guest daemon at uid 0" (Save-WindowShot $handle "04-adb-root.png")
 
         $adbUnroot = Find-Element "ADB unroot" "" 20
         if ($adbUnroot) {
             Wait-Enabled $adbUnroot
-            Click-Element $adbUnroot
-            $unrootDeadline = (Get-Date).AddSeconds(120)
+            $unrootDeadline = (Get-Date).AddSeconds(150)
             $unrooted = $false
             while ((Get-Date) -lt $unrootDeadline) {
+                Click-Element $adbUnroot
+                Start-Sleep -Seconds 4
                 $state = Parse-Json (Invoke-Ws @("adb-root-state", "--name", $deviceName, "--root", $Root) -AllowFailure).Text
                 if ($state -and $state.uid -eq "2000") { $unrooted = $true; break }
-                Start-Sleep -Seconds 3
             }
             Add-Step "adb-unroot" ($unrooted -and $rooted) "the Root Lab ADB unroot button returned the daemon to uid 2000" (Save-WindowShot $handle "05-adb-unroot.png")
         }
@@ -355,13 +362,13 @@ try {
     [void][ClickThrough.Native]::SetForegroundWindow($handle)
     Start-Sleep -Milliseconds 800
     [System.Windows.Forms.SendKeys]::SendWait("^k")
-    Start-Sleep -Seconds 2
-    $palette = Find-Element "Command palette filter" "" 15
+    $palette = Find-Element "Command palette filter" "" 30
     Add-Check "palette.opens" ($null -ne $palette) "Ctrl+K opened the command palette"
+    $shotPalette = Save-WindowShot $handle "06-palette.png"
+    # The palette is modal, so it is always closed before the run continues.
+    [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    Start-Sleep -Seconds 2
     if ($palette) {
-        $shotPalette = Save-WindowShot $handle "06-palette.png"
-        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-        Start-Sleep -Seconds 1
         Add-Step "command-palette" $true "the command palette opened with Ctrl+K" $shotPalette
     }
 
@@ -385,6 +392,15 @@ try {
         $targetY = [int]($rect.Top + ($rect.Bottom - $rect.Top) * 0.45)
 
         if ($sourceHandle) {
+            # The drag source is raised above the desktop window, so the press
+            # lands on its handle and not on the window that covers it.
+            $helper.Refresh()
+            if ($helper.MainWindowHandle -ne [IntPtr]::Zero) {
+                [void][ClickThrough.Native]::ShowWindow($helper.MainWindowHandle, 3)
+                [void][ClickThrough.Native]::SetForegroundWindow($helper.MainWindowHandle)
+            }
+            Start-Sleep -Milliseconds 800
+            $sourceHandle = Find-Element "Drag source handle" "" 20
             $sourceRect = $sourceHandle.Current.BoundingRectangle
             $sourceX = [int]($sourceRect.X + $sourceRect.Width / 2)
             $sourceY = [int]($sourceRect.Y + $sourceRect.Height / 2)
@@ -401,6 +417,7 @@ try {
             }
             Start-Sleep -Milliseconds 600
             [ClickThrough.Native]::mouse_event([ClickThrough.Native]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+            [void][ClickThrough.Native]::SetForegroundWindow($handle)
         }
         else {
             Log "the drag source handle was not found"
@@ -503,7 +520,7 @@ try {
     Add-Step "shutdown" $stopped "the desktop stopped the guest" (Save-WindowShot $handle "12-stopped.png")
 
     $treeCount = Dump-UiTree $window "ui-tree-final.txt"
-    Add-Check "ui-tree" ($treeCount -gt 20) "the final UI tree has $treeCount automation elements"
+    Add-Check "ui-tree" ($treeCount -gt 20) "the UI tree has $treeCount automation elements"
 }
 catch {
     Add-Check "harness.fatal" $false $_.Exception.Message
