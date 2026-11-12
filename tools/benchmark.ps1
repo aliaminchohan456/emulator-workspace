@@ -114,6 +114,11 @@ function Summary([double[]]$values) {
     }
 }
 
+function First-Line([string]$text) {
+    if (-not $text) { return "" }
+    return (($text -split "`r?`n") | Select-Object -First 1)
+}
+
 function Get-EngineCount {
     return @(Get-CimInstance Win32_Process -Filter "Name='qemu-system-x86_64-headless.exe'" -ErrorAction SilentlyContinue).Count
 }
@@ -284,14 +289,35 @@ try {
     Log ("warm restore p50={0}s p95={1}s over {2} samples" -f $report.scenarios["warmRestore"].p50, $report.scenarios["warmRestore"].p95, $report.scenarios["warmRestore"].samples)
 
     # ------------------------------------------------- input latency and frames
-    if ($Apk) {
-        Invoke-Ws @("install", "--name", $guest, "--path", (Join-Path $Root "apps\ws-sample.apk"), "--root", $Root) -AllowFailure | Out-Null
-        Invoke-Ws @("launch", "--name", $guest, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure | Out-Null
-        Start-Sleep -Seconds 8
+    # The guest has to be up again after the restore sequence.
+    $status = Parse-Json (Invoke-Ws @("status", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
+    if (-not $status -or $status.state -ne "Running") {
+        Log "the guest is not running after the restores; it is started again"
+        Invoke-Ws @("start", "--name", $guest, "--root", $Root) -AllowFailure | Out-Null
+        Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) -AllowFailure | Out-Null
     }
 
-    $identity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
-    $serial = $identity.serial
+    if ($Apk) {
+        $install = Invoke-Ws @("install", "--name", $guest, "--apk", (Join-Path $Root "apps\ws-sample.apk"), "--root", $Root) -AllowFailure
+        Log ("install: {0}" -f (First-Line $install.Text))
+        $launch = Invoke-Ws @("launch", "--name", $guest, "--package", "dev.emulatorworkspace.sample", "--root", $Root) -AllowFailure
+        Log ("launch: {0}" -f (First-Line $launch.Text))
+        Start-Sleep -Seconds 10
+    }
+
+    # The serial is read with retries, because the ADB server needs a moment
+    # after the restore sequence.
+    $serial = ""
+    for ($attempt = 0; $attempt -lt 12 -and -not $serial; $attempt++) {
+        $identity = Parse-Json (Invoke-Ws @("adb-identity", "--name", $guest, "--json", "--root", $Root) -AllowFailure).Text
+        if ($identity -and $identity.serial) {
+            $serial = $identity.serial
+            break
+        }
+        Log ("the serial of the guest is not visible yet (attempt {0})" -f ($attempt + 1))
+        Start-Sleep -Seconds 5
+    }
+    Log ("the guest serial is {0}" -f $serial)
     if ($serial) {
         $logcat = Join-Path $out "bench-logcat.txt"
         Start-Process -FilePath $adb -ArgumentList "-s", $serial, "logcat", "-c" -WindowStyle Hidden | Out-Null
@@ -299,18 +325,19 @@ try {
             # The marker of the sample scene changes on every tap, so the
             # dispatch-to-response latency is measured from the tap to the log
             # line the guest writes for it.
+            & $adb -s $serial logcat -c 2>&1 | Out-Null
             $started = Get-Date
             & $adb -s $serial shell input tap 540 1200 | Out-Null
-            $deadline = (Get-Date).AddSeconds(5)
+            $deadline = (Get-Date).AddSeconds(6)
             $seen = $false
             while ((Get-Date) -lt $deadline) {
-                $text = (& $adb -s $serial logcat -d -t 20 2>&1 | Out-String)
+                $text = (& $adb -s $serial logcat -d -v threadtime 2>&1 | Out-String)
                 if ($text -match "TAP index=") { $seen = $true; break }
                 Start-Sleep -Milliseconds 100
             }
             $elapsed = ((Get-Date) - $started).TotalMilliseconds
             if ($seen) { [void]$latencySamples.Add($elapsed) }
-            Log ("input latency {0}/{1}: {2:N0} ms" -f $sample, $Samples, $elapsed)
+            Log ("input latency {0}/{1}: {2:N0} ms seen={3}" -f $sample, $Samples, $elapsed, $seen)
             Start-Sleep -Milliseconds 300
         }
         & $adb -s $serial logcat -d -t 400 | Set-Content -Path $logcat -Encoding UTF8
@@ -343,7 +370,7 @@ try {
                 $deadline = (Get-Date).AddSeconds(6)
                 $seen = $false
                 while ((Get-Date) -lt $deadline) {
-                    $text = (& $adb -s $twoIdentity.serial logcat -d -t 20 2>&1 | Out-String)
+                    $text = (& $adb -s $twoIdentity.serial logcat -d -v threadtime 2>&1 | Out-String)
                     if ($text -match "TAP index=") { $seen = $true; break }
                     Start-Sleep -Milliseconds 100
                 }

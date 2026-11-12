@@ -2060,6 +2060,133 @@ public sealed class InstanceManager
         return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
     }
 
+/// <summary>
+    /// Probes the simulation capabilities of a guest. Every capability is
+    /// checked against the running guest, so the answer is the observed
+    /// behaviour and not a promise. A capability that the guest does not
+    /// offer reports the exact reason.
+    /// </summary>
+    public async Task<JsonObject> SimulationProbeAsync(string name, CancellationToken cancellationToken)
+    {
+        var record = RuntimeFor(name).Record;
+        var capabilities = new JsonArray();
+
+        async Task<string> Shell(params string[] command)
+        {
+            try
+            {
+                return (await _adb.ShellAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false)).Trim();
+            }
+            catch (Exception ex)
+            {
+                return "! " + ex.Message;
+            }
+        }
+
+        async Task<string> Console(params string[] command)
+        {
+            try
+            {
+                return (await _adb.EmulatorConsoleAsync(record.AdbSerial, command, cancellationToken).ConfigureAwait(false)).Trim();
+            }
+            catch (Exception ex)
+            {
+                return "! " + ex.Message;
+            }
+        }
+
+        void Add(string capability, bool supported, string evidence, string reason)
+        {
+            capabilities.Add(new JsonObject
+            {
+                ["capability"] = capability,
+                ["supported"] = supported,
+                ["evidence"] = evidence.Length > 400 ? evidence[..400] : evidence,
+                ["reason"] = reason,
+            });
+        }
+
+        // The emulator console drives the simulated hardware.
+        var network = await Console("network", "status").ConfigureAwait(false);
+        Add("network speed and latency",
+            !network.StartsWith("!", StringComparison.Ordinal),
+            network,
+            network.StartsWith("!", StringComparison.Ordinal) ? network : "");
+
+        var routes = await Console("route").ConfigureAwait(false);
+        Add("routes and offline mode",
+            !routes.StartsWith("!", StringComparison.Ordinal),
+            routes,
+            routes.StartsWith("!", StringComparison.Ordinal) ? routes : "");
+
+        var power = await Console("power", "capacity").ConfigureAwait(false);
+        Add("battery and charging",
+            !power.StartsWith("!", StringComparison.Ordinal),
+            power,
+            power.StartsWith("!", StringComparison.Ordinal) ? power : "");
+
+        var sensors = await Console("sensor", "status").ConfigureAwait(false);
+        Add("sensors",
+            !sensors.StartsWith("!", StringComparison.Ordinal),
+            sensors,
+            sensors.StartsWith("!", StringComparison.Ordinal) ? sensors : "");
+
+        // The guest itself reports the hardware it exposes.
+        var features = await Shell("pm", "list", "features").ConfigureAwait(false);
+        var featureLines = features.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        bool HasFeature(string name) => featureLines.Any(line => line.Contains(name, StringComparison.Ordinal));
+
+        Add("virtual camera",
+            HasFeature("camera"),
+            string.Join(", ", featureLines.Where(l => l.Contains("camera", StringComparison.Ordinal))),
+            HasFeature("camera") ? "" : "the guest exposes no camera feature");
+
+        Add("microphone",
+            HasFeature("microphone"),
+            string.Join(", ", featureLines.Where(l => l.Contains("microphone", StringComparison.Ordinal))),
+            HasFeature("microphone") ? "" : "the guest exposes no microphone feature");
+
+        Add("telephony and SMS",
+            HasFeature("telephony"),
+            string.Join(", ", featureLines.Where(l => l.Contains("telephony", StringComparison.Ordinal))),
+            HasFeature("telephony") ? "" : "the guest exposes no telephony feature");
+
+        var locale = await Shell("getprop", "persist.sys.locale").ConfigureAwait(false);
+        var timezone = await Shell("getprop", "persist.sys.timezone").ConfigureAwait(false);
+        Add("locale and timezone",
+            !locale.StartsWith("!", StringComparison.Ordinal) && !timezone.StartsWith("!", StringComparison.Ordinal),
+            $"locale={locale} timezone={timezone}",
+            string.Empty);
+
+        var size = await Shell("wm", "size").ConfigureAwait(false);
+        var density = await Shell("wm", "density").ConfigureAwait(false);
+        Add("display settings",
+            !size.StartsWith("!", StringComparison.Ordinal) && !density.StartsWith("!", StringComparison.Ordinal),
+            $"{size} / {density}",
+            string.Empty);
+
+        var offline = await Shell("settings", "get", "global", "airplane_mode_on").ConfigureAwait(false);
+        Add("airplane and offline mode",
+            !offline.StartsWith("!", StringComparison.Ordinal),
+            $"airplane_mode_on={offline}",
+            string.Empty);
+
+        var gps = await Console("geo", "fix", "0", "0").ConfigureAwait(false);
+        Add("GPS",
+            !gps.StartsWith("!", StringComparison.Ordinal),
+            gps,
+            gps.StartsWith("!", StringComparison.Ordinal) ? gps : "");
+
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["serial"] = record.AdbSerial,
+            ["capabilities"] = capabilities,
+            ["supported"] = capabilities.Count(c => c?["supported"]?.GetValue<bool>() == true),
+            ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
     public async Task<JsonObject> ForegroundStatusAsync(string name, CancellationToken cancellationToken)
     {
         var record = RuntimeFor(name).Record;

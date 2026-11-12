@@ -169,6 +169,7 @@ public static class OperationNames
     public const string AppDeepLink = "app.deepLink";
     public const string AppInstrumentation = "app.instrumentation";
     public const string LogcatExport = "logcat.export";
+    public const string SimulationProbe = "simulation.probe";
     public const string DiagnosticsCrash = "diagnostics.crash";
     public const string DiagnosticsBugreport = "diagnostics.bugreport";
 

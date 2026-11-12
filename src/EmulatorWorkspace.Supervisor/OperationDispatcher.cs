@@ -1332,6 +1332,9 @@ public sealed class OperationDispatcher
                     cancellationToken).ConfigureAwait(false);
             }
 
+            case OperationNames.SimulationProbe:
+                return await _manager.SimulationProbeAsync(name, cancellationToken).ConfigureAwait(false);
+
             case OperationNames.LogcatExport:
             {
                 var lines = JsonArgs.Int(args, "lines") ?? 500;

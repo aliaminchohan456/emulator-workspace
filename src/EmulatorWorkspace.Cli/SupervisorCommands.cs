@@ -335,6 +335,11 @@ internal static class SupervisorCommands
                 requestArgs["runner"] = args.Optional("runner") ?? "";
                 deadline = TimeSpan.FromMinutes(5);
                 break;
+            case "simulation-probe":
+                op = OperationNames.SimulationProbe;
+                requestArgs["name"] = name;
+                deadline = TimeSpan.FromMinutes(3);
+                break;
             case "logcat-export":
                 op = OperationNames.LogcatExport;
                 requestArgs["name"] = name;
