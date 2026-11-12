@@ -586,6 +586,12 @@ All tasks start open. Check off an implementation task after its scoped verifica
   force-kill. The 30-cycle benchmark records each start, wait, stop and
   post-stop listener state. Verify both the interrupted retry and cycle
   lane on the updated runtime.
+- Release build at `5448d15df6c2fdbe67ca5c35532509391420e701` passed
+  59/59 tests. The separate unsigned 0.1.4 MSI is
+  `D:/Release/emulator-workspace-0.1.4-20261113-042924/EmulatorWorkspace-0.1.4.msi`,
+  SHA-256 `0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d`.
+  Its stage is `D:/Release/stage-20261113-042924/payload`. Verify the two
+  recipe baselines and restart cleanup before repeating final acceptance.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

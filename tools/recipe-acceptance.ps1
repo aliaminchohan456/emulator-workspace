@@ -482,7 +482,8 @@ try {
     Add-Check "replay" "baseline-verified" ($replayJson.baselineVerified -eq $true) "the baseline was verified by an independent fixture assertion"
     Add-Check "replay" "network-reset" ($replayJson.networkRestored -eq "restored" -or $replayJson.networkRestored -eq "not_required") "networkRestored=$($replayJson.networkRestored)"
     $stepResults = @($replayJson.steps | ForEach-Object { $_.result })
-    Add-Check "replay" "steps-green" (@($stepResults | Where-Object { $_ -eq "failed" -or $_ -eq "expectation_failed" }).Count -eq 0) ($stepResults -join ",")
+    Add-Check "replay" "steps-green" ($stepResults.Count -gt 0 -and
+        @($stepResults | Where-Object { $_ -notin @("ok", "baseline_restored") }).Count -eq 0) ($stepResults -join ",")
 
     # The bystander keeps its own state.
     $bystanderMarkerAfter = Marker-Text $identityBystander.serial

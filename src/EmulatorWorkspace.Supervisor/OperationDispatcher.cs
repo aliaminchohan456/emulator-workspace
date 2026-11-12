@@ -875,6 +875,23 @@ public sealed class OperationDispatcher
         int attempts = 30,
         Func<Task>? relaunch = null)
     {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMinutes(2));
+        try
+        {
+            return await WaitForGuestUiCoreAsync(session, sink, package, attempts, relaunch, deadline.Token)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> WaitForGuestUiCoreAsync(
+        AgentSession session, IEventSink sink, string? package, int attempts,
+        Func<Task>? relaunch, CancellationToken cancellationToken)
+    {
         for (var attempt = 0; attempt < attempts; attempt++)
         {
             if (!string.IsNullOrEmpty(package))
