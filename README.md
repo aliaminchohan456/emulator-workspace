@@ -29,9 +29,9 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 | Recipe record/replay | `tools/recipe-acceptance.ps1` | Both baseline variants green at 39/39 |
 | WPF click-through | `tools/wpf-clickthrough-acceptance.ps1` | UI Automation against the live window |
 | Benchmark plan | `tools/benchmark.ps1` | p50/p95, single and two guest, 30 start/stop cycles |
-| Windows packaging (WiX 5 MSI, SBOM, provenance) | `tools/package-release.ps1`, `packaging/` | Installer builds and carries the full payload |
-| Installer acceptance | `tools/installer-acceptance.ps1` | Clean install, upgrade, uninstall |
-| Unit tests | `tests/EmulatorWorkspace.Tests` | 56 passing |
+| Windows packaging (WiX 5 MSI, SBOM, provenance) | `tools/package-release.ps1`, `packaging/` | Verified unsigned 0.1.4 payload |
+| Installer acceptance | `tools/installer-acceptance.ps1` | 22/22 on exact 0.1.4, including profile-preserving upgrade and uninstall |
+| Unit tests | `tests/EmulatorWorkspace.Tests` | 64 passing on the current source |
 
 ## Release documentation
 
@@ -47,17 +47,18 @@ controller, frame capture, input, named snapshots, and the Magisk boot input.
 ## Building the release candidate
 
 ```powershell
-# the installer, the SBOM, the notices and the provenance
-powershell -ExecutionPolicy Bypass -File tools\package-release.ps1 -Version 0.1.1 -OutDir D:\Release
+# Rebuild the fixture for a new candidate, then package it.
+powershell -ExecutionPolicy Bypass -File sample\build-sample-apk.ps1
+powershell -ExecutionPolicy Bypass -File tools\package-release.ps1 -Version 0.1.5 -OutDir D:\Release
 
 # clean install, first launch and boot, and uninstall
-powershell -ExecutionPolicy Bypass -File tools\installer-acceptance.ps1 -Installer D:\Release\emulator-workspace-0.1.1-<stamp>\EmulatorWorkspace-0.1.1.msi
+powershell -ExecutionPolicy Bypass -File tools\installer-acceptance.ps1 -Installer 'D:\Release\emulator-workspace-0.1.5-<stamp>\EmulatorWorkspace-0.1.5.msi'
 ```
 
-The preserved 0.1.1 candidate and exact acceptance are listed in
-[release notes](docs/release-notes.md). The disconnected check uses
-`-VerifyDisconnectedReuse` inside an isolated Windows environment.
-[Run commands and evidence](task.md)
+The release notes list the preserved 0.1.1 MSI and the exact 0.1.4
+installer and runtime results. Release readiness remains pending. The
+disconnected check uses `-VerifyDisconnectedReuse` inside an isolated
+Windows environment. [Release notes](docs/release-notes.md) · [Run commands and evidence](task.md)
 
 ## Prerequisites
 
