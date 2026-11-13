@@ -700,6 +700,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   desktop smoke check. The full live demo uses
   `tools/wpf-clickthrough-acceptance.ps1 -RecordDemo` after the timing
   runs, with the fixture guest and an isolated workspace.
+- Unsigned 0.1.5 is built from `a0624599ac1bbd7cea5d7c15a22cee308f7c615a`.
+  MSI `D:/Release/emulator-workspace-0.1.5-20261113-092932/EmulatorWorkspace-0.1.5.msi`,
+  SHA-256 `0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c`,
+  Authenticode `NotSigned`. The 426 files in
+  `D:/Release/stage-20261113-092931-015/payload` match the inventory,
+  including the rebuilt instrumentation fixture. The network-disabled
+  kit is `D:/WS-OfflineSandbox-015-20261113-093742/offline-acceptance.wsb`.
+  After the 0.1.4 soak and cleanup, run quiet-host comparisons and
+  `tools/candidate-regression.ps1 -RequireInstrumentation` on the 0.1.5
+  payload, and exercise the installed 0.1.4 to 0.1.5 upgrade.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

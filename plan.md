@@ -401,3 +401,10 @@ fixture build can explicitly use the local Android debug key with
 built successfully. Run the scoped Mobile MCP comparison and the Android
 Studio deployment with one disposable guest after the timed workloads.
 Record the live desktop click-through separately.
+
+Unsigned 0.1.5 was packaged from `a062459`, with its MSI and all 426
+payload files verified against the release record and inventory. It
+includes the setup, frame, controller, readiness and fixture changes.
+The exact artifact and its pending checks are in [task.md](task.md).
+The 0.1.4 soak continues on its isolated root and will be verified through
+cleanup before any new guest workload starts.
