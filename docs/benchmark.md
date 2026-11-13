@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`, `20261113-095328`, `20261113-100133`, `20261113-100519`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`, `20261113-095328`, `20261113-100133`, `20261113-100519`, `20261113-100819`.
 
 Guest profile: AOSP API 35 x86_64 revision 2 on WHPX. Headless host GPU is the default. Renderer-specific viewport runs identify their GPU mode.
 
@@ -222,6 +222,28 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Supervisor changed-frame write p95 | 7.19 ms |
 | Desktop changed-frame decode and dispatch p95 | 81.26 ms |
 | Guest touch release to draw p95 | 22.00 ms |
+
+### Run `20261113-100819` (1 guest(s), diagnostic)
+
+This run used desktop `0.1.0+8c5bb6ca4d14ad70aa63ae34cf5cf35e9a57d7a6`. Candidate payload scope was CLI from `a0624599ac1bbd7cea5d7c15a22cee308f7c615a`. The separately built supervisor was `0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e`. The separately built fixture hash is in the evidence manifest.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 5 / 5 |
+| Dispatch to composition p50 / p95 | 362.02 / 506.56 ms |
+| Frame availability to composition p95 | 1.71 ms |
+| Supervisor frame arrival interval p95 | 117.77 ms |
+| Viewport throughput | 15.91 FPS at 540 × 1200 |
+| Dropped sequences | 12 |
+| Configured emulator GPU mode | `swiftshader_indirect` |
+| Desktop dispatch to supervisor reply p95 | 284.80 ms |
+| Supervisor controller setup p95 | 166.64 ms |
+| Supervisor controller tap p95 | 102.92 ms |
+| Dispatch to first observed changed controller frame p95 | 477.10 ms |
+| Supervisor changed-frame write p95 | 10.76 ms |
+| Desktop changed-frame decode and dispatch p95 | 79.35 ms |
+| Guest touch release to draw p95 | 9.00 ms |
 
 ## Matched cold-boot comparison `20261113-023049`
 

@@ -425,6 +425,9 @@ measured 3.59–11.82 ms for the changed-frame write and 21.92–47.87 ms
 for desktop decode and dispatch. The paired draw check measured 4–22 ms
 from touch release to draw in the guest and 183–232 ms from host
 dispatch to first observed changed controller frame on the four reused
-connections. Run the same short diagnostic with the software renderer.
+connections. With the same binaries and fixture, SwiftShader delivered
+15.91 FPS and took 277–362 ms for the same interval. Host GPU remains
+the default. Compare a lower capture size on host GPU while preserving
+the guest resolution and input mapping.
 Three verified warm restores had a 13.13 s median. Full acceptance
 counts and targets remain for the selected release build.

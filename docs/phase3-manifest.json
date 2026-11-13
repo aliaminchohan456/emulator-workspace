@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "8c5bb6c",
-  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md\n M tools/build-benchmark-doc.py",
+  "headCommit": "c2f8ee1",
+  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -35682,6 +35682,132 @@
           "name": "summary.json",
           "bytes": 3045,
           "sha256": "aa0d33a500d5281881e1b0214744d8ab96f7134874b75038ff8bc04e12c99532"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-100819",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-100819",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "c2f8ee10724497874cc4c0edeff50b2577622a45",
+      "harnessSha256": "7110A9DB731E7A709F898816A9B6155136CFA55943328A012379F8B227C3BAA0",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "CLI"
+      },
+      "fixtureOverrideSha256": "734E0E65500FBC5900D56D32F492D373CBD79FE99C527287E8DF24E6E5BE59A3",
+      "supervisorOverride": {
+        "version": "0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e",
+        "files": [
+          {
+            "sha256": "8815B2E5C316FC32D42C4B3BBEB93CDF643E59C0548128F6ECE2AD8EDB34385D",
+            "name": "EmulatorWorkspace.Supervisor.exe"
+          },
+          {
+            "sha256": "F00B91483C0F39793A5988A6AD5FBEFD6A2CCF38315553A33F9E3D36AE08BF9F",
+            "name": "EmulatorWorkspace.Supervisor.dll"
+          },
+          {
+            "sha256": "3806406D81131601E441073D77B93225A66B9538879F6A277AF65F9B8BE4D44A",
+            "name": "EmulatorWorkspace.Core.dll"
+          }
+        ]
+      },
+      "desktop": {
+        "sha256": "6E8A1964A2144F0BD6D607BB04C202591C4AF40F875664B4A0F5F9C8875622DD",
+        "assemblySha256": "DE3D866120CA25588BAC5A32470275CABDDFF2B09D2834AE8DF3E8E04AAA952B",
+        "version": "0.1.0+8c5bb6ca4d14ad70aa63ae34cf5cf35e9a57d7a6",
+        "override": true
+      },
+      "finishedUtc": "2026-11-13T05:10:23.5300673+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-TapDraw-SwiftShader-20261113-100819",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 3,
+      "lanes": {
+        "diagnostic.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.coverage",
+              "passed": true,
+              "detail": "5/5 valid samples, p95=506.56 ms, delivered=15.91 FPS",
+              "atUtc": null
+            }
+          ]
+        },
+        "diagnostic.guest-draw": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.guest-draw",
+              "passed": true,
+              "detail": "draw pairs=5, changed-frame receipt timings=5",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-100819",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 1509,
+          "sha256": "de1a1fd2a59a986ed49960668dc7145bfc4aac4268c87b815d1b64ad4feaab25"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 34815,
+          "sha256": "9612f573847b598499126b9dea29b745a72f78123235dee81a3a0f13cf9cca16"
+        },
+        {
+          "name": "guest-tap-draw.json",
+          "bytes": 338,
+          "sha256": "08a5d73793a0a47bf22935d854adf8c5cfe2adde56235e3a06cece45416ae67c"
+        },
+        {
+          "name": "guest-tap-draw.txt",
+          "bytes": 808,
+          "sha256": "80f4712400f6b858bdaac4e077ce11c8dbb20b5c05d588caca6225fe5bb561cc"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 17216,
+          "sha256": "c22fc7912f088aa5864e739df326beb9c48c8498d217ae847e9b99c92b5df1e2"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 1791,
+          "sha256": "9c610e62645ea25f382ab23e9983c567122d2e4680533599b0d9b7ac0f09851a"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 3074,
+          "sha256": "f0535d37c578792b58795ec157bf8b78d6379a93d42163b9888cb528bf637bc0"
         }
       ]
     },

@@ -755,9 +755,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   changed controller frame arrived 183–232 ms after WPF dispatch,
   or 117–181 ms after the tap reply. These are host timestamps.
   The independently built desktop, supervisor and fixture hashes
-  are recorded separately from the 0.1.5 CLI. Next, use the same
-  fixture in a five-trial `-Gpu swiftshader_indirect` diagnostic
-  and compare the controller frame receipt times with this host GPU run.
+  are recorded separately from the 0.1.5 CLI.
+- The matched software GPU diagnostic `20261113-100819` passed
+  5/5 with the same desktop, supervisor and fixture hashes. Warm
+  dispatch-to-changed-frame receipt was 277–362 ms and viewport delivery
+  was 15.91 FPS. The host GPU delivered 183–232 ms and 27.43 FPS.
+  Both guests were removed. Keep the host renderer as the default.
+  Next, expose a diagnostic-only capture-size override in
+  `tools/latency-probe.ps1` and compare five trials at 270 × 600 against
+  the existing 540 × 1200 host run. Keep guest resolution fixed and verify
+  marker and input coordinates in both runs.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
