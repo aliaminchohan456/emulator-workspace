@@ -573,12 +573,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var sdk = doctor["androidSdk"]!.AsObject();
         var gpu = doctor["gpu"]!.AsObject();
         var images = sdk["images"]!.AsArray();
-        var pinned = "system-images;android-35;default;x86_64";
+        var pins = doctor["pinned"]!.AsObject();
+        var pinned = pins["image"]!.GetValue<string>();
+        var requiredImageRevision = pins["requiredImageRevision"]?.GetValue<string>() ?? "2";
         var pinnedImage = images.FirstOrDefault(i => i!["packageId"]!.GetValue<string>() == pinned);
 
         SetupIssues.Clear();
         var acceleration = doctor["accelerationVerdict"]?.GetValue<string>() ?? "unknown";
-        if (!acceleration.Contains("usable", StringComparison.OrdinalIgnoreCase))
+        if (doctor["whpxUsable"]?.GetValue<bool>() != true)
         {
             SetupIssues.Add("WHPX is not usable. Enable Windows Hypervisor Platform, then reboot.");
         }
@@ -586,6 +588,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (pinnedImage is null)
         {
             SetupIssues.Add($"The pinned image {pinned} is not installed. Install it with sdkmanager.");
+        }
+        else if (pinnedImage["revision"]?.GetValue<string>() != requiredImageRevision)
+        {
+            SetupIssues.Add($"Install revision {requiredImageRevision} of the pinned image {pinned}.");
+        }
+
+        var emulatorVersion = sdk["emulatorVersion"]?.GetValue<string>();
+        var emulatorBuild = sdk["emulatorBuildId"]?.GetValue<string>();
+        var requiredVersion = pins["emulator"]?.GetValue<string>();
+        var requiredBuild = pins["buildId"]?.GetValue<string>();
+        if (emulatorVersion != requiredVersion || emulatorBuild != requiredBuild)
+        {
+            SetupIssues.Add($"Install Android Emulator {requiredVersion} build {requiredBuild} in this SDK.");
+        }
+        if (sdk["missingTools"] is JsonArray missingTools)
+        {
+            foreach (var tool in missingTools)
+            {
+                SetupIssues.Add($"Install the SDK component that provides {tool?.GetValue<string>()}.");
+            }
         }
 
         var freeGiB = doctor["workspaceDriveFreeGiB"]?.GetValue<double>() ?? 0;
@@ -595,11 +617,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         HasBlockingIssue = SetupIssues.Count > 0;
+        var systemImageBytes = pinnedImage?["systemImageBytes"]?.GetValue<long>();
+        var systemImageSize = systemImageBytes is long bytes ? $" ({bytes / 1073741824d:N2} GiB system.img)" : "";
         DoctorText = string.Join(Environment.NewLine, new[]
         {
             $"SDK: {sdk["root"]}",
-            $"Emulator: {sdk["emulatorVersion"]} (pinned 37.2.12.0 / 16428233)",
-            $"Image: {pinned} rev {pinnedImage?["revision"] ?? "missing"}",
+            $"Emulator: {emulatorVersion} build {emulatorBuild ?? "unknown"}",
+            $"Image: {pinned} rev {pinnedImage?["revision"] ?? "missing"}{systemImageSize}",
             $"ADB: {sdk["adbVersion"]}",
             $"Acceleration: {acceleration}",
             $"GPU: {gpu["name"]} driver {gpu["driverVersion"]}",

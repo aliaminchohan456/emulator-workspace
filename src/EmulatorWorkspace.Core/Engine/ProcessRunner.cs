@@ -106,7 +106,9 @@ public sealed record ProcessResult(int ExitCode, string StandardOutput, string S
 /// <summary>Resolves the installed Android SDK and pinned emulator binaries.</summary>
 public sealed class SdkLocator
 {
-    private static readonly Regex VersionPattern = new(@"Android emulator version\s+([0-9][^\s]*)", RegexOptions.Compiled);
+    private static readonly Regex VersionPattern = new(
+        @"Android emulator version\s+(?<version>\d+(?:\.\d+)+)(?:[ \t]+\(build_id (?<build>\d+)\))?",
+        RegexOptions.Compiled);
 
     public SdkLocator(string sdkRoot)
     {
@@ -166,7 +168,10 @@ public sealed class SdkLocator
         }
     }
 
-    public async Task<string> GetEmulatorVersionAsync(CancellationToken cancellationToken = default)
+    public async Task<string> GetEmulatorVersionAsync(CancellationToken cancellationToken = default) =>
+        (await GetEmulatorBuildAsync(cancellationToken).ConfigureAwait(false)).Version;
+
+    public async Task<(string Version, string? BuildId)> GetEmulatorBuildAsync(CancellationToken cancellationToken = default)
     {
         var result = await ProcessRunner.RunAsync(
             EmulatorExe,
@@ -182,11 +187,11 @@ public sealed class SdkLocator
                 Environment.NewLine + result.Combined.Trim());
         }
 
-        return match.Groups[1].Value;
+        return (match.Groups["version"].Value, match.Groups["build"].Success ? match.Groups["build"].Value : null);
     }
 
     /// <summary>The engine's own accelerator probe is the authoritative verdict.</summary>
-    public async Task<string> GetAccelerationVerdictAsync(CancellationToken cancellationToken = default)
+    public async Task<(bool WhpxUsable, string Verdict)> ProbeAccelerationAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -196,20 +201,25 @@ public sealed class SdkLocator
                 timeout: TimeSpan.FromSeconds(60),
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            var lines = result.Combined
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(line => line.Contains("WHPX", StringComparison.OrdinalIgnoreCase)
-                               || line.Contains("WHP", StringComparison.OrdinalIgnoreCase)
-                               || line.Contains("Hypervisor", StringComparison.OrdinalIgnoreCase)
-                               || line.Contains("accel", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            return lines.Count > 0 ? string.Join(" | ", lines) : result.Combined.Trim();
+            var lines = result.Combined.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return (IsWhpxUsable(result), string.Join(" | ", lines));
         }
-        catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException)
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or InvalidOperationException or TimeoutException)
         {
-            return "emulator-check unavailable: " + ex.Message;
+            return (false, "emulator-check unavailable: " + ex.Message);
         }
+    }
+
+    public static bool IsWhpxUsable(ProcessResult result)
+    {
+        var lines = result.Combined.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var header = Array.IndexOf(lines, "accel:");
+        return result.ExitCode == 0
+            && header >= 0
+            && header + 2 < lines.Length
+            && lines[header + 1] == "0"
+            && lines[header + 2].StartsWith("WHPX(", StringComparison.OrdinalIgnoreCase)
+            && lines[header + 2].EndsWith(" is installed and usable.", StringComparison.OrdinalIgnoreCase);
     }
 
     public static string NormalizeImageId(string image)

@@ -4,6 +4,21 @@ using Xunit;
 
 namespace EmulatorWorkspace.Tests;
 
+public sealed class AccelerationProbeTests
+{
+    [Theory]
+    [InlineData(0, "0", "WHPX(10.0.26300) is installed and usable.", true)]
+    [InlineData(0, "1", "WHPX(10.0.26300) is installed and usable.", false)]
+    [InlineData(1, "0", "WHPX(10.0.26300) is installed and usable.", false)]
+    [InlineData(0, "0", "WHPX(10.0.26300) is installed but not usable.", false)]
+    [InlineData(0, "0", "AEHD is installed and usable.", false)]
+    public void RequiresSuccessfulWhpxResult(int exitCode, string status, string verdict, bool expected)
+    {
+        var result = new ProcessResult(exitCode, $"accel:\r\n{status}\r\n{verdict}\r\naccel\r\n", "");
+        Assert.Equal(expected, SdkLocator.IsWhpxUsable(result));
+    }
+}
+
 public sealed class ApkManifestTests
 {
     [Fact]

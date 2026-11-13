@@ -24,6 +24,7 @@ public sealed class HostDiagnostics
         var os = ReadWindowsVersion();
         var gpu = ReadGpu();
         var sdk = await ReadSdkAsync(cancellationToken).ConfigureAwait(false);
+        var (whpxUsable, accelerationVerdict) = await _sdk.ProbeAccelerationAsync(cancellationToken).ConfigureAwait(false);
 
         var drive = new DriveInfo(Path.GetPathRoot(workspaceRoot) ?? "C:\\");
 
@@ -43,7 +44,8 @@ public sealed class HostDiagnostics
             WorkspaceDriveFreeBytes = drive.AvailableFreeSpace,
             WorkspaceDriveTotalBytes = drive.TotalSize,
             Gpu = gpu,
-            AccelerationVerdict = await _sdk.GetAccelerationVerdictAsync(cancellationToken).ConfigureAwait(false),
+            AccelerationVerdict = accelerationVerdict,
+            WhpxUsable = whpxUsable,
             HyperV = ReadHyperVSummary(),
             AndroidSdk = sdk,
         };
@@ -146,9 +148,10 @@ public sealed class HostDiagnostics
     private async Task<SdkReport> ReadSdkAsync(CancellationToken cancellationToken)
     {
         string emulatorVersion;
+        string? emulatorBuildId = null;
         try
         {
-            emulatorVersion = await _sdk.GetEmulatorVersionAsync(cancellationToken).ConfigureAwait(false);
+            (emulatorVersion, emulatorBuildId) = await _sdk.GetEmulatorBuildAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -197,12 +200,16 @@ public sealed class HostDiagnostics
             adbVersion = "unavailable: " + ex.Message;
         }
 
+        var missingTools = new[] { _sdk.EmulatorExe, _sdk.AdbExe, _sdk.AvdManager }
+            .Where(path => !File.Exists(path)).ToArray();
         return new SdkReport(
             _sdk.SdkRoot,
             _sdk.EmulatorExe,
             emulatorVersion,
+            emulatorBuildId,
             _sdk.AdbExe,
             adbVersion,
+            missingTools,
             images.OrderBy(i => i.PackageId, StringComparer.OrdinalIgnoreCase).ToList());
     }
 
@@ -286,10 +293,11 @@ public sealed class HostReport
     public GpuInfo Gpu { get; set; } = new("unknown", "unknown", null);
 
     public string AccelerationVerdict { get; set; } = "";
+    public bool WhpxUsable { get; set; }
 
     public string HyperV { get; set; } = "";
 
-    public SdkReport AndroidSdk { get; set; } = new("", "", "", "", "", new List<InstalledImage>());
+    public SdkReport AndroidSdk { get; set; } = new("", "", "", null, "", "", [], []);
 
     public double TotalMemoryGiB => TotalMemoryBytes / 1024d / 1024d / 1024d;
 
@@ -326,6 +334,8 @@ public sealed record SdkReport(
     string Root,
     string EmulatorPath,
     string EmulatorVersion,
+    string? EmulatorBuildId,
     string AdbPath,
     string AdbVersion,
+    IReadOnlyList<string> MissingTools,
     IReadOnlyList<InstalledImage> Images);

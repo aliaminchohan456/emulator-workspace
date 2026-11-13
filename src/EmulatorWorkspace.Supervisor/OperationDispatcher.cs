@@ -1841,20 +1841,24 @@ public sealed class OperationDispatcher
                 ["driverDate"] = report.Gpu.DriverDate,
             },
             ["accelerationVerdict"] = report.AccelerationVerdict,
+            ["whpxUsable"] = report.WhpxUsable,
             ["hyperV"] = report.HyperV,
             ["androidSdk"] = new JsonObject
             {
                 ["root"] = report.AndroidSdk.Root,
                 ["emulatorPath"] = report.AndroidSdk.EmulatorPath,
                 ["emulatorVersion"] = report.AndroidSdk.EmulatorVersion,
+                ["emulatorBuildId"] = report.AndroidSdk.EmulatorBuildId,
                 ["adbPath"] = report.AndroidSdk.AdbPath,
                 ["adbVersion"] = report.AndroidSdk.AdbVersion,
+                ["missingTools"] = new JsonArray(report.AndroidSdk.MissingTools.Select(path => (JsonNode?)JsonValue.Create(path)).ToArray()),
                 ["images"] = images,
             },
             ["pinned"] = new JsonObject
             {
                 ["image"] = "system-images;android-35;default;x86_64",
                 ["imageRevision"] = _sdk.ImageRevision("system-images;android-35;default;x86_64"),
+                ["requiredImageRevision"] = "2",
                 ["emulator"] = "37.2.12.0",
                 ["buildId"] = "16428233",
             },
