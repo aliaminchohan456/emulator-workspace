@@ -417,9 +417,9 @@ public sealed class InstanceManager
                         await PublishProgress(name, "adb_online", stages).ConfigureAwait(false);
                     }
 
-                    var boot = await _adb.GetPropAsync(record.AdbSerial, "sys.boot_completed", cancellationToken)
+                    var (booted, focus) = await ProbeInteractiveAsync(record, cancellationToken)
                         .ConfigureAwait(false);
-                    if (boot.Trim() == "1")
+                    if (booted)
                     {
                         if (stages.BootCompletedUtc is null)
                         {
@@ -430,15 +430,11 @@ public sealed class InstanceManager
                             await PublishProgress(name, "boot_completed", stages).ConfigureAwait(false);
                         }
 
-                        if (stages.InteractiveUtc is null)
+                        if (stages.InteractiveUtc is null && focus is not null)
                         {
-                            var focus = await ForegroundAsync(record, cancellationToken).ConfigureAwait(false);
-                            if (!string.IsNullOrWhiteSpace(focus))
-                            {
-                                stages = stages with { InteractiveUtc = DateTimeOffset.UtcNow };
-                                runtime.Ready = stages;
-                                await PublishProgress(name, "interactive", stages).ConfigureAwait(false);
-                            }
+                            stages = stages with { InteractiveUtc = DateTimeOffset.UtcNow };
+                            runtime.Ready = stages;
+                            await PublishProgress(name, "interactive", stages).ConfigureAwait(false);
                         }
 
                         if (stages.InteractiveUtc is not null)
@@ -742,16 +738,8 @@ public sealed class InstanceManager
             {
                 try
                 {
-                    var probe = await _adb.RunAsync(
-                            record.AdbSerial,
-                            new[] { "shell", "getprop sys.boot_completed; dumpsys -t 5 window" },
-                            TimeSpan.FromSeconds(8),
-                            deadline.Token)
-                        .ConfigureAwait(false);
-                    var output = probe.StandardOutput.AsSpan().TrimStart();
-                    var endOfBootProperty = output.IndexOf('\n');
-                    if (probe.ExitCode == 0 && endOfBootProperty > 0 && output[..endOfBootProperty].Trim().SequenceEqual("1")
-                        && ReadFocusedWindow(probe.StandardOutput) is not null)
+                    var (booted, focus) = await ProbeInteractiveAsync(record, deadline.Token).ConfigureAwait(false);
+                    if (booted && focus is not null)
                     {
                         return true;
                     }
@@ -768,6 +756,19 @@ public sealed class InstanceManager
         {
             return false;
         }
+    }
+
+    private async Task<(bool Booted, string? Focus)> ProbeInteractiveAsync(
+        InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var probe = await _adb.RunAsync(
+            record.AdbSerial,
+            new[] { "shell", """boot=$(getprop sys.boot_completed); echo "$boot"; if [ "$boot" = 1 ]; then dumpsys -t 5 window; fi""" },
+            TimeSpan.FromSeconds(8), cancellationToken).ConfigureAwait(false);
+        var output = probe.StandardOutput.AsSpan().TrimStart();
+        var endOfBootProperty = output.IndexOf('\n');
+        var booted = endOfBootProperty > 0 && output[..endOfBootProperty].Trim().SequenceEqual("1");
+        return (booted, probe.ExitCode == 0 && booted ? ReadFocusedWindow(probe.StandardOutput) : null);
     }
 
     public async Task<byte[]> CapturePngAsync(
@@ -1346,8 +1347,9 @@ public sealed class InstanceManager
     private async Task<ulong> RequireTransportAsync(
         InstanceRecord record, string errorCode, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(record.EngineStartTimeUtc)
-            || !NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
+        var pid = record.EnginePid;
+        var startedUtc = record.EngineStartTimeUtc;
+        if (string.IsNullOrWhiteSpace(startedUtc) || !NativeProcess.IsAlive(pid, startedUtc))
         {
             throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no live managed engine.");
         }
@@ -1355,7 +1357,9 @@ public sealed class InstanceManager
         var listing = await _adb.ListDevicesAsync(cancellationToken).ConfigureAwait(false);
         var transport = AdbIdentity.Find(listing, record.AdbSerial);
         if (transport?.State != "device" || !ulong.TryParse(transport.TransportId, NumberStyles.None,
-                CultureInfo.InvariantCulture, out var transportId) || transportId == 0)
+                CultureInfo.InvariantCulture, out var transportId) || transportId == 0
+            || pid != record.EnginePid || startedUtc != record.EngineStartTimeUtc
+            || !NativeProcess.IsAlive(pid, startedUtc))
         {
             throw new SupervisorOperationException(errorCode, "The managed guest has no usable ADB transport ID.");
         }
@@ -2548,12 +2552,21 @@ public sealed class InstanceManager
         Func<EmulatorControlChannel, Task<T>> action,
         CancellationToken cancellationToken)
     {
+        var pid = record.EnginePid;
+        var startedUtc = record.EngineStartTimeUtc;
+        if (string.IsNullOrWhiteSpace(startedUtc) || !NativeProcess.IsAlive(pid, startedUtc))
+        {
+            throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no verified live engine.");
+        }
+
         var discovery = await EmulatorDiscovery.ReadAsync(_adb, record.AdbSerial, cancellationToken)
             .ConfigureAwait(false);
 
         if (discovery.AdbPort != record.ConsolePort + 1
             || discovery.GrpcPort != record.GrpcPort
-            || discovery.AvdName != record.AvdName)
+            || discovery.AvdName != record.AvdName
+            || pid != record.EnginePid || startedUtc != record.EngineStartTimeUtc
+            || !NativeProcess.IsAlive(pid, startedUtc))
         {
             throw new SupervisorOperationException(
                 ErrorCodes.ControllerFailure,

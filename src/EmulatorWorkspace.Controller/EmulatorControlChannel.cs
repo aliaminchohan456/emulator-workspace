@@ -134,12 +134,6 @@ public sealed class EmulatorControlChannel : IDisposable
             Expiration = Touch.Types.EventExpiration.NeverExpire,
         };
 
-        await _controller.sendTouchAsync(
-            new TouchEvent { Touches = { down } },
-            CreateOptions(TimeSpan.FromSeconds(20), cancellationToken)).ResponseAsync.ConfigureAwait(false);
-
-        await Task.Delay(90, cancellationToken).ConfigureAwait(false);
-
         var up = new Touch
         {
             X = x,
@@ -149,9 +143,27 @@ public sealed class EmulatorControlChannel : IDisposable
             Expiration = Touch.Types.EventExpiration.NeverExpire,
         };
 
-        await _controller.sendTouchAsync(
-            new TouchEvent { Touches = { up } },
-            CreateOptions(TimeSpan.FromSeconds(20), cancellationToken)).ResponseAsync.ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            await _controller.sendTouchAsync(
+                new TouchEvent { Touches = { down } },
+                CreateOptions(TimeSpan.FromSeconds(5), cancellationToken)).ResponseAsync.ConfigureAwait(false);
+            await Task.Delay(32, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                await _controller.sendTouchAsync(
+                    new TouchEvent { Touches = { up } },
+                    CreateOptions(TimeSpan.FromSeconds(2), CancellationToken.None)).ResponseAsync.ConfigureAwait(false);
+            }
+            catch (RpcException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Preserve cancellation after attempting to release the contact.
+            }
+        }
     }
 
     public async Task SwipeAsync(
