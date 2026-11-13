@@ -96,7 +96,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Build the reproducible installer or installable release candidate. Produce hashes, dependency inventory or SBOM, notices, provenance, and signing status. Verify clean install, first launch, offline reuse with installed dependencies, upgrade preserving profiles, and uninstall.
   `tools/package-release.ps1` publishes a self-contained win-x64 payload, a **per-user WiX 5 MSI**, the SBOM, notices and provenance. Historical unsigned `EmulatorWorkspace-0.1.0.msi` is 55,380,192 bytes with SHA-256 `8742367339f2b0b4daa65ba23ddf2e842ead707b52b9a344e3835d0d7f96fc5f`. Installer acceptance `20261112-194153` passed 16/16 checks covering clean install, first launch, pinned guest boot, local dependency reuse, upgrade and uninstall with profiles retained. The preserved 0.1.1 installer passed 21/21 checks. Disconnected reuse and signed final acceptance remain pending.
 - [ ] Publish setup and recovery commands, architecture decisions, client setup and contract, permissions and compatibility matrices, and the reproducible lab build procedure. Attach first-run and failure screenshots, demo, test outputs, exact versions, benchmark samples, and the remaining gates with their next actions.
-  `docs/release-notes.md` publishes the package layout, the pins, the first-run flow, the architecture, the recovery commands, the developer-tooling commands and the known limitations. The demo recording and the first-run/failure screenshots are still open.
+  `docs/release-notes.md` publishes the package layout, the pins, the first-run flow, the architecture, the recovery commands, the developer-tooling commands and the known limitations. The 0.1.4 first-run and missing-image captures passed. A live demo recording is still open.
 
 ## Milestone log
 
@@ -154,7 +154,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | The release signing identity | No user-owned code-signing certificate was supplied, so the candidate is unsigned. | Supply the certificate to `tools/package-release.ps1 -CertificateThumbprint` and rebuild; the provenance records the signing status either way. |
 | Stock Google Play API 36 and API 35 | Both profiles booted and ran the sample. API 36 restored the named snapshot. API 35 16 KB rolled back the fixture with a cold boot. | Investigate the 16 KB restore path and rerun `tools/play-image-acceptance.ps1` for that package. |
 | 150% and mixed-DPI displays, paths with spaces and non-ASCII names | Only 100% and 125% scaling were exercised, and the workspace roots used plain paths. | Repeat the WPF click-through on a 150% display and run the harnesses with a root path that contains spaces and non-ASCII characters. |
-| The demo recording and the first-run and failure screenshots | Not produced. | Record the WPF click-through and capture the first-run panel and a failure state as PNGs. |
+| Demo and WPF screenshots | Exact 0.1.4 first-run and missing-image screenshots verified in `20261113-084323` and `20261113-084356`. | Record the live WPF click-through after timed host tests. |
 
 ### Continuation from `806251f`
 
@@ -652,6 +652,22 @@ All tasks start open. Check off an implementation task after its scoped verifica
   `D:/WS-OfflineSandbox-014-20261113-064035/offline-acceptance.wsb`.
   The copied candidate hash matches the MSI. Administrator enablement
   and usable nested WHPX are still required.
+- The verified 0.1.4 desktop displayed the first-run panel and enabled
+  Create with the pinned SDK (`20261113-084323`, 3/3). A separate SDK
+  directory exposed the installed tools while omitting the pinned image.
+  The desktop displayed the missing package ID and disabled Create
+  (`20261113-084356`, 3/3). Both used fresh roots containing spaces,
+  launched zero guests, and shut down their own supervisors. Both
+  screenshots and their UI trees are under `artifacts/phase3/wpf`.
+- Source `728cb4b` fixes a first-run false positive where a verdict
+  containing “not usable” could enable Create. Setup now checks the
+  structured WHPX probe status, emulator build, image revision and missing
+  tool paths. It also displays the system image file size. The Release
+  build, 64 tests and real `wsctl doctor --json <path>` passed on WHPX.
+- Source `65ec277` removes a raw-frame byte-array copy, leaves room
+  for 60 Hz arrival jitter and checks the advertised AVD name at frame
+  subscription. The Release build and 64 tests passed. Measure both
+  changes on the next packaged payload after the soak.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

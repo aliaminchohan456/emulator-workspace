@@ -91,6 +91,13 @@ SDK SignTool to verify the MSI before writing signed provenance.
    emulator and the pinned image are never substituted automatically.
 4. Press **Create device**. The guest boots from the pinned image.
 
+The verified 0.1.4 [first-run screen](../artifacts/phase3/wpf/20261113-084323/first-run.png)
+shows the installed engine, image revision, WHPX verdict and free workspace
+space. The [missing-image screen](../artifacts/phase3/wpf/20261113-084356/missing-image.png)
+identifies the missing package and disables Create. Each run passed three
+checks and shut down its own supervisor. The raw PNGs contain local
+workspace details and stay in the evidence directory.
+
 The workspace state lives in `%LOCALAPPDATA%\EmulatorWorkspace` (instances,
 AVDs, journals, evidence, recipes). It is deliberately outside the program
 files so that an uninstall or an upgrade never touches the operator's

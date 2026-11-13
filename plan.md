@@ -380,3 +380,15 @@ The 8 s target remains open. Its matched cold-boot comparison completed
 20 trials per arm, with 14.53 s median overhead against 3.54 s allowed.
 The four-hour soak is now repeating on the exact 0.1.4 candidate.
 [Benchmark evidence](docs/benchmark.md)
+
+The packaged 0.1.4 first-run screen and the missing-image failure each
+passed three checks and produced a PNG and automation tree. The failure
+used a process-local SDK directory that omitted the image and reused the
+installed tools. Both roots contained spaces, with no guest started.
+Repeat these checks on the final packaged build.
+The source now requires successful WHPX probe status, the exact emulator
+build and image revision, and the required SDK executables before enabling
+Create. A source-only viewport change also avoids one full RGB copy per
+frame and relaxes the raw arrival threshold to accommodate 60 Hz jitter.
+Release build and 64 tests passed. Re-measure WPF with one and two guests
+after the soak and record the packaged source separately from 0.1.4.
