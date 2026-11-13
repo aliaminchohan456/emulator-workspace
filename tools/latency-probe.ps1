@@ -24,7 +24,8 @@ param(
     [int]$BootTimeoutSeconds = 600,
     [string]$CandidateRelease = "",
     [string]$CandidatePayload = "",
-    [string]$DesktopExecutable = ""
+    [string]$DesktopExecutable = "",
+    [string]$SupervisorExecutable = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -140,6 +141,18 @@ try {
         $wsctl = Join-Path $verified.payload "wsctl.exe"
         $desktop = Join-Path $verified.payload "EmulatorWorkspace.Desktop.exe"
         $env:EMULATORWORKSPACE_SUPERVISOR_EXE = Join-Path $verified.payload "EmulatorWorkspace.Supervisor.exe"
+        if ($SupervisorExecutable) {
+            $env:EMULATORWORKSPACE_SUPERVISOR_EXE = (Resolve-Path -LiteralPath $SupervisorExecutable).ProviderPath
+            $candidate.evidenceScope = if ($DesktopExecutable) { "CLI and sample APK" } else { "CLI, desktop and sample APK" }
+            $supervisorFiles = @("EmulatorWorkspace.Supervisor.exe", "EmulatorWorkspace.Supervisor.dll", "EmulatorWorkspace.Core.dll")
+            $supervisorDirectory = Split-Path -Parent $env:EMULATORWORKSPACE_SUPERVISOR_EXE
+            $supervisorOverride = [ordered]@{
+                version = (Get-Item -LiteralPath $env:EMULATORWORKSPACE_SUPERVISOR_EXE).VersionInfo.ProductVersion
+                files = @($supervisorFiles | ForEach-Object {
+                    @{ name = $_; sha256 = (Get-FileHash -LiteralPath (Join-Path $supervisorDirectory $_) -ErrorAction Stop).Hash }
+                })
+            }
+        }
         if (Get-Process qemu-system-x86_64-headless, qemu-system-x86_64 -ErrorAction SilentlyContinue) {
             throw "Run the quiet-host WPF probe after other emulator guests have stopped."
         }
@@ -212,7 +225,7 @@ try {
     $launch.UseShellExecute = $false
     $launch.Arguments = ('--root "{0}" --latency-probe {1} --out "{2}"' -f $Root, $Count, $resultPath)
     if ($verified) {
-        $launch.EnvironmentVariables["EMULATORWORKSPACE_SUPERVISOR_EXE"] = Join-Path $verified.payload "EmulatorWorkspace.Supervisor.exe"
+        $launch.EnvironmentVariables["EMULATORWORKSPACE_SUPERVISOR_EXE"] = $env:EMULATORWORKSPACE_SUPERVISOR_EXE
     }
     $desktopProcess = [System.Diagnostics.Process]::Start($launch)
     if (-not $desktopProcess.WaitForExit(300000)) {
@@ -296,6 +309,7 @@ finally {
         desktopAssemblySha256 = $desktopAssemblySha256
         desktopVersion = $desktopVersion
         desktopOverride = [bool]$DesktopExecutable
+        supervisorOverride = $supervisorOverride
         checks = $checks.ToArray()
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $out "summary.json") -Encoding UTF8
     Write-Host "Evidence: $out"

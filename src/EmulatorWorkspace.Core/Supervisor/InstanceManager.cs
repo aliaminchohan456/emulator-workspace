@@ -71,6 +71,8 @@ public sealed class InstanceManager
 
         public SemaphoreSlim Gate { get; } = new(1, 1);
 
+        public (int? Pid, string StartedUtc, EmulatorControlChannel Channel)? Controller { get; set; }
+
         public FramePump? Frames { get; set; }
 
         public LogcatPump? Logcat { get; set; }
@@ -774,7 +776,8 @@ public sealed class InstanceManager
     public async Task<byte[]> CapturePngAsync(
         string name, int width, string? via, CancellationToken cancellationToken)
     {
-        var record = RuntimeFor(name).Record;
+        var runtime = RuntimeFor(name);
+        var record = runtime.Record;
         if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
         {
             throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{name}' is not running.");
@@ -786,7 +789,7 @@ public sealed class InstanceManager
         }
 
         return await WithControllerAsync(
-            record,
+            runtime,
             channel => channel.GetScreenshotPngAsync(width, cancellationToken: cancellationToken),
             cancellationToken).ConfigureAwait(false);
     }
@@ -1067,11 +1070,11 @@ public sealed class InstanceManager
     }
     public async Task<JsonObject> TapAsync(string name, int x, int y, CancellationToken cancellationToken)
     {
-        var record = RuntimeFor(name).Record;
+        var runtime = RuntimeFor(name);
         var dispatched = DateTimeOffset.UtcNow;
         var timer = Stopwatch.StartNew();
         var controllerTapStartedMs = 0d;
-        await WithControllerAsync(record, channel =>
+        await WithControllerAsync(runtime, channel =>
         {
             controllerTapStartedMs = timer.Elapsed.TotalMilliseconds;
             return channel.TapAsync(x, y, cancellationToken);
@@ -1091,10 +1094,10 @@ public sealed class InstanceManager
     public async Task<JsonObject> SwipeAsync(
         string name, int x1, int y1, int x2, int y2, int durationMs, CancellationToken cancellationToken)
     {
-        var record = RuntimeFor(name).Record;
+        var runtime = RuntimeFor(name);
         var dispatched = DateTimeOffset.UtcNow;
         await WithControllerAsync(
-            record,
+            runtime,
             channel => channel.SwipeAsync(x1, y1, x2, y2, durationMs, cancellationToken),
             cancellationToken).ConfigureAwait(false);
         return new JsonObject
@@ -2466,12 +2469,23 @@ public sealed class InstanceManager
     {
         foreach (var runtime in _runtimes.Values)
         {
-            await StopPumpsAsync(runtime).ConfigureAwait(false);
+            await runtime.Gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await StopPumpsAsync(runtime).ConfigureAwait(false);
+            }
+            finally
+            {
+                runtime.Gate.Release();
+            }
         }
     }
 
     private async Task StopPumpsAsync(Runtime runtime)
     {
+        runtime.Controller?.Channel.Dispose();
+        runtime.Controller = null;
+
         if (runtime.Frames is not null)
         {
             await runtime.Frames.StopAsync().ConfigureAwait(false);
@@ -2548,24 +2562,57 @@ public sealed class InstanceManager
     }
 
     private async Task<T> WithControllerAsync<T>(
-        InstanceRecord record,
+        Runtime runtime,
         Func<EmulatorControlChannel, Task<T>> action,
         CancellationToken cancellationToken)
     {
-        var pid = record.EnginePid;
-        var startedUtc = record.EngineStartTimeUtc;
-        if (string.IsNullOrWhiteSpace(startedUtc) || !NativeProcess.IsAlive(pid, startedUtc))
+        await runtime.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no verified live engine.");
-        }
+            var record = runtime.Record;
+            var pid = record.EnginePid;
+            var startedUtc = record.EngineStartTimeUtc;
+            if (string.IsNullOrWhiteSpace(startedUtc) || !NativeProcess.IsAlive(pid, startedUtc))
+            {
+                throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no verified live engine.");
+            }
 
+            if (runtime.Controller is not { } cached || cached.Pid != pid || cached.StartedUtc != startedUtc)
+            {
+                runtime.Controller?.Channel.Dispose();
+                runtime.Controller = null;
+                var channel = await OpenControllerAsync(runtime, record, pid, startedUtc, cancellationToken).ConfigureAwait(false);
+                cached = (pid, startedUtc, channel);
+                runtime.Controller = cached;
+            }
+
+            try
+            {
+                return await action(cached.Channel).ConfigureAwait(false);
+            }
+            catch (Grpc.Core.RpcException)
+            {
+                cached.Channel.Dispose();
+                runtime.Controller = null;
+                throw;
+            }
+        }
+        finally
+        {
+            runtime.Gate.Release();
+        }
+    }
+
+    private async Task<EmulatorControlChannel> OpenControllerAsync(
+        Runtime runtime, InstanceRecord record, int? pid, string startedUtc, CancellationToken cancellationToken)
+    {
         var discovery = await EmulatorDiscovery.ReadAsync(_adb, record.AdbSerial, cancellationToken)
             .ConfigureAwait(false);
 
         if (discovery.AdbPort != record.ConsolePort + 1
             || discovery.GrpcPort != record.GrpcPort
             || discovery.AvdName != record.AvdName
-            || pid != record.EnginePid || startedUtc != record.EngineStartTimeUtc
+            || pid != runtime.Record.EnginePid || startedUtc != runtime.Record.EngineStartTimeUtc
             || !NativeProcess.IsAlive(pid, startedUtc))
         {
             throw new SupervisorOperationException(
@@ -2573,17 +2620,16 @@ public sealed class InstanceManager
                 "The engine's advertised identity does not match the managed instance; input was not sent.");
         }
 
-        using var channel = EmulatorControlChannel.Connect(discovery.GrpcPort, discovery.GrpcToken, "bearer");
-        return await action(channel).ConfigureAwait(false);
+        return EmulatorControlChannel.Connect(discovery.GrpcPort, discovery.GrpcToken, "bearer");
     }
 
     private async Task WithControllerAsync(
-        InstanceRecord record,
+        Runtime runtime,
         Func<EmulatorControlChannel, Task> action,
         CancellationToken cancellationToken)
     {
         await WithControllerAsync(
-            record,
+            runtime,
             async channel =>
             {
                 await action(channel).ConfigureAwait(false);
