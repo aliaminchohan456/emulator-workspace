@@ -721,7 +721,12 @@ All tasks start open. Check off an implementation task after its scoped verifica
   guest. Both owned profiles, processes, reserved listeners and ADB
   transports were gone. The 0.1.1 full soak remains verified.
   Use quick diagnostics for intermediate changes. The current run
-  targets five WPF trials and three verified warm restores on 0.1.5.
+  completed five valid WPF trials (`20261113-094636`), with 514.15 ms
+  median, 556.56 ms maximum and 25.99 delivered FPS. Per-tap controller
+  setup took 244.54–275.27 ms. The restore run (`20261113-094828`)
+  verified three restores in three attempts, with no fallback and
+  13.13 s median. Both cleaned up. Test the controller setup path
+  next. The diagnostic counts leave full acceptance pending.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

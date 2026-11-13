@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "2899b34",
+  "headCommit": "481e993",
   "trackedWorkTree": "M plan.md\n M task.md",
   "runs": [
     {
@@ -35268,6 +35268,92 @@
       ]
     },
     {
+      "kind": "wpf",
+      "runId": "20261113-094636",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-094636",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "481e9938593e23b730f9442dc1f1bf108ceb87ee",
+      "harnessSha256": "784762347BAA6ECB6B40051A4CCBBC2C2FF35656BAB68D5C7B864E2C2C817E08",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload"
+      },
+      "desktop": {
+        "sha256": "03781340251ECBAAEB8229D50EB84E451A37A87CC46D6D09839983CCDB5074CA",
+        "assemblySha256": "C3397B712729D705B6E205E72769D2BBC35B31919A7E98CD170FBD2274B1BB52",
+        "version": "0.1.5+a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "override": false
+      },
+      "finishedUtc": "2026-11-13T04:48:25.6599013+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-015-WPF-Short-20261113-094636",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "diagnostic.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.coverage",
+              "passed": true,
+              "detail": "5/5 valid samples, p95=556.56 ms, delivered=25.99 FPS",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-094636",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 1317,
+          "sha256": "2b364bcb07a7fc6562f406aafcbcab3d9374550543c44ca817019a3b732008fa"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 34177,
+          "sha256": "12344aa4a856a1ec221abac1075a6b8d015e52da7cf266aab88f083dad4bd1ae"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 45484,
+          "sha256": "ef5dce23badf858de7c7cf607805d3f5d899a2cf69df77c92b913feebe42aaa1"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 1168,
+          "sha256": "5363cfa2321098dd5453f0e63855e423554536f27f0a14fc41316a971a8e430e"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1550,
+          "sha256": "ee443a63b64f7c109538dde1dd23c9a36fdfe597831a42d63bd5e55c054dc212"
+        }
+      ]
+    },
+    {
       "kind": "devtools",
       "runId": "20261112-095717",
       "rawArtifactRoot": "artifacts/phase3/devtools/20261112-095717",
@@ -42271,6 +42357,85 @@
           "name": "transcript.txt",
           "bytes": 2807,
           "sha256": "338a37deccb57653beda083668734b1139a0e6fddf004b14a0324710c9929716"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-094828",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-094828",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "481e9938593e23b730f9442dc1f1bf108ceb87ee",
+      "harnessSha256": "CBBEEC5C121FCDFCAA5DA73C8D7F29B7FBAC2809314BF8BDBA082D0A19AC277D",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T04:50:48.7737286Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "diagnostic.restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.restore",
+              "passed": true,
+              "detail": "verified 3/3 warm restores, p50 13.13s",
+              "atUtc": "2026-11-13T04:50:41.4484050Z"
+            }
+          ]
+        },
+        "cleanup.bench-bfdf957d489b": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-bfdf957d489b",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T04:50:48.7423635Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 5653,
+          "sha256": "dc2af6d47faf7babf965e435d55286679721900c40a9e0d9bd73dfb64085d061"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "5585bdbd8d40c47c33b81e2f7e7308858bed478fba8cb0ad006711f2a00be4d8"
+        },
+        {
+          "name": "restore.jsonl",
+          "bytes": 691,
+          "sha256": "d0884350cc24646cde0a53d9c5f6fa37f64ef44db6c2b9633ea549039d222f3e"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 8415,
+          "sha256": "b514f8650cb6b955f5b6de8294d28038d3b7cac3fd70d06c596768bbe9117762"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 878,
+          "sha256": "53a2cd76ad7f0ba5a1b05d29b20d5a7472a7153cd89c8d51b55c912fc2e9f92d"
         }
       ]
     },

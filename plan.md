@@ -415,3 +415,7 @@ Use short functional and timing checks to evaluate intermediate changes.
 Schedule another full four-hour soak only after selecting the release
 candidate and passing its shorter checks. Preserve the completed 0.1.1
 run and the partial 0.1.4 run as evidence for their exact payloads.
+The first 0.1.5 diagnostics completed with verified cleanup. Controller
+setup accounts for 245–275 ms per WPF tap, and three verified warm
+restores had a 13.13 s median. Investigate controller setup first and
+keep the full acceptance counts for the selected release build.
