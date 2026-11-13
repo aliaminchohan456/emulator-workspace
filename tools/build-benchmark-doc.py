@@ -184,12 +184,12 @@ def main() -> int:
 
         candidate = summary.get("candidate") or {}
         supervisor = summary.get("supervisorOverride") or {}
-        runtime_note = (
-            f"The CLI and fixture came from `{candidate.get('sourceCommit')}`. "
-            f"The separately built supervisor was `{supervisor['version']}`."
-            if supervisor else
-            f"The CLI, supervisor and fixture came from `{candidate.get('sourceCommit')}`."
-        )
+        scope = candidate.get("evidenceScope", "CLI, supervisor and fixture")
+        runtime_note = f"Candidate payload scope was {scope} from `{candidate.get('sourceCommit')}`."
+        if supervisor:
+            runtime_note += f" The separately built supervisor was `{supervisor['version']}`."
+        if summary.get("fixtureOverrideSha256"):
+            runtime_note += " The separately built fixture hash is in the evidence manifest."
         acknowledged = [sample["tapAcknowledgedMs"] for sample in probe["samples"]
                         if not sample["timeout"] and "tapAcknowledgedMs" in sample]
         controller_setup = [sample["controllerSetupMs"] for sample in probe["samples"]
@@ -223,6 +223,7 @@ def main() -> int:
         if controller_tap:
             lines.append(f"| Supervisor controller tap p95 | {p95(controller_tap)} ms |")
         for field, label in (
+            ("changedFrameReceivedMs", "Dispatch to first observed changed controller frame p95"),
             ("supervisorFrameWriteMs", "Supervisor changed-frame write p95"),
             ("frameDecodeAndDispatchMs", "Desktop changed-frame decode and dispatch p95"),
         ):
@@ -230,6 +231,10 @@ def main() -> int:
                        if not sample["timeout"] and sample.get(field) is not None]
             if timings:
                 lines.append(f"| {label} | {p95(timings)} ms |")
+        draw_path = directory / "guest-tap-draw.json"
+        if draw_path.is_file():
+            draw_times = [sample["touchToDrawMs"] for sample in load(draw_path)]
+            lines.append(f"| Guest touch release to draw p95 | {p95(draw_times)} ms |")
         if (directory / "rgb-capture.json").is_file() and (directory / "encoded-capture.json").is_file():
             rgb = load(directory / "rgb-capture.json")
             encoded = load(directory / "encoded-capture.json")

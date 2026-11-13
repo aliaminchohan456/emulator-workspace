@@ -422,7 +422,9 @@ the first tap. Five diagnostic trials measured a 211.72 ms median
 and 27.17 FPS. The same channel behavior passed checks before and after
 restart, including both rejected token cases. The frame timing diagnostic
 measured 3.59–11.82 ms for the changed-frame write and 21.92–47.87 ms
-for desktop decode and dispatch. Measure guest touch-to-draw and the
-first changed controller frame next.
+for desktop decode and dispatch. The paired draw check measured 4–22 ms
+from touch release to draw in the guest and 183–232 ms from host
+dispatch to first observed changed controller frame on the four reused
+connections. Run the same short diagnostic with the software renderer.
 Three verified warm restores had a 13.13 s median. Full acceptance
 counts and targets remain for the selected release build.

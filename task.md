@@ -749,9 +749,15 @@ All tasks start open. Check off an implementation task after its scoped verifica
   246.20 ms at 32.38 FPS. The supervisor and desktop were separate
   source builds. The desktop was built with the changes later committed
   as `6bcca53`, so its version embeds the preceding `65c2f15`.
-  Next, add a fixture draw marker paired with its input marker, and
-  record the raw controller's first changed frame in a five-trial run
-  to locate the gap before supervisor frame receipt.
+- The paired draw diagnostic `20261113-100519` passed 5/5 and
+  removed its guest. Touch release to draw took 4–22 ms in guest
+  uptime. On the four reused-controller trials, the first observed
+  changed controller frame arrived 183–232 ms after WPF dispatch,
+  or 117–181 ms after the tap reply. These are host timestamps.
+  The independently built desktop, supervisor and fixture hashes
+  are recorded separately from the 0.1.5 CLI. Next, use the same
+  fixture in a five-trial `-Gpu swiftshader_indirect` diagnostic
+  and compare the controller frame receipt times with this host GPU run.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
