@@ -279,6 +279,16 @@ Both arms ran in this benchmark on the same Windows host and pinned emulator.
 Both arms required Android boot completion and a current focused window.
 Missed the target. Managed p50 49.9s vs raw p50 35.37s = 14.53s overhead (allowed 3.54s).
 
+## Bounded RGB publication experiment
+
+Run `20261113-101843` used a separately built desktop and supervisor
+from `d834bde`, the instrumented fixture and the verified 0.1.5 CLI.
+It delivered 36.68 FPS at 270 × 600. All five marker trials passed and
+the guest was removed. Median composition was 164.19 ms, with a
+408.68 ms maximum. The preceding half-size run `20261113-101158`
+delivered 37.28 FPS, with 166.12 ms median and 374.17 ms maximum.
+The queue was reverted after this comparison.
+
 ## Direct RGB and RGBA capture
 
 Run `20261113-101457` used the exact 0.1.5 payload, one host-GPU

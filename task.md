@@ -775,9 +775,18 @@ All tasks start open. Check off an implementation task after its scoped verifica
   delivered 57.88 and 58.20 FPS with one-third more bytes per frame.
   Keep RGB for the next experiment. The direct stream reached about
   58 FPS while the WPF path delivered 37.28 FPS at the same capture
-  size in `20261113-101158`. Next, decouple the RGB stream reader
-  from frame file writes and event publication using a bounded
-  latest-frame queue, then repeat the five-tap half-size diagnostic.
+  size in `20261113-101158`.
+- The bounded latest-frame queue in `d834bde` passed the Release
+  build, all 64 tests and five real half-size WPF trials in
+  `20261113-101843`. Median composition was 164.19 ms versus
+  166.12 ms, delivery 36.68 FPS versus 37.28 FPS, and the slowest
+  trial was 408.68 ms versus 374.17 ms. Cleanup passed and ADB
+  was empty. Reverted the queue in `78abb25` because the short
+  comparison showed no clear gain. The 100 ms and 60 FPS targets remain open.
+  Next, inspect the console, supervisor reply and verification timings
+  in `artifacts/phase3/bench/20261113-094828/restore.jsonl` and run
+  one focused restore change through three verified samples. Resume
+  viewport work with a direct transport experiment once restore is measured.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

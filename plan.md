@@ -431,7 +431,8 @@ the default. Half-size capture reached 37.28 FPS and 166.12 ms median
 composition in five trials. The guest stayed at 1080 × 2400, and
 the app logged one-pixel coordinate differences on each axis.
 Direct controller capture at that size reached 54–58 FPS in RGB and
-about 58 FPS in RGBA. Retain RGB and test whether a bounded handoff
-between stream receipt and file publication improves WPF delivery.
-Three verified warm restores had a 13.13 s median. Full acceptance
+about 58 FPS in RGBA. The bounded handoff measured 36.68 FPS against
+37.28 FPS at half size and was reverted. Keep the recorded diagnostic.
+Three verified warm restores had a 13.13 s median. Next, isolate their
+console, readiness and independent verification costs. Full acceptance
 counts and targets remain for the selected release build.
