@@ -727,6 +727,18 @@ All tasks start open. Check off an implementation task after its scoped verifica
   verified three restores in three attempts, with no fallback and
   13.13 s median. Both cleaned up. Test the controller setup path
   next. The diagnostic counts leave full acceptance pending.
+- Source `148d584` reuses the authenticated controller channel for
+  the verified engine process generation. The instance gate serializes
+  channel use with start and stop. An RPC failure discards the channel
+  for the next request. Release build and 64 tests passed. WPF diagnostic
+  `20261113-095328` passed 5/5 and cleaned up. With the packaged 0.1.5
+  desktop, CLI and fixture plus the separately hashed supervisor, median
+  fell from 514.15 to 211.72 ms and throughput reached 27.17 FPS.
+  First-tap setup took 160.71 ms. Reused setup took 0.08–0.34 ms.
+  Next, run the targeted controller-authentication and lifecycle checks
+  on the source build and measure guest input to changed frame.
+  Queued takeover and stale-observation acceptance are still pending
+  for this supervisor build.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

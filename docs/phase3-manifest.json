@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "481e993",
+  "headCommit": "148d584",
   "trackedWorkTree": "M plan.md\n M task.md",
   "runs": [
     {
@@ -35350,6 +35350,109 @@
           "name": "summary.json",
           "bytes": 1550,
           "sha256": "ee443a63b64f7c109538dde1dd23c9a36fdfe597831a42d63bd5e55c054dc212"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-095328",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-095328",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "148d584cb09179195cd5f5a0d820261a5749d25e",
+      "harnessSha256": "E8270F84D6DA743176DB56187C648447460FC47C3E1D840BB358F966C229F1A0",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "CLI, desktop and sample APK"
+      },
+      "supervisorOverride": {
+        "version": "0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e",
+        "files": [
+          {
+            "sha256": "8815B2E5C316FC32D42C4B3BBEB93CDF643E59C0548128F6ECE2AD8EDB34385D",
+            "name": "EmulatorWorkspace.Supervisor.exe"
+          },
+          {
+            "sha256": "F00B91483C0F39793A5988A6AD5FBEFD6A2CCF38315553A33F9E3D36AE08BF9F",
+            "name": "EmulatorWorkspace.Supervisor.dll"
+          },
+          {
+            "sha256": "3806406D81131601E441073D77B93225A66B9538879F6A277AF65F9B8BE4D44A",
+            "name": "EmulatorWorkspace.Core.dll"
+          }
+        ]
+      },
+      "desktop": {
+        "sha256": "03781340251ECBAAEB8229D50EB84E451A37A87CC46D6D09839983CCDB5074CA",
+        "assemblySha256": "C3397B712729D705B6E205E72769D2BBC35B31919A7E98CD170FBD2274B1BB52",
+        "version": "0.1.5+a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "override": false
+      },
+      "finishedUtc": "2026-11-13T04:55:31.8420078+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Controller-Short-20261113-095328",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "diagnostic.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.coverage",
+              "passed": true,
+              "detail": "5/5 valid samples, p95=426.99 ms, delivered=27.17 FPS",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-095328",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 1317,
+          "sha256": "82cc2b10566ff1e9734f797dc3b5f1697e19f84ca661fd4f327d598104c4c523"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 34189,
+          "sha256": "bdfa09a86a28f82c5f8163238a9ca1f95c06413d0bdf27203b687dbdd74650d5"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 24768,
+          "sha256": "b9b6badb24c75647981f53ce7f7a645429b16d174875b1ffa6d80352b69a0ff9"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 1157,
+          "sha256": "a97728aad1a2723a72fa9a0762461a74fe3564c36df6523b60ae077cc9779518"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2754,
+          "sha256": "6147557fe442d3a6cf5eff1dde0b4afc7a4afa9cdf2e647e72e57a39020256e4"
         }
       ]
     },

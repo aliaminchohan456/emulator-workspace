@@ -416,6 +416,10 @@ Schedule another full four-hour soak only after selecting the release
 candidate and passing its shorter checks. Preserve the completed 0.1.1
 run and the partial 0.1.4 run as evidence for their exact payloads.
 The first 0.1.5 diagnostics completed with verified cleanup. Controller
-setup accounts for 245–275 ms per WPF tap, and three verified warm
-restores had a 13.13 s median. Investigate controller setup first and
-keep the full acceptance counts for the selected release build.
+setup accounted for 245–275 ms per WPF tap. Reusing the channel for
+the verified engine generation reduced setup to 0.08–0.34 ms after
+the first tap. Five diagnostic trials measured a 211.72 ms median
+and 27.17 FPS. Verify channel behavior across restart and authentication
+failure, then measure the guest input and frame delivery stages.
+Three verified warm restores had a 13.13 s median. Full acceptance
+counts and targets remain for the selected release build.
