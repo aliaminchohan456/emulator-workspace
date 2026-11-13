@@ -643,6 +643,15 @@ All tasks start open. Check off an implementation task after its scoped verifica
   deadline to cover the supervisor's bounded cold fallback, and requires
   a matching saved/restored tag and an explicit recovery outcome. Re-run
   the paired Phase 3 lane after `20261113-063943` completes.
+- The 0.1.4 follow-on wrapper `20261113-063943` passed all six lanes:
+  Root Lab 10/10, import 9/9, developer tools 9/9, WPF click-through
+  16/16, and both Play profiles 8/8. The Play profiles verified named
+  snapshot rollback. No owned emulator remained. The paired Phase 3
+  rerun with the updated MCP client is `20261113-065245`.
+- The exact 0.1.4 offline Sandbox configuration is at
+  `D:/WS-OfflineSandbox-014-20261113-064035/offline-acceptance.wsb`.
+  The copied candidate hash matches the MSI. Administrator enablement
+  and usable nested WHPX are still required.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

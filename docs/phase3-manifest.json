@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T01:36:22.8048873+00:00",
-  "headCommit": "1d5395d",
+  "latestFinishedUtc": "2026-11-13T01:52:13.3939787+00:00",
+  "headCommit": "5d2e88a",
   "trackedWorkTree": "M task.md",
   "runs": [
     {
@@ -38951,6 +38951,365 @@
       ]
     },
     {
+      "kind": "install",
+      "runId": "20261113-063652",
+      "rawArtifactRoot": "artifacts/phase3/install/20261113-063652",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "signingStatus": "unsigned",
+        "evidence": "verified MSI and matching release record"
+      },
+      "finishedUtc": "2026-11-13T01:39:42.2224727Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 22,
+      "lanes": {
+        "install.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.clean",
+              "passed": true,
+              "detail": "msiexec exited with 0",
+              "atUtc": "2026-11-13T01:36:57.0994172Z"
+            }
+          ]
+        },
+        "install.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.files",
+              "passed": true,
+              "detail": "the desktop, the supervisor and the CLI are installed under C:\\Users\\aliam\\AppData\\Local\\Programs\\Emulator Workspace",
+              "atUtc": "2026-11-13T01:36:57.1201751Z"
+            }
+          ]
+        },
+        "install.sample-apk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install.sample-apk",
+              "passed": true,
+              "detail": "the approved sample APK ships with the package",
+              "atUtc": "2026-11-13T01:36:57.1410709Z"
+            }
+          ]
+        },
+        "installed.mcp-stdio": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.mcp-stdio",
+              "passed": true,
+              "detail": "initialized and listed scoped MCP tools through the installed executable",
+              "atUtc": "2026-11-13T01:37:00.7066481Z"
+            }
+          ]
+        },
+        "first-launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-launch",
+              "passed": true,
+              "detail": "the installed desktop starts and stays up",
+              "atUtc": "2026-11-13T01:37:12.7954855Z"
+            }
+          ]
+        },
+        "first-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot",
+              "passed": true,
+              "detail": "the guest created by the installed CLI reached interactive readiness",
+              "atUtc": "2026-11-13T01:38:34.3090451Z"
+            }
+          ]
+        },
+        "first-boot.state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.state",
+              "passed": true,
+              "detail": "the guest reports Running",
+              "atUtc": "2026-11-13T01:38:34.3195154Z"
+            }
+          ]
+        },
+        "first-boot.image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "first-boot.image",
+              "passed": true,
+              "detail": "the guest uses system-images;android-35;default;x86_64",
+              "atUtc": "2026-11-13T01:38:34.3458650Z"
+            }
+          ]
+        },
+        "installed.snapshot-json": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.snapshot-json",
+              "passed": true,
+              "detail": "the installed CLI reports structured snapshot results",
+              "atUtc": "2026-11-13T01:38:38.0748194Z"
+            }
+          ]
+        },
+        "installed.simulation-probe": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "installed.simulation-probe",
+              "passed": true,
+              "detail": "route=KO: unknown command, try 'help' battery=True GPS=feature:android.hardware.location.gps",
+              "atUtc": "2026-11-13T01:38:40.2148912Z"
+            }
+          ]
+        },
+        "local-status-reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "local-status-reuse",
+              "passed": true,
+              "detail": "the installed CLI answered while the guest was running",
+              "atUtc": "2026-11-13T01:38:41.5101270Z"
+            }
+          ]
+        },
+        "upgrade.profile-before": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-before",
+              "passed": true,
+              "detail": "a profile marker exists before the upgrade",
+              "atUtc": "2026-11-13T01:38:41.5304096Z"
+            }
+          ]
+        },
+        "upgrade.reinstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.reinstall",
+              "passed": true,
+              "detail": "the same installer ran again with exit code 0",
+              "atUtc": "2026-11-13T01:38:43.5982438Z"
+            }
+          ]
+        },
+        "upgrade.profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.profile-kept",
+              "passed": true,
+              "detail": "the profile survived the upgrade",
+              "atUtc": "2026-11-13T01:38:43.6061495Z"
+            }
+          ]
+        },
+        "upgrade.files": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.files",
+              "passed": true,
+              "detail": "the installed files are still in place after the upgrade",
+              "atUtc": "2026-11-13T01:38:43.6237182Z"
+            }
+          ]
+        },
+        "uninstall.registered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.registered",
+              "passed": true,
+              "detail": "the package is registered in the uninstall registry",
+              "atUtc": "2026-11-13T01:38:57.4071131Z"
+            }
+          ]
+        },
+        "uninstall.clean": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.clean",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-13T01:39:01.4510948Z"
+            }
+          ]
+        },
+        "uninstall.files-removed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.files-removed",
+              "passed": true,
+              "detail": "the installed binaries are gone",
+              "atUtc": "2026-11-13T01:39:01.4623515Z"
+            }
+          ]
+        },
+        "uninstall.profiles-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "uninstall.profiles-kept",
+              "passed": true,
+              "detail": "the operator profiles were not touched",
+              "atUtc": "2026-11-13T01:39:01.4860495Z"
+            }
+          ]
+        },
+        "upgrade.version-changed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.version-changed",
+              "passed": true,
+              "detail": "0.1.3 -> 0.1.4",
+              "atUtc": "2026-11-13T01:39:29.9530125Z"
+            }
+          ]
+        },
+        "upgrade.managed-profile-kept": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.managed-profile-kept",
+              "passed": true,
+              "detail": "upgrade-e95892670798",
+              "atUtc": "2026-11-13T01:39:33.3188074Z"
+            }
+          ]
+        },
+        "upgrade.uninstall": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "upgrade.uninstall",
+              "passed": true,
+              "detail": "msiexec /x exited with 0",
+              "atUtc": "2026-11-13T01:39:41.9562423Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop-err.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "desktop-launch.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "installed-mcp.json",
+          "bytes": 1011,
+          "sha256": "5e58b58fa59dd9398d5bf7389e905aa0fdf7725e8d26a4c807a945753310fcce"
+        },
+        {
+          "name": "installed-simulation.json",
+          "bytes": 2745,
+          "sha256": "8b167852a722d42e6d674a00cfa23a73a95b8f4bd6b7de576a0c8644a6245658"
+        },
+        {
+          "name": "installed-snapshot.json",
+          "bytes": 101,
+          "sha256": "2e4597ee9c8a6a6d9caaa87a29467718d17e79f460b680674b3cb9e0189ccfd1"
+        },
+        {
+          "name": "msi-install.log",
+          "bytes": 638616,
+          "sha256": "18e101ab18b67f29a3170adbbdb7580db80e995cd62d1be25f268bfecba6992b"
+        },
+        {
+          "name": "msi-previous.log",
+          "bytes": 638630,
+          "sha256": "51c7f63f5671c0c7be9d78c19593d62f7fee3a60dcc9a17ddda55209711749eb"
+        },
+        {
+          "name": "msi-uninstall.log",
+          "bytes": 373948,
+          "sha256": "c16b0b0716ffab109e9e4f4e371ed7d7971a621d6f2b79133439955d9120c75f"
+        },
+        {
+          "name": "msi-upgrade.log",
+          "bytes": 105446,
+          "sha256": "187db5f348e076235ac33b57eb292823bed65f86cd96edb13df4b7b712319d7a"
+        },
+        {
+          "name": "msi-version-upgrade-uninstall.log",
+          "bytes": 374020,
+          "sha256": "b420ef059b0cd9cf1b6db500b6ded3f5990f69102aa846dd9bac325c4fbf177c"
+        },
+        {
+          "name": "msi-version-upgrade.log",
+          "bytes": 1143504,
+          "sha256": "07f3b4a00c62aa9351cb469dd549b41a37a09895228977cf329474595cf4b732"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 6910,
+          "sha256": "24539654bedbe0b843c095f61dca2972fee8357d324df5925e09d6c2c3f57240"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2131,
+          "sha256": "84a273976a5bcafbec905f0b09b08d17aa46b66f0c76c27f6a9f724b5e63dd93"
+        }
+      ]
+    },
+    {
       "kind": "bench",
       "runId": "20261112-152621",
       "rawArtifactRoot": "artifacts/phase3/bench/20261112-152621",
@@ -55717,6 +56076,1873 @@
           "name": "versions.json",
           "bytes": 339,
           "sha256": "cff0d16a1b7316c4a927ed24f722990a9de50c22e830722c8ce591015630d1cc"
+        }
+      ]
+    },
+    {
+      "kind": "candidate",
+      "runId": "20261113-063943",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "a40e522e3da0d4a4355b44cd92b2bef290ec0ad2",
+      "harnessSha256": "821134829C70F45B50FD530A6852D3C954AAB1FCFBA55B1D9081E0DF6213DECC",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:52:13.3939787+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 6,
+      "lanes": {
+        "rootlab": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab",
+              "passed": true,
+              "detail": "exit=0, checks=10, failures=0, log=rootlab.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "import": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "import",
+              "passed": true,
+              "detail": "exit=0, checks=9, failures=0, log=import.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "devtools": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "devtools",
+              "passed": true,
+              "detail": "exit=0, checks=9, failures=0, log=devtools.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "wpf": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wpf",
+              "passed": true,
+              "detail": "exit=0, checks=16, failures=0, log=wpf.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "play36": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "play36",
+              "passed": true,
+              "detail": "exit=0, checks=8, failures=0, log=play36.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "play35": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "play35",
+              "passed": true,
+              "detail": "exit=0, checks=8, failures=0, log=play35.log",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "devtools/20261113-064249/bugreport.json",
+          "bytes": 338,
+          "sha256": "9b578ec57e3b4e1b1e6b8c2b909e59f7e99d57840a124a6b012a371351ebb2bc"
+        },
+        {
+          "name": "devtools/20261113-064249/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "devtools/20261113-064249/crash-report.json",
+          "bytes": 266,
+          "sha256": "802479e633730cbc25a49a57c0f382701c7d5dbcd2c1da5e2452d10cc4796915"
+        },
+        {
+          "name": "devtools/20261113-064249/deep-link.json",
+          "bytes": 507,
+          "sha256": "12eea49c91602dd6fac491ef4856a5acd5323608db4fae69ab0537a0389f7441"
+        },
+        {
+          "name": "devtools/20261113-064249/instrumentation.json",
+          "bytes": 370,
+          "sha256": "ebde4c942c1f49be8773f673dcfe9ad2dfa3ffc6de6f78d6c2b3ee9faec2f366"
+        },
+        {
+          "name": "devtools/20261113-064249/logcat-export.json",
+          "bytes": 286,
+          "sha256": "0bc99c7d06e71fb47742ffdff463646dd176c8d4e7f824f6518b14a1bbb27b03"
+        },
+        {
+          "name": "devtools/20261113-064249/logcat-export.txt",
+          "bytes": 52871,
+          "sha256": "9377e070bd9af6685f92f50bbd002c126a345cc8f9427c3c937989d24f079ba8"
+        },
+        {
+          "name": "devtools/20261113-064249/package-info.json",
+          "bytes": 311,
+          "sha256": "0549f594112b6065fc1b8cf01b307d2f8bd3113876096cd095f04bad7f671704"
+        },
+        {
+          "name": "devtools/20261113-064249/package-permissions.json",
+          "bytes": 346,
+          "sha256": "994e4b56a27e44a2bf50be8267a6746a945afadf2b320e1b627318734c797a40"
+        },
+        {
+          "name": "devtools/20261113-064249/summary.json",
+          "bytes": 3121,
+          "sha256": "da1c3f476fbb51ca69f20e56155786ead32c7548564248143d78ae9d759f97d3"
+        },
+        {
+          "name": "devtools/20261113-064249/transcript.txt",
+          "bytes": 1339,
+          "sha256": "c8d5e62ef60289fbf5f3d493a7449591d87ca832f6b8eca3810e4204d586b3b6"
+        },
+        {
+          "name": "devtools.log",
+          "bytes": 2675,
+          "sha256": "4cc0caf063243063fc11eb74126f80da4bd5ad46126a6dc393f9efda282adc52"
+        },
+        {
+          "name": "import/20261113-064234/avdmanager-create.txt",
+          "bytes": 39,
+          "sha256": "5701be79f259bcf77da2c4c6788c77dccbf4827317b1094e0583025f72748334"
+        },
+        {
+          "name": "import/20261113-064234/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "import/20261113-064234/import.json",
+          "bytes": 653,
+          "sha256": "a6ea06da95a8a9b2e4ccc3aad94a2bc560e40c3d18403bc6ae8e648a8225313f"
+        },
+        {
+          "name": "import/20261113-064234/instances.txt",
+          "bytes": 89,
+          "sha256": "38231384403f33d46bec3acfc4aee4a803fbc4afb73dae692cc62e7beb619b36"
+        },
+        {
+          "name": "import/20261113-064234/preview.json",
+          "bytes": 564,
+          "sha256": "24f6a3acd71acd74839d9c8253d151c9567ac341587766cec6d93198206ee942"
+        },
+        {
+          "name": "import/20261113-064234/source-after.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "import/20261113-064234/source-before.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "import/20261113-064234/summary.json",
+          "bytes": 2920,
+          "sha256": "088f3bd3a85cfedc0b1cd305af386a05a058b874cef4182795fbb367409b3737"
+        },
+        {
+          "name": "import/20261113-064234/transcript.txt",
+          "bytes": 1222,
+          "sha256": "7d756cca1eafe0314ba97b87fda4663f6dbd00714f54ae2904720938964aba26"
+        },
+        {
+          "name": "import.log",
+          "bytes": 2558,
+          "sha256": "a81e01cc64b677d7b448f760f16f44d64ba6a8c80b9836dc56133a65da16ca14"
+        },
+        {
+          "name": "play35/20261113-065000/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "play35/20261113-065000/create.txt",
+          "bytes": 292,
+          "sha256": "5ee89559a8d0a4c4961ddc94e5fea2dc9acd6ca3fa267ea16e934e3d1df651c5"
+        },
+        {
+          "name": "play35/20261113-065000/destroy.txt",
+          "bytes": 32,
+          "sha256": "523ec15ad9c284dd6c77e9d4c3badb0ea210023cfd8152bda891ec98dbd4d465"
+        },
+        {
+          "name": "play35/20261113-065000/fixture.png",
+          "bytes": 131184,
+          "sha256": "0c1240a6589b761d82b749e547b22cf9c95f96020ebdc4f0c2594abb2b2170f6"
+        },
+        {
+          "name": "play35/20261113-065000/foreground.txt",
+          "bytes": 124,
+          "sha256": "db7df4984354c6895135a9adbcaa701f06eac5c8bc0a6865d4d91ea6ece03491"
+        },
+        {
+          "name": "play35/20261113-065000/frame.txt",
+          "bytes": 179,
+          "sha256": "dc83b6aaf6c63291edcb8fe653bb05a6b57e32720d23a7b02329df676ecc3ad5"
+        },
+        {
+          "name": "play35/20261113-065000/install.txt",
+          "bytes": 126,
+          "sha256": "466a60f3d8fc67d3b599250d83c860390c73954f23504407cec9e8fb2cc18c39"
+        },
+        {
+          "name": "play35/20261113-065000/launch.txt",
+          "bytes": 108,
+          "sha256": "4318f3bf9db40881957674272ac5622edc6e8bbb926411239ed7aea5a7240553"
+        },
+        {
+          "name": "play35/20261113-065000/package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "3baa9fede759dcf1958fcf254adc7472d67f28a23958aac7f084afab5604b953"
+        },
+        {
+          "name": "play35/20261113-065000/package-info.txt",
+          "bytes": 270,
+          "sha256": "724e2b1222dcf368243a1fc0de08a5aa97bd94e51e4df3e9f0e394d5550410d2"
+        },
+        {
+          "name": "play35/20261113-065000/root-state.txt",
+          "bytes": 207,
+          "sha256": "c894950a27bb0deb1f0aeb3ac6e0ec75f426e82ec02f6fa2e2b69f36a2d913fc"
+        },
+        {
+          "name": "play35/20261113-065000/simulation.txt",
+          "bytes": 2750,
+          "sha256": "dc3a69e08412c52e6ce8ef01fdb9ebdf982386713bdac80071cce1fe1f3b36e4"
+        },
+        {
+          "name": "play35/20261113-065000/snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "39608c53a604cf210518970c20398f63029af47d545f18e33abdaf050f8f9898"
+        },
+        {
+          "name": "play35/20261113-065000/snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "f032de9267515b69c76db7da62f8a072723e905f812bc8500366fa5af0aaee1d"
+        },
+        {
+          "name": "play35/20261113-065000/start.txt",
+          "bytes": 169,
+          "sha256": "d0461b4cf80b19630652ed7bdc48bb73db09c102b418f09ea7274b786e04d0f3"
+        },
+        {
+          "name": "play35/20261113-065000/status.txt",
+          "bytes": 1298,
+          "sha256": "cbaa570cf9d9729b8bfbee5f8d606aa337ef2ed13b57f9a43b15deb1ec92c895"
+        },
+        {
+          "name": "play35/20261113-065000/stop.txt",
+          "bytes": 88,
+          "sha256": "be54119a0c04a21aa7c83b2d56686aab39ecf0e9ac4e8532901037b52aceecbb"
+        },
+        {
+          "name": "play35/20261113-065000/summary.json",
+          "bytes": 2573,
+          "sha256": "9112481888b0b9e432d7efe344f84ec161cbd3acc3b610d54ff52f33b0dd4f35"
+        },
+        {
+          "name": "play35/20261113-065000/wait.txt",
+          "bytes": 209,
+          "sha256": "c817457e8e6d967640ae23b98f95c053114286161668ed5846e036f4a009ed15"
+        },
+        {
+          "name": "play35.log",
+          "bytes": 646,
+          "sha256": "30442f4ff0447d85b0676389c6b2c381c5a7a6b260507f9d0bbb10ff119ae940"
+        },
+        {
+          "name": "play36/20261113-064730/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "play36/20261113-064730/create.txt",
+          "bytes": 286,
+          "sha256": "5b75ce1222a39fad8175cb41fdb3589b78ca54f9297f9ff637f6783f43ae2fa1"
+        },
+        {
+          "name": "play36/20261113-064730/destroy.txt",
+          "bytes": 32,
+          "sha256": "e6259c43ccbc6121b2652a58244262386bc9ee174c32e508ea8c1819282fc3f3"
+        },
+        {
+          "name": "play36/20261113-064730/fixture.png",
+          "bytes": 129869,
+          "sha256": "3f3695af6950468938d79d8714c22a57addf2f6775e8d132d6eedb3a60a37655"
+        },
+        {
+          "name": "play36/20261113-064730/foreground.txt",
+          "bytes": 124,
+          "sha256": "35561d686e128ac6773b3f25ff2835bf0536f462e3439eddc763568384fbe498"
+        },
+        {
+          "name": "play36/20261113-064730/frame.txt",
+          "bytes": 179,
+          "sha256": "50646cc206c7abfad0bbdd1ea734f65b73881fe3933107503882f38f66137bfc"
+        },
+        {
+          "name": "play36/20261113-064730/install.txt",
+          "bytes": 126,
+          "sha256": "0dcb719835612b2114827cf763765bb49b1ecf8f27790a9633c2cbf9685ebf57"
+        },
+        {
+          "name": "play36/20261113-064730/launch.txt",
+          "bytes": 108,
+          "sha256": "7824cab39665061f76ef63e8fefcd1d8225e7acb0a6577a52cc3ea4d07e98b18"
+        },
+        {
+          "name": "play36/20261113-064730/package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "9958fdfc051f41734880ec4144b83045c8cb345f94293f58a0d917a5b5ac41db"
+        },
+        {
+          "name": "play36/20261113-064730/package-info.txt",
+          "bytes": 270,
+          "sha256": "e8ec81026f75b7f40d12109ab05feefc5dc6b7529b72dccb5d3697cefaa51ac3"
+        },
+        {
+          "name": "play36/20261113-064730/root-state.txt",
+          "bytes": 207,
+          "sha256": "5ea1600c976372fb0d3cc05d55396434491b102a99fff103d59ab1ddb9488c49"
+        },
+        {
+          "name": "play36/20261113-064730/simulation.txt",
+          "bytes": 2750,
+          "sha256": "d5ab5891d29905046ead27a893e3bc9ed1092113ddedf8394d610039ff87ef0c"
+        },
+        {
+          "name": "play36/20261113-064730/snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "2fedb22616910b049384dd8c9450b9b70e203682405b63f018f77852153f4079"
+        },
+        {
+          "name": "play36/20261113-064730/snapshot-save.txt",
+          "bytes": 95,
+          "sha256": "27c50cff64e8827b99b9995c70f76572e7ec6650b18d91bcfdc456e9cef927c8"
+        },
+        {
+          "name": "play36/20261113-064730/start.txt",
+          "bytes": 169,
+          "sha256": "1a652489aa2e6aef42a9c4acb87ab509a89ecb7c0327677e79d596f4e34c33bc"
+        },
+        {
+          "name": "play36/20261113-064730/status.txt",
+          "bytes": 1296,
+          "sha256": "f6e7d84bc8e2098c037cff1aac0b415847deef73b0f6502118aeed9ed0862453"
+        },
+        {
+          "name": "play36/20261113-064730/stop.txt",
+          "bytes": 88,
+          "sha256": "21179671b54e3c49a130a54a1951fa2095ff664a3589a4eaf05f1d0711da301f"
+        },
+        {
+          "name": "play36/20261113-064730/summary.json",
+          "bytes": 2570,
+          "sha256": "0651ce3f3afb68af104b9e3de1b379c24203cc9cf6a6e425aaa29c3c3e99a1cd"
+        },
+        {
+          "name": "play36/20261113-064730/wait.txt",
+          "bytes": 211,
+          "sha256": "4bdce46fda3fd808ddfa78981d2f1c1c7c25658d8a5ad171268090f78f6c7790"
+        },
+        {
+          "name": "play36.log",
+          "bytes": 649,
+          "sha256": "07f3a4af54e55adbad9deb778c4e3d2da075e1cdf21152f2e1376e4cbaa04a50"
+        },
+        {
+          "name": "rootlab/20261113-063944/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "rootlab/20261113-063944/root.json",
+          "bytes": 338,
+          "sha256": "e04d3c7c115cbacbeebe4b2b861d749401cef30591d26027a9b5a3020eb6d619"
+        },
+        {
+          "name": "rootlab/20261113-063944/state-initial.json",
+          "bytes": 267,
+          "sha256": "ab662b4a08750748775e1aab91d1bbb5b7ec05ff4c00885c419b65aa4de0571c"
+        },
+        {
+          "name": "rootlab/20261113-063944/summary.json",
+          "bytes": 2867,
+          "sha256": "46820f0e8baccc97e69a964a8ca928c6ad8092fbdb1635a4e351cdbcbc1fd6da"
+        },
+        {
+          "name": "rootlab/20261113-063944/transcript.txt",
+          "bytes": 880,
+          "sha256": "6b0d1ef492f4125cae33a3f336c9f738baa36e5047d48923fa4f2e8276c223f9"
+        },
+        {
+          "name": "rootlab/20261113-063944/unroot.json",
+          "bytes": 345,
+          "sha256": "e44875b76b8039387acac9c97b2537ef063e45a1d00908a8bb18ab00ab4781a1"
+        },
+        {
+          "name": "rootlab.log",
+          "bytes": 2313,
+          "sha256": "d73a49029ddedb8318138e983726a8e7376ee98724af3195040528a8c5cc1456"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1497,
+          "sha256": "ff608f87a8101d511393e215f3b5a29b20a28cc30c12cbd128bafab8fec65756"
+        },
+        {
+          "name": "wpf/20261113-064532/01-startup.png",
+          "bytes": 102922,
+          "sha256": "88b8b77e1d2c5aa2d9d3e4591d14173dae1fcabb559de1e5b3c2d2ce0f43e8a9"
+        },
+        {
+          "name": "wpf/20261113-064532/02-created.png",
+          "bytes": 104464,
+          "sha256": "ae89e1e39a73d3ef2953d2beadd13417157860c66608d006438e1a9faaec0406"
+        },
+        {
+          "name": "wpf/20261113-064532/03-booted.png",
+          "bytes": 144811,
+          "sha256": "8fa72ddca596abe743cf4549cd727be64250b1ab95d6c1be1b5a93a2bd0d5237"
+        },
+        {
+          "name": "wpf/20261113-064532/04-adb-root.png",
+          "bytes": 164764,
+          "sha256": "68f61b3ee9a1078c2dfa6be40752c95de186d262aee21f59c68d0d535db2db83"
+        },
+        {
+          "name": "wpf/20261113-064532/05-adb-unroot.png",
+          "bytes": 177883,
+          "sha256": "8b4eb2e5bbcbe0d4dc0c20401154f966049d1e0308cab83a7e3e1727012bf6de"
+        },
+        {
+          "name": "wpf/20261113-064532/07-dropped.png",
+          "bytes": 177672,
+          "sha256": "2d419162fa372b324acfe398b5d8b250ced020ba79e560611b800ca78d9fc089"
+        },
+        {
+          "name": "wpf/20261113-064532/08-launched.png",
+          "bytes": 178222,
+          "sha256": "ff19b835b2b0bf878659bb452c545ed48dc4bd30149d007029316acb55eea95a"
+        },
+        {
+          "name": "wpf/20261113-064532/09-tapped.png",
+          "bytes": 175163,
+          "sha256": "e31ec02eae7b1a9210b42b7cadea5f6428b8a33bc936e89f8a88043d7648873d"
+        },
+        {
+          "name": "wpf/20261113-064532/10-logcat.png",
+          "bytes": 175140,
+          "sha256": "c5e7336781ad912dbbbdf74779aa65d045404d91a3f647b7c125a5aad0162648"
+        },
+        {
+          "name": "wpf/20261113-064532/11-screenshot.png",
+          "bytes": 189461,
+          "sha256": "3293c0fbb0ff1d0cafadf1b0f3a63ab3b6bf9222ca9687d2890a8afe9e9d6bfb"
+        },
+        {
+          "name": "wpf/20261113-064532/12-stopped.png",
+          "bytes": 191110,
+          "sha256": "4af632835ad4d1f062ad1b6802509968f3fb41ef699718f120eae22bf4646cc4"
+        },
+        {
+          "name": "wpf/20261113-064532/13-palette.png",
+          "bytes": 173222,
+          "sha256": "fd25c22bad836658110e48c0a8b4dab2ebde5493f6d03a6abc34a05c5a15c798"
+        },
+        {
+          "name": "wpf/20261113-064532/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "wpf/20261113-064532/summary.json",
+          "bytes": 10648,
+          "sha256": "482d1e4ae62f443722de16397f67701d3e4ebd3b7e0fff5f2941d0734df8c339"
+        },
+        {
+          "name": "wpf/20261113-064532/transcript.txt",
+          "bytes": 1824,
+          "sha256": "0c47227082872426dddf45b6d6bf338862bc554d8d918c5c11923674420e4139"
+        },
+        {
+          "name": "wpf/20261113-064532/ui-tree-final.txt",
+          "bytes": 8612,
+          "sha256": "75028029b8677b5a257f13b430b89070de83efaea581329a4b24c5043bc8b7c1"
+        },
+        {
+          "name": "wpf/20261113-064532/ui-tree-start.txt",
+          "bytes": 4264,
+          "sha256": "3659bf93e0c3117828e834f3b705ad6748379b0a76c515f4f7906c997d4c1eed"
+        },
+        {
+          "name": "wpf.log",
+          "bytes": 4043,
+          "sha256": "f85d9b11bdb1a69fa8b8a7333171c94ca3d096323ac827d43f43cc3b12c7ed55"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-064249",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/devtools/20261113-064249",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "a40e522e3da0d4a4355b44cd92b2bef290ec0ad2",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:45:30.0173703Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 9,
+      "lanes": {
+        "package-info": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-info",
+              "passed": true,
+              "detail": "installed=True version=1.0 codePath=/data/app/~~dT2FnK1aebV8Pm12mHHegw==/dev.emulatorworkspace.sample-3kj5Eq_su93l6p7zt5rnqg==",
+              "atUtc": "2026-11-13T01:44:25.7216636Z"
+            }
+          ]
+        },
+        "package-permissions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-permissions",
+              "passed": true,
+              "detail": "requested=1 granted=1",
+              "atUtc": "2026-11-13T01:44:26.4802916Z"
+            }
+          ]
+        },
+        "deep-link": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link",
+              "passed": true,
+              "detail": "scheme=https host=emulatorworkspace.local started=True",
+              "atUtc": "2026-11-13T01:44:30.0827305Z"
+            }
+          ]
+        },
+        "deep-link.negative": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link.negative",
+              "passed": true,
+              "detail": "a malformed URI is refused: FAILED [invalid_request] 'not a uri' is not an absolute URI.",
+              "atUtc": "2026-11-13T01:44:30.5830278Z"
+            }
+          ]
+        },
+        "instrumentation": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "instrumentation",
+              "passed": true,
+              "detail": "available=False tests=0 failures=0 reason=The package 'dev.emulatorworkspace.sample' does not publish an instrumentation runner.",
+              "atUtc": "2026-11-13T01:44:33.0294531Z"
+            }
+          ]
+        },
+        "logcat-export": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "logcat-export",
+              "passed": true,
+              "detail": "artifact=d:\\ws-candidate-014-finish-20261113-063943-devtools\\evidence\\logcat-devtools-4083-20261113-014433.txt bytes=52566",
+              "atUtc": "2026-11-13T01:44:33.5323010Z"
+            }
+          ]
+        },
+        "crash-report": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "crash-report",
+              "passed": true,
+              "detail": "crashes=0 anrs=0",
+              "atUtc": "2026-11-13T01:44:34.1182086Z"
+            }
+          ]
+        },
+        "bugreport": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bugreport",
+              "passed": true,
+              "detail": "artifact=d:\\ws-candidate-014-finish-20261113-063943-devtools\\evidence\\bugreport-devtools-4083-20261113-014434.zip bytes=4301581 sha256=eaee501714e04bd99506f8ed3",
+              "atUtc": "2026-11-13T01:45:17.6717652Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-13T01:45:29.8114159Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bugreport.json",
+          "bytes": 338,
+          "sha256": "9b578ec57e3b4e1b1e6b8c2b909e59f7e99d57840a124a6b012a371351ebb2bc"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "crash-report.json",
+          "bytes": 266,
+          "sha256": "802479e633730cbc25a49a57c0f382701c7d5dbcd2c1da5e2452d10cc4796915"
+        },
+        {
+          "name": "deep-link.json",
+          "bytes": 507,
+          "sha256": "12eea49c91602dd6fac491ef4856a5acd5323608db4fae69ab0537a0389f7441"
+        },
+        {
+          "name": "instrumentation.json",
+          "bytes": 370,
+          "sha256": "ebde4c942c1f49be8773f673dcfe9ad2dfa3ffc6de6f78d6c2b3ee9faec2f366"
+        },
+        {
+          "name": "logcat-export.json",
+          "bytes": 286,
+          "sha256": "0bc99c7d06e71fb47742ffdff463646dd176c8d4e7f824f6518b14a1bbb27b03"
+        },
+        {
+          "name": "logcat-export.txt",
+          "bytes": 52871,
+          "sha256": "9377e070bd9af6685f92f50bbd002c126a345cc8f9427c3c937989d24f079ba8"
+        },
+        {
+          "name": "package-info.json",
+          "bytes": 311,
+          "sha256": "0549f594112b6065fc1b8cf01b307d2f8bd3113876096cd095f04bad7f671704"
+        },
+        {
+          "name": "package-permissions.json",
+          "bytes": 346,
+          "sha256": "994e4b56a27e44a2bf50be8267a6746a945afadf2b320e1b627318734c797a40"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 3121,
+          "sha256": "da1c3f476fbb51ca69f20e56155786ead32c7548564248143d78ae9d759f97d3"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1339,
+          "sha256": "c8d5e62ef60289fbf5f3d493a7449591d87ca832f6b8eca3810e4204d586b3b6"
+        }
+      ]
+    },
+    {
+      "kind": "import",
+      "runId": "20261113-064234",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/import/20261113-064234",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "a40e522e3da0d4a4355b44cd92b2bef290ec0ad2",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:42:48.5518949Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 9,
+      "lanes": {
+        "source-created": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-created",
+              "passed": true,
+              "detail": "source=D:\\WS-Candidate-014-Finish-20261113-063943-import-external\\external-20261113-063943.avd",
+              "atUtc": "2026-11-13T01:42:36.8132997Z"
+            }
+          ]
+        },
+        "source-not-managed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-not-managed",
+              "passed": true,
+              "detail": "the external AVD is not a managed instance",
+              "atUtc": "2026-11-13T01:42:41.2654277Z"
+            }
+          ]
+        },
+        "preview": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "preview",
+              "passed": true,
+              "detail": "fingerprint=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515",
+              "atUtc": "2026-11-13T01:42:43.5417914Z"
+            }
+          ]
+        },
+        "import": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "import",
+              "passed": true,
+              "detail": "instance=imported-avd",
+              "atUtc": "2026-11-13T01:42:47.8764445Z"
+            }
+          ]
+        },
+        "source-unchanged": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-unchanged",
+              "passed": true,
+              "detail": "before=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515 after=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515",
+              "atUtc": "2026-11-13T01:42:47.8860672Z"
+            }
+          ]
+        },
+        "independent-copy": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "independent-copy",
+              "passed": true,
+              "detail": "target=61b1c5adce47244a1f715bae451cbb8abdadb051587fa2426dc78e6018b02621",
+              "atUtc": "2026-11-13T01:42:47.8968062Z"
+            }
+          ]
+        },
+        "source-bytes-unchanged": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-bytes-unchanged",
+              "passed": true,
+              "detail": "config sha256=CD991AB9E04623A8020A750FF8B20A30BE59C2A02253CED7A74313E52BDB65B2",
+              "atUtc": "2026-11-13T01:42:47.9268453Z"
+            }
+          ]
+        },
+        "imported-instance-owned": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "imported-instance-owned",
+              "passed": true,
+              "detail": "the copy is a managed instance",
+              "atUtc": "2026-11-13T01:42:48.1261816Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the imported instance was removed",
+              "atUtc": "2026-11-13T01:42:48.5384811Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "avdmanager-create.txt",
+          "bytes": 39,
+          "sha256": "5701be79f259bcf77da2c4c6788c77dccbf4827317b1094e0583025f72748334"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "import.json",
+          "bytes": 653,
+          "sha256": "a6ea06da95a8a9b2e4ccc3aad94a2bc560e40c3d18403bc6ae8e648a8225313f"
+        },
+        {
+          "name": "instances.txt",
+          "bytes": 89,
+          "sha256": "38231384403f33d46bec3acfc4aee4a803fbc4afb73dae692cc62e7beb619b36"
+        },
+        {
+          "name": "preview.json",
+          "bytes": 564,
+          "sha256": "24f6a3acd71acd74839d9c8253d151c9567ac341587766cec6d93198206ee942"
+        },
+        {
+          "name": "source-after.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "source-before.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2920,
+          "sha256": "088f3bd3a85cfedc0b1cd305af386a05a058b874cef4182795fbb367409b3737"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1222,
+          "sha256": "7d756cca1eafe0314ba97b87fda4663f6dbd00714f54ae2904720938964aba26"
+        }
+      ]
+    },
+    {
+      "kind": "play35",
+      "runId": "20261113-065000",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/play35/20261113-065000",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "5d2e88a058b7e2d722809e38c6477b3172c59692",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-35;google_apis_playstore_ps16k;x86_64",
+        "imageRevision": "5",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone16k_x86_64/emu64xa16k:15/AE3A.240806.041/12890756:user/dev-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-57b7b5f07596 foreground: Window{24d747e u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": true,
+              "detail": "recovery=restored installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-57b7b5f07596",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "ED6461B56E5B6FBE2DD78B18289F31CFCCEF5F046A0CB9D038C9437080AEA4D1",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "create.txt",
+          "bytes": 292,
+          "sha256": "5ee89559a8d0a4c4961ddc94e5fea2dc9acd6ca3fa267ea16e934e3d1df651c5"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "523ec15ad9c284dd6c77e9d4c3badb0ea210023cfd8152bda891ec98dbd4d465"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 131184,
+          "sha256": "0c1240a6589b761d82b749e547b22cf9c95f96020ebdc4f0c2594abb2b2170f6"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "db7df4984354c6895135a9adbcaa701f06eac5c8bc0a6865d4d91ea6ece03491"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 179,
+          "sha256": "dc83b6aaf6c63291edcb8fe653bb05a6b57e32720d23a7b02329df676ecc3ad5"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 126,
+          "sha256": "466a60f3d8fc67d3b599250d83c860390c73954f23504407cec9e8fb2cc18c39"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "4318f3bf9db40881957674272ac5622edc6e8bbb926411239ed7aea5a7240553"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "3baa9fede759dcf1958fcf254adc7472d67f28a23958aac7f084afab5604b953"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "724e2b1222dcf368243a1fc0de08a5aa97bd94e51e4df3e9f0e394d5550410d2"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "c894950a27bb0deb1f0aeb3ac6e0ec75f426e82ec02f6fa2e2b69f36a2d913fc"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2750,
+          "sha256": "dc3a69e08412c52e6ce8ef01fdb9ebdf982386713bdac80071cce1fe1f3b36e4"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "39608c53a604cf210518970c20398f63029af47d545f18e33abdaf050f8f9898"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "f032de9267515b69c76db7da62f8a072723e905f812bc8500366fa5af0aaee1d"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 169,
+          "sha256": "d0461b4cf80b19630652ed7bdc48bb73db09c102b418f09ea7274b786e04d0f3"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1298,
+          "sha256": "cbaa570cf9d9729b8bfbee5f8d606aa337ef2ed13b57f9a43b15deb1ec92c895"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "be54119a0c04a21aa7c83b2d56686aab39ecf0e9ac4e8532901037b52aceecbb"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2573,
+          "sha256": "9112481888b0b9e432d7efe344f84ec161cbd3acc3b610d54ff52f33b0dd4f35"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 209,
+          "sha256": "c817457e8e6d967640ae23b98f95c053114286161668ed5846e036f4a009ed15"
+        }
+      ]
+    },
+    {
+      "kind": "play36",
+      "runId": "20261113-064730",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/play36/20261113-064730",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "5d2e88a058b7e2d722809e38c6477b3172c59692",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-36;google_apis_playstore;x86_64",
+        "imageRevision": "7",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone64_x86_64/emu64xa:16/BE2A.250530.026.D1/13818094:user/release-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-b07ed3ec630e foreground: Window{7fcf2a3 u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": true,
+              "detail": "recovery=restored installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-b07ed3ec630e",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "7F286403EF23D62A70F62C8ADEA07828B3C0D798E8A0CA049060E31BA012DDD3",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "create.txt",
+          "bytes": 286,
+          "sha256": "5b75ce1222a39fad8175cb41fdb3589b78ca54f9297f9ff637f6783f43ae2fa1"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "e6259c43ccbc6121b2652a58244262386bc9ee174c32e508ea8c1819282fc3f3"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 129869,
+          "sha256": "3f3695af6950468938d79d8714c22a57addf2f6775e8d132d6eedb3a60a37655"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "35561d686e128ac6773b3f25ff2835bf0536f462e3439eddc763568384fbe498"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 179,
+          "sha256": "50646cc206c7abfad0bbdd1ea734f65b73881fe3933107503882f38f66137bfc"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 126,
+          "sha256": "0dcb719835612b2114827cf763765bb49b1ecf8f27790a9633c2cbf9685ebf57"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "7824cab39665061f76ef63e8fefcd1d8225e7acb0a6577a52cc3ea4d07e98b18"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "9958fdfc051f41734880ec4144b83045c8cb345f94293f58a0d917a5b5ac41db"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "e8ec81026f75b7f40d12109ab05feefc5dc6b7529b72dccb5d3697cefaa51ac3"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "5ea1600c976372fb0d3cc05d55396434491b102a99fff103d59ab1ddb9488c49"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2750,
+          "sha256": "d5ab5891d29905046ead27a893e3bc9ed1092113ddedf8394d610039ff87ef0c"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "2fedb22616910b049384dd8c9450b9b70e203682405b63f018f77852153f4079"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 95,
+          "sha256": "27c50cff64e8827b99b9995c70f76572e7ec6650b18d91bcfdc456e9cef927c8"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 169,
+          "sha256": "1a652489aa2e6aef42a9c4acb87ab509a89ecb7c0327677e79d596f4e34c33bc"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1296,
+          "sha256": "f6e7d84bc8e2098c037cff1aac0b415847deef73b0f6502118aeed9ed0862453"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "21179671b54e3c49a130a54a1951fa2095ff664a3589a4eaf05f1d0711da301f"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2570,
+          "sha256": "0651ce3f3afb68af104b9e3de1b379c24203cc9cf6a6e425aaa29c3c3e99a1cd"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 211,
+          "sha256": "4bdce46fda3fd808ddfa78981d2f1c1c7c25658d8a5ad171268090f78f6c7790"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261113-063944",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/rootlab/20261113-063944",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "a40e522e3da0d4a4355b44cd92b2bef290ec0ad2",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:42:32.1146562Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 10,
+      "lanes": {
+        "state-initial": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-initial",
+              "passed": true,
+              "detail": "uid=2000 buildType=userdebug transport=603",
+              "atUtc": "2026-11-13T01:41:08.5134495Z"
+            }
+          ]
+        },
+        "root-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "root-transition",
+              "passed": true,
+              "detail": "uid 2000 -> 0",
+              "atUtc": "2026-11-13T01:41:11.1380374Z"
+            }
+          ]
+        },
+        "transport-reattached": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "transport-reattached",
+              "passed": true,
+              "detail": "transport 603 -> 604",
+              "atUtc": "2026-11-13T01:41:11.1478825Z"
+            }
+          ]
+        },
+        "state-after-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-root",
+              "passed": true,
+              "detail": "uid=0",
+              "atUtc": "2026-11-13T01:41:11.8786351Z"
+            }
+          ]
+        },
+        "unroot-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "unroot-transition",
+              "passed": true,
+              "detail": "uid 0 -> 2000",
+              "atUtc": "2026-11-13T01:41:15.0720631Z"
+            }
+          ]
+        },
+        "state-after-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-boot",
+              "passed": true,
+              "detail": "uid=2000",
+              "atUtc": "2026-11-13T01:42:01.2884655Z"
+            }
+          ]
+        },
+        "snapshot-saved": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-saved",
+              "passed": true,
+              "detail": "snapshot save rootlab-6136 tag=rootlab-base via=adb in 3.27s",
+              "atUtc": "2026-11-13T01:42:05.0575116Z"
+            }
+          ]
+        },
+        "snapshot-restored": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-restored",
+              "passed": true,
+              "detail": "snapshot load rootlab-6136 tag=rootlab-base via=adb in 4.11s",
+              "atUtc": "2026-11-13T01:42:18.7435334Z"
+            }
+          ]
+        },
+        "state-after-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-restore",
+              "passed": true,
+              "detail": "uid=2000 transport=607",
+              "atUtc": "2026-11-13T01:42:19.5682035Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-13T01:42:32.1010335Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "root.json",
+          "bytes": 338,
+          "sha256": "e04d3c7c115cbacbeebe4b2b861d749401cef30591d26027a9b5a3020eb6d619"
+        },
+        {
+          "name": "state-initial.json",
+          "bytes": 267,
+          "sha256": "ab662b4a08750748775e1aab91d1bbb5b7ec05ff4c00885c419b65aa4de0571c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2867,
+          "sha256": "46820f0e8baccc97e69a964a8ca928c6ad8092fbdb1635a4e351cdbcbc1fd6da"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 880,
+          "sha256": "6b0d1ef492f4125cae33a3f336c9f738baa36e5047d48923fa4f2e8276c223f9"
+        },
+        {
+          "name": "unroot.json",
+          "bytes": 345,
+          "sha256": "e44875b76b8039387acac9c97b2537ef063e45a1d00908a8bb18ab00ab4781a1"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-064532",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-063943/wpf/20261113-064532",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "a40e522e3da0d4a4355b44cd92b2bef290ec0ad2",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:47:28.6012313Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Candidate-014-Finish-20261113-063943-wpf",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-13T01:45:38.2525155Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-13T01:45:38.8063817Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 185 automation elements",
+              "atUtc": "2026-11-13T01:47:28.5746770Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-13T01:45:48.3746464Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-13T01:46:51.1389009Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-13T01:46:51.5214048Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-13T01:46:56.8118058Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-13T01:47:08.0014742Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": true,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-13T01:47:10.7838686Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": true,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-13T01:47:13.6213066Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": true,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-13T01:47:16.8448060Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": true,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-13T01:47:17.6669900Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261113-064718.png",
+              "atUtc": "2026-11-13T01:47:20.6443575Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-13T01:47:24.4596939Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-13T01:47:25.4401037Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-13T01:47:25.5545928Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 102922,
+          "sha256": "88b8b77e1d2c5aa2d9d3e4591d14173dae1fcabb559de1e5b3c2d2ce0f43e8a9"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 104464,
+          "sha256": "ae89e1e39a73d3ef2953d2beadd13417157860c66608d006438e1a9faaec0406"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 144811,
+          "sha256": "8fa72ddca596abe743cf4549cd727be64250b1ab95d6c1be1b5a93a2bd0d5237"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 164764,
+          "sha256": "68f61b3ee9a1078c2dfa6be40752c95de186d262aee21f59c68d0d535db2db83"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 177883,
+          "sha256": "8b4eb2e5bbcbe0d4dc0c20401154f966049d1e0308cab83a7e3e1727012bf6de"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 177672,
+          "sha256": "2d419162fa372b324acfe398b5d8b250ced020ba79e560611b800ca78d9fc089"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 178222,
+          "sha256": "ff19b835b2b0bf878659bb452c545ed48dc4bd30149d007029316acb55eea95a"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 175163,
+          "sha256": "e31ec02eae7b1a9210b42b7cadea5f6428b8a33bc936e89f8a88043d7648873d"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 175140,
+          "sha256": "c5e7336781ad912dbbbdf74779aa65d045404d91a3f647b7c125a5aad0162648"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 189461,
+          "sha256": "3293c0fbb0ff1d0cafadf1b0f3a63ab3b6bf9222ca9687d2890a8afe9e9d6bfb"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 191110,
+          "sha256": "4af632835ad4d1f062ad1b6802509968f3fb41ef699718f120eae22bf4646cc4"
+        },
+        {
+          "name": "13-palette.png",
+          "bytes": 173222,
+          "sha256": "fd25c22bad836658110e48c0a8b4dab2ebde5493f6d03a6abc34a05c5a15c798"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 10648,
+          "sha256": "482d1e4ae62f443722de16397f67701d3e4ebd3b7e0fff5f2941d0734df8c339"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1824,
+          "sha256": "0c47227082872426dddf45b6d6bf338862bc554d8d918c5c11923674420e4139"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 8612,
+          "sha256": "75028029b8677b5a257f13b430b89070de83efaea581329a4b24c5043bc8b7c1"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4264,
+          "sha256": "3659bf93e0c3117828e834f3b705ad6748379b0a76c515f4f7906c997d4c1eed"
         }
       ]
     }
