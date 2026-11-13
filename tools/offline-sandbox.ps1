@@ -43,14 +43,15 @@ try {
         $acceleration = & $emulator -accel-check 2>&1 | Out-String
         $accelCode = $LASTEXITCODE
         $version = & $emulator -version 2>&1 | Out-String
+        $versionCode = $LASTEXITCODE
     }
     finally { $ErrorActionPreference = "Stop" }
     $acceleration | Set-Content -LiteralPath (Join-Path $resultPath "acceleration.txt") -Encoding UTF8
-    if ($accelCode -ne 0 -or $acceleration -notmatch 'WHPX.*is installed and usable') {
+    if ($accelCode -ne 0 -or $acceleration -notmatch '(?im)^accel:\s+0\s+WHPX\([^\r\n]+\) is installed and usable\.') {
         throw "This isolated Windows instance did not expose usable WHPX."
     }
     $revision = Get-Content -LiteralPath (Join-Path $env:ANDROID_HOME "system-images/android-35/default/x86_64/source.properties")
-    if ($version -notmatch '37\.2\.12\.0.*16428233' -or $revision -notcontains 'Pkg.Revision=2') {
+    if ($versionCode -ne 0 -or $version -notmatch '37\.2\.12\.0.*16428233' -or $revision -notcontains 'Pkg.Revision=2') {
         throw "The offline SDK differs from the pinned engine or image."
     }
     $candidate = Get-Content -LiteralPath (Join-Path $inputPath "candidate.json") -Raw | ConvertFrom-Json
@@ -82,6 +83,9 @@ function Add-Setting($parent, [string]$name, [string]$value) {
     $element.InnerText = $value
 }
 Add-Setting $configuration "Networking" "Disable"
+Add-Setting $configuration "AudioInput" "Disable"
+Add-Setting $configuration "VideoInput" "Disable"
+Add-Setting $configuration "ClipboardRedirection" "Disable"
 Add-Setting $configuration "MemoryInMB" "8192"
 $mappings = $configuration.AppendChild($document.CreateElement("MappedFolders"))
 foreach ($entry in @(
