@@ -743,12 +743,14 @@ public sealed class InstanceManager
                 {
                     var probe = await _adb.RunAsync(
                             record.AdbSerial,
-                            new[] { "shell", "getprop", "sys.boot_completed" },
-                            TimeSpan.FromSeconds(15),
+                            new[] { "shell", "getprop sys.boot_completed; dumpsys -t 5 window" },
+                            TimeSpan.FromSeconds(8),
                             deadline.Token)
                         .ConfigureAwait(false);
-                    if (probe.ExitCode == 0 && probe.StandardOutput.Trim() == "1"
-                        && await ForegroundAsync(record, deadline.Token).ConfigureAwait(false) is not null)
+                    var output = probe.StandardOutput.AsSpan().TrimStart();
+                    var endOfBootProperty = output.IndexOf('\n');
+                    if (probe.ExitCode == 0 && endOfBootProperty > 0 && output[..endOfBootProperty].Trim().SequenceEqual("1")
+                        && ReadFocusedWindow(probe.StandardOutput) is not null)
                     {
                         return true;
                     }
@@ -758,7 +760,7 @@ public sealed class InstanceManager
                     // The guest is still coming back; keep waiting.
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(3), deadline.Token).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(700), deadline.Token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -2500,18 +2502,20 @@ public sealed class InstanceManager
                 return null;
             }
 
-            const string prefix = "mCurrentFocus=";
-            var line = dump.StandardOutput
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(l => l.Trim())
-                .FirstOrDefault(l => l.StartsWith(prefix + "Window{", StringComparison.Ordinal));
-
-            return line is null ? null : line[prefix.Length..];
+            return ReadFocusedWindow(dump.StandardOutput);
         }
         catch (Exception ex) when (ex is InvalidOperationException or TimeoutException)
         {
             return null;
         }
+    }
+
+    private static string? ReadFocusedWindow(string windowDump)
+    {
+        const string prefix = "mCurrentFocus=";
+        var line = windowDump.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault(line => line.StartsWith(prefix + "Window{", StringComparison.Ordinal));
+        return line?[prefix.Length..];
     }
 
     private async Task<T> WithControllerAsync<T>(
