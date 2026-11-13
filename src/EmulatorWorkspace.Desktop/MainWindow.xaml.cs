@@ -76,6 +76,8 @@ public partial class MainWindow : Window
                     ["ms"] = Math.Round(latency.CompositionMs, 2),
                     ["frameAvailableMs"] = Math.Round(latency.FrameAvailableMs, 2),
                     ["tapAcknowledgedMs"] = Math.Round(latency.TapAcknowledgedMs, 2),
+                    ["controllerSetupMs"] = latency.ControllerSetupMs,
+                    ["controllerTapMs"] = latency.ControllerTapMs,
                     ["timeout"] = false,
                 });
             }

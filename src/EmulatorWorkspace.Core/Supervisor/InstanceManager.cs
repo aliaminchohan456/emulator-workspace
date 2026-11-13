@@ -1067,8 +1067,13 @@ public sealed class InstanceManager
     {
         var record = RuntimeFor(name).Record;
         var dispatched = DateTimeOffset.UtcNow;
-        await WithControllerAsync(record, channel => channel.TapAsync(x, y, cancellationToken), cancellationToken)
-            .ConfigureAwait(false);
+        var timer = Stopwatch.StartNew();
+        var controllerTapStartedMs = 0d;
+        await WithControllerAsync(record, channel =>
+        {
+            controllerTapStartedMs = timer.Elapsed.TotalMilliseconds;
+            return channel.TapAsync(x, y, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
         return new JsonObject
         {
             ["name"] = name,
@@ -1076,6 +1081,8 @@ public sealed class InstanceManager
             ["y"] = y,
             ["dispatchedUtc"] = dispatched.ToString("O"),
             ["acknowledgedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
+            ["controllerSetupMs"] = Math.Round(controllerTapStartedMs, 2),
+            ["controllerTapMs"] = Math.Round(timer.Elapsed.TotalMilliseconds - controllerTapStartedMs, 2),
         };
     }
 
