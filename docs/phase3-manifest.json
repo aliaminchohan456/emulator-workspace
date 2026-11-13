@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T00:13:13.4129335Z",
-  "headCommit": "c7fef2c",
-  "trackedWorkTree": "M plan.md\n M src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs",
+  "latestFinishedUtc": "2026-11-13T00:48:30.6083131+00:00",
+  "headCommit": "fcb46e0",
+  "trackedWorkTree": "M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -46600,6 +46600,3981 @@
       ]
     },
     {
+      "kind": "candidate",
+      "runId": "20261113-041225",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessSha256": "821134829C70F45B50FD530A6852D3C954AAB1FCFBA55B1D9081E0DF6213DECC",
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:48:30.6083131+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 9,
+      "lanes": {
+        "recipe-launcher": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "recipe-launcher",
+              "passed": false,
+              "detail": "exit=2, checks=37, failures=3, log=recipe-launcher.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "recipe-fixture": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "recipe-fixture",
+              "passed": false,
+              "detail": "exit=2, checks=37, failures=4, log=recipe-fixture.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "phase3": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "phase3",
+              "passed": false,
+              "detail": "exit=2, checks=55, failures=3, log=phase3.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "rootlab": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab",
+              "passed": true,
+              "detail": "exit=0, checks=10, failures=0, log=rootlab.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "import": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "import",
+              "passed": true,
+              "detail": "exit=0, checks=9, failures=0, log=import.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "devtools": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "devtools",
+              "passed": true,
+              "detail": "exit=0, checks=9, failures=0, log=devtools.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "wpf": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wpf",
+              "passed": true,
+              "detail": "exit=0, checks=16, failures=0, log=wpf.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "play36": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "play36",
+              "passed": false,
+              "detail": "exit=2, checks=8, failures=1, log=play36.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "play35": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "play35",
+              "passed": true,
+              "detail": "exit=0, checks=8, failures=0, log=play35.log",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "devtools/20261113-053532/bugreport.json",
+          "bytes": 331,
+          "sha256": "1bbe664249b8a4ce895291e0a490cf678c9930a627c591aef4668b24f9bcf9a8"
+        },
+        {
+          "name": "devtools/20261113-053532/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "devtools/20261113-053532/crash-report.json",
+          "bytes": 266,
+          "sha256": "788388e747c68ffca59ee6bb6fe597fc355885a34f3f140f2fce96f61ca2ea66"
+        },
+        {
+          "name": "devtools/20261113-053532/deep-link.json",
+          "bytes": 507,
+          "sha256": "c817b988810fd8bb3f501005a4346d80e7b9c06d6078b51312310d9d8c5d830a"
+        },
+        {
+          "name": "devtools/20261113-053532/instrumentation.json",
+          "bytes": 370,
+          "sha256": "759cb42af9d9f8e5f269910677457642f4ce0e6a75676523dd057c4ef6bf63d9"
+        },
+        {
+          "name": "devtools/20261113-053532/logcat-export.json",
+          "bytes": 279,
+          "sha256": "a50e8a072cceac76cd012906a449016cce7d0b36b141cbe2eebf2963eea6a2f1"
+        },
+        {
+          "name": "devtools/20261113-053532/logcat-export.txt",
+          "bytes": 45596,
+          "sha256": "d608089c9a85572d18d9c96972fa47a82fe08eeaf65bd8c2d580f0794fbfea73"
+        },
+        {
+          "name": "devtools/20261113-053532/package-info.json",
+          "bytes": 311,
+          "sha256": "3e26035e8676fd5677ad98e695f2e43579c013836583d97d516aa429712c12ef"
+        },
+        {
+          "name": "devtools/20261113-053532/package-permissions.json",
+          "bytes": 346,
+          "sha256": "7ca21dfe033d17b17a0161a4860214952b6a1336f47c2f3507dab2ef53a72fdb"
+        },
+        {
+          "name": "devtools/20261113-053532/summary.json",
+          "bytes": 3107,
+          "sha256": "d806bae13035b4fbbeb6c46333d7b6ed5a161461da41f6e54f892ca3877dd75f"
+        },
+        {
+          "name": "devtools/20261113-053532/transcript.txt",
+          "bytes": 1318,
+          "sha256": "ec6285973c0d97c5f13ed76dc1ba39dce6609a215692b95de66fa9266bacb4fb"
+        },
+        {
+          "name": "devtools.log",
+          "bytes": 2654,
+          "sha256": "db507f37d22472148a926dd682edfce109001227890f13e53a1b1dc21a6b26d3"
+        },
+        {
+          "name": "import/20261113-053515/avdmanager-create.txt",
+          "bytes": 39,
+          "sha256": "5701be79f259bcf77da2c4c6788c77dccbf4827317b1094e0583025f72748334"
+        },
+        {
+          "name": "import/20261113-053515/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "import/20261113-053515/import.json",
+          "bytes": 646,
+          "sha256": "d55ae47cca230990946da14c3c6bab8f434da9042ed5d635c402ca487ca0a63f"
+        },
+        {
+          "name": "import/20261113-053515/instances.txt",
+          "bytes": 89,
+          "sha256": "38231384403f33d46bec3acfc4aee4a803fbc4afb73dae692cc62e7beb619b36"
+        },
+        {
+          "name": "import/20261113-053515/preview.json",
+          "bytes": 550,
+          "sha256": "dd26dc42133621115441c862de9bdacc17fb66c37b9a6f165c7aac9fc180baeb"
+        },
+        {
+          "name": "import/20261113-053515/source-after.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "import/20261113-053515/source-before.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "import/20261113-053515/summary.json",
+          "bytes": 2913,
+          "sha256": "d5e1f39be2826c03d92a7e48b119c66988a59afddb4f4ecd6992ac21527c80e4"
+        },
+        {
+          "name": "import/20261113-053515/transcript.txt",
+          "bytes": 1201,
+          "sha256": "540be5b18c7514bd5f7c93e78016ee6422547095fd8585564bad1b73102420e5"
+        },
+        {
+          "name": "import.log",
+          "bytes": 2537,
+          "sha256": "3feb327427764a60ca6e4d02f0161465afa214a0a89b8e46a606f28c7fd03a05"
+        },
+        {
+          "name": "phase3/20261113-051314/adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "f02b21413b4328c1eb77bfd238b250a19744655ba306a861b0fc0d379b434c17"
+        },
+        {
+          "name": "phase3/20261113-051314/adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "f02b21413b4328c1eb77bfd238b250a19744655ba306a861b0fc0d379b434c17"
+        },
+        {
+          "name": "phase3/20261113-051314/adb-identity.json",
+          "bytes": 879,
+          "sha256": "744395261f7f477d4b7f2bf6534ad6f964a63c24b1988690a0e87158690c5670"
+        },
+        {
+          "name": "phase3/20261113-051314/battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "phase3/20261113-051314/battery.json",
+          "bytes": 78,
+          "sha256": "066d91014b76a33740a8c9ee5e3d7bf68a1d8d491d5839e029fe9d5c65b4d120"
+        },
+        {
+          "name": "phase3/20261113-051314/bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "4c096b7bdbe6aaf9cf5460713b0dc8f04254e6b986ea93a3f679a8c574fc2851"
+        },
+        {
+          "name": "phase3/20261113-051314/bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "phase3/20261113-051314/bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "phase3/20261113-051314/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "phase3/20261113-051314/cross-guest.json",
+          "bytes": 35,
+          "sha256": "4451b7e6ba513a942bf41585d5cf4a95880e02436ca571cf363b2af48061b65c"
+        },
+        {
+          "name": "phase3/20261113-051314/geo.json",
+          "bytes": 107,
+          "sha256": "6a187ba3799176f00a188e1fc675c85ea2dbe1f441710892194054113f703c12"
+        },
+        {
+          "name": "phase3/20261113-051314/instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "55c1deb34962717ea297c3165420a832a584cba1cdc48e58692f620112e9552e"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-duplicate.yaml",
+          "bytes": 201,
+          "sha256": "370b6e73c6d08c030a8a7b285bd6cc725091ace025e6e3a7fb99ff4cac6bbe7a"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/commands.json",
+          "bytes": 3447,
+          "sha256": "a3ea7c765f9cccd64d150e919979de5316cbe9f3a6d0b426dc67672db4c1fd83"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 995906,
+          "sha256": "0fa721eaf2dbdf8d1ab41b8ffe85fab720b45f386e32908fea952889d73544cc"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/logs/maestro.log",
+          "bytes": 3862,
+          "sha256": "44e05eadee9ef9ab60a0f3ec3ddaaa28c6ffc7123277bc0facbbbeea2dc44b8a"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/manifest.json",
+          "bytes": 803,
+          "sha256": "6d418de0e2405cc76180a3c320604abcdac5f652b67efc9a67b362d83cb62a39"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/screen-hierarchy/step-004-assertCondition-Emulator_Workspace_QA_fi.json",
+          "bytes": 44581,
+          "sha256": "3a434be36546bd8bc74e14d94e2f65043a5d58853579823b4993c715a540b84e"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/screenshots/step-004-assertCondition-Emulator_Workspace_QA_fi.png",
+          "bytes": 84505,
+          "sha256": "de8a29c6da675da66edbfb109a155fa36f7d0e6b5aa97a6e660520da3b2997e8"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-evidence/.maestro/tests/2026-11-13_052849/maestro.log",
+          "bytes": 6350,
+          "sha256": "16616b7740c17ca1295593ae01ed0a03ea72f35bffa2593da125322d7e88fd8a"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "04bebebad93ce736641a590812aecdb44e09be19ac055e13091b7afd92a8c467"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "phase3/20261113-051314/maestro-run.txt",
+          "bytes": 863,
+          "sha256": "a2a11ea2ce9a276c2c02d2f4b73875f38495cacbfb1291e5c8ae3f73725e4261"
+        },
+        {
+          "name": "phase3/20261113-051314/malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "phase3/20261113-051314/package-dumpsys.txt",
+          "bytes": 3538,
+          "sha256": "5d3e4982d1c7e673d84b8a6604214c65c13e8c36cb3ad9a7d4d4e64b8500c0dc"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-099fdd5b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-111b9eb4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-16c73aa0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-1eff5b2a.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-338dbb5c.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-3b9e9a6b.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-3cb45984.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-4a279fea.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-64b85ef8.json",
+          "bytes": 38,
+          "sha256": "688428c1c02b1f40b6ec8ef3d7f90b2bc9f778cf4e4c1dd97357c20ea7087c9f"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-73b4a223.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-8ecc2d3d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-8fb00645.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-92ddef58.json",
+          "bytes": 54,
+          "sha256": "277520a351d63712e912e9065efdc64d0ae1a7765f3cd9c9cd0902eff2516cb2"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-93bb93ec.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-a0429331.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-a773a194.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-b6623b7c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-bd941556.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-c2e33fdf.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-c74602eb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-d1c88125.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-d4d2505f.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-d5c5009f.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-e10bbba3.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-e3b4e64d.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-e8716ed8.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-e9d14561.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-ecc632b9.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-fe552579.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/args-fea56041.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/boot.txt",
+          "bytes": 349,
+          "sha256": "bef8a56c6867af297032b9235bbcc407d4636cb68bfa94d5826b9ccc47490933"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/cli-transcript.json",
+          "bytes": 383962,
+          "sha256": "5bf64507426991b73be3c3703e3f5a3cc0d00f1e3f4d5f4fd075f20753eee799"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "979ea1675d54e5943e4fbf587abfe1db7e7c1ddd7c7c4c3308696c3aea587ec9"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "6824fe53a16b571f343f9db4376bf3a305238dc57f1590d23a88e8c5ecb684bc"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/mcp/mcp-transcript.json",
+          "bytes": 241677,
+          "sha256": "8b95703b25e5560c76b85a65b31b495f34dbef0b1d152f1314d22bf2810b85df"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "4a6752a37303b984dadf2a510dde043167b1b5391831b439b7689637e5e7b842"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "a2e2df3a7901513c9f0bd8071aac9f2776ab76164222702c5fc37f4be9febe94"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/mcp-workflow.txt",
+          "bytes": 662,
+          "sha256": "e3d072b7536b517252ef6814ea9b84e8497461e0676b9bf225eb2a572e2947a1"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/network.json",
+          "bytes": 2069,
+          "sha256": "6d153954cd5665d4ee7edf71795eb41d1e26291814bd24fcb57467442491fc54"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/python-mcp.txt",
+          "bytes": 506,
+          "sha256": "b3b3e126731e5ce7dd82966242f38b666b1fd7c5c731c3144666aefdbe68333b"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/secure-cli.json",
+          "bytes": 250604,
+          "sha256": "2acc78fd8a367ed2cc06c20fd15dda5df95d84fc7c859dcf058e53a85731a21f"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/security.json",
+          "bytes": 1081,
+          "sha256": "f4e390fa83df7a1b7fa9fdfa5c03341400c0dc627ae1eae793d3f0e806ac2ea8"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/stale-frame.json",
+          "bytes": 52,
+          "sha256": "1824d4f0d0fbd9a7a1ebc973cb42e195f5726557a9240df6c674b4f921252ad7"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/summary.json",
+          "bytes": 12271,
+          "sha256": "b699b2028cac8230f3462d52b1fd78ef2ed0872684232a209e4cfb7675eb6333"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/transcript.txt",
+          "bytes": 5714,
+          "sha256": "93e42fef2c1e5ea8447456b9f0f29175735f15a4b6bdc92838b2278fde004be9"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/versions.json",
+          "bytes": 554,
+          "sha256": "78d613de0b0a071eb3b21c7ba6d181508c3872ed380f9bb6464727c20e63997b"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2/20261113-051326/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2-acceptance.txt",
+          "bytes": 11168,
+          "sha256": "abae09e9350ecfd7626a8d38d594411fac2fd93d264e58dc1d7cf38ac0bf8f43"
+        },
+        {
+          "name": "phase3/20261113-051314/phase2-summary.json",
+          "bytes": 12271,
+          "sha256": "b699b2028cac8230f3462d52b1fd78ef2ed0872684232a209e4cfb7675eb6333"
+        },
+        {
+          "name": "phase3/20261113-051314/profile-export.json",
+          "bytes": 538,
+          "sha256": "1d82acd99d7494d001a511f2f4f6e3bb0d75e4c2cc4a2c90987526622207a5f5"
+        },
+        {
+          "name": "phase3/20261113-051314/profile-import-request.json",
+          "bytes": 928,
+          "sha256": "4bf99e7dc94d803dce66d70f5af4851844d1d8f12345401ec88d7ae52ec3363b"
+        },
+        {
+          "name": "phase3/20261113-051314/race-logcat.txt",
+          "bytes": 856,
+          "sha256": "3bfff2193acfb65728b19ab4e322e0e1945dfbc22eac4ab88a2f5edd46b09650"
+        },
+        {
+          "name": "phase3/20261113-051314/race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "phase3/20261113-051314/race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "phase3/20261113-051314/race-timeline.json",
+          "bytes": 648,
+          "sha256": "c9b34c298a56e035eae10ae7b3326e6a9ddc12bfdda5b5da4440e22218c913e6"
+        },
+        {
+          "name": "phase3/20261113-051314/race-ui.xml",
+          "bytes": 56,
+          "sha256": "2b43d1dc45b096fe1aa706d17d7e0c55a98442d43141ee5d94b2fe5774eeef15"
+        },
+        {
+          "name": "phase3/20261113-051314/restore.json",
+          "bytes": 63,
+          "sha256": "a6e879e62c6b180338ae105c66a011c5ddb3787ee9e97a2f5ace197e250715f4"
+        },
+        {
+          "name": "phase3/20261113-051314/snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "37c210583a3aac05c585b5f26258962c4bb48b737f366adcdc48feb329cc5e09"
+        },
+        {
+          "name": "phase3/20261113-051314/stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "079468d41faf3795e53cee45ccca5bd75f6cdf1dd3a7aa38adc6aebb315d8094"
+        },
+        {
+          "name": "phase3/20261113-051314/summary.json",
+          "bytes": 36960,
+          "sha256": "033fd3c0f8c25e39f86469b05885497ac070d68f4c3d78e337c230c48760cae1"
+        },
+        {
+          "name": "phase3/20261113-051314/terminated-guest-probe.json",
+          "bytes": 270,
+          "sha256": "f303ff349525be33c6a3ac035ca85b6bb84d9dbde92bcc265320b45d46b417c7"
+        },
+        {
+          "name": "phase3/20261113-051314/terminated-race-probe.json",
+          "bytes": 268,
+          "sha256": "e1474d029c3392a2991238f6b8c7e4f6f104687464bbc35cabe42b3be9a5de42"
+        },
+        {
+          "name": "phase3/20261113-051314/transcript.txt",
+          "bytes": 5063,
+          "sha256": "df6b075bb3c301378ed027cbae531b54adb2cb3b584c837e9a81679ff92dc3d8"
+        },
+        {
+          "name": "phase3/20261113-051314/versions.json",
+          "bytes": 543,
+          "sha256": "902b3b27cffe807bb938a65f95ace138cbaa984b2b075b4518dc9400d0a56725"
+        },
+        {
+          "name": "phase3.log",
+          "bytes": 11962,
+          "sha256": "7927eebd0b73dd1d91ef662c1f83f0c766a658ac0644dbe335fc8ba667322630"
+        },
+        {
+          "name": "play35/20261113-054544/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "play35/20261113-054544/create.txt",
+          "bytes": 285,
+          "sha256": "6fe6c73766dbd30bcbc97f11f3bd3835c1a33ce9d1830b1fd7b27967d9a67919"
+        },
+        {
+          "name": "play35/20261113-054544/destroy.txt",
+          "bytes": 32,
+          "sha256": "7cf730881b4098aea00395541b112dcdaa1ded6cc059e067c1d3d0ca2ee8e8f9"
+        },
+        {
+          "name": "play35/20261113-054544/fixture.png",
+          "bytes": 131713,
+          "sha256": "2c55b2981c55690794c640ad3ee667f288e306538d9631d4cdb6003b9de32f5b"
+        },
+        {
+          "name": "play35/20261113-054544/foreground.txt",
+          "bytes": 124,
+          "sha256": "e072efef4eb048598f1c2bcfd20cead5552d11c75d4e4d152babda713ca32e93"
+        },
+        {
+          "name": "play35/20261113-054544/frame.txt",
+          "bytes": 179,
+          "sha256": "b11ef17c532f6bccc379214a135ea33e8db4b32bdba2c451786e26d037533684"
+        },
+        {
+          "name": "play35/20261113-054544/install.txt",
+          "bytes": 119,
+          "sha256": "4f8404a5d2907fd22bb130f5dc0884d58bbb9e8a9e5a64effce94be07eeb01b4"
+        },
+        {
+          "name": "play35/20261113-054544/launch.txt",
+          "bytes": 108,
+          "sha256": "22706518a215230deba1f6b67b98092b10e8e99045dc8f104d9cfe3d979a954e"
+        },
+        {
+          "name": "play35/20261113-054544/package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "6ad233d5738519cfbf416bd1660fd666c4b4354ecc53edd1afca40da26181de9"
+        },
+        {
+          "name": "play35/20261113-054544/package-info.txt",
+          "bytes": 270,
+          "sha256": "bd596b8cdf6582dd15db1df3cab917f9e7bc840cdcb62bdfb32b87895372ab46"
+        },
+        {
+          "name": "play35/20261113-054544/root-state.txt",
+          "bytes": 207,
+          "sha256": "a324e74fb784dffb058a93ba27c45b3949dd161e712f9d7d4215cf2d1da077be"
+        },
+        {
+          "name": "play35/20261113-054544/simulation.txt",
+          "bytes": 2750,
+          "sha256": "177f6250cb06038b9132afe74d0257960730632e3a36cc2884081ddc0b5e645d"
+        },
+        {
+          "name": "play35/20261113-054544/snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "5e4afbfa3f9f12af1eeb04d7b05cfc6b02f39c467700ea25d194441ce3eded61"
+        },
+        {
+          "name": "play35/20261113-054544/snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "bab0c76a95c6b7848c4a1303f04fdd8b6cc7ef4bda5437a73e33b380917ff85b"
+        },
+        {
+          "name": "play35/20261113-054544/start.txt",
+          "bytes": 162,
+          "sha256": "ae33950a1b70cef56689658de036b415b36c5b14a1479597cfe6f063b0727848"
+        },
+        {
+          "name": "play35/20261113-054544/status.txt",
+          "bytes": 1300,
+          "sha256": "088dc71e4b1ee80ea0c562a099a7fc1e392f483a28de9b7e85b623ef26eee80b"
+        },
+        {
+          "name": "play35/20261113-054544/stop.txt",
+          "bytes": 88,
+          "sha256": "e8629c112f0f0f91a543d163ec82c11b2673628241175731b543b2cc0aa1d13b"
+        },
+        {
+          "name": "play35/20261113-054544/summary.json",
+          "bytes": 2573,
+          "sha256": "b36bf18c1fad8643c382ea917872b611f55fd6649c670a06bb959e71ced9e55d"
+        },
+        {
+          "name": "play35/20261113-054544/wait.txt",
+          "bytes": 211,
+          "sha256": "d5a0cf85aa831e36e9166faf713b58dfe09890579737ac9efa3313ca9a32b995"
+        },
+        {
+          "name": "play35.log",
+          "bytes": 646,
+          "sha256": "291be67ce160b340a7441497da9b39de26b80426dccad8de36e23d9720b0d3a1"
+        },
+        {
+          "name": "play36/20261113-054025/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "play36/20261113-054025/create.txt",
+          "bytes": 279,
+          "sha256": "681dec8e39469e4a62cd75c7525d801309920043bf123ecd6e61cfb6f10be5e4"
+        },
+        {
+          "name": "play36/20261113-054025/destroy.txt",
+          "bytes": 32,
+          "sha256": "c488301349d2de5770bc614d49db722e725248ef0281125d6a814c58f11e9b63"
+        },
+        {
+          "name": "play36/20261113-054025/fixture.png",
+          "bytes": 129608,
+          "sha256": "e326b34b878be8ffacebb5370da2b5d9f9014ad5f0d71be67118836b026c6e1d"
+        },
+        {
+          "name": "play36/20261113-054025/foreground.txt",
+          "bytes": 124,
+          "sha256": "20d043131a3acfa067e1f911ede5a8ea72318e97a84c75b92cf1ea595982ab27"
+        },
+        {
+          "name": "play36/20261113-054025/frame.txt",
+          "bytes": 179,
+          "sha256": "03c75c763de28ad7206149ee94a3c1cd4be00aff8d7d333dfa4bcfa19bb2ae6f"
+        },
+        {
+          "name": "play36/20261113-054025/install.txt",
+          "bytes": 119,
+          "sha256": "89d2f9ff054f8fad2f93792dc33f4339a5029fb13e24bb733e57c115ab88e490"
+        },
+        {
+          "name": "play36/20261113-054025/launch.txt",
+          "bytes": 108,
+          "sha256": "9d7472533efc3b92745ac901a13642d558698fa4e1eccef0a8c93fdebad306ad"
+        },
+        {
+          "name": "play36/20261113-054025/package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "720d0a8b20782798b83677e062fc08747cd95314beb7ced8bfd101836903343b"
+        },
+        {
+          "name": "play36/20261113-054025/package-info.txt",
+          "bytes": 270,
+          "sha256": "6b496400f4d1e8fe7aba7eec69b0ddf0ddf1292751e0f8ab325ba7fbe023a0ae"
+        },
+        {
+          "name": "play36/20261113-054025/root-state.txt",
+          "bytes": 207,
+          "sha256": "c7114c72e2b5dae50c55004523fdc24fcd29e8b51da131a11e21958e8a5e5396"
+        },
+        {
+          "name": "play36/20261113-054025/simulation.txt",
+          "bytes": 2750,
+          "sha256": "6465fd73ab83167953f5bee6ab13938029127c6b4e144f2db1e41350ef0a0840"
+        },
+        {
+          "name": "play36/20261113-054025/snapshot-load.txt",
+          "bytes": 101,
+          "sha256": "8d60a251c421e15abe9bac89774ff944100e1f792d3e87d5fe3318a03fb61dfb"
+        },
+        {
+          "name": "play36/20261113-054025/snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "cb01e65861fbab7dc25f34c57497befd273c619ede3bbc83f75c8ebf74f411c9"
+        },
+        {
+          "name": "play36/20261113-054025/start.txt",
+          "bytes": 163,
+          "sha256": "ea567269bfa8f1e7e73ed362059387ae47c0182422485c0e20bad8f73f783d71"
+        },
+        {
+          "name": "play36/20261113-054025/status.txt",
+          "bytes": 1298,
+          "sha256": "b0e1f2c9257e891ca4f12bd4ad7135883202d5eb40f5594955cc8be97777c086"
+        },
+        {
+          "name": "play36/20261113-054025/stop.txt",
+          "bytes": 88,
+          "sha256": "6575ed4aa86c94fe11671394364e97b6396b003bed1ed2f7b94388866f1fa877"
+        },
+        {
+          "name": "play36/20261113-054025/summary.json",
+          "bytes": 2572,
+          "sha256": "2f533431a8b0bf3eea952b656c426b194e4e20d0a073a93e9672c7cc3a03d9eb"
+        },
+        {
+          "name": "play36/20261113-054025/wait.txt",
+          "bytes": 214,
+          "sha256": "6b5ce563ef33eb86cba74589e462e78fe53839ee767b60dda72b474dc54cf759"
+        },
+        {
+          "name": "play36.log",
+          "bytes": 651,
+          "sha256": "f2101b5b3574a2fd8fbfd936c338fc95b8d0a1ecc0794b6dc59261e0585c5b9f"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-recovered-a81fb5.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-recovered-tap-c5dcfc.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-timeout-884701.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-timeout-tap-c9546b.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-welcome-428e18.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-assert-welcome-tap-87704d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-baseline-e1cdad.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-bystander-network-33da55.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-fg-state-1dd947.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-fg-state-e95200.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-install-6db171.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-launch-befc7c.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-logs-60d41a.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-marker-bystander-2-09e4ea.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-marker-bystander-c50c28.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-marker-target-21ed13.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-screenshot-abf29a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-shape-3df046.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-type-pass-15e752.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-type-user-3b669e.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/args-unshape-af6f3f.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/fixture.jsonl",
+          "bytes": 278,
+          "sha256": "1b70fe64ca002d4e551b700221d5703e6ea3d9efd3f2352c58ef6dbce1ce6b16"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/identities.json",
+          "bytes": 545,
+          "sha256": "a5ae9ce0202cdc27c22b0e287bb983e68d99bdc3ad92acb063b31ef25234bb3b"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/operations-after-interrupt.json",
+          "bytes": 9335,
+          "sha256": "5910e9308d59bc11b80d74c9e28614741c3ac61484d7a977732da86be658b7f1"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-export.json",
+          "bytes": 4213,
+          "sha256": "da384a788a5f98eef9fcbb954c2c955436965df48527b4b2401393affb60f1f7"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "0c095314a8dd15805b55065c7ed8f74dad957abca0191d7b17eebb661d91ec18"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-replay.json",
+          "bytes": 2183,
+          "sha256": "bb9441992ce4821f27b6cbeb03dcdaa9281b662ecacc73c2c9e1f70448c61163"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-retry.json",
+          "bytes": 2183,
+          "sha256": "94abfca8a624058e5f7438d755e525168d7a525f0cbc5f203848024a6b3ecbe8"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-stop.json",
+          "bytes": 281,
+          "sha256": "a21b68e5cfa4e5bdd0037a007359599c0aab37bd5049b6216ee49c41bef5e48e"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/restore-window-probe.txt",
+          "bytes": 120,
+          "sha256": "ea853ee470cbf425d79766b309ad7c8df7ce96edd444f7b3aad92d893ee7b866"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/summary.json",
+          "bytes": 12574,
+          "sha256": "37824e60708e351eee66022addb22f8f18dd4915b4b45b7302a32893a18e036d"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/transcript.txt",
+          "bytes": 3709,
+          "sha256": "b8594c2c26c3e6f760d15ea60eeb54adb19a69c4cd861699baf98db635faa31d"
+        },
+        {
+          "name": "recipe-fixture/20261113-042810/versions.json",
+          "bytes": 338,
+          "sha256": "8b980f23c471ef54c8887086a3bd102ae0b630d283982c51676d4080f31dbee8"
+        },
+        {
+          "name": "recipe-fixture.log",
+          "bytes": 8433,
+          "sha256": "2f075dce8912f0b19a892caafbb8cbfc8f1b9f755ced0af93f97bdffb6d117ac"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-recovered-7f91ba.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-recovered-tap-39846d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-timeout-1cb736.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-timeout-tap-04b725.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-welcome-6a59fd.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-assert-welcome-tap-09d020.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-baseline-a804d9.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-bystander-network-acb03a.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-fg-state-4d6f7d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-fg-state-b415e2.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-install-9c01d5.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-launch-6b8922.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-logs-b6d205.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-marker-bystander-10878f.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-marker-bystander-2-405f19.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-marker-target-74de55.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-screenshot-f033c0.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-shape-86c3a3.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-type-pass-1d2ca3.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-type-user-47a355.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/args-unshape-0170ac.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/fixture.jsonl",
+          "bytes": 278,
+          "sha256": "a632dc9c5afd0a933cac61aaa3c260987163ebbd4cfd898abb33b3754a820865"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/identities.json",
+          "bytes": 546,
+          "sha256": "47424af134f53ec3b91706439abbb83f4f216eb31198ffdad7338c493dabaf64"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/operations-after-interrupt.json",
+          "bytes": 9334,
+          "sha256": "845c87851942a759c16906a84191fa005aadaed2a7fd2ecc2ba3b640e3321c00"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-export.json",
+          "bytes": 4214,
+          "sha256": "40a30ba8493d4d69ea1b6b3d1ffdd56867a1ced9dec9f4e9e1397a83c2923215"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "e7a906fcfdf0dd7a74fca7e6a352f7da7938113bea988758db07ec5768222dc5"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-replay.json",
+          "bytes": 710,
+          "sha256": "25a8dfec97ce5f11db7ce58c4d0504da16da8e2892eb46075fcf05a54753647b"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-retry.json",
+          "bytes": 2304,
+          "sha256": "33d7cfb83a8f8f0c694a1343d10fcc1bcb5acb9bf1e364a74ad16ea932c08899"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-stop.json",
+          "bytes": 282,
+          "sha256": "d3d2c89042a2bb6d2e9193106a4dbaa86faa66fd73de8331faac1ab68a8751d1"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/summary.json",
+          "bytes": 12489,
+          "sha256": "4b8d6cbf4dfefa2adec30d27b83cc7b145ed4ea76105610f4a4850d55e3cbe63"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/transcript.txt",
+          "bytes": 3627,
+          "sha256": "04acae435cf96f437492a0fc22adcacbdce517360e628592c8475f79869dda01"
+        },
+        {
+          "name": "recipe-launcher/20261113-041225/versions.json",
+          "bytes": 494,
+          "sha256": "d47fc331d640a82e73864147e3c80e30f33a5b2aaff84e0765bce80bec21f15c"
+        },
+        {
+          "name": "recipe-launcher.log",
+          "bytes": 8351,
+          "sha256": "cc6aad83c7f437499394263cf073d8488dca489c1c478b38f3c6d317c50945b5"
+        },
+        {
+          "name": "rootlab/20261113-053031/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "rootlab/20261113-053031/root.json",
+          "bytes": 338,
+          "sha256": "2a088650edc5a3c56205fd9d6cb32a1f574c86cb2018545bdbc915889f5e7149"
+        },
+        {
+          "name": "rootlab/20261113-053031/state-initial.json",
+          "bytes": 267,
+          "sha256": "6ad29ceb31bc4f7ed83bdca34a7927588c110830b8985325d3e41cbf4ac668f6"
+        },
+        {
+          "name": "rootlab/20261113-053031/summary.json",
+          "bytes": 2867,
+          "sha256": "f806660db4643d87aec06475ae9f995f7d29f1a379cab66d3a1b8a9bfe675fe0"
+        },
+        {
+          "name": "rootlab/20261113-053031/transcript.txt",
+          "bytes": 873,
+          "sha256": "aa2bd8a3d826abb446077610ba66eccd0ced02b3bba943381bd846cf43ae210a"
+        },
+        {
+          "name": "rootlab/20261113-053031/unroot.json",
+          "bytes": 345,
+          "sha256": "663d10273ab3c94b8d03c69cad46422bfd0dd690b814108bfebbf0575e37e783"
+        },
+        {
+          "name": "rootlab.log",
+          "bytes": 2306,
+          "sha256": "f07d600b3da3bad74416ea95014eec8a1b39290be2f491f4558ed5a53a57d572"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1919,
+          "sha256": "8119a9b70b5092d0b5eae78622e923eadc24bebc830e094d44adddb00c68dfb8"
+        },
+        {
+          "name": "wpf/20261113-053817/01-startup.png",
+          "bytes": 102430,
+          "sha256": "e33007b25addc58aed2708d1751d80d144dba9b8ae4a4cd0627298e0722bf21c"
+        },
+        {
+          "name": "wpf/20261113-053817/02-created.png",
+          "bytes": 103231,
+          "sha256": "bfc0588cc3552519c483579e405dc213ee75ae1627eb1916355843c76661b20d"
+        },
+        {
+          "name": "wpf/20261113-053817/03-booted.png",
+          "bytes": 131628,
+          "sha256": "5ed6de2799853d5544c57d43cc2196850668ac21c7c740ff35b4654e7e194628"
+        },
+        {
+          "name": "wpf/20261113-053817/04-adb-root.png",
+          "bytes": 167868,
+          "sha256": "0dba4a0cf199281ec2008d88cdf5495a2cfdc7d864ea2bd1841946932a0053ce"
+        },
+        {
+          "name": "wpf/20261113-053817/05-adb-unroot.png",
+          "bytes": 164204,
+          "sha256": "acdfa613b3c962a570f59b63bd00b56e54cffc09a5882603c7d3530fc047eb4f"
+        },
+        {
+          "name": "wpf/20261113-053817/07-dropped.png",
+          "bytes": 164167,
+          "sha256": "c2ec7e6467c8f96d2a2bb57e856409d8b0f74e27d803ac00564dbeb0c9dc6cda"
+        },
+        {
+          "name": "wpf/20261113-053817/08-launched.png",
+          "bytes": 164746,
+          "sha256": "be13301fe47c954bdedd92e4a81c282c411c4b4bf996a341bb7d5198d7256c9c"
+        },
+        {
+          "name": "wpf/20261113-053817/09-tapped.png",
+          "bytes": 163934,
+          "sha256": "bee49408afc0c9916e62514e97b4a6e416b1cfa1317a59b7f3cdfed9d3d76cdc"
+        },
+        {
+          "name": "wpf/20261113-053817/10-logcat.png",
+          "bytes": 163927,
+          "sha256": "28912bc51031146d7505f6f632a41a2b7427e62d623b31c27d34ba9bd963ae77"
+        },
+        {
+          "name": "wpf/20261113-053817/11-screenshot.png",
+          "bytes": 177605,
+          "sha256": "3dfd026474897acc2fb3fb77287774f8e2d6a947eab47f2cace9d56b8b703b1c"
+        },
+        {
+          "name": "wpf/20261113-053817/12-stopped.png",
+          "bytes": 179462,
+          "sha256": "ea26ba77c4e8b8e0b0921f807dcbfe306158c3fb13079c412bb853d83f4a3487"
+        },
+        {
+          "name": "wpf/20261113-053817/13-palette.png",
+          "bytes": 160427,
+          "sha256": "493d9dd713b0588f592670c0575a261e39cae5d6a8b5fcec97dec7a616d2bd3c"
+        },
+        {
+          "name": "wpf/20261113-053817/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "wpf/20261113-053817/summary.json",
+          "bytes": 10641,
+          "sha256": "6c63ffa03e349745393ddee4ab9131424656a2183213acbbf646d931513198a0"
+        },
+        {
+          "name": "wpf/20261113-053817/transcript.txt",
+          "bytes": 1817,
+          "sha256": "59582d74c86e2033f547c2ec8adbd186da207e6e243c1125a8088c8590446d75"
+        },
+        {
+          "name": "wpf/20261113-053817/ui-tree-final.txt",
+          "bytes": 9017,
+          "sha256": "e17f425861beb349e689fdf0add8cc93b8294a626c491389496c719501f4437d"
+        },
+        {
+          "name": "wpf/20261113-053817/ui-tree-start.txt",
+          "bytes": 4257,
+          "sha256": "3f6b5da7534aa91954f98c5a5afd0dfd3ba8c914b3fc4cefc3b162ff9b25e51a"
+        },
+        {
+          "name": "wpf.log",
+          "bytes": 4036,
+          "sha256": "a8f9ff080b3beed539f9c7312a4f10e10054ab01f11d7c2a7038edf33877e652"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-053532",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/devtools/20261113-053532",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:38:14.6494600Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 9,
+      "lanes": {
+        "package-info": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-info",
+              "passed": true,
+              "detail": "installed=True version=1.0 codePath=/data/app/~~5g4iVJJzZ9J_V1UUFs7dXA==/dev.emulatorworkspace.sample-un2kGr8WNrkTDKNEAhc6Sw==",
+              "atUtc": "2026-11-13T00:37:09.8187612Z"
+            }
+          ]
+        },
+        "package-permissions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-permissions",
+              "passed": true,
+              "detail": "requested=1 granted=1",
+              "atUtc": "2026-11-13T00:37:10.5248092Z"
+            }
+          ]
+        },
+        "deep-link": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link",
+              "passed": true,
+              "detail": "scheme=https host=emulatorworkspace.local started=True",
+              "atUtc": "2026-11-13T00:37:13.8859413Z"
+            }
+          ]
+        },
+        "deep-link.negative": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deep-link.negative",
+              "passed": true,
+              "detail": "a malformed URI is refused: FAILED [invalid_request] 'not a uri' is not an absolute URI.",
+              "atUtc": "2026-11-13T00:37:14.3792877Z"
+            }
+          ]
+        },
+        "instrumentation": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "instrumentation",
+              "passed": true,
+              "detail": "available=False tests=0 failures=0 reason=The package 'dev.emulatorworkspace.sample' does not publish an instrumentation runner.",
+              "atUtc": "2026-11-13T00:37:16.6627719Z"
+            }
+          ]
+        },
+        "logcat-export": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "logcat-export",
+              "passed": true,
+              "detail": "artifact=d:\\ws-candidate-013-20261113-041225-devtools\\evidence\\logcat-devtools-4557-20261113-003717.txt bytes=45399",
+              "atUtc": "2026-11-13T00:37:17.2038206Z"
+            }
+          ]
+        },
+        "crash-report": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "crash-report",
+              "passed": true,
+              "detail": "crashes=0 anrs=0",
+              "atUtc": "2026-11-13T00:37:17.8910331Z"
+            }
+          ]
+        },
+        "bugreport": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bugreport",
+              "passed": true,
+              "detail": "artifact=d:\\ws-candidate-013-20261113-041225-devtools\\evidence\\bugreport-devtools-4557-20261113-003718.zip bytes=4272565 sha256=f1da64dccba30c13f29c6c25c3734c59",
+              "atUtc": "2026-11-13T00:38:01.9876929Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-13T00:38:14.4454396Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "bugreport.json",
+          "bytes": 331,
+          "sha256": "1bbe664249b8a4ce895291e0a490cf678c9930a627c591aef4668b24f9bcf9a8"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "crash-report.json",
+          "bytes": 266,
+          "sha256": "788388e747c68ffca59ee6bb6fe597fc355885a34f3f140f2fce96f61ca2ea66"
+        },
+        {
+          "name": "deep-link.json",
+          "bytes": 507,
+          "sha256": "c817b988810fd8bb3f501005a4346d80e7b9c06d6078b51312310d9d8c5d830a"
+        },
+        {
+          "name": "instrumentation.json",
+          "bytes": 370,
+          "sha256": "759cb42af9d9f8e5f269910677457642f4ce0e6a75676523dd057c4ef6bf63d9"
+        },
+        {
+          "name": "logcat-export.json",
+          "bytes": 279,
+          "sha256": "a50e8a072cceac76cd012906a449016cce7d0b36b141cbe2eebf2963eea6a2f1"
+        },
+        {
+          "name": "logcat-export.txt",
+          "bytes": 45596,
+          "sha256": "d608089c9a85572d18d9c96972fa47a82fe08eeaf65bd8c2d580f0794fbfea73"
+        },
+        {
+          "name": "package-info.json",
+          "bytes": 311,
+          "sha256": "3e26035e8676fd5677ad98e695f2e43579c013836583d97d516aa429712c12ef"
+        },
+        {
+          "name": "package-permissions.json",
+          "bytes": 346,
+          "sha256": "7ca21dfe033d17b17a0161a4860214952b6a1336f47c2f3507dab2ef53a72fdb"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 3107,
+          "sha256": "d806bae13035b4fbbeb6c46333d7b6ed5a161461da41f6e54f892ca3877dd75f"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1318,
+          "sha256": "ec6285973c0d97c5f13ed76dc1ba39dce6609a215692b95de66fa9266bacb4fb"
+        }
+      ]
+    },
+    {
+      "kind": "import",
+      "runId": "20261113-053515",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/import/20261113-053515",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:35:30.4261717Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 9,
+      "lanes": {
+        "source-created": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-created",
+              "passed": true,
+              "detail": "source=D:\\WS-Candidate-013-20261113-041225-import-external\\external-20261113-041225.avd",
+              "atUtc": "2026-11-13T00:35:17.1743289Z"
+            }
+          ]
+        },
+        "source-not-managed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-not-managed",
+              "passed": true,
+              "detail": "the external AVD is not a managed instance",
+              "atUtc": "2026-11-13T00:35:23.2026460Z"
+            }
+          ]
+        },
+        "preview": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "preview",
+              "passed": true,
+              "detail": "fingerprint=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515",
+              "atUtc": "2026-11-13T00:35:25.4519994Z"
+            }
+          ]
+        },
+        "import": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "import",
+              "passed": true,
+              "detail": "instance=imported-avd",
+              "atUtc": "2026-11-13T00:35:29.7442208Z"
+            }
+          ]
+        },
+        "source-unchanged": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-unchanged",
+              "passed": true,
+              "detail": "before=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515 after=e676c18cf726d52ce839d536a177ec056cf3a811d8d783a5214948c2b5599515",
+              "atUtc": "2026-11-13T00:35:29.7530131Z"
+            }
+          ]
+        },
+        "independent-copy": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "independent-copy",
+              "passed": true,
+              "detail": "target=b44ad2146bac72a4e2bd08860675d41120fa0aa43092f15fdcdfaf118bd8f625",
+              "atUtc": "2026-11-13T00:35:29.7656677Z"
+            }
+          ]
+        },
+        "source-bytes-unchanged": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "source-bytes-unchanged",
+              "passed": true,
+              "detail": "config sha256=CD991AB9E04623A8020A750FF8B20A30BE59C2A02253CED7A74313E52BDB65B2",
+              "atUtc": "2026-11-13T00:35:29.7982637Z"
+            }
+          ]
+        },
+        "imported-instance-owned": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "imported-instance-owned",
+              "passed": true,
+              "detail": "the copy is a managed instance",
+              "atUtc": "2026-11-13T00:35:30.0083513Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the imported instance was removed",
+              "atUtc": "2026-11-13T00:35:30.4134804Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "avdmanager-create.txt",
+          "bytes": 39,
+          "sha256": "5701be79f259bcf77da2c4c6788c77dccbf4827317b1094e0583025f72748334"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "import.json",
+          "bytes": 646,
+          "sha256": "d55ae47cca230990946da14c3c6bab8f434da9042ed5d635c402ca487ca0a63f"
+        },
+        {
+          "name": "instances.txt",
+          "bytes": 89,
+          "sha256": "38231384403f33d46bec3acfc4aee4a803fbc4afb73dae692cc62e7beb619b36"
+        },
+        {
+          "name": "preview.json",
+          "bytes": 550,
+          "sha256": "dd26dc42133621115441c862de9bdacc17fb66c37b9a6f165c7aac9fc180baeb"
+        },
+        {
+          "name": "source-after.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "source-before.json",
+          "bytes": 135,
+          "sha256": "4133a24acff7d6463b4cc95f9a6802033ed988dc3133ad2e4d0b41e397f5013c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2913,
+          "sha256": "d5e1f39be2826c03d92a7e48b119c66988a59afddb4f4ecd6992ac21527c80e4"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1201,
+          "sha256": "540be5b18c7514bd5f7c93e78016ee6422547095fd8585564bad1b73102420e5"
+        }
+      ]
+    },
+    {
+      "kind": "phase2",
+      "runId": "20261113-051326",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/phase3/20261113-051314/phase2/20261113-051326",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "c7fef2c",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:18:10.5527303Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-013-20261113-041225-phase3",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 43,
+      "lanes": {
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture",
+              "passed": true,
+              "detail": "127.0.0.1:8765 body=65536",
+              "atUtc": null
+            }
+          ]
+        },
+        "build": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "skipped (-SkipBuild; pre-captured)",
+              "atUtc": null
+            }
+          ]
+        },
+        "boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "boot",
+              "passed": true,
+              "detail": "serial=emulator-5556",
+              "atUtc": null
+            }
+          ]
+        },
+        "status": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "status",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": null
+            }
+          ]
+        },
+        "fingerprint": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fingerprint",
+              "passed": true,
+              "detail": "Android/sdk_phone64_x86_64/emu64x:15/AE3A.240806.019/12368160:userdebug/test-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "install": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install",
+              "passed": true,
+              "detail": "installed d:\\ws-candidate-013-20261113-041225-phase3\\apps\\ws-sample.apk (16787 bytes) on ag-e42b1a",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "launch",
+              "passed": true,
+              "detail": "launched dev.emulatorworkspace.sample on ag-e42b1a (dev.emulatorworkspace.sample/.MainActivity)",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "baseline.snapshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "baseline.snapshot",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-e42b1a\",\r\n  \"tag\": \"phase2-boot-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.55,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.screenshot",
+              "passed": true,
+              "detail": "artifact=art-51721d0d14f3",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.tree",
+              "passed": true,
+              "detail": "nodes=19",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.login": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.login",
+              "passed": true,
+              "detail": "{\r\n  \"pass\": true,\r\n  \"instance\": \"ag-e42b1a\",\r\n  \"text\": \"WELCOME\",\r\n  \"bounds\": \"[42,467][1038,518]\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.logs": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.logs",
+              "passed": true,
+              "detail": "lines=1",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.artifact": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.artifact",
+              "passed": true,
+              "detail": "bytes=131099",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.save": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.save",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-e42b1a\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.54,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-e42b1a\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"load\",\r\n  \"seconds\": 3.99,\r\n  \"recovery\": \"restored\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.readiness": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.readiness",
+              "passed": true,
+              "detail": "sys.boot_completed=1 after the snapshot load",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.fixture-ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.fixture-ready",
+              "passed": true,
+              "detail": "the fixture is in the foreground after the restore",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.post-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.post-restore",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-network",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay.pre-network",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.baseline": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.baseline",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.shaped": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.shaped",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.recovered",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.screenshot",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-e42b1a\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.tree",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-e42b1a\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.selector": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.selector",
+              "passed": true,
+              "detail": "selector denied",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.recovered",
+              "passed": true,
+              "detail": "capture restored",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-mcp",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.mcp",
+              "passed": true,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-013-20261113-041225-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:40",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.workflow": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "mcp.workflow",
+              "passed": true,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-013-20261113-041225-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:41",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.python": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "mcp.python",
+              "passed": true,
+              "detail": "py.exe : ws-mcp ready root=D:/WS-Candidate-013-20261113-041225-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:427 ",
+              "atUtc": null
+            }
+          ]
+        },
+        "wpf.agent-sessions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wpf.agent-sessions",
+              "passed": true,
+              "detail": "2 sessions, 2 pairings",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-security": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-security",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.unpaired": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.unpaired",
+              "passed": true,
+              "detail": "unauthorized",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.wrong-instance": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.wrong-instance",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-e42b1a', not 'tpl3'.",
+              "atUtc": null
+            }
+          ]
+        },
+        "stale.bump": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stale.bump",
+              "passed": true,
+              "detail": "{\r\n  \"instance\": \"ag-e42b1a\",\r\n  \"dispatchedUtc\": \"2026-11-13T00:18:00.7526302\\u002B00:00\",\r\n  \"queuedUtc\": \"2026-11-13T00:18:00.5270660\\u002B00:00\",\r\n  \"x\": 54",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.stale-frame": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.stale-frame",
+              "passed": true,
+              "detail": "FAILED [stale_observation] The guest generation changed.",
+              "atUtc": null
+            }
+          ]
+        },
+        "fixture.duplicate-selectors": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture.duplicate-selectors",
+              "passed": true,
+              "detail": "dup_action matches=2",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.ambiguous": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.ambiguous",
+              "passed": true,
+              "detail": "FAILED [ambiguous_selector] 2 nodes matched; refine the selector.",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.replay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.replay",
+              "passed": true,
+              "detail": "cached response identical",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.conflict": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.conflict",
+              "passed": true,
+              "detail": "FAILED [idempotency_conflict] This idempotency key was used with different arguments.",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "args-099fdd5b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-111b9eb4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-16c73aa0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-1eff5b2a.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-338dbb5c.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-3b9e9a6b.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-3cb45984.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "args-4a279fea.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-64b85ef8.json",
+          "bytes": 38,
+          "sha256": "688428c1c02b1f40b6ec8ef3d7f90b2bc9f778cf4e4c1dd97357c20ea7087c9f"
+        },
+        {
+          "name": "args-73b4a223.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-8ecc2d3d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-8fb00645.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-92ddef58.json",
+          "bytes": 54,
+          "sha256": "277520a351d63712e912e9065efdc64d0ae1a7765f3cd9c9cd0902eff2516cb2"
+        },
+        {
+          "name": "args-93bb93ec.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-a0429331.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "args-a773a194.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "args-b6623b7c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-bd941556.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "args-c2e33fdf.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-c74602eb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-d1c88125.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-d4d2505f.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "args-d5c5009f.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "args-e10bbba3.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-e3b4e64d.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-e8716ed8.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-e9d14561.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "args-ecc632b9.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-fe552579.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fea56041.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "boot.txt",
+          "bytes": 349,
+          "sha256": "bef8a56c6867af297032b9235bbcc407d4636cb68bfa94d5826b9ccc47490933"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "cli-transcript.json",
+          "bytes": 383962,
+          "sha256": "5bf64507426991b73be3c3703e3f5a3cc0d00f1e3f4d5f4fd075f20753eee799"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 572,
+          "sha256": "979ea1675d54e5943e4fbf587abfe1db7e7c1ddd7c7c4c3308696c3aea587ec9"
+        },
+        {
+          "name": "idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "6824fe53a16b571f343f9db4376bf3a305238dc57f1590d23a88e8c5ecb684bc"
+        },
+        {
+          "name": "mcp/mcp-transcript.json",
+          "bytes": 241677,
+          "sha256": "8b95703b25e5560c76b85a65b31b495f34dbef0b1d152f1314d22bf2810b85df"
+        },
+        {
+          "name": "mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "4a6752a37303b984dadf2a510dde043167b1b5391831b439b7689637e5e7b842"
+        },
+        {
+          "name": "mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "a2e2df3a7901513c9f0bd8071aac9f2776ab76164222702c5fc37f4be9febe94"
+        },
+        {
+          "name": "mcp-workflow.txt",
+          "bytes": 662,
+          "sha256": "e3d072b7536b517252ef6814ea9b84e8497461e0676b9bf225eb2a572e2947a1"
+        },
+        {
+          "name": "network.json",
+          "bytes": 2069,
+          "sha256": "6d153954cd5665d4ee7edf71795eb41d1e26291814bd24fcb57467442491fc54"
+        },
+        {
+          "name": "python-mcp.txt",
+          "bytes": 506,
+          "sha256": "b3b3e126731e5ce7dd82966242f38b666b1fd7c5c731c3144666aefdbe68333b"
+        },
+        {
+          "name": "secure-cli.json",
+          "bytes": 250604,
+          "sha256": "2acc78fd8a367ed2cc06c20fd15dda5df95d84fc7c859dcf058e53a85731a21f"
+        },
+        {
+          "name": "security.json",
+          "bytes": 1081,
+          "sha256": "f4e390fa83df7a1b7fa9fdfa5c03341400c0dc627ae1eae793d3f0e806ac2ea8"
+        },
+        {
+          "name": "stale-frame.json",
+          "bytes": 52,
+          "sha256": "1824d4f0d0fbd9a7a1ebc973cb42e195f5726557a9240df6c674b4f921252ad7"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 12271,
+          "sha256": "b699b2028cac8230f3462d52b1fd78ef2ed0872684232a209e4cfb7675eb6333"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5714,
+          "sha256": "93e42fef2c1e5ea8447456b9f0f29175735f15a4b6bdc92838b2278fde004be9"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 554,
+          "sha256": "78d613de0b0a071eb3b21c7ba6d181508c3872ed380f9bb6464727c20e63997b"
+        },
+        {
+          "name": "wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        }
+      ]
+    },
+    {
+      "kind": "phase3",
+      "runId": "20261113-051314",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/phase3/20261113-051314",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "c7fef2c",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:30:29.2266581Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": "Pkg.Revision=2",
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-013-20261113-041225-phase3",
+      "freeBytesAtStart": 313114894336,
+      "failedChecks": 3,
+      "totalChecks": 55,
+      "lanes": {
+        "host": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=291.6 GB",
+              "atUtc": "2026-11-13T00:13:15.7417244Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-13T00:13:15.8370398Z"
+            },
+            {
+              "check": "pairs",
+              "passed": true,
+              "detail": "P=ag-e42b1a Q=ag-bd8862",
+              "atUtc": "2026-11-13T00:13:26.0849538Z"
+            }
+          ]
+        },
+        "phase2": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "acceptance",
+              "passed": true,
+              "detail": "exit=0 failed=0 run=20261113-051326",
+              "atUtc": "2026-11-13T00:18:10.6412619Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "duplicate-running-refused",
+              "passed": true,
+              "detail": "running writable disks are never copied",
+              "atUtc": "2026-11-13T00:18:13.3409122Z"
+            },
+            {
+              "check": "duplicate",
+              "passed": true,
+              "detail": "target=p3-dup ports=5560/8557 lineage=2125816fecfa4c2aa89003bc36a677be",
+              "atUtc": "2026-11-13T00:18:15.7688853Z"
+            },
+            {
+              "check": "duplicate-isolated",
+              "passed": true,
+              "detail": "source=24cb13e04b5989d249ce296c4d2f3cd193438f6d8f036acb514792dbc77c9bd2 target=e4117e50497882982ce8892d70bf0c738e828418f5ce7e22b84e2f8bd06d0690",
+              "atUtc": "2026-11-13T00:18:15.7811397Z"
+            },
+            {
+              "check": "template-untouched",
+              "passed": true,
+              "detail": "tpl3: state=Defined engineAlive=false pid=\r",
+              "atUtc": "2026-11-13T00:18:15.9915581Z"
+            },
+            {
+              "check": "reset",
+              "passed": true,
+              "detail": "freedBytes=0",
+              "atUtc": "2026-11-13T00:18:16.1987981Z"
+            },
+            {
+              "check": "presets",
+              "passed": true,
+              "detail": "presets=4",
+              "atUtc": "2026-11-13T00:18:17.3791588Z"
+            },
+            {
+              "check": "disk-estimate",
+              "passed": true,
+              "detail": "required=4294967296 free=301122162688",
+              "atUtc": "2026-11-13T00:18:17.3908582Z"
+            },
+            {
+              "check": "profile-export",
+              "passed": true,
+              "detail": "schema=1 secrets=False",
+              "atUtc": "2026-11-13T00:18:17.6002332Z"
+            },
+            {
+              "check": "profile-import",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T00:18:21.1574715Z"
+            }
+          ]
+        },
+        "snapshot": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "save",
+              "passed": true,
+              "detail": "snapshot save ag-e42b1a tag=p3-base via=adb in 2.92s",
+              "atUtc": "2026-11-13T00:18:24.2851521Z"
+            },
+            {
+              "check": "list",
+              "passed": true,
+              "detail": "count=5 compatible=True",
+              "atUtc": "2026-11-13T00:18:24.5259326Z"
+            },
+            {
+              "check": "delete-older",
+              "passed": true,
+              "detail": "deleted=mcp-baseline",
+              "atUtc": "2026-11-13T00:18:25.1465996Z"
+            },
+            {
+              "check": "delete-guarded",
+              "passed": true,
+              "detail": "newest recovery point protected",
+              "atUtc": "2026-11-13T00:18:25.3457914Z"
+            },
+            {
+              "check": "delete-forced",
+              "passed": true,
+              "detail": "{\"name\":\"ag-e42b1a\",\"tag\":\"p3-base\",\"deleted\":true,\"freedBytes\":2689082991,\"lastRecoveryPoint\":true}",
+              "atUtc": "2026-11-13T00:18:25.9128647Z"
+            },
+            {
+              "check": "restore",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T00:18:39.0888471Z"
+            },
+            {
+              "check": "restore-readiness",
+              "passed": true,
+              "detail": "the guest reports sys.boot_completed=1 after the restore",
+              "atUtc": "2026-11-13T00:18:39.2078595Z"
+            },
+            {
+              "check": "stale-frame-invalidated",
+              "passed": true,
+              "detail": "frame id rejected after restore",
+              "atUtc": "2026-11-13T00:18:43.7862579Z"
+            }
+          ]
+        },
+        "transport": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "identity",
+              "passed": true,
+              "detail": "P=emulator-5556/549 Q=emulator-5558/550",
+              "atUtc": "2026-11-13T00:19:56.9351645Z"
+            },
+            {
+              "check": "distinct-targets",
+              "passed": true,
+              "detail": "serials and identities differ",
+              "atUtc": "2026-11-13T00:19:56.9474613Z"
+            },
+            {
+              "check": "cross-guest-denied",
+              "passed": true,
+              "detail": "agent on P cannot address Q",
+              "atUtc": "2026-11-13T00:19:59.4781448Z"
+            },
+            {
+              "check": "external-state-unchanged",
+              "passed": true,
+              "detail": "transport ids stable across agent calls",
+              "atUtc": "2026-11-13T00:19:59.6037826Z"
+            },
+            {
+              "check": "recycled-transport-resolves",
+              "passed": true,
+              "detail": "transportId=551 (was 550) enginePid=13596",
+              "atUtc": "2026-11-13T00:20:03.2902205Z"
+            },
+            {
+              "check": "disconnected-target-fails-closed",
+              "passed": true,
+              "detail": "FAILED [instance_unavailable] The managed serial 'emulator-5558' is not visible to the pinned ADB server.",
+              "atUtc": "2026-11-13T00:20:15.3470104Z"
+            },
+            {
+              "check": "disconnected-target-not-substituted",
+              "passed": true,
+              "detail": "a missing target is never substituted with another guest",
+              "atUtc": "2026-11-13T00:20:15.5480904Z"
+            },
+            {
+              "check": "reconnect-rebounds",
+              "passed": true,
+              "detail": "transportId=552 (was 550)",
+              "atUtc": "2026-11-13T00:20:52.7527098Z"
+            },
+            {
+              "check": "physical-devices-not-managed",
+              "passed": true,
+              "detail": "non-emulator transports visible=0; managed serials are emulator-only",
+              "atUtc": "2026-11-13T00:20:52.8601196Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T00:20:53.2127030Z"
+            }
+          ]
+        },
+        "race": {
+          "passed": 4,
+          "failed": 2,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": false,
+              "detail": "marker before the race=",
+              "atUtc": "2026-11-13T00:25:34.3661226Z"
+            },
+            {
+              "check": "input-held",
+              "passed": true,
+              "detail": "{\"instance\":\"ag-e42b1a\",\"held\":true,\"heldSinceUtc\":\"2026-11-13T00:25:34.7473815\\u002B00:00\",\"waiting\":0}",
+              "atUtc": "2026-11-13T00:25:34.7816991Z"
+            },
+            {
+              "check": "input-queued",
+              "passed": true,
+              "detail": "queuedUtc=2026-11-13T00:25:36.4228501+00:00",
+              "atUtc": "2026-11-13T00:25:36.7746281Z"
+            },
+            {
+              "check": "takeover",
+              "passed": true,
+              "detail": "{\r   \"instance\": \"ag-e42b1a\",\r   \"revokedSessions\": 1\r }",
+              "atUtc": "2026-11-13T00:25:36.9868825Z"
+            },
+            {
+              "check": "queued-input-not-authorized",
+              "passed": true,
+              "detail": "wsctl.exe : FAILED [revoked] The agent session has been revoked.\r",
+              "atUtc": "2026-11-13T00:25:37.3149680Z"
+            },
+            {
+              "check": "guest-marker-unchanged",
+              "passed": false,
+              "detail": "marker= dupTapLogLines=0 baseline=0",
+              "atUtc": "2026-11-13T00:27:00.1908198Z"
+            }
+          ]
+        },
+        "simulation": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "geo-fix",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T00:27:01.2519062Z"
+            },
+            {
+              "check": "battery",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T00:27:02.5262511Z"
+            },
+            {
+              "check": "battery-verified",
+              "passed": true,
+              "detail": "level: 42",
+              "atUtc": "2026-11-13T00:27:02.6004387Z"
+            },
+            {
+              "check": "rotation",
+              "passed": true,
+              "detail": "ag-bd8862 rotation set to 1",
+              "atUtc": "2026-11-13T00:27:03.1043536Z"
+            }
+          ]
+        },
+        "deployment": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bundletool",
+              "passed": true,
+              "detail": "1.18.1",
+              "atUtc": "2026-11-13T00:27:03.4551117Z"
+            },
+            {
+              "check": "target-selected",
+              "passed": true,
+              "detail": "target serial=emulator-5560",
+              "atUtc": "2026-11-13T00:28:17.4129695Z"
+            },
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T00:28:17.6906778Z"
+            },
+            {
+              "check": "transport-usable",
+              "passed": true,
+              "detail": "round-trip probe on the selected serial",
+              "atUtc": "2026-11-13T00:28:26.5840774Z"
+            },
+            {
+              "check": "apks-install",
+              "passed": true,
+              "detail": "scoped install exit=0, transport=553",
+              "atUtc": "2026-11-13T00:28:33.6081025Z"
+            },
+            {
+              "check": "split-install-recorded",
+              "passed": true,
+              "detail": "package manager reports split APKs",
+              "atUtc": "2026-11-13T00:28:33.8434010Z"
+            },
+            {
+              "check": "target-explicit",
+              "passed": true,
+              "detail": "the other guest did not receive the deployment",
+              "atUtc": "2026-11-13T00:28:34.0268004Z"
+            },
+            {
+              "check": "malformed-apks-diagnosed",
+              "passed": true,
+              "detail": "exit=5 typed diagnostic returned",
+              "atUtc": "2026-11-13T00:28:34.9646870Z"
+            }
+          ]
+        },
+        "runner": {
+          "passed": 3,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "device-visible-to-runner",
+              "passed": true,
+              "detail": "serial=emulator-5560 listed for the external runner",
+              "atUtc": "2026-11-13T00:28:35.2650482Z"
+            },
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "scoped launch exit=0",
+              "atUtc": "2026-11-13T00:28:44.1541979Z"
+            },
+            {
+              "check": "maestro-flow",
+              "passed": false,
+              "detail": "exit=1",
+              "atUtc": "2026-11-13T00:29:55.3712445Z"
+            },
+            {
+              "check": "touches-only-selected-guest",
+              "passed": true,
+              "detail": "other guest tap count 0 -> 0",
+              "atUtc": "2026-11-13T00:29:55.6561160Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "remaining=0",
+              "atUtc": "2026-11-13T00:30:29.2027010Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-13T00:30:29.2060266Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "f02b21413b4328c1eb77bfd238b250a19744655ba306a861b0fc0d379b434c17"
+        },
+        {
+          "name": "adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "f02b21413b4328c1eb77bfd238b250a19744655ba306a861b0fc0d379b434c17"
+        },
+        {
+          "name": "adb-identity.json",
+          "bytes": 879,
+          "sha256": "744395261f7f477d4b7f2bf6534ad6f964a63c24b1988690a0e87158690c5670"
+        },
+        {
+          "name": "battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "battery.json",
+          "bytes": 78,
+          "sha256": "066d91014b76a33740a8c9ee5e3d7bf68a1d8d491d5839e029fe9d5c65b4d120"
+        },
+        {
+          "name": "bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "4c096b7bdbe6aaf9cf5460713b0dc8f04254e6b986ea93a3f679a8c574fc2851"
+        },
+        {
+          "name": "bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "cross-guest.json",
+          "bytes": 35,
+          "sha256": "4451b7e6ba513a942bf41585d5cf4a95880e02436ca571cf363b2af48061b65c"
+        },
+        {
+          "name": "geo.json",
+          "bytes": 107,
+          "sha256": "6a187ba3799176f00a188e1fc675c85ea2dbe1f441710892194054113f703c12"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "55c1deb34962717ea297c3165420a832a584cba1cdc48e58692f620112e9552e"
+        },
+        {
+          "name": "maestro-duplicate.yaml",
+          "bytes": 201,
+          "sha256": "370b6e73c6d08c030a8a7b285bd6cc725091ace025e6e3a7fb99ff4cac6bbe7a"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/commands.json",
+          "bytes": 3447,
+          "sha256": "a3ea7c765f9cccd64d150e919979de5316cbe9f3a6d0b426dc67672db4c1fd83"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 995906,
+          "sha256": "0fa721eaf2dbdf8d1ab41b8ffe85fab720b45f386e32908fea952889d73544cc"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/logs/maestro.log",
+          "bytes": 3862,
+          "sha256": "44e05eadee9ef9ab60a0f3ec3ddaaa28c6ffc7123277bc0facbbbeea2dc44b8a"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/manifest.json",
+          "bytes": 803,
+          "sha256": "6d418de0e2405cc76180a3c320604abcdac5f652b67efc9a67b362d83cb62a39"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/screen-hierarchy/step-004-assertCondition-Emulator_Workspace_QA_fi.json",
+          "bytes": 44581,
+          "sha256": "3a434be36546bd8bc74e14d94e2f65043a5d58853579823b4993c715a540b84e"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro-duplicate/screenshots/step-004-assertCondition-Emulator_Workspace_QA_fi.png",
+          "bytes": 84505,
+          "sha256": "de8a29c6da675da66edbfb109a155fa36f7d0e6b5aa97a6e660520da3b2997e8"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_052849/maestro.log",
+          "bytes": 6350,
+          "sha256": "16616b7740c17ca1295593ae01ed0a03ea72f35bffa2593da125322d7e88fd8a"
+        },
+        {
+          "name": "maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "04bebebad93ce736641a590812aecdb44e09be19ac055e13091b7afd92a8c467"
+        },
+        {
+          "name": "maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "maestro-run.txt",
+          "bytes": 863,
+          "sha256": "a2a11ea2ce9a276c2c02d2f4b73875f38495cacbfb1291e5c8ae3f73725e4261"
+        },
+        {
+          "name": "malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "package-dumpsys.txt",
+          "bytes": 3538,
+          "sha256": "5d3e4982d1c7e673d84b8a6604214c65c13e8c36cb3ad9a7d4d4e64b8500c0dc"
+        },
+        {
+          "name": "phase2/20261113-051326/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase2/20261113-051326/args-099fdd5b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-051326/args-111b9eb4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-16c73aa0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-051326/args-1eff5b2a.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase2/20261113-051326/args-338dbb5c.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-051326/args-3b9e9a6b.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-3cb45984.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase2/20261113-051326/args-4a279fea.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-051326/args-64b85ef8.json",
+          "bytes": 38,
+          "sha256": "688428c1c02b1f40b6ec8ef3d7f90b2bc9f778cf4e4c1dd97357c20ea7087c9f"
+        },
+        {
+          "name": "phase2/20261113-051326/args-73b4a223.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-051326/args-8ecc2d3d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-8fb00645.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-92ddef58.json",
+          "bytes": 54,
+          "sha256": "277520a351d63712e912e9065efdc64d0ae1a7765f3cd9c9cd0902eff2516cb2"
+        },
+        {
+          "name": "phase2/20261113-051326/args-93bb93ec.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-051326/args-a0429331.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase2/20261113-051326/args-a773a194.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase2/20261113-051326/args-b6623b7c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-bd941556.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase2/20261113-051326/args-c2e33fdf.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-c74602eb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-d1c88125.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-051326/args-d4d2505f.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase2/20261113-051326/args-d5c5009f.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase2/20261113-051326/args-e10bbba3.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase2/20261113-051326/args-e3b4e64d.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-051326/args-e8716ed8.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-e9d14561.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase2/20261113-051326/args-ecc632b9.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-051326/args-fe552579.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-051326/args-fea56041.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase2/20261113-051326/boot.txt",
+          "bytes": 349,
+          "sha256": "bef8a56c6867af297032b9235bbcc407d4636cb68bfa94d5826b9ccc47490933"
+        },
+        {
+          "name": "phase2/20261113-051326/candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "phase2/20261113-051326/cli-transcript.json",
+          "bytes": 383962,
+          "sha256": "5bf64507426991b73be3c3703e3f5a3cc0d00f1e3f4d5f4fd075f20753eee799"
+        },
+        {
+          "name": "phase2/20261113-051326/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "979ea1675d54e5943e4fbf587abfe1db7e7c1ddd7c7c4c3308696c3aea587ec9"
+        },
+        {
+          "name": "phase2/20261113-051326/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase2/20261113-051326/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase2/20261113-051326/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "6824fe53a16b571f343f9db4376bf3a305238dc57f1590d23a88e8c5ecb684bc"
+        },
+        {
+          "name": "phase2/20261113-051326/mcp/mcp-transcript.json",
+          "bytes": 241677,
+          "sha256": "8b95703b25e5560c76b85a65b31b495f34dbef0b1d152f1314d22bf2810b85df"
+        },
+        {
+          "name": "phase2/20261113-051326/mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "4a6752a37303b984dadf2a510dde043167b1b5391831b439b7689637e5e7b842"
+        },
+        {
+          "name": "phase2/20261113-051326/mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "a2e2df3a7901513c9f0bd8071aac9f2776ab76164222702c5fc37f4be9febe94"
+        },
+        {
+          "name": "phase2/20261113-051326/mcp-workflow.txt",
+          "bytes": 662,
+          "sha256": "e3d072b7536b517252ef6814ea9b84e8497461e0676b9bf225eb2a572e2947a1"
+        },
+        {
+          "name": "phase2/20261113-051326/network.json",
+          "bytes": 2069,
+          "sha256": "6d153954cd5665d4ee7edf71795eb41d1e26291814bd24fcb57467442491fc54"
+        },
+        {
+          "name": "phase2/20261113-051326/python-mcp.txt",
+          "bytes": 506,
+          "sha256": "b3b3e126731e5ce7dd82966242f38b666b1fd7c5c731c3144666aefdbe68333b"
+        },
+        {
+          "name": "phase2/20261113-051326/secure-cli.json",
+          "bytes": 250604,
+          "sha256": "2acc78fd8a367ed2cc06c20fd15dda5df95d84fc7c859dcf058e53a85731a21f"
+        },
+        {
+          "name": "phase2/20261113-051326/security.json",
+          "bytes": 1081,
+          "sha256": "f4e390fa83df7a1b7fa9fdfa5c03341400c0dc627ae1eae793d3f0e806ac2ea8"
+        },
+        {
+          "name": "phase2/20261113-051326/stale-frame.json",
+          "bytes": 52,
+          "sha256": "1824d4f0d0fbd9a7a1ebc973cb42e195f5726557a9240df6c674b4f921252ad7"
+        },
+        {
+          "name": "phase2/20261113-051326/summary.json",
+          "bytes": 12271,
+          "sha256": "b699b2028cac8230f3462d52b1fd78ef2ed0872684232a209e4cfb7675eb6333"
+        },
+        {
+          "name": "phase2/20261113-051326/transcript.txt",
+          "bytes": 5714,
+          "sha256": "93e42fef2c1e5ea8447456b9f0f29175735f15a4b6bdc92838b2278fde004be9"
+        },
+        {
+          "name": "phase2/20261113-051326/versions.json",
+          "bytes": 554,
+          "sha256": "78d613de0b0a071eb3b21c7ba6d181508c3872ed380f9bb6464727c20e63997b"
+        },
+        {
+          "name": "phase2/20261113-051326/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase2-acceptance.txt",
+          "bytes": 11168,
+          "sha256": "abae09e9350ecfd7626a8d38d594411fac2fd93d264e58dc1d7cf38ac0bf8f43"
+        },
+        {
+          "name": "phase2-summary.json",
+          "bytes": 12271,
+          "sha256": "b699b2028cac8230f3462d52b1fd78ef2ed0872684232a209e4cfb7675eb6333"
+        },
+        {
+          "name": "profile-export.json",
+          "bytes": 538,
+          "sha256": "1d82acd99d7494d001a511f2f4f6e3bb0d75e4c2cc4a2c90987526622207a5f5"
+        },
+        {
+          "name": "profile-import-request.json",
+          "bytes": 928,
+          "sha256": "4bf99e7dc94d803dce66d70f5af4851844d1d8f12345401ec88d7ae52ec3363b"
+        },
+        {
+          "name": "race-logcat.txt",
+          "bytes": 856,
+          "sha256": "3bfff2193acfb65728b19ab4e322e0e1945dfbc22eac4ab88a2f5edd46b09650"
+        },
+        {
+          "name": "race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "race-timeline.json",
+          "bytes": 648,
+          "sha256": "c9b34c298a56e035eae10ae7b3326e6a9ddc12bfdda5b5da4440e22218c913e6"
+        },
+        {
+          "name": "race-ui.xml",
+          "bytes": 56,
+          "sha256": "2b43d1dc45b096fe1aa706d17d7e0c55a98442d43141ee5d94b2fe5774eeef15"
+        },
+        {
+          "name": "restore.json",
+          "bytes": 63,
+          "sha256": "a6e879e62c6b180338ae105c66a011c5ddb3787ee9e97a2f5ace197e250715f4"
+        },
+        {
+          "name": "snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "37c210583a3aac05c585b5f26258962c4bb48b737f366adcdc48feb329cc5e09"
+        },
+        {
+          "name": "stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "079468d41faf3795e53cee45ccca5bd75f6cdf1dd3a7aa38adc6aebb315d8094"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 36960,
+          "sha256": "033fd3c0f8c25e39f86469b05885497ac070d68f4c3d78e337c230c48760cae1"
+        },
+        {
+          "name": "terminated-guest-probe.json",
+          "bytes": 270,
+          "sha256": "f303ff349525be33c6a3ac035ca85b6bb84d9dbde92bcc265320b45d46b417c7"
+        },
+        {
+          "name": "terminated-race-probe.json",
+          "bytes": 268,
+          "sha256": "e1474d029c3392a2991238f6b8c7e4f6f104687464bbc35cabe42b3be9a5de42"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5063,
+          "sha256": "df6b075bb3c301378ed027cbae531b54adb2cb3b584c837e9a81679ff92dc3d8"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 543,
+          "sha256": "902b3b27cffe807bb938a65f95ace138cbaa984b2b075b4518dc9400d0a56725"
+        }
+      ]
+    },
+    {
+      "kind": "play35",
+      "runId": "20261113-054544",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/play35/20261113-054544",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "fcb46e09cf26a67ae99b0e1bf688c0b70c08bfaa",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-35;google_apis_playstore_ps16k;x86_64",
+        "imageRevision": "5",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone16k_x86_64/emu64xa16k:15/AE3A.240806.041/12890756:user/dev-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-af7870b53929 foreground: Window{61fa8c0 u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": true,
+              "detail": "recovery=restored installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-af7870b53929",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "ED6461B56E5B6FBE2DD78B18289F31CFCCEF5F046A0CB9D038C9437080AEA4D1",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "create.txt",
+          "bytes": 285,
+          "sha256": "6fe6c73766dbd30bcbc97f11f3bd3835c1a33ce9d1830b1fd7b27967d9a67919"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "7cf730881b4098aea00395541b112dcdaa1ded6cc059e067c1d3d0ca2ee8e8f9"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 131713,
+          "sha256": "2c55b2981c55690794c640ad3ee667f288e306538d9631d4cdb6003b9de32f5b"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "e072efef4eb048598f1c2bcfd20cead5552d11c75d4e4d152babda713ca32e93"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 179,
+          "sha256": "b11ef17c532f6bccc379214a135ea33e8db4b32bdba2c451786e26d037533684"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 119,
+          "sha256": "4f8404a5d2907fd22bb130f5dc0884d58bbb9e8a9e5a64effce94be07eeb01b4"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "22706518a215230deba1f6b67b98092b10e8e99045dc8f104d9cfe3d979a954e"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "6ad233d5738519cfbf416bd1660fd666c4b4354ecc53edd1afca40da26181de9"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "bd596b8cdf6582dd15db1df3cab917f9e7bc840cdcb62bdfb32b87895372ab46"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "a324e74fb784dffb058a93ba27c45b3949dd161e712f9d7d4215cf2d1da077be"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2750,
+          "sha256": "177f6250cb06038b9132afe74d0257960730632e3a36cc2884081ddc0b5e645d"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 100,
+          "sha256": "5e4afbfa3f9f12af1eeb04d7b05cfc6b02f39c467700ea25d194441ce3eded61"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "bab0c76a95c6b7848c4a1303f04fdd8b6cc7ef4bda5437a73e33b380917ff85b"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 162,
+          "sha256": "ae33950a1b70cef56689658de036b415b36c5b14a1479597cfe6f063b0727848"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1300,
+          "sha256": "088dc71e4b1ee80ea0c562a099a7fc1e392f483a28de9b7e85b623ef26eee80b"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "e8629c112f0f0f91a543d163ec82c11b2673628241175731b543b2cc0aa1d13b"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2573,
+          "sha256": "b36bf18c1fad8643c382ea917872b611f55fd6649c670a06bb959e71ced9e55d"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 211,
+          "sha256": "d5a0cf85aa831e36e9166faf713b58dfe09890579737ac9efa3313ca9a32b995"
+        }
+      ]
+    },
+    {
+      "kind": "play36",
+      "runId": "20261113-054025",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/play36/20261113-054025",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "fcb46e09cf26a67ae99b0e1bf688c0b70c08bfaa",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": null,
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": "system-images;android-36;google_apis_playstore;x86_64",
+        "imageRevision": "7",
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 8,
+      "lanes": {
+        "interactive": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "interactive",
+              "passed": true,
+              "detail": "google/sdk_gphone64_x86_64/emu64xa:16/BE2A.250530.026.D1/13818094:user/release-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-user": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-user",
+              "passed": true,
+              "detail": "uid=2000 buildType=user",
+              "atUtc": null
+            }
+          ]
+        },
+        "package-installed": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "package-installed",
+              "passed": true,
+              "detail": "dev.emulatorworkspace.sample",
+              "atUtc": null
+            }
+          ]
+        },
+        "foreground": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "foreground",
+              "passed": true,
+              "detail": "play-11f8629c447f foreground: Window{1958d1d u0 dev.emulatorworkspace.sample/dev.emulatorworkspace.sample.MainActivity}",
+              "atUtc": null
+            }
+          ]
+        },
+        "capture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "capture",
+              "passed": true,
+              "detail": "fixture.png",
+              "atUtc": null
+            }
+          ]
+        },
+        "snapshot-state": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "snapshot-state",
+              "passed": false,
+              "detail": "recovery=cold_boot installed=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "play-11f8629c447f",
+              "atUtc": null
+            }
+          ]
+        },
+        "stock-ramdisk": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stock-ramdisk",
+              "passed": true,
+              "detail": "7F286403EF23D62A70F62C8ADEA07828B3C0D798E8A0CA049060E31BA012DDD3",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "create.txt",
+          "bytes": 279,
+          "sha256": "681dec8e39469e4a62cd75c7525d801309920043bf123ecd6e61cfb6f10be5e4"
+        },
+        {
+          "name": "destroy.txt",
+          "bytes": 32,
+          "sha256": "c488301349d2de5770bc614d49db722e725248ef0281125d6a814c58f11e9b63"
+        },
+        {
+          "name": "fixture.png",
+          "bytes": 129608,
+          "sha256": "e326b34b878be8ffacebb5370da2b5d9f9014ad5f0d71be67118836b026c6e1d"
+        },
+        {
+          "name": "foreground.txt",
+          "bytes": 124,
+          "sha256": "20d043131a3acfa067e1f911ede5a8ea72318e97a84c75b92cf1ea595982ab27"
+        },
+        {
+          "name": "frame.txt",
+          "bytes": 179,
+          "sha256": "03c75c763de28ad7206149ee94a3c1cd4be00aff8d7d333dfa4bcfa19bb2ae6f"
+        },
+        {
+          "name": "install.txt",
+          "bytes": 119,
+          "sha256": "89d2f9ff054f8fad2f93792dc33f4339a5029fb13e24bb733e57c115ab88e490"
+        },
+        {
+          "name": "launch.txt",
+          "bytes": 108,
+          "sha256": "9d7472533efc3b92745ac901a13642d558698fa4e1eccef0a8c93fdebad306ad"
+        },
+        {
+          "name": "package-after-restore.txt",
+          "bytes": 178,
+          "sha256": "720d0a8b20782798b83677e062fc08747cd95314beb7ced8bfd101836903343b"
+        },
+        {
+          "name": "package-info.txt",
+          "bytes": 270,
+          "sha256": "6b496400f4d1e8fe7aba7eec69b0ddf0ddf1292751e0f8ab325ba7fbe023a0ae"
+        },
+        {
+          "name": "root-state.txt",
+          "bytes": 207,
+          "sha256": "c7114c72e2b5dae50c55004523fdc24fcd29e8b51da131a11e21958e8a5e5396"
+        },
+        {
+          "name": "simulation.txt",
+          "bytes": 2750,
+          "sha256": "6465fd73ab83167953f5bee6ab13938029127c6b4e144f2db1e41350ef0a0840"
+        },
+        {
+          "name": "snapshot-load.txt",
+          "bytes": 101,
+          "sha256": "8d60a251c421e15abe9bac89774ff944100e1f792d3e87d5fe3318a03fb61dfb"
+        },
+        {
+          "name": "snapshot-save.txt",
+          "bytes": 96,
+          "sha256": "cb01e65861fbab7dc25f34c57497befd273c619ede3bbc83f75c8ebf74f411c9"
+        },
+        {
+          "name": "start.txt",
+          "bytes": 163,
+          "sha256": "ea567269bfa8f1e7e73ed362059387ae47c0182422485c0e20bad8f73f783d71"
+        },
+        {
+          "name": "status.txt",
+          "bytes": 1298,
+          "sha256": "b0e1f2c9257e891ca4f12bd4ad7135883202d5eb40f5594955cc8be97777c086"
+        },
+        {
+          "name": "stop.txt",
+          "bytes": 88,
+          "sha256": "6575ed4aa86c94fe11671394364e97b6396b003bed1ed2f7b94388866f1fa877"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2572,
+          "sha256": "2f533431a8b0bf3eea952b656c426b194e4e20d0a073a93e9672c7cc3a03d9eb"
+        },
+        {
+          "name": "wait.txt",
+          "bytes": 214,
+          "sha256": "6b5ce563ef33eb86cba74589e462e78fe53839ee767b60dda72b474dc54cf759"
+        }
+      ]
+    },
+    {
       "kind": "recipe-fixture",
       "runId": "20261113-042810",
       "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/recipe-fixture/20261113-042810",
@@ -47639,6 +51614,493 @@
           "name": "versions.json",
           "bytes": 494,
           "sha256": "d47fc331d640a82e73864147e3c80e30f33a5b2aaff84e0765bce80bec21f15c"
+        }
+      ]
+    },
+    {
+      "kind": "rootlab",
+      "runId": "20261113-053031",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/rootlab/20261113-053031",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:35:12.6264741Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 10,
+      "lanes": {
+        "state-initial": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-initial",
+              "passed": true,
+              "detail": "uid=2000 buildType=userdebug transport=554",
+              "atUtc": "2026-11-13T00:31:39.8859573Z"
+            }
+          ]
+        },
+        "root-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "root-transition",
+              "passed": true,
+              "detail": "uid 2000 -> 0",
+              "atUtc": "2026-11-13T00:31:43.1000227Z"
+            }
+          ]
+        },
+        "transport-reattached": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "transport-reattached",
+              "passed": true,
+              "detail": "transport 554 -> 555",
+              "atUtc": "2026-11-13T00:31:43.1175366Z"
+            }
+          ]
+        },
+        "state-after-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-root",
+              "passed": true,
+              "detail": "uid=0",
+              "atUtc": "2026-11-13T00:31:44.0032277Z"
+            }
+          ]
+        },
+        "unroot-transition": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "unroot-transition",
+              "passed": true,
+              "detail": "uid 0 -> 2000",
+              "atUtc": "2026-11-13T00:31:47.1057096Z"
+            }
+          ]
+        },
+        "state-after-boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-boot",
+              "passed": true,
+              "detail": "uid=2000",
+              "atUtc": "2026-11-13T00:32:36.4491851Z"
+            }
+          ]
+        },
+        "snapshot-saved": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-saved",
+              "passed": true,
+              "detail": "snapshot save rootlab-9975 tag=rootlab-base via=adb in 3.31s",
+              "atUtc": "2026-11-13T00:32:40.2879930Z"
+            }
+          ]
+        },
+        "snapshot-restored": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "snapshot-restored",
+              "passed": true,
+              "detail": "snapshot load rootlab-9975 tag=rootlab-base via=adb in 4.42s",
+              "atUtc": "2026-11-13T00:34:58.8212149Z"
+            }
+          ]
+        },
+        "state-after-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "state-after-restore",
+              "passed": true,
+              "detail": "uid=2000 transport=560",
+              "atUtc": "2026-11-13T00:34:59.7497911Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "the lab guest was removed",
+              "atUtc": "2026-11-13T00:35:12.6120968Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "root.json",
+          "bytes": 338,
+          "sha256": "2a088650edc5a3c56205fd9d6cb32a1f574c86cb2018545bdbc915889f5e7149"
+        },
+        {
+          "name": "state-initial.json",
+          "bytes": 267,
+          "sha256": "6ad29ceb31bc4f7ed83bdca34a7927588c110830b8985325d3e41cbf4ac668f6"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2867,
+          "sha256": "f806660db4643d87aec06475ae9f995f7d29f1a379cab66d3a1b8a9bfe675fe0"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 873,
+          "sha256": "aa2bd8a3d826abb446077610ba66eccd0ced02b3bba943381bd846cf43ae210a"
+        },
+        {
+          "name": "unroot.json",
+          "bytes": 345,
+          "sha256": "663d10273ab3c94b8d03c69cad46422bfd0dd690b814108bfebbf0575e37e783"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-053817",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-041225/wpf/20261113-053817",
+      "rawArtifactsAreGitignored": true,
+      "commit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d",
+        "installerSha256": "11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "707B16E7C778A4D6F504B307BD037D029DBD875F7D9B549772480F1C0B3CE653",
+        "mcpExecutableVersion": "0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d"
+      },
+      "finishedUtc": "2026-11-13T00:40:22.3497781Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Candidate-013-20261113-041225-wpf",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 16,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-13T00:38:22.8146123Z"
+            }
+          ]
+        },
+        "ui-tree": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 137 automation elements",
+              "atUtc": "2026-11-13T00:38:23.4327742Z"
+            },
+            {
+              "check": "ui-tree",
+              "passed": true,
+              "detail": "the UI tree has 185 automation elements",
+              "atUtc": "2026-11-13T00:40:22.3137746Z"
+            }
+          ]
+        },
+        "clickthrough.create-device": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.create-device",
+              "passed": true,
+              "detail": "the Create device button created the managed instance 'dev'",
+              "atUtc": "2026-11-13T00:38:30.8912999Z"
+            }
+          ]
+        },
+        "clickthrough.boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.boot",
+              "passed": true,
+              "detail": "the guest created from the UI reached interactive readiness",
+              "atUtc": "2026-11-13T00:39:39.8904471Z"
+            }
+          ]
+        },
+        "rootlab.control-present": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "rootlab.control-present",
+              "passed": true,
+              "detail": "the Root Lab ADB root control exists in the desktop",
+              "atUtc": "2026-11-13T00:39:40.1936736Z"
+            }
+          ]
+        },
+        "clickthrough.adb-root": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-root",
+              "passed": true,
+              "detail": "the Root Lab ADB root button put the guest daemon at uid 0",
+              "atUtc": "2026-11-13T00:39:54.3427319Z"
+            }
+          ]
+        },
+        "clickthrough.adb-unroot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.adb-unroot",
+              "passed": true,
+              "detail": "the Root Lab ADB unroot button returned the daemon to uid 2000",
+              "atUtc": "2026-11-13T00:40:01.5025628Z"
+            }
+          ]
+        },
+        "clickthrough.apk-drag-drop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.apk-drag-drop",
+              "passed": true,
+              "detail": "the APK was dropped on the desktop window and installed on the selected guest",
+              "atUtc": "2026-11-13T00:40:04.7706581Z"
+            }
+          ]
+        },
+        "clickthrough.launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.launch",
+              "passed": true,
+              "detail": "the Launch sample button brought the application to the foreground",
+              "atUtc": "2026-11-13T00:40:07.8887563Z"
+            }
+          ]
+        },
+        "clickthrough.tap": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.tap",
+              "passed": true,
+              "detail": "a click in the viewport reached the guest and the guest logged the tap",
+              "atUtc": "2026-11-13T00:40:11.3330207Z"
+            }
+          ]
+        },
+        "clickthrough.logcat": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.logcat",
+              "passed": true,
+              "detail": "the Logcat drawer opened and shows the guest log",
+              "atUtc": "2026-11-13T00:40:12.2275142Z"
+            }
+          ]
+        },
+        "clickthrough.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.screenshot",
+              "passed": true,
+              "detail": "the Screenshot button produced dev-20261113-054013.png",
+              "atUtc": "2026-11-13T00:40:15.0224775Z"
+            }
+          ]
+        },
+        "clickthrough.shutdown": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.shutdown",
+              "passed": true,
+              "detail": "the desktop stopped the guest",
+              "atUtc": "2026-11-13T00:40:18.2282155Z"
+            }
+          ]
+        },
+        "palette.opens": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "palette.opens",
+              "passed": true,
+              "detail": "Ctrl+K opened the command palette",
+              "atUtc": "2026-11-13T00:40:19.1790603Z"
+            }
+          ]
+        },
+        "clickthrough.command-palette": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.command-palette",
+              "passed": true,
+              "detail": "the command palette opened with Ctrl+K",
+              "atUtc": "2026-11-13T00:40:19.2751176Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 102430,
+          "sha256": "e33007b25addc58aed2708d1751d80d144dba9b8ae4a4cd0627298e0722bf21c"
+        },
+        {
+          "name": "02-created.png",
+          "bytes": 103231,
+          "sha256": "bfc0588cc3552519c483579e405dc213ee75ae1627eb1916355843c76661b20d"
+        },
+        {
+          "name": "03-booted.png",
+          "bytes": 131628,
+          "sha256": "5ed6de2799853d5544c57d43cc2196850668ac21c7c740ff35b4654e7e194628"
+        },
+        {
+          "name": "04-adb-root.png",
+          "bytes": 167868,
+          "sha256": "0dba4a0cf199281ec2008d88cdf5495a2cfdc7d864ea2bd1841946932a0053ce"
+        },
+        {
+          "name": "05-adb-unroot.png",
+          "bytes": 164204,
+          "sha256": "acdfa613b3c962a570f59b63bd00b56e54cffc09a5882603c7d3530fc047eb4f"
+        },
+        {
+          "name": "07-dropped.png",
+          "bytes": 164167,
+          "sha256": "c2ec7e6467c8f96d2a2bb57e856409d8b0f74e27d803ac00564dbeb0c9dc6cda"
+        },
+        {
+          "name": "08-launched.png",
+          "bytes": 164746,
+          "sha256": "be13301fe47c954bdedd92e4a81c282c411c4b4bf996a341bb7d5198d7256c9c"
+        },
+        {
+          "name": "09-tapped.png",
+          "bytes": 163934,
+          "sha256": "bee49408afc0c9916e62514e97b4a6e416b1cfa1317a59b7f3cdfed9d3d76cdc"
+        },
+        {
+          "name": "10-logcat.png",
+          "bytes": 163927,
+          "sha256": "28912bc51031146d7505f6f632a41a2b7427e62d623b31c27d34ba9bd963ae77"
+        },
+        {
+          "name": "11-screenshot.png",
+          "bytes": 177605,
+          "sha256": "3dfd026474897acc2fb3fb77287774f8e2d6a947eab47f2cace9d56b8b703b1c"
+        },
+        {
+          "name": "12-stopped.png",
+          "bytes": 179462,
+          "sha256": "ea26ba77c4e8b8e0b0921f807dcbfe306158c3fb13079c412bb853d83f4a3487"
+        },
+        {
+          "name": "13-palette.png",
+          "bytes": 160427,
+          "sha256": "493d9dd713b0588f592670c0575a261e39cae5d6a8b5fcec97dec7a616d2bd3c"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "d9cb1ec932c3162012c77903a7d51f17427c8dcdc502c4c3e0fe9feee12ca6db"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 10641,
+          "sha256": "6c63ffa03e349745393ddee4ab9131424656a2183213acbbf646d931513198a0"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1817,
+          "sha256": "59582d74c86e2033f547c2ec8adbd186da207e6e243c1125a8088c8590446d75"
+        },
+        {
+          "name": "ui-tree-final.txt",
+          "bytes": 9017,
+          "sha256": "e17f425861beb349e689fdf0add8cc93b8294a626c491389496c719501f4437d"
+        },
+        {
+          "name": "ui-tree-start.txt",
+          "bytes": 4257,
+          "sha256": "3f6b5da7534aa91954f98c5a5afd0dfd3ba8c914b3fc4cefc3b162ff9b25e51a"
         }
       ]
     }

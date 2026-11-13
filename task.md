@@ -609,6 +609,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   `DUP_TAPS=0` and `DUPLICATE A`, with the title outside the visible
   hierarchy. The runner now waits for the exact initial marker and taps
   the displayed uppercase label. Rerun to verify the marker advances.
+- The full 0.1.3 candidate suite finished 5/9 and cleaned up its guests.
+  Root Lab, import, developer tools, WPF click-through and Play API 35
+  16 KB passed. Both recipes and Phase 3 failed as recorded above. Play
+  API 36 booted, installed, captured and cleaned up, with a cold fallback
+  on named restore. Raw wrapper summary `20261113-041225/summary.json`.
+- The targeted 0.1.4 candidate rerun started in
+  `artifacts/phase3/candidate/20261113-054840` with launcher and fixture
+  recipe baselines, then Phase 3. The 426-file stage passed hash
+  verification. Check the wrapper and nested logs through cleanup. If
+  these checks pass, run the remaining 0.1.4 installer and runtime lanes.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
