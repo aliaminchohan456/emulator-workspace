@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -37,8 +37,8 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
 | Scenario | Valid samples | p50 | p95 | Target |
 | --- | --- | --- | --- | --- |
-| Cold boot to interactive readiness (managed, s) | 20 | 44.36 | 55.96 | matched raw CLI overhead gate when both arms have 20 samples |
-| Cold boot to interactive readiness (raw CLI, s) | 20 | 41.41 | 47.27 | same-engine control |
+| Cold boot to interactive readiness (managed, s) | 20 | 49.9 | 54.9 | matched raw CLI overhead gate when both arms have 20 samples |
+| Cold boot to interactive readiness (raw CLI, s) | 20 | 35.37 | 50.52 | same-engine control |
 | Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | historical control |
 | Historical restore reading (s) | 20 | 39.65 | 39.65 | invalid endpoint |
 | Verified warm restore (s) | 20 | 11.15 | 16.91 | median at most 8 s, 20 samples |
@@ -163,11 +163,17 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Dropped sequences | 454 |
 | Desktop dispatch to supervisor reply p95 | 846.15 ms |
 
-## Matched cold-boot comparison
+## Matched cold-boot comparison `20261113-023049`
 
-Run `20261113-023049` verified the 20 raw control rows from `20261113-021146` against the same Windows host, emulator, fixture, MSI and AVD settings before running the managed arm.
+The managed arm verified and reused the 20 raw control rows from `20261113-021146`.
 Both arms required Android boot completion and a current focused window.
-Managed p50 44.36s vs raw p50 41.41s = 2.95s overhead (allowed 4.14s).
+Passed. Managed p50 44.36s vs raw p50 41.41s = 2.95s overhead (allowed 4.14s).
+
+## Matched cold-boot comparison `20261113-074512`
+
+Both arms ran in this benchmark on the same Windows host and pinned emulator.
+Both arms required Android boot completion and a current focused window.
+Missed the target. Managed p50 49.9s vs raw p50 35.37s = 14.53s overhead (allowed 3.54s).
 
 ## Reproduce the corrected benchmarks
 

@@ -376,6 +376,7 @@ valid and the three test guests were removed. Both performance gates
 remain open. The lifecycle rerun passed all 30 start/stop cycles with
 verified port release and no engines remaining. The current candidate
 verified 20 warm restores with 11.15 s median and one cold fallback.
-The 8 s target remains open. The current candidate's matched cold-boot
-comparison is in progress.
+The 8 s target remains open. Its matched cold-boot comparison completed
+20 trials per arm, with 14.53 s median overhead against 3.54 s allowed.
+The four-hour soak is now repeating on the exact 0.1.4 candidate.
 [Benchmark evidence](docs/benchmark.md)

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T02:44:40.8736057Z",
-  "headCommit": "597ba59",
-  "trackedWorkTree": "M docs/benchmark.md\n M docs/phase3-manifest.json\n M plan.md\n M task.md",
+  "latestFinishedUtc": "2026-11-13T03:19:17.1678783Z",
+  "headCommit": "435cd31",
+  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M src/EmulatorWorkspace.Core/Supervisor/InstanceManager.cs\n M task.md\n M tools/build-benchmark-doc.py",
   "runs": [
     {
       "kind": "phase3",
@@ -41484,6 +41484,197 @@
           "name": "transcript.txt",
           "bytes": 2341,
           "sha256": "2714c76a6ea71d5239922b3ebd1d4a443cdc193d79e2d09785b1c275d7c445ce"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-074512",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-074512",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "597ba59fd20e707a35d364661f5d0b63c411dc8e",
+      "harnessSha256": "A303AEEE719DC5794BCC3DA1F27BF26C8AA6E28CD2526E26D5C5D00357E58FD9",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T03:19:17.1678783Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "target.boot-overhead": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.boot-overhead",
+              "passed": false,
+              "detail": "managed p50 49.9s vs raw p50 35.37s = 14.53s overhead (allowed 3.54s)",
+              "atUtc": "2026-11-13T03:19:15.7810307Z"
+            }
+          ]
+        },
+        "cleanup.bench-base-adf1473f5979": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-base-adf1473f5979",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T03:19:16.4140548Z"
+            }
+          ]
+        },
+        "cleanup.bench-69953c78ebce": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-69953c78ebce",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T03:19:17.1352567Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 18589,
+          "sha256": "9421bc4a4b49f1a064630656b50c43d2fc65ab244be73469ee0e09b235717d53"
+        },
+        {
+          "name": "cold-boot.jsonl",
+          "bytes": 9288,
+          "sha256": "18385c72190ff64201a6e5239c6303f1e4f2686b6840c50097a85366520c9fe3"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "e62b6d942256200ea982eb010d4a5f7ca564589dd5d3e44bdcbe56938e2690f2"
+        },
+        {
+          "name": "raw-engine-1.log",
+          "bytes": 107199,
+          "sha256": "9cbbb79369c22dd38657b5a90483620b3278fdbb54fcf1707badfe30655f1f42"
+        },
+        {
+          "name": "raw-engine-10.log",
+          "bytes": 103271,
+          "sha256": "7bcc498d70d7d69a5832136bc764a5a1eb24560613dc430e313b490e478e055b"
+        },
+        {
+          "name": "raw-engine-11.log",
+          "bytes": 106073,
+          "sha256": "1ec877bd0bd28a1abb9e9ab1d6c822cff17ad6f1810af85e94368e8a607f68f5"
+        },
+        {
+          "name": "raw-engine-12.log",
+          "bytes": 106186,
+          "sha256": "e925fe6cd3822239b91244e03e05d8886e6836a2b4103da3f16a8fdf3054c6a1"
+        },
+        {
+          "name": "raw-engine-13.log",
+          "bytes": 106907,
+          "sha256": "0f490913e1875c08210ed0acfc470104e25ca0dd29c5f0b9cce395245e278179"
+        },
+        {
+          "name": "raw-engine-14.log",
+          "bytes": 103301,
+          "sha256": "1aab092d4dd6f4d3f147359831016e0df2d9b9ed1f959ccfcd9428e794086820"
+        },
+        {
+          "name": "raw-engine-15.log",
+          "bytes": 110940,
+          "sha256": "34ab496513a01925d3a2ff011efb6b2cd0aba2c0417fa13d513fb842af714356"
+        },
+        {
+          "name": "raw-engine-16.log",
+          "bytes": 103302,
+          "sha256": "8507d43612fc93dcd17d631254fe455d6ebaac2b144737757ff6a11b1996f9b3"
+        },
+        {
+          "name": "raw-engine-17.log",
+          "bytes": 107030,
+          "sha256": "722e0b7512dfab05b6017133b05e27bdf2fdf6210c1713ae6c1f06a3fca0728f"
+        },
+        {
+          "name": "raw-engine-18.log",
+          "bytes": 106909,
+          "sha256": "2e96f6238727932ee7154448ef99b35260cabdb9db836fe43b61d05c58f4d40a"
+        },
+        {
+          "name": "raw-engine-19.log",
+          "bytes": 106909,
+          "sha256": "0290156ba784b487ed1f00d4d6099b6c7a0d11494c565c46d42cbfdb15b30b80"
+        },
+        {
+          "name": "raw-engine-2.log",
+          "bytes": 105952,
+          "sha256": "496deecf61f970da3f8b72d4cc2b04683a82aa89115d54051701f22f54aab680"
+        },
+        {
+          "name": "raw-engine-20.log",
+          "bytes": 103302,
+          "sha256": "3fe3bc13c2759b24cd9f3d4170185a84d55328b317bf9c7a51ed1d8b957621c2"
+        },
+        {
+          "name": "raw-engine-3.log",
+          "bytes": 103302,
+          "sha256": "36c2c529cb01c1e3e18457770c4fcd7777c91f52b68851a4d6c5c415c9b2fe43"
+        },
+        {
+          "name": "raw-engine-4.log",
+          "bytes": 103189,
+          "sha256": "6c35e2fbdd7af8d46fd07a08303441e556bed6909e8e15d9b473a5c971de0714"
+        },
+        {
+          "name": "raw-engine-5.log",
+          "bytes": 103153,
+          "sha256": "b0c91731e1b31c9493ceacc0198e9ff839ce4aadd83cf787614f154ea940f91b"
+        },
+        {
+          "name": "raw-engine-6.log",
+          "bytes": 106067,
+          "sha256": "21c2d6527926347898517d9ebc1912657034f9d0b87a57440feb1fb2d51a9e24"
+        },
+        {
+          "name": "raw-engine-7.log",
+          "bytes": 106185,
+          "sha256": "2795fcf4dcffd3ffe4faa0af05214b9a05e8d4a807ac99f0f581d59051eb10aa"
+        },
+        {
+          "name": "raw-engine-8.log",
+          "bytes": 103265,
+          "sha256": "24c5037c163173aab910e7361b58664156a6f6d2c736233da1192b1497c7ae47"
+        },
+        {
+          "name": "raw-engine-9.log",
+          "bytes": 106028,
+          "sha256": "4d35541082f5959dc5be6bdb17b17aa74d97de96891b4823c59d93b0511fd579"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 25412,
+          "sha256": "fea46bd00745de6f8d8c04c63a77f0ab9e6d3bf6ef076edb2d8c294f666fe7ca"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2248,
+          "sha256": "0b7fd3712e02cbf7b237aca082ec79bcf735480b8485951abe45bd4d0f79eda2"
         }
       ]
     },

@@ -216,15 +216,15 @@ def main() -> int:
         data = run.get("benchmark") or {}
         control = data.get("rawControl")
         check = next((check for check in run.get("checks", []) if check.get("Check") == "target.boot-overhead"), None)
-        if control and check:
+        if check and data.get("matchedAvdConfig"):
             lines += [
                 "",
-                "## Matched cold-boot comparison",
+                f"## Matched cold-boot comparison `{run['runId']}`",
                 "",
-                f"Run `{run['runId']}` verified the 20 raw control rows from `{control['runId']}` "
-                "against the same Windows host, emulator, fixture, MSI and AVD settings before running the managed arm.",
+                (f"The managed arm verified and reused the 20 raw control rows from `{control['runId']}`."
+                 if control else "Both arms ran in this benchmark on the same Windows host and pinned emulator."),
                 "Both arms required Android boot completion and a current focused window.",
-                f"{check['Detail'].capitalize()}.",
+                f"{'Passed' if check['Passed'] else 'Missed the target'}. {check['Detail'].capitalize()}.",
             ]
 
     lines += [

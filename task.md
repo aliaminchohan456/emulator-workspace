@@ -672,7 +672,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
   11.15/16.91 s, exceeding the 8 s median target. One cold fallback
   took 135.26 s and was excluded from warm percentiles. The guest was
   removed and the scoped supervisor was shut down. The exact 0.1.4
-  matched raw comparison is running at `artifacts/phase3/bench/20261113-074512`.
+  matched raw comparison `artifacts/phase3/bench/20261113-074512` finished
+  20/20 in each arm. Raw p50/p95 was 35.37/50.52 s and managed was
+  49.90/54.90 s. The 14.53 s median overhead missed the 3.54 s allowance.
+  Both profiles were removed and the scoped supervisor was shut down.
+- The 0.1.4 four-hour soak is `artifacts/phase3/bench/20261113-081953`
+  with root `D:/WS-Soak-014-20261113-081951`. The historical 0.1.1 soak
+  passed independently. Verify the new run with `tools/soak-progress.py
+  --require-complete` after both guests are removed.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
