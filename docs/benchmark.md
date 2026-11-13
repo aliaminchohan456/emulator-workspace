@@ -279,6 +279,23 @@ Both arms ran in this benchmark on the same Windows host and pinned emulator.
 Both arms required Android boot completion and a current focused window.
 Missed the target. Managed p50 49.9s vs raw p50 35.37s = 14.53s overhead (allowed 3.54s).
 
+## Direct RGB and RGBA capture
+
+Run `20261113-101457` used the exact 0.1.5 payload, one host-GPU
+guest and the foreground animated fixture at 270 × 600 capture.
+Each arm used `wsctl capture-bench --width 270 --height 600 --seconds 8`.
+These figures measure the direct controller stream. The WPF viewport
+measured 37.28 FPS at this capture size in `20261113-101158`.
+
+| Arm | Format | Frames | FPS | p95 frame interval |
+| --- | --- | ---: | ---: | ---: |
+| 1 | RGB | 437 | 54.33 | 23.14 ms |
+| 2 | RGBA | 467 | 57.88 | 19.53 ms |
+| 3 | RGBA | 468 | 58.20 | 21.46 ms |
+| 4 | RGB | 469 | 58.22 | 25.91 ms |
+
+[Source, installer hash and raw files](phase3-manifest.json)
+
 ## Reproduce the corrected benchmarks
 
 ```powershell

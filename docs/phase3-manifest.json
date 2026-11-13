@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "d9098e9",
+  "headCommit": "a0d3b9d",
   "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md",
   "runs": [
     {
@@ -36629,6 +36629,146 @@
           "name": "tap-args.json",
           "bytes": 46,
           "sha256": "84543536c83984e2a7fe96ab4b599280f28c0d036a4f5f3eef7d2b921fdd1bf5"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-101457",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261113-101457",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": null,
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T05:16:55.9673215+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-RGBCompare-20261113-101457",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 5,
+      "lanes": {
+        "1.rgb": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "1.rgb",
+              "passed": true,
+              "detail": "437 frames, 54.33 FPS, p95 interval 23.14 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "2.rgba": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "2.rgba",
+              "passed": true,
+              "detail": "467 frames, 57.88 FPS, p95 interval 19.53 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "3.rgba": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "3.rgba",
+              "passed": true,
+              "detail": "468 frames, 58.2 FPS, p95 interval 21.46 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "4.rgb": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "4.rgb",
+              "passed": true,
+              "detail": "469 frames, 58.22 FPS, p95 interval 25.91 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "List of devices attached",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "1-rgb.json",
+          "bytes": 86792,
+          "sha256": "f4fcc754ca248e2bba9b2ed7c8ce9e86c3fd5fda08e8f939594dcc428e504a72"
+        },
+        {
+          "name": "1-rgb.json.raw",
+          "bytes": 486000,
+          "sha256": "a38aad67cb77d97cc7b1a2e68d7cafa298c56315e1b1c7590caf541a9f803f50"
+        },
+        {
+          "name": "2-rgba.json",
+          "bytes": 92731,
+          "sha256": "0a67f345672f0f171019d8b21598096770dcf52dc9cd53ef1ae7511e16bc9ffe"
+        },
+        {
+          "name": "2-rgba.json.raw",
+          "bytes": 648000,
+          "sha256": "25ea91606089643a6bb630350c7fb53e1c557351f3fb537e45897ca7d2f0803e"
+        },
+        {
+          "name": "3-rgba.json",
+          "bytes": 92926,
+          "sha256": "d720ee35c3243bebb1a490c06fe6c2d7cf4b03f40deb83070db40b6a21e919c9"
+        },
+        {
+          "name": "3-rgba.json.raw",
+          "bytes": 648000,
+          "sha256": "d4c7ae17bbe7e5872b362095285775dd80f9b0961682d9c45264582ccc663f26"
+        },
+        {
+          "name": "4-rgb.json",
+          "bytes": 93124,
+          "sha256": "674983f49d1f79f4f15b0f169b8a9d6a2a1a8044a338a198a7ae98c8313bac70"
+        },
+        {
+          "name": "4-rgb.json.raw",
+          "bytes": 486000,
+          "sha256": "4125884670a8772b5557f103f6975be4f96838dd544a9e14710428b997008683"
+        },
+        {
+          "name": "identity.json",
+          "bytes": 507,
+          "sha256": "ba7662c9828c33eb28f1f4837ec966199af6d16a822513c944bb1c34f75b3f8a"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1019,
+          "sha256": "00e571a52aab7d02d7be0b9f5d7c2bb1f7523491bf2ebfedd8a8429193cf8de6"
         }
       ]
     },

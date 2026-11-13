@@ -767,8 +767,17 @@ All tasks start open. Check off an implementation task after its scoped verifica
   Warm changed-frame receipt fell from 183–232 to 118–129 ms,
   median composition fell from 232.91 to 166.12 ms, and throughput
   rose from 27.43 to 37.28 FPS. Cleanup passed. The 100 ms and 60 FPS
-  gates remain open. Next, compare controller RGB and RGBA at 270 × 600
-  with the existing `wsctl capture-bench` on one disposable guest.
+  gates remain open.
+- Direct controller capture `20261113-101457` passed all four
+  eight-second arms and cleanup on exact 0.1.5. One host-GPU guest
+  ran the same animated fixture throughout, in RGB, RGBA, RGBA, RGB
+  order at 270 × 600. RGB delivered 54.33 and 58.22 FPS. RGBA
+  delivered 57.88 and 58.20 FPS with one-third more bytes per frame.
+  Keep RGB for the next experiment. The direct stream reached about
+  58 FPS while the WPF path delivered 37.28 FPS at the same capture
+  size in `20261113-101158`. Next, decouple the RGB stream reader
+  from frame file writes and event publication using a bounded
+  latest-frame queue, then repeat the five-tap half-size diagnostic.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

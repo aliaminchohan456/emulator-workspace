@@ -430,6 +430,8 @@ connections. With the same binaries and fixture, SwiftShader delivered
 the default. Half-size capture reached 37.28 FPS and 166.12 ms median
 composition in five trials. The guest stayed at 1080 × 2400, and
 the app logged one-pixel coordinate differences on each axis.
-Compare RGB and RGBA capture at that size before changing the viewport.
+Direct controller capture at that size reached 54–58 FPS in RGB and
+about 58 FPS in RGBA. Retain RGB and test whether a bounded handoff
+between stream receipt and file publication improves WPF delivery.
 Three verified warm restores had a 13.13 s median. Full acceptance
 counts and targets remain for the selected release build.
