@@ -114,12 +114,13 @@ Privileged changes are separated from ordinary ones:
 | 6 | A stale device could receive input after the engine was replaced. | Fixed: the engine identity (AVD name, ADB port, gRPC port) is verified before input is sent. |
 | 7 | The privileged ADB-root operation was reachable from an agent scope. | Fixed: `instance.adbRoot` and `instance.adbRootState` are outside the agent scopes. |
 | 8 | The code-signing certificate of the release candidate. | **Open**: no user-owned signing identity was supplied, so the release candidate is produced unsigned and the provenance records `signing.status = "unsigned"`. Supplying a certificate is an operator action. |
-| 9 | The four-hour two-guest soak. | **Verified on 0.1.1**: WHPX soak `20261112-213629` recorded 200 paired probes over 14,411.36 seconds and removed both guests. Repeat on the final candidate after release-affecting changes. |
+| 9 | The four-hour two-guest soak. | **Verified on 0.1.1**. WHPX soak `20261112-213629` recorded 200 paired probes over 14,411.36 seconds and removed both guests. The exact 0.1.4 rerun is `20261113-081953`. |
+| 10 | Split APK deployment target. | **Verified on 0.1.4**. The supervisor verified the managed engine and ADB transport before `install-multiple`. Phase 3 `20261113-065245` verified the package on the selected guest, the untouched bystander, and typed rejection of a malformed set. |
 
 ## 10. How to reproduce the checks
 
 ```
-dotnet test                                              # 56 unit tests
+dotnet test                                              # 59 unit tests
 powershell -ExecutionPolicy Bypass -File tools\recipe-acceptance.ps1 -Root D:\Phase4Root -Baseline FixtureForeground
 powershell -ExecutionPolicy Bypass -File tools\root-lab-acceptance.ps1 -Root D:\Phase4Root
 powershell -ExecutionPolicy Bypass -File tools\avd-import-acceptance.ps1 -Root D:\Phase4Root

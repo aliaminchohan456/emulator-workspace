@@ -40,9 +40,13 @@ ADB daemon UID 2000. Their stock ramdisk hashes matched before and after.
 | API 35 16 KB revision 5 | `20261112-211808`, 7/8 | `AE3A.240806.041/12890756` | `recovery=cold_boot`, fixture absent after fallback |
 | API 36 revision 7 | `20261113-035552`, 8/8 on 0.1.2 | `BE2A.250530.026.D1/13818094` | `recovery=restored`, fixture absent after load |
 | API 35 16 KB revision 5 | `20261113-035829`, 8/8 on 0.1.2 | `AE3A.240806.041/12890756` | `recovery=restored`, fixture absent after load |
+| API 36 revision 7 | `20261113-054025`, 7/8 on 0.1.3 | `BE2A.250530.026.D1/13818094` | `recovery=cold_boot`, fixture absent after fallback |
+| API 36 revision 7 | `20261113-064730`, 8/8 on 0.1.4 | `BE2A.250530.026.D1/13818094` | `recovery=restored`, fixture absent after load |
+| API 35 16 KB revision 5 | `20261113-065000`, 8/8 on 0.1.4 | `AE3A.240806.041/12890756` | `recovery=restored`, fixture absent after load |
 
-The 0.1.2 results are in `artifacts/phase3/candidate/20261113-025947`.
-Historical raw records are in `artifacts/phase3/play/`. [Source and MSI identities](phase3-manifest.json)
+The 0.1.4 runs are in `artifacts/phase3/candidate/20261113-063943`.
+Historical raw records are under `artifacts/phase3/play/` and the earlier
+candidate run directories. [Source and MSI identities](phase3-manifest.json)
 The original simulation output exposed a false-positive console status for
 `route` and `power capacity`. The corrected probe distinguishes console
 rejections, reads the battery state using `power display`, and reads the
@@ -56,7 +60,7 @@ and simulation mutations require separate checks on those profiles.
 | Capability | AOSP API 35 x86_64 | Google APIs API 35 x86_64 | Google Play image |
 | --- | --- | --- | --- |
 | Cold boot to interactive readiness | Verified (see `docs/phase3-evidence.md`) | Verified | Verified on both tested images |
-| Warm snapshot restore | Verified | Not verified | Both images restored on 0.1.2. An earlier API 35 16 KB run used cold-boot fallback |
+| Warm snapshot restore | Verified | Not verified | Both images restored on 0.1.4. Earlier runs recorded cold-boot fallback on each image |
 | Frame capture and streaming | Verified | Not verified | One-shot PNG verified on both tested images |
 | Input (tap, text, key, swipe) | Verified | Not verified | Not verified |
 | ADB daemon as root (`adb root`) | Verified (`ro.build.type=userdebug`) | Verified | Both tested images report user build and root unavailable |
