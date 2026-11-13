@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
+using Android.Emulation.Control;
 using EmulatorWorkspace.Controller;
 using EmulatorWorkspace.Core.Engine;
 using EmulatorWorkspace.Core.Instances;
@@ -177,23 +179,14 @@ public sealed class FramePump : IAsyncDisposable
                         Height = (uint)Math.Max(0, _options.Height),
                     };
 
-                    await foreach (var image in channel.StreamImagesAsync(request, cancellationToken).ConfigureAwait(false))
-                    {
-                        attempt = 0;
-                        await PublishAsync(
-                            image.Image_.Memory,
-                            (int)image.Format.Width,
-                            (int)image.Format.Height,
-                            image.Seq,
-                            image.TimestampUs).ConfigureAwait(false);
-                    }
+                    await StreamRawAsync(channel, request, () => attempt = 0, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     await foreach (var frame in channel.StreamScreenshotsAsync(_options.Width, cancellationToken).ConfigureAwait(false))
                     {
                         attempt = 0;
-                        await PublishAsync(frame.PngBytes, 0, 0, frame.Sequence, frame.TimestampMicroseconds)
+                        await PublishAsync(frame.PngBytes, 0, 0, frame.Sequence, frame.TimestampMicroseconds, DateTimeOffset.UtcNow)
                             .ConfigureAwait(false);
                     }
                 }
@@ -225,9 +218,56 @@ public sealed class FramePump : IAsyncDisposable
         }
     }
 
-    private async Task PublishAsync(ReadOnlyMemory<byte> payload, int width, int height, uint sequence, ulong timestampUs)
+    private async Task StreamRawAsync(
+        EmulatorControlChannel controller, ImageFormat request, Action onFrame, CancellationToken cancellationToken)
     {
-        var received = DateTimeOffset.UtcNow;
+        using var stream = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var pending = Channel.CreateBounded<(Image Frame, DateTimeOffset ReceivedUtc)>(new BoundedChannelOptions(1)
+        {
+            SingleReader = true,
+            SingleWriter = true,
+            FullMode = BoundedChannelFullMode.DropOldest,
+        });
+
+        async Task ReadAsync()
+        {
+            try
+            {
+                await foreach (var frame in controller.StreamImagesAsync(request, stream.Token).ConfigureAwait(false))
+                {
+                    pending.Writer.TryWrite((frame, DateTimeOffset.UtcNow));
+                }
+            }
+            finally
+            {
+                pending.Writer.TryComplete();
+            }
+        }
+
+        async Task PublishFramesAsync()
+        {
+            await foreach (var (frame, receivedUtc) in pending.Reader.ReadAllAsync(stream.Token).ConfigureAwait(false))
+            {
+                stream.Token.ThrowIfCancellationRequested();
+                await PublishAsync(frame.Image_.Memory, (int)frame.Format.Width, (int)frame.Format.Height,
+                    frame.Seq, frame.TimestampUs, receivedUtc).ConfigureAwait(false);
+                onFrame();
+            }
+        }
+
+        var read = ReadAsync();
+        var publish = PublishFramesAsync();
+        var first = await Task.WhenAny(read, publish).ConfigureAwait(false);
+        if (first == publish && publish.IsFaulted)
+        {
+            await stream.CancelAsync().ConfigureAwait(false);
+        }
+        await Task.WhenAll(publish, read).ConfigureAwait(false);
+    }
+
+    private async Task PublishAsync(ReadOnlyMemory<byte> payload, int width, int height, uint sequence, ulong timestampUs,
+        DateTimeOffset received)
+    {
         // A 60 Hz source can deliver frames less than 16 ms apart when the
         // transport catches up. Leave enough headroom for that jitter.
         var minimumIntervalMs = _options.IsRaw ? 8 : 16;
