@@ -680,7 +680,11 @@ All tasks start open. Check off an implementation task after its scoped verifica
   Run `tools/mobile-mcp-comparison.py` after soak cleanup with exactly one
   owned, verified emulator and the packaged fixture. Android Studio
   build `262.9437.185.2621.16467767` is installed for the separate
-  IDE comparison.
+  IDE comparison. The isolated project at `D:/WS-AndroidStudio-Comparison`
+  built the same fixture sources offline with Gradle 8.11.1 and AGP 8.9.2
+  in 2m06s. Its debug APK SHA-256 is
+  `f583f0d016130599a99ce23fdbac1abe30e5fe6fd6db07cbb3a26d915c4e0f2`.
+  Guest deployment and app workflow timings are still pending.
 - Source `6a474b2` shares one guest boot-and-focus query between normal
   start and restore. It also shortens controller tap dwell to 32 ms,
   attempts contact release after cancellation, and checks the verified
