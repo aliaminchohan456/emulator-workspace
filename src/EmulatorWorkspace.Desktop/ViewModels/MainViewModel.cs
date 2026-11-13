@@ -915,7 +915,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (probe.FrameAvailableMs is double frameMs && SelectedDevice?.Name == probe.Device)
             {
-                probe.Completion.TrySetResult(new LatencyProbeSample(frameMs, probe.Clock.Elapsed.TotalMilliseconds));
+                probe.Completion.TrySetResult(new LatencyProbeSample(frameMs, probe.Clock.Elapsed.TotalMilliseconds)
+                {
+                    SupervisorFrameWriteMs = probe.SupervisorFrameWriteMs,
+                    FrameDecodeAndDispatchMs = probe.FrameDecodeAndDispatchMs,
+                });
             }
         }
 
@@ -1380,8 +1384,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     var guestHeight = frame["guestHeight"]?.GetValue<int>() ?? 0;
                     var dropped = frame["dropped"]?.GetValue<int>() ?? 0;
                     var sequence = frame["seq"]?.GetValue<int>() ?? 0;
+                    var receivedUtc = frame["receivedUtc"]?.GetValue<DateTimeOffset>();
+                    var writtenUtc = frame["writtenUtc"]?.GetValue<DateTimeOffset>();
                     _frames.Writer.TryWrite(new PendingFrame(envelope.Subscription, path, format, frameWidth, frameHeight,
-                        stride, guestWidth, guestHeight, sequence, dropped));
+                        stride, guestWidth, guestHeight, sequence, dropped, receivedUtc, writtenUtc, Stopwatch.GetTimestamp()));
                 }
 
                 break;
@@ -1551,6 +1557,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             && ProbePixel(ReadProbeColumn(bitmap, probe.Row, 1), 0) == probe.ExpectedColor)
         {
             probe.FrameAvailableMs = probe.Clock.Elapsed.TotalMilliseconds;
+            if (source.ReceivedUtc is { } frameReceived && source.WrittenUtc is { } frameWritten)
+            {
+                probe.SupervisorFrameWriteMs = (frameWritten - frameReceived).TotalMilliseconds;
+            }
+            probe.FrameDecodeAndDispatchMs = Stopwatch.GetElapsedTime(source.EventTimestamp).TotalMilliseconds;
         }
 
     }
@@ -1788,6 +1799,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public double TapAcknowledgedMs { get; init; }
         public double? ControllerSetupMs { get; init; }
         public double? ControllerTapMs { get; init; }
+        public double? SupervisorFrameWriteMs { get; init; }
+        public double? FrameDecodeAndDispatchMs { get; init; }
     }
 
     private sealed record ProbeState(string Device, int Row, int Width, int Height, int ExpectedColor)
@@ -1795,10 +1808,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public TaskCompletionSource<LatencyProbeSample> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Stopwatch Clock { get; } = Stopwatch.StartNew();
         public double? FrameAvailableMs { get; set; }
+        public double? SupervisorFrameWriteMs { get; set; }
+        public double? FrameDecodeAndDispatchMs { get; set; }
     }
 
     private sealed record PendingFrame(string Subscription, string Path, string Format, int Width, int Height, int Stride,
-        int GuestWidth, int GuestHeight, int Sequence, int Dropped);
+        int GuestWidth, int GuestHeight, int Sequence, int Dropped, DateTimeOffset? ReceivedUtc, DateTimeOffset? WrittenUtc,
+        long EventTimestamp);
 }
 
 public sealed class SupervisorRequestException(string code, string message) : Exception(message)
