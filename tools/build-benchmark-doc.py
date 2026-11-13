@@ -29,7 +29,7 @@ def merge(runs: list[dict]) -> dict:
             if name == "warmRestore" and "restoreTrials" not in report:
                 name = "historicalRestore"
             if data.get("samples"):
-                merged["scenarios"][name] = data
+                merged["scenarios"][name] = {**data, "runId": run["runId"]}
         if report.get("lifecycle"):
             merged["lifecycle"] = report["lifecycle"]
     return merged
@@ -37,9 +37,9 @@ def merge(runs: list[dict]) -> dict:
 
 def row(name: str, data: dict, target: str) -> str:
     if not data or not data.get("samples"):
-        return f"| {name} | no valid samples | - | - | {target} |"
+        return f"| {name} | no valid samples | - | - | - | {target} |"
     return (f"| {name} | {data['samples']} | {data.get('p50')} | {data.get('p95')} | "
-            f"{target} |")
+            f"`{data['runId']}` | {target} |")
 
 
 def p95(samples: list[float]) -> str:
@@ -79,7 +79,8 @@ def main() -> int:
         "",
         "Runs used for this report: " + ", ".join(f"`{run_id}`" for run_id in report["run_ids"]) + ".",
         "",
-        "Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.",
+        "Guest profile: AOSP API 35 x86_64 revision 2 on WHPX. Headless host GPU "
+        "is the default. Renderer-specific viewport runs identify their GPU mode.",
         "",
         "## Reference host",
         "",
@@ -110,8 +111,8 @@ def main() -> int:
         "",
         "## Scenarios",
         "",
-        "| Scenario | Valid samples | p50 | p95 | Target |",
-        "| --- | --- | --- | --- | --- |",
+        "| Scenario | Valid samples | p50 | p95 | Run | Target |",
+        "| --- | --- | --- | --- | --- | --- |",
         row("Cold boot to interactive readiness (managed, s)", scenarios.get("coldBoot", {}),
             "matched raw CLI overhead gate when both arms have 20 samples"),
         row("Cold boot to interactive readiness (raw CLI, s)", scenarios.get("rawBoot", {}),

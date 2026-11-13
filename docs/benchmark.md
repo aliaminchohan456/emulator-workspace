@@ -4,7 +4,7 @@ Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
 Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`.
 
-Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
+Guest profile: AOSP API 35 x86_64 revision 2 on WHPX. Headless host GPU is the default. Renderer-specific viewport runs identify their GPU mode.
 
 ## Reference host
 
@@ -35,17 +35,17 @@ Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
 ## Scenarios
 
-| Scenario | Valid samples | p50 | p95 | Target |
-| --- | --- | --- | --- | --- |
-| Cold boot to interactive readiness (managed, s) | 20 | 49.9 | 54.9 | matched raw CLI overhead gate when both arms have 20 samples |
-| Cold boot to interactive readiness (raw CLI, s) | 20 | 35.37 | 50.52 | same-engine control |
-| Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | historical control |
-| Historical restore reading (s) | 20 | 39.65 | 39.65 | invalid endpoint |
-| Verified warm restore (s) | 20 | 11.15 | 16.91 | median at most 8 s, 20 samples |
-| Restore attempt to readiness, including fallback (s) | 21 | 11.62 | 43.54 | reports recovery cost |
-| ADB tap to Logcat, single guest (ms) | 20 | 476.91 | 935.58 | diagnostic |
-| ADB tap to Logcat, two guests (ms) | 20 | 685.26 | 828.83 | diagnostic |
-| CLI one-shot PNG (ms) | 20 | 869.85 | 1155.98 | diagnostic |
+| Scenario | Valid samples | p50 | p95 | Run | Target |
+| --- | --- | --- | --- | --- | --- |
+| Cold boot to interactive readiness (managed, s) | 20 | 49.9 | 54.9 | `20261113-074512` | matched raw CLI overhead gate when both arms have 20 samples |
+| Cold boot to interactive readiness (raw CLI, s) | 20 | 35.37 | 50.52 | `20261113-074512` | same-engine control |
+| Cold boot (second managed profile, s) | 20 | 44.92 | 69.33 | `20261112-173642` | historical control |
+| Historical restore reading (s) | 20 | 39.65 | 39.65 | `20261112-173642` | invalid endpoint |
+| Verified warm restore (s) | 20 | 11.15 | 16.91 | `20261113-073629` | median at most 8 s, 20 samples |
+| Restore attempt to readiness, including fallback (s) | 21 | 11.62 | 43.54 | `20261113-073629` | reports recovery cost |
+| ADB tap to Logcat, single guest (ms) | 20 | 476.91 | 935.58 | `20261112-213629` | diagnostic |
+| ADB tap to Logcat, two guests (ms) | 20 | 685.26 | 828.83 | `20261112-213629` | diagnostic |
+| CLI one-shot PNG (ms) | 20 | 869.85 | 1155.98 | `20261112-213629` | diagnostic |
 
 ## Lifecycle
 
