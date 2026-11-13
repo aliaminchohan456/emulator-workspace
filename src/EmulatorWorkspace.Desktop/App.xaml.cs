@@ -104,6 +104,7 @@ public partial class App : Application
         }
 
         var probeCount = 0;
+        var halfCapture = false;
         string? probeOut = null;
         for (var index = 0; index < e.Args.Length; index++)
         {
@@ -112,6 +113,10 @@ public partial class App : Application
             {
                 int.TryParse(e.Args[index + 1], out probeCount);
             }
+            else if (e.Args[index].Equals("--probe-half-capture", StringComparison.OrdinalIgnoreCase))
+            {
+                halfCapture = true;
+            }
             else if (e.Args[index].Equals("--out", StringComparison.OrdinalIgnoreCase)
                      && index + 1 < e.Args.Length)
             {
@@ -119,7 +124,7 @@ public partial class App : Application
             }
         }
 
-        var window = new MainWindow();
+        var window = new MainWindow(probeCount > 0 && halfCapture);
         MainWindow = window;
 
         var dropFile = "";

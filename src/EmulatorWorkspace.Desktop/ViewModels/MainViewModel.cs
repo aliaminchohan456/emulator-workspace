@@ -48,8 +48,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private int _droppedFrames;
     private bool _initialized;
 
-    public MainViewModel()
+    private readonly bool _halfCapture;
+
+    public MainViewModel(bool halfCapture = false)
     {
+        _halfCapture = halfCapture;
         _paths = WorkspacePaths.Resolve();
         _dispatcher = Application.Current.Dispatcher;
 
@@ -1282,7 +1285,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             Volatile.Write(ref _frameSubscribePending, true);
             var data = await RequestAsync(
                 OperationNames.FrameSubscribe,
-                new JsonObject { ["name"] = device.Name, ["format"] = "rgb", ["width"] = 540, ["height"] = 1200 },
+                new JsonObject
+                {
+                    ["name"] = device.Name,
+                    ["format"] = "rgb",
+                    ["width"] = _halfCapture ? 270 : 540,
+                    ["height"] = _halfCapture ? 600 : 1200,
+                },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
             var subscription = data["subscription"]!.GetValue<string>();
             if (SelectedDevice?.Name != device.Name)

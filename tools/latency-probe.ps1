@@ -26,7 +26,8 @@ param(
     [string]$CandidatePayload = "",
     [string]$DesktopExecutable = "",
     [string]$SupervisorExecutable = "",
-    [string]$DiagnosticFixture = ""
+    [string]$DiagnosticFixture = "",
+    [switch]$HalfCapture
 )
 
 $ErrorActionPreference = "Stop"
@@ -127,6 +128,9 @@ function Measure-EncodedCapture([string]$adb, [string]$transportId) {
 }
 
 try {
+    if ($HalfCapture -and (-not $Diagnostic -or -not $DesktopExecutable -or -not $DiagnosticFixture)) {
+        throw "Half capture requires a diagnostic desktop and draw-marker fixture."
+    }
     if ($DiagnosticFixture -and (-not $Diagnostic -or -not ($CandidateRelease -and $CandidatePayload) -or $GuestCount -ne 1)) {
         throw "A fixture override requires a single-guest diagnostic with verified candidate inputs."
     }
@@ -233,6 +237,7 @@ try {
     $launch.FileName = $desktop
     $launch.UseShellExecute = $false
     $launch.Arguments = ('--root "{0}" --latency-probe {1} --out "{2}"' -f $Root, $Count, $resultPath)
+    if ($HalfCapture) { $launch.Arguments += ' --probe-half-capture' }
     if ($verified) {
         $launch.EnvironmentVariables["EMULATORWORKSPACE_SUPERVISOR_EXE"] = $env:EMULATORWORKSPACE_SUPERVISOR_EXE
     }
@@ -244,6 +249,10 @@ try {
     }
     if (-not (Test-Path -LiteralPath $resultPath)) { throw "The desktop did not write presentation evidence." }
     $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+    if ($HalfCapture) {
+        Check "diagnostic.capture-size" ($result.deliveredWidth -eq 270 -and $result.deliveredHeight -eq 600 -and
+            $result.guestWidth -eq 1080 -and $result.guestHeight -eq 2400) "capture=$($result.deliveredWidth)x$($result.deliveredHeight), guest=$($result.guestWidth)x$($result.guestHeight)"
+    }
     if ($Diagnostic) {
         Check "diagnostic.coverage" ($result.valid -eq $Count) "$($result.valid)/$($result.trials) valid samples, p95=$($result.p95Ms) ms, delivered=$($result.deliveredFps) FPS"
     }

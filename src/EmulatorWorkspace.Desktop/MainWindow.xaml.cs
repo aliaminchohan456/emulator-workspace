@@ -20,11 +20,11 @@ public partial class MainWindow : Window
     /// <summary>The view model behind the window, for the automation modes.</summary>
     public MainViewModel ViewModel => _viewModel;
 
-    public MainWindow()
+    public MainWindow(bool halfCapture = false)
     {
         InitializeComponent();
         ThemeManager.Initialize();
-        _viewModel = new MainViewModel();
+        _viewModel = new MainViewModel(halfCapture);
         DataContext = _viewModel;
 
         Loaded += async (_, _) =>
