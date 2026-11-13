@@ -408,3 +408,8 @@ includes the setup, frame, controller, readiness and fixture changes.
 The exact artifact and its pending checks are in [task.md](task.md).
 The 0.1.4 soak continues on its isolated root and will be verified through
 cleanup before any new guest workload starts.
+
+Use short functional and timing checks to evaluate intermediate changes.
+Schedule another full four-hour soak only after selecting the release
+candidate and passing its shorter checks. Preserve the completed 0.1.1
+run and the ongoing 0.1.4 run as evidence for their exact payloads.

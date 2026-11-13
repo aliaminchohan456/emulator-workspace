@@ -715,6 +715,10 @@ All tasks start open. Check off an implementation task after its scoped verifica
   and non-ASCII text. The normal panel showed build 16428233, AOSP
   revision 2, 1.51 GiB for `system.img` and usable WHPX. Missing-image
   setup disabled Create. Both isolated supervisors shut down.
+- Do not repeat a four-hour soak for intermediate changes. Complete
+  the active 0.1.4 run through cleanup, then use short functional and
+  performance gates to qualify the release candidate before its
+  four-hour run. The 0.1.1 four-hour result remains tied to 0.1.1.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
