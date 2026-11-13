@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "78abb25",
+  "headCommit": "07b3585",
   "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md",
   "runs": [
     {
@@ -43546,6 +43546,103 @@
           "name": "transcript.txt",
           "bytes": 878,
           "sha256": "53a2cd76ad7f0ba5a1b05d29b20d5a7472a7153cd89c8d51b55c912fc2e9f92d"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-102316",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-102316",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "07b35859afd86ea92319d747a3ca1aa263a451df",
+      "harnessSha256": "27973F12C890C762166C309E23B22FCAA880733227E3EBD953A12F305CC2AD91",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "CLI and sample APK"
+      },
+      "supervisorOverride": {
+        "version": "0.1.0+07b35859afd86ea92319d747a3ca1aa263a451df",
+        "files": [
+          {
+            "sha256": "85EF8DFA8C82145EDA5D2F83B2D7DAFEA3CDFA29CC99637BF13D8CBB198B0AFB",
+            "name": "EmulatorWorkspace.Supervisor.exe"
+          },
+          {
+            "sha256": "B807EF48B9668399F3340865FB97CEFD566F6C4B1BA70B176BDFA2ADB6828A55",
+            "name": "EmulatorWorkspace.Supervisor.dll"
+          },
+          {
+            "sha256": "9724FE462B3BA41319BE944D13BD25EB7CB13E9DD69A0CF6AC821C835A1B357A",
+            "name": "EmulatorWorkspace.Core.dll"
+          }
+        ]
+      },
+      "finishedUtc": "2026-11-13T05:27:23.1836763Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "diagnostic.restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.restore",
+              "passed": true,
+              "detail": "verified 3/3 warm restores, p50 8.9s",
+              "atUtc": "2026-11-13T05:27:15.6005484Z"
+            }
+          ]
+        },
+        "cleanup.bench-64e0b32b7591": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-64e0b32b7591",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T05:27:23.1608918Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 8033,
+          "sha256": "a2faded9ddf439afa30c6ae545592623cead7342ec0fd81ee14803c03b24f00e"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "369f101905eb038729c09b336de41634d0fd9ea76de71bd4fc81ee8045252802"
+        },
+        {
+          "name": "restore.jsonl",
+          "bytes": 1119,
+          "sha256": "5b33a4ef3da72267a74ea30a5ba3123ad770cb3da1e0267fcdba9df15a2a4c70"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 11495,
+          "sha256": "4f7f1529e6f90adf46a1dc39a981fb304df12a094637fa9cf4e25950633e2cd7"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 952,
+          "sha256": "3072233be72a0d1115eb0ee5fea6efde584fba0aea9e4ba94f55c8ab076f1158"
         }
       ]
     },

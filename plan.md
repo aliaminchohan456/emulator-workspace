@@ -433,6 +433,8 @@ the app logged one-pixel coordinate differences on each axis.
 Direct controller capture at that size reached 54–58 FPS in RGB and
 about 58 FPS in RGBA. The bounded handoff measured 36.68 FPS against
 37.28 FPS at half size and was reverted. Keep the recorded diagnostic.
-Three verified warm restores had a 13.13 s median. Next, isolate their
-console, readiness and independent verification costs. Full acceptance
-counts and targets remain for the selected release build.
+Three verified warm restores had an 8.90 s median after narrowing the
+readiness query and combining independent ADB verification. One
+attempt fell back to a 139.45 s cold boot. Measure readiness outcomes
+per attempt next. Full acceptance counts and targets remain for the
+selected release build.

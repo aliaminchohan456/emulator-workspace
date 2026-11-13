@@ -306,6 +306,22 @@ measured 37.28 FPS at this capture size in `20261113-101158`.
 
 [Source, installer hash and raw files](phase3-manifest.json)
 
+## Restore readiness diagnostic
+
+Run `20261113-102316` used the separately built `07b3585` supervisor
+with the 0.1.5 CLI and fixture. It verified three warm restores in
+four attempts. Warm median was 8.90 s. The 139.45 s cold fallback
+followed a 90.01 s readiness timeout and is excluded from that median.
+
+| Attempt | Console | Readiness | Independent verification | End to end |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 3.88 s | 2.17 s | 1.92 s | 8.50 s |
+| 2 | 3.89 s | 3.95 s | 3.26 s | 11.55 s |
+| 3 (cold fallback) | 3.15 s | 90.01 s | 1.42 s | 139.45 s |
+| 4 | 4.72 s | 2.00 s | 1.60 s | 8.90 s |
+
+[Raw evidence and build identities](phase3-manifest.json)
+
 ## Reproduce the corrected benchmarks
 
 ```powershell

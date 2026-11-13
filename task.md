@@ -783,10 +783,18 @@ All tasks start open. Check off an implementation task after its scoped verifica
   trial was 408.68 ms versus 374.17 ms. Cleanup passed and ADB
   was empty. Reverted the queue in `78abb25` because the short
   comparison showed no clear gain. The 100 ms and 60 FPS targets remain open.
-  Next, inspect the console, supervisor reply and verification timings
-  in `artifacts/phase3/bench/20261113-094828/restore.jsonl` and run
-  one focused restore change through three verified samples. Resume
-  viewport work with a direct transport experiment once restore is measured.
+- Restore diagnostic `20261113-102316` used the separately hashed
+  `07b3585` supervisor with the exact 0.1.5 CLI and fixture. The restore
+  readiness probe queried only display information, and the harness
+  read the marker and focus in one independent ADB request. Three
+  verified warm samples took 8.50, 11.55 and 8.90 s. The median was
+  8.90 s versus 13.13 s in `20261113-094828`. Warm samples spent
+  3.88–4.72 s in the console, 2.00–3.95 s on readiness and
+  1.60–3.26 s on independent verification. One cold fallback took
+  139.45 s after the 90 s readiness timeout. Release build, 64 tests
+  and cleanup passed. Next, record each readiness probe's transport,
+  boot property and focus outcome during the next short restore run
+  to diagnose the fallback. Keep the 8 s and 20-sample gates open.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
