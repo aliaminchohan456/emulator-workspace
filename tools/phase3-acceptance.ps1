@@ -357,7 +357,7 @@ try {
         Start-Sleep -Seconds 3
     }
     Add-Check "snapshot" "restore-readiness" $booted "the guest reports sys.boot_completed=1 after the restore"
-    & $adb -s $idP.serial shell monkey -p dev.emulatorworkspace.sample -c android.intent.category.LAUNCHER 1 2>&1 | Out-Null
+    Invoke-Adb @("-s", $idP.serial, "shell", "monkey", "-p", "dev.emulatorworkspace.sample", "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
     Start-Sleep -Seconds 4
     $stale = Invoke-Ws @("call", "--op", "input.tap", "--args-file", $staleFile, "--token-file", $tokenP, "--root", $Root) -AllowFailure
     Add-Check "snapshot" "stale-frame-invalidated" ($stale.Text -match "stale_observation") "frame id rejected after restore"
@@ -388,7 +388,7 @@ try {
     Add-Check "transport" "external-state-unchanged" $unchanged "transport ids stable across agent calls"
 
     # A recycled transport must not break exact target binding.
-    & $adb -s $idQ.serial reconnect 2>&1 | Out-Null
+    Invoke-Adb @("-s", $idQ.serial, "reconnect") | Out-Null
     Start-Sleep -Seconds 3
     $recycled = Invoke-Ws @("adb-identity", "--name", $sessionQ.instance, "--root", $Root) -AllowFailure
     $idQ2 = Parse-Json $recycled.Text
@@ -422,10 +422,10 @@ try {
     $anr = Ensure-NoAnr $idP.serial $sessionP.instance
     Add-Check "guest" "no-anr-overlay" $anr.Clear "recovered=$($anr.Recovered)"
     Unlock-Guest $idP.serial
-    & $adb -s $idP.serial shell monkey -p dev.emulatorworkspace.sample -c android.intent.category.LAUNCHER 1 2>&1 | Out-Null
+    Invoke-Adb @("-s", $idP.serial, "shell", "monkey", "-p", "dev.emulatorworkspace.sample", "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
     Start-Sleep -Seconds 5
-    & $adb -s $idP.serial shell uiautomator dump /sdcard/p3-before.xml 2>&1 | Out-Null
-    $beforeDump = (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-before.xml")).Text
+    $beforeUi = Invoke-Adb @("-s", $idP.serial, "shell", "uiautomator", "dump", "/sdcard/p3-before.xml")
+    $beforeDump = if ($beforeUi.Code -eq 0) { (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-before.xml")).Text } else { "" }
     $beforeNode = [regex]::Match($beforeDump, '<node[^>]*content-desc="dup_marker"[^>]*>')
     $markerBefore = ""
     if ($beforeNode.Success) {
@@ -465,8 +465,8 @@ try {
     Save-Text "race-tap-result.txt" $tapResult
     Add-Check "race" "queued-input-not-authorized" ($tapResult -match "revoked" -or $tapResult -match "cancelled" -or $tapResult -match "forbidden") `
         (($tapResult -split "`n" | Where-Object { $_ -match "FAILED" } | Select-Object -First 1))
-    & $adb -s $idP.serial shell uiautomator dump /sdcard/p3-race.xml 2>&1 | Out-Null
-    $dump = (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-race.xml")).Text
+    $raceUi = Invoke-Adb @("-s", $idP.serial, "shell", "uiautomator", "dump", "/sdcard/p3-race.xml")
+    $dump = if ($raceUi.Code -eq 0) { (Invoke-Adb @("-s", $idP.serial, "shell", "cat", "/sdcard/p3-race.xml")).Text } else { "" }
     Save-Text "race-ui.xml" $dump
     $nodeMatch = [regex]::Match($dump, '<node[^>]*content-desc="dup_marker"[^>]*>')
     $markerText = ""

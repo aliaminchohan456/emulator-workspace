@@ -598,6 +598,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
   source bounds the recipe UI wait to two minutes, the launch focus wait
   by elapsed wall time, and each WindowManager dump by both guest and host
   deadlines. Confirm prompt failure or recovery on a real restored guest.
+- In 0.1.3 Phase 3, the nested MCP/CLI acceptance passed 43/43. The race
+  probe's two raw UIAutomator dumps hung on the restored guest. The exact
+  owned ADB clients were terminated after their bounds so independent
+  checks and cleanup could continue. The takeover rejected queued input
+  with `revoked`. The independent UI markers remain failed. Future runs
+  use the existing bounded ADB helper and require a successful fresh dump.
+  Evidence `artifacts/phase3/candidate/20261113-041225/phase3/20261113-051314`.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
