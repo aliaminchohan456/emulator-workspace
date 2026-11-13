@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T00:48:30.6083131+00:00",
-  "headCommit": "fcb46e0",
+  "latestFinishedUtc": "2026-11-13T01:36:22.8048873+00:00",
+  "headCommit": "1d5395d",
   "trackedWorkTree": "M task.md",
   "runs": [
     {
@@ -52101,6 +52101,3622 @@
           "name": "ui-tree-start.txt",
           "bytes": 4257,
           "sha256": "3f6b5da7534aa91954f98c5a5afd0dfd3ba8c914b3fc4cefc3b162ff9b25e51a"
+        }
+      ]
+    },
+    {
+      "kind": "candidate",
+      "runId": "20261113-054840",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-054840",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "fcb46e09cf26a67ae99b0e1bf688c0b70c08bfaa",
+      "harnessSha256": "821134829C70F45B50FD530A6852D3C954AAB1FCFBA55B1D9081E0DF6213DECC",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:36:22.8048873+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "recipe-launcher": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recipe-launcher",
+              "passed": true,
+              "detail": "exit=0, checks=37, failures=0, log=recipe-launcher.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "recipe-fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recipe-fixture",
+              "passed": true,
+              "detail": "exit=0, checks=37, failures=0, log=recipe-fixture.log",
+              "atUtc": null
+            }
+          ]
+        },
+        "phase3": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "phase3",
+              "passed": false,
+              "detail": "exit=2, checks=55, failures=1, log=phase3.log",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-061905/adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "65f26f4150856644b0cb746f48bc1133ff1b629d88cea4acbbb6a6c6692ac41b"
+        },
+        {
+          "name": "phase3/20261113-061905/adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "65f26f4150856644b0cb746f48bc1133ff1b629d88cea4acbbb6a6c6692ac41b"
+        },
+        {
+          "name": "phase3/20261113-061905/adb-identity.json",
+          "bytes": 879,
+          "sha256": "b954215065e65e680a01d6cacad41e7b040f5938b975dca09d3b0f9f2cd1db92"
+        },
+        {
+          "name": "phase3/20261113-061905/battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "phase3/20261113-061905/battery.json",
+          "bytes": 78,
+          "sha256": "04913eeecf10ac5962a2725169ac97981d04a4d811cacf894b7a44bed7578a7b"
+        },
+        {
+          "name": "phase3/20261113-061905/bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "09f79b84b537e4c6d0404d7e254439ad8277c6a83400d1157853276cc0e937d7"
+        },
+        {
+          "name": "phase3/20261113-061905/bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "phase3/20261113-061905/bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "phase3/20261113-061905/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-061905/cross-guest.json",
+          "bytes": 35,
+          "sha256": "373a319be1cc4ba67675442717ed5b0b033cf6fbca285892dd318b013e76de72"
+        },
+        {
+          "name": "phase3/20261113-061905/geo.json",
+          "bytes": 107,
+          "sha256": "ed197b31221549ed7ab19342caa689783457039044dac12325c3dec15bd54f6d"
+        },
+        {
+          "name": "phase3/20261113-061905/instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "74cd0eb4b358e23608335a7a3da2101679a2ac120fe05dbfb2edd7984e20e15d"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-duplicate.yaml",
+          "bytes": 182,
+          "sha256": "10d6cb19f38f897130cd0877ea9dc4fab9c0b06b446da731b8ee1e83faf892e8"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/commands.json",
+          "bytes": 3962,
+          "sha256": "05fc61561d712b83053f5019fbeeb1880225d5d344b55a22b12d306ad265671b"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 83752,
+          "sha256": "d8d9ed4b2adf95fc5156d750806e91a78ac8477eb74fa676f836d8ef308ea163"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/logs/maestro.log",
+          "bytes": 6347,
+          "sha256": "25ef94d2541b849b983cb20ac73f8d663cb604885d3ddf0d01d652d684f79996"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/manifest.json",
+          "bytes": 564,
+          "sha256": "e8b2a3c9748405da35ad189a155b615c27e2207013bb738e119ddba89855a08a"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-evidence/.maestro/tests/2026-11-13_063443/maestro.log",
+          "bytes": 8835,
+          "sha256": "d1419d76f3b4c6eb12f2d317c68b956334ee6d2e8830374f52f34e22707ec1f3"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "278058710dd3ababedeeaf33f496756dc63d42243eaa40d760f88f72cba54944"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "phase3/20261113-061905/maestro-run.txt",
+          "bytes": 245,
+          "sha256": "41f32b7d1b7f1b8701a09d1380550456ee9cec929b596737e82a0eafb843d286"
+        },
+        {
+          "name": "phase3/20261113-061905/malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "phase3/20261113-061905/package-dumpsys.txt",
+          "bytes": 3538,
+          "sha256": "43375d66562795d56b3c57e93caf1866dd14b4a055833e84e18a52209aa0d1e8"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-168a0b69.json",
+          "bytes": 38,
+          "sha256": "b3b2aa156e306fbd2674f5d14c03abafc2c8a94f94f6e71f62ee2f92ad0b732e"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-1fe3ea26.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-20a0b85f.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-2baece4c.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-2de265c7.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-3423251d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-35333b79.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-3c23f66a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-3f8e7871.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-3fbf375c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-56cf7e05.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-5b8c5f20.json",
+          "bytes": 54,
+          "sha256": "518cf2607598b377e503f0772e47503fdcfbf5ebbf0eca00eeb2055caab6abe5"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-77b193df.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-77b6caf4.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-8b5df487.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-911c787a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-932af551.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-a47dae76.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-ab159e11.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-ab307768.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-afbb1e9d.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-b281f5cf.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-b2dfcaf0.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-b336bcf0.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-cb34cd27.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-d543c7cb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-d551b4ff.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-db975e6e.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-df250505.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/args-f40cb809.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/boot.txt",
+          "bytes": 350,
+          "sha256": "c7acb06d356f128ed847410659312ce6083b7e10e565143d9355019894203c32"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/cli-transcript.json",
+          "bytes": 389546,
+          "sha256": "e317bf860eadeda2e8e1a289875463834299cca7f667f197ec492547e9ecd3dd"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "863703dbeaa53bacd7da2ea90228e53dfd3c42272fb39fdcec9c15a5c5afc768"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "bb31eae719d8c86685c72aad52fed00b1ed5572d8630f51f6be054d81bbcc9e7"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/mcp/python-mcp.json",
+          "bytes": 2240,
+          "sha256": "622ea06c5bb63a00862abccc63b688ce5cbcc2421b68f65cb4b5f9c089f34059"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "5b856dd11751bd152475fa6fa5126cd4e76872497f24d5488cd4ba2f19729299"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/mcp-workflow.txt",
+          "bytes": 1234,
+          "sha256": "a93ae4fc4be18fe958174f83ca5947ed5865f0afd40683b29d2fd9d700964b1f"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/network.json",
+          "bytes": 2069,
+          "sha256": "51ecf75e8f13e29750972d8264ca3260fd3b68497d5799e20bf5be4ccb0a5871"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/python-mcp.txt",
+          "bytes": 506,
+          "sha256": "f42d78b3406be85256a70a61ea8a792118de23b471c0bd23c3844bf50492d4e2"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/secure-cli.json",
+          "bytes": 251126,
+          "sha256": "78832db5db27dcd6b671314b07540a8de26d43b54dcb3fe0e5f69d4ec9dbfd15"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/security.json",
+          "bytes": 832,
+          "sha256": "9a2eec128749922490362721fed13bf50360d9ca6c3688423db1fe6b9f2a33ea"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/stale-frame.json",
+          "bytes": 52,
+          "sha256": "31cc17be648b6c09bab903bac8c603a30d9ad8759370e73da600a086ecd63602"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/summary.json",
+          "bytes": 12850,
+          "sha256": "5f62258e923028deedacbfe3e892806b6b541cfd77124cd1c02565664b88a47b"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/transcript.txt",
+          "bytes": 6269,
+          "sha256": "eb3cc1196430ff6b6e7b66eab1261c020b97a4888637584c48baf45b75b7f5e5"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/versions.json",
+          "bytes": 492,
+          "sha256": "131f33e2e5d098e9c2eef4437b2e10d6f01e4a5041d4ea3decd929d4c4e6d816"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2/20261113-061917/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2-acceptance.txt",
+          "bytes": 11723,
+          "sha256": "1e13461070127c041155fbaaf718ce62e94b36812eb82e78f86b30409133ac91"
+        },
+        {
+          "name": "phase3/20261113-061905/phase2-summary.json",
+          "bytes": 12850,
+          "sha256": "5f62258e923028deedacbfe3e892806b6b541cfd77124cd1c02565664b88a47b"
+        },
+        {
+          "name": "phase3/20261113-061905/profile-export.json",
+          "bytes": 538,
+          "sha256": "4e75f233b95bce3ca147e4db876422fe2361f839918efbbac74a1e767aba061a"
+        },
+        {
+          "name": "phase3/20261113-061905/profile-import-request.json",
+          "bytes": 928,
+          "sha256": "e96681de8d34f76fcdb434729287cf6d8a4d5f3233eef60e527b13e6b5dc971b"
+        },
+        {
+          "name": "phase3/20261113-061905/race-logcat.txt",
+          "bytes": 170,
+          "sha256": "b86c376158b5e33d56b4132c4458301c60b710626b2151fb6a27394c332bce23"
+        },
+        {
+          "name": "phase3/20261113-061905/race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "phase3/20261113-061905/race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "phase3/20261113-061905/race-timeline.json",
+          "bytes": 648,
+          "sha256": "00c03442ed9423a624e70508c8cb93299f12cc1046bde03f7f6837b428d722f9"
+        },
+        {
+          "name": "phase3/20261113-061905/race-ui.xml",
+          "bytes": 6742,
+          "sha256": "ea21ff7b73dcd30d8e23788930d3b9e3760cedb226be691773d61cc922a08ea9"
+        },
+        {
+          "name": "phase3/20261113-061905/restore.json",
+          "bytes": 63,
+          "sha256": "effa523b7754934d0067024da03bd0e3b729362f8bcaf5e474b9cb15ca9107a4"
+        },
+        {
+          "name": "phase3/20261113-061905/snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "645246821f962c008e6f0b248559b42d26bcaf7f497a0b784ff4738c1e4973a9"
+        },
+        {
+          "name": "phase3/20261113-061905/stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "3bf0225a6ed5e7af509b8822852acf93ae3e6eebbb609574f9dec6ad6c0108df"
+        },
+        {
+          "name": "phase3/20261113-061905/summary.json",
+          "bytes": 37555,
+          "sha256": "f5d4045aa6e4e19b18dce4a56dadf3d7a3046d7b783fb70c084819b1e1d152fc"
+        },
+        {
+          "name": "phase3/20261113-061905/transcript.txt",
+          "bytes": 5081,
+          "sha256": "cfafaf9aa718869bddfc6c594fc14ed301e43cd43c7759aa4a36e7cf360d0582"
+        },
+        {
+          "name": "phase3/20261113-061905/versions.json",
+          "bytes": 495,
+          "sha256": "3a471056148bad3b2b60d48251879670debd8aff52aadf31ebb78bf94697d1db"
+        },
+        {
+          "name": "phase3.log",
+          "bytes": 11980,
+          "sha256": "6189d418803e2e01987b435b88ce1d5af7ee73996fd01f0431b383dc42e9a242"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-recovered-7fb4b2.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-recovered-tap-f90803.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-timeout-7b7acc.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-timeout-tap-4fe873.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-welcome-9d2deb.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-assert-welcome-tap-0d67c2.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-baseline-e259a9.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-bystander-network-51e86c.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-fg-state-a4c18a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-fg-state-d6994c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-install-91dc26.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-launch-1c595b.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-logs-beaae6.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-marker-bystander-2-c94678.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-marker-bystander-c8bf26.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-marker-target-4cfb89.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-screenshot-aba2c9.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-shape-222a6c.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-type-pass-df4a27.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-type-user-00d73d.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/args-unshape-78df17.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/fixture.jsonl",
+          "bytes": 834,
+          "sha256": "f4d88ef53abf941173765887d7d29ff64249d8e4629d2bf9f2e101e1197f5e2e"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/identities.json",
+          "bytes": 546,
+          "sha256": "e10e0b1f2f862c407ed8b2e25ed3f88374bbb31dc565c1f22347ec98120a56de"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/operations-after-interrupt.json",
+          "bytes": 9333,
+          "sha256": "ee8370e9ffaffa6c1e538402576a7d877425d313475d57e52b9d5eb23de3828c"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-export.json",
+          "bytes": 4213,
+          "sha256": "c090679b46bf39985fb11163e66cbba434cf88e605bb54cb6328d0d9e83344d8"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "96f9494e225aeb75270b27d95df4fd74abbef5678b97b3b9a84e06d655369f63"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-replay.json",
+          "bytes": 2634,
+          "sha256": "f2e9b016c3f8f52420edf482082e145bcb82d1bad2f268606c3037d6854715c3"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-retry.json",
+          "bytes": 2635,
+          "sha256": "343d2ce4ebb403c38dd0d56e6dc7333733fe8484cea9a135b44bcaa8020b2abc"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-stop.json",
+          "bytes": 281,
+          "sha256": "feb90737cabe880a538a15cc35e284937ac0e9b21861b8747f52dc0c488a9196"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/summary.json",
+          "bytes": 12520,
+          "sha256": "baefc5e00020099865f4ee98cbd93ebce473207d5a0cb033c1bab068a79af810"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/transcript.txt",
+          "bytes": 3659,
+          "sha256": "1aea1916653741a80aad66981fa40e7e2dfba1f39b03b9e770551b361c39339d"
+        },
+        {
+          "name": "recipe-fixture/20261113-060543/versions.json",
+          "bytes": 338,
+          "sha256": "d6f4e6b2203cf60fbecc2c4d1f2177a3764666b97cdcff292715466a85358522"
+        },
+        {
+          "name": "recipe-fixture.log",
+          "bytes": 8383,
+          "sha256": "03dedc448e63c7d39a05ec1387df32124f8c9f05dfae1f57a02da2ae793e890c"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-recovered-75aa49.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-recovered-tap-99cfcc.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-timeout-a413a1.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-timeout-tap-730fe8.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-welcome-eb1da4.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-assert-welcome-tap-0ecf97.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-baseline-09f443.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-bystander-network-e1a960.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-fg-state-16afc4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-fg-state-806b26.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-install-e3e585.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-launch-23a42c.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-logs-c798f8.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-marker-bystander-2-aab818.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-marker-bystander-3596f7.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-marker-target-0ce439.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-screenshot-e3982c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-shape-5cb1d1.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-type-pass-0a9066.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-type-user-0b12da.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/args-unshape-fb0da4.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/fixture.jsonl",
+          "bytes": 834,
+          "sha256": "a574d2dc30c11536d8e5aa3a251daa8e75f9871cb6438445ae5ff5c6f0662ddf"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/identities.json",
+          "bytes": 546,
+          "sha256": "33c0fd4f25c3d2749557742f0a04c92d6ede73f0cb1ea4cb998c858274d6c402"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/operations-after-interrupt.json",
+          "bytes": 9334,
+          "sha256": "4fd37557d5cadb87dad5f7ff94a810d4e5c2c763a671787a98fb17bec844c028"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-export.json",
+          "bytes": 4214,
+          "sha256": "78b8d97b5a6f2eeeef377bae65529350a2fd37ccdab509db9a304e11362be4fc"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "c0f88cf37bb3a97b5837f15f3fdbab26deac50f43abb3158dff0f0e981d477c8"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-replay.json",
+          "bytes": 2469,
+          "sha256": "6d8820866e9e7d44ac855cb7fc81e4febc660f254b989af3c09febe4c0bba419"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-retry.json",
+          "bytes": 2471,
+          "sha256": "3da7973f3615d0e9c327320fc573738d54273890b9af29cd935ef922fea9264d"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-stop.json",
+          "bytes": 282,
+          "sha256": "d1e5423daa7b5a1556222c7fbb134da9938e47b3357d8522941cd6ed05d1271d"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/summary.json",
+          "bytes": 12521,
+          "sha256": "305f71afdb1a2d2774c99eee959501ccca96da00a6f62c42d31d65a3f6c70174"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/transcript.txt",
+          "bytes": 3662,
+          "sha256": "a22a9137ab0a87241d9da2806106e9f22e2291b45ce6dacd2a98391a18a6cda4"
+        },
+        {
+          "name": "recipe-launcher/20261113-054841/versions.json",
+          "bytes": 339,
+          "sha256": "cff0d16a1b7316c4a927ed24f722990a9de50c22e830722c8ce591015630d1cc"
+        },
+        {
+          "name": "recipe-launcher.log",
+          "bytes": 8386,
+          "sha256": "d5ee51d927701e3b29843868788a35fef0d38a51cc8a5b0c8ab719ed1d856138"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1152,
+          "sha256": "5388138f5199180ab9334f2b9b8e66e5b71efc8693cfb50b313e8a8a54703039"
+        }
+      ]
+    },
+    {
+      "kind": "phase2",
+      "runId": "20261113-061917",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-054840/phase3/20261113-061905/phase2/20261113-061917",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "1d5395d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:26:36.0513181Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-20261113-054840-phase3",
+      "freeBytesAtStart": null,
+      "failedChecks": 4,
+      "totalChecks": 43,
+      "lanes": {
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture",
+              "passed": true,
+              "detail": "127.0.0.1:8765 body=65536",
+              "atUtc": null
+            }
+          ]
+        },
+        "build": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "skipped (-SkipBuild; pre-captured)",
+              "atUtc": null
+            }
+          ]
+        },
+        "boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "boot",
+              "passed": true,
+              "detail": "serial=emulator-5556",
+              "atUtc": null
+            }
+          ]
+        },
+        "status": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "status",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": null
+            }
+          ]
+        },
+        "fingerprint": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fingerprint",
+              "passed": true,
+              "detail": "Android/sdk_phone64_x86_64/emu64x:15/AE3A.240806.019/12368160:userdebug/test-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "install": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install",
+              "passed": true,
+              "detail": "installed d:\\ws-candidate-014-20261113-054840-phase3\\apps\\ws-sample.apk (16787 bytes) on ag-bb58c8",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "launch",
+              "passed": true,
+              "detail": "launched dev.emulatorworkspace.sample on ag-bb58c8 (dev.emulatorworkspace.sample/.MainActivity)",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "baseline.snapshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "baseline.snapshot",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-bb58c8\",\r\n  \"tag\": \"phase2-boot-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.4,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.screenshot",
+              "passed": true,
+              "detail": "artifact=art-1c18521abeb5",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.tree",
+              "passed": true,
+              "detail": "nodes=19",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.login": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.login",
+              "passed": true,
+              "detail": "{\r\n  \"pass\": true,\r\n  \"instance\": \"ag-bb58c8\",\r\n  \"text\": \"WELCOME\",\r\n  \"bounds\": \"[42,467][1038,518]\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.logs": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.logs",
+              "passed": true,
+              "detail": "lines=1",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.artifact": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.artifact",
+              "passed": true,
+              "detail": "bytes=132617",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.save": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.save",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-bb58c8\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.47,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-bb58c8\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"load\",\r\n  \"seconds\": 3.79,\r\n  \"recovery\": \"restored\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.readiness": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.readiness",
+              "passed": true,
+              "detail": "sys.boot_completed=1 after the snapshot load",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.fixture-ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.fixture-ready",
+              "passed": true,
+              "detail": "the fixture is in the foreground after the restore",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.post-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.post-restore",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-network",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay.pre-network",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.baseline": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.baseline",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.shaped": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.shaped",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.recovered",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.screenshot",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-bb58c8\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.tree",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-bb58c8\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.selector": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.selector",
+              "passed": true,
+              "detail": "selector denied",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.recovered",
+              "passed": true,
+              "detail": "capture restored",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-mcp",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.mcp",
+              "passed": true,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-014-20261113-054840-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:40",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.workflow": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "mcp.workflow",
+              "passed": false,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-014-20261113-054840-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:41",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.python": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "mcp.python",
+              "passed": true,
+              "detail": "py.exe : ws-mcp ready root=D:/WS-Candidate-014-20261113-054840-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.ps1:427 ",
+              "atUtc": null
+            }
+          ]
+        },
+        "wpf.agent-sessions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wpf.agent-sessions",
+              "passed": true,
+              "detail": "2 sessions, 2 pairings",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-security": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "adb.ready.pre-security",
+              "passed": false,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.unpaired": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.unpaired",
+              "passed": true,
+              "detail": "unauthorized",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.wrong-instance": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.wrong-instance",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-bb58c8', not 'tpl3'.",
+              "atUtc": null
+            }
+          ]
+        },
+        "stale.bump": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stale.bump",
+              "passed": true,
+              "detail": "{\r\n  \"instance\": \"ag-bb58c8\",\r\n  \"dispatchedUtc\": \"2026-11-13T01:26:29.2839056\\u002B00:00\",\r\n  \"queuedUtc\": \"2026-11-13T01:26:29.0865761\\u002B00:00\",\r\n  \"x\": 54",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.stale-frame": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.stale-frame",
+              "passed": true,
+              "detail": "FAILED [stale_observation] The guest generation changed.",
+              "atUtc": null
+            }
+          ]
+        },
+        "fixture.duplicate-selectors": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "fixture.duplicate-selectors",
+              "passed": false,
+              "detail": "dup_action matches=0",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.ambiguous": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "deny.ambiguous",
+              "passed": false,
+              "detail": "{\r\n  \"pass\": false,\r\n  \"instance\": \"ag-bb58c8\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.replay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.replay",
+              "passed": true,
+              "detail": "cached response identical",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.conflict": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.conflict",
+              "passed": true,
+              "detail": "FAILED [idempotency_conflict] This idempotency key was used with different arguments.",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "args-168a0b69.json",
+          "bytes": 38,
+          "sha256": "b3b2aa156e306fbd2674f5d14c03abafc2c8a94f94f6e71f62ee2f92ad0b732e"
+        },
+        {
+          "name": "args-1fe3ea26.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "args-20a0b85f.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-2baece4c.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-2de265c7.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "args-3423251d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-35333b79.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-3c23f66a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-3f8e7871.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "args-3fbf375c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-56cf7e05.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-5b8c5f20.json",
+          "bytes": 54,
+          "sha256": "518cf2607598b377e503f0772e47503fdcfbf5ebbf0eca00eeb2055caab6abe5"
+        },
+        {
+          "name": "args-77b193df.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-77b6caf4.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-8b5df487.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-911c787a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-932af551.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "args-a47dae76.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-ab159e11.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-ab307768.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "args-afbb1e9d.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "args-b281f5cf.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "args-b2dfcaf0.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-b336bcf0.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-cb34cd27.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-d543c7cb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-d551b4ff.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-db975e6e.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-df250505.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "args-f40cb809.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "boot.txt",
+          "bytes": 350,
+          "sha256": "c7acb06d356f128ed847410659312ce6083b7e10e565143d9355019894203c32"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "cli-transcript.json",
+          "bytes": 389546,
+          "sha256": "e317bf860eadeda2e8e1a289875463834299cca7f667f197ec492547e9ecd3dd"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 572,
+          "sha256": "863703dbeaa53bacd7da2ea90228e53dfd3c42272fb39fdcec9c15a5c5afc768"
+        },
+        {
+          "name": "idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "bb31eae719d8c86685c72aad52fed00b1ed5572d8630f51f6be054d81bbcc9e7"
+        },
+        {
+          "name": "mcp/python-mcp.json",
+          "bytes": 2240,
+          "sha256": "622ea06c5bb63a00862abccc63b688ce5cbcc2421b68f65cb4b5f9c089f34059"
+        },
+        {
+          "name": "mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "5b856dd11751bd152475fa6fa5126cd4e76872497f24d5488cd4ba2f19729299"
+        },
+        {
+          "name": "mcp-workflow.txt",
+          "bytes": 1234,
+          "sha256": "a93ae4fc4be18fe958174f83ca5947ed5865f0afd40683b29d2fd9d700964b1f"
+        },
+        {
+          "name": "network.json",
+          "bytes": 2069,
+          "sha256": "51ecf75e8f13e29750972d8264ca3260fd3b68497d5799e20bf5be4ccb0a5871"
+        },
+        {
+          "name": "python-mcp.txt",
+          "bytes": 506,
+          "sha256": "f42d78b3406be85256a70a61ea8a792118de23b471c0bd23c3844bf50492d4e2"
+        },
+        {
+          "name": "secure-cli.json",
+          "bytes": 251126,
+          "sha256": "78832db5db27dcd6b671314b07540a8de26d43b54dcb3fe0e5f69d4ec9dbfd15"
+        },
+        {
+          "name": "security.json",
+          "bytes": 832,
+          "sha256": "9a2eec128749922490362721fed13bf50360d9ca6c3688423db1fe6b9f2a33ea"
+        },
+        {
+          "name": "stale-frame.json",
+          "bytes": 52,
+          "sha256": "31cc17be648b6c09bab903bac8c603a30d9ad8759370e73da600a086ecd63602"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 12850,
+          "sha256": "5f62258e923028deedacbfe3e892806b6b541cfd77124cd1c02565664b88a47b"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 6269,
+          "sha256": "eb3cc1196430ff6b6e7b66eab1261c020b97a4888637584c48baf45b75b7f5e5"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 492,
+          "sha256": "131f33e2e5d098e9c2eef4437b2e10d6f01e4a5041d4ea3decd929d4c4e6d816"
+        },
+        {
+          "name": "wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        }
+      ]
+    },
+    {
+      "kind": "phase3",
+      "runId": "20261113-061905",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-054840/phase3/20261113-061905",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "1d5395d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:36:20.5471239Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": "Pkg.Revision=2",
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-20261113-054840-phase3",
+      "freeBytesAtStart": 302861213696,
+      "failedChecks": 1,
+      "totalChecks": 55,
+      "lanes": {
+        "host": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=282.1 GB",
+              "atUtc": "2026-11-13T01:19:06.0267132Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-13T01:19:06.1081483Z"
+            },
+            {
+              "check": "pairs",
+              "passed": true,
+              "detail": "P=ag-bb58c8 Q=ag-aaccc1",
+              "atUtc": "2026-11-13T01:19:16.7815217Z"
+            }
+          ]
+        },
+        "phase2": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "acceptance",
+              "passed": false,
+              "detail": "exit=2 failed=4 run=20261113-061917",
+              "atUtc": "2026-11-13T01:26:36.1579910Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "duplicate-running-refused",
+              "passed": true,
+              "detail": "running writable disks are never copied",
+              "atUtc": "2026-11-13T01:26:36.6187894Z"
+            },
+            {
+              "check": "duplicate",
+              "passed": true,
+              "detail": "target=p3-dup ports=5560/8557 lineage=24532542b84d449cb304fc436ef11245",
+              "atUtc": "2026-11-13T01:26:39.2624008Z"
+            },
+            {
+              "check": "duplicate-isolated",
+              "passed": true,
+              "detail": "source=24cb13e04b5989d249ce296c4d2f3cd193438f6d8f036acb514792dbc77c9bd2 target=f1b343fcb560f6b7b8c68c012935a0b5eeb2397466f029e87c90d305f4abd53d",
+              "atUtc": "2026-11-13T01:26:39.3856407Z"
+            },
+            {
+              "check": "template-untouched",
+              "passed": true,
+              "detail": "tpl3: state=Defined engineAlive=false pid=\r",
+              "atUtc": "2026-11-13T01:26:39.6110801Z"
+            },
+            {
+              "check": "reset",
+              "passed": true,
+              "detail": "freedBytes=0",
+              "atUtc": "2026-11-13T01:26:39.8976276Z"
+            },
+            {
+              "check": "presets",
+              "passed": true,
+              "detail": "presets=4",
+              "atUtc": "2026-11-13T01:26:42.0345592Z"
+            },
+            {
+              "check": "disk-estimate",
+              "passed": true,
+              "detail": "required=4294967296 free=290769092608",
+              "atUtc": "2026-11-13T01:26:42.0465078Z"
+            },
+            {
+              "check": "profile-export",
+              "passed": true,
+              "detail": "schema=1 secrets=False",
+              "atUtc": "2026-11-13T01:26:42.2543625Z"
+            },
+            {
+              "check": "profile-import",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:26:46.7751826Z"
+            }
+          ]
+        },
+        "snapshot": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "save",
+              "passed": true,
+              "detail": "snapshot save ag-bb58c8 tag=p3-base via=adb in 3.6s",
+              "atUtc": "2026-11-13T01:26:50.5776151Z"
+            },
+            {
+              "check": "list",
+              "passed": true,
+              "detail": "count=5 compatible=True",
+              "atUtc": "2026-11-13T01:26:50.8101303Z"
+            },
+            {
+              "check": "delete-older",
+              "passed": true,
+              "detail": "deleted=mcp-baseline",
+              "atUtc": "2026-11-13T01:26:51.4017926Z"
+            },
+            {
+              "check": "delete-guarded",
+              "passed": true,
+              "detail": "newest recovery point protected",
+              "atUtc": "2026-11-13T01:26:51.6113176Z"
+            },
+            {
+              "check": "delete-forced",
+              "passed": true,
+              "detail": "{\"name\":\"ag-bb58c8\",\"tag\":\"p3-base\",\"deleted\":true,\"freedBytes\":2701236957,\"lastRecoveryPoint\":true}",
+              "atUtc": "2026-11-13T01:26:52.1807128Z"
+            },
+            {
+              "check": "restore",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:29:10.0347733Z"
+            },
+            {
+              "check": "restore-readiness",
+              "passed": true,
+              "detail": "the guest reports sys.boot_completed=1 after the restore",
+              "atUtc": "2026-11-13T01:29:10.3659268Z"
+            },
+            {
+              "check": "stale-frame-invalidated",
+              "passed": true,
+              "detail": "frame id rejected after restore",
+              "atUtc": "2026-11-13T01:29:17.9878323Z"
+            }
+          ]
+        },
+        "transport": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "identity",
+              "passed": true,
+              "detail": "P=emulator-5556/597 Q=emulator-5558/598",
+              "atUtc": "2026-11-13T01:30:42.4565162Z"
+            },
+            {
+              "check": "distinct-targets",
+              "passed": true,
+              "detail": "serials and identities differ",
+              "atUtc": "2026-11-13T01:30:42.5159153Z"
+            },
+            {
+              "check": "cross-guest-denied",
+              "passed": true,
+              "detail": "agent on P cannot address Q",
+              "atUtc": "2026-11-13T01:30:45.4780143Z"
+            },
+            {
+              "check": "external-state-unchanged",
+              "passed": true,
+              "detail": "transport ids stable across agent calls",
+              "atUtc": "2026-11-13T01:30:45.8451700Z"
+            },
+            {
+              "check": "recycled-transport-resolves",
+              "passed": true,
+              "detail": "transportId=599 (was 598) enginePid=6076",
+              "atUtc": "2026-11-13T01:30:50.8683239Z"
+            },
+            {
+              "check": "disconnected-target-fails-closed",
+              "passed": true,
+              "detail": "FAILED [instance_unavailable] The managed serial 'emulator-5558' is not visible to the pinned ADB server.",
+              "atUtc": "2026-11-13T01:31:03.6592408Z"
+            },
+            {
+              "check": "disconnected-target-not-substituted",
+              "passed": true,
+              "detail": "a missing target is never substituted with another guest",
+              "atUtc": "2026-11-13T01:31:03.9267592Z"
+            },
+            {
+              "check": "reconnect-rebounds",
+              "passed": true,
+              "detail": "transportId=600 (was 598)",
+              "atUtc": "2026-11-13T01:32:05.0167065Z"
+            },
+            {
+              "check": "physical-devices-not-managed",
+              "passed": true,
+              "detail": "non-emulator transports visible=0; managed serials are emulator-only",
+              "atUtc": "2026-11-13T01:32:05.1347996Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T01:32:05.5724225Z"
+            }
+          ]
+        },
+        "race": {
+          "passed": 6,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "marker before the race=DUP_TAPS=0",
+              "atUtc": "2026-11-13T01:32:17.8988455Z"
+            },
+            {
+              "check": "input-held",
+              "passed": true,
+              "detail": "{\"instance\":\"ag-bb58c8\",\"held\":true,\"heldSinceUtc\":\"2026-11-13T01:32:20.0060829\\u002B00:00\",\"waiting\":0}",
+              "atUtc": "2026-11-13T01:32:20.1355711Z"
+            },
+            {
+              "check": "input-queued",
+              "passed": true,
+              "detail": "queuedUtc=2026-11-13T01:32:25.7396927+00:00",
+              "atUtc": "2026-11-13T01:32:26.5227340Z"
+            },
+            {
+              "check": "takeover",
+              "passed": true,
+              "detail": "{\r   \"instance\": \"ag-bb58c8\",\r   \"revokedSessions\": 1\r }",
+              "atUtc": "2026-11-13T01:32:27.2379415Z"
+            },
+            {
+              "check": "queued-input-not-authorized",
+              "passed": true,
+              "detail": "wsctl.exe : FAILED [revoked] The agent session has been revoked.\r",
+              "atUtc": "2026-11-13T01:32:28.8464919Z"
+            },
+            {
+              "check": "guest-marker-unchanged",
+              "passed": true,
+              "detail": "marker=DUP_TAPS=0 dupTapLogLines=0 baseline=0",
+              "atUtc": "2026-11-13T01:32:32.3374493Z"
+            }
+          ]
+        },
+        "simulation": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "geo-fix",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:32:33.9952707Z"
+            },
+            {
+              "check": "battery",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:32:35.8383769Z"
+            },
+            {
+              "check": "battery-verified",
+              "passed": true,
+              "detail": "level: 42",
+              "atUtc": "2026-11-13T01:32:36.0819470Z"
+            },
+            {
+              "check": "rotation",
+              "passed": true,
+              "detail": "ag-aaccc1 rotation set to 1",
+              "atUtc": "2026-11-13T01:32:37.4559912Z"
+            }
+          ]
+        },
+        "deployment": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bundletool",
+              "passed": true,
+              "detail": "1.18.1",
+              "atUtc": "2026-11-13T01:32:38.1962079Z"
+            },
+            {
+              "check": "target-selected",
+              "passed": true,
+              "detail": "target serial=emulator-5560",
+              "atUtc": "2026-11-13T01:34:03.4231503Z"
+            },
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T01:34:04.9388260Z"
+            },
+            {
+              "check": "transport-usable",
+              "passed": true,
+              "detail": "round-trip probe on the selected serial",
+              "atUtc": "2026-11-13T01:34:12.1677435Z"
+            },
+            {
+              "check": "apks-install",
+              "passed": true,
+              "detail": "scoped install exit=0, transport=601",
+              "atUtc": "2026-11-13T01:34:22.6265980Z"
+            },
+            {
+              "check": "split-install-recorded",
+              "passed": true,
+              "detail": "package manager reports split APKs",
+              "atUtc": "2026-11-13T01:34:22.9833946Z"
+            },
+            {
+              "check": "target-explicit",
+              "passed": true,
+              "detail": "the other guest did not receive the deployment",
+              "atUtc": "2026-11-13T01:34:23.3462753Z"
+            },
+            {
+              "check": "malformed-apks-diagnosed",
+              "passed": true,
+              "detail": "exit=5 typed diagnostic returned",
+              "atUtc": "2026-11-13T01:34:24.6418849Z"
+            }
+          ]
+        },
+        "runner": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "device-visible-to-runner",
+              "passed": true,
+              "detail": "serial=emulator-5560 listed for the external runner",
+              "atUtc": "2026-11-13T01:34:25.1272281Z"
+            },
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "scoped launch exit=0",
+              "atUtc": "2026-11-13T01:34:33.1144479Z"
+            },
+            {
+              "check": "maestro-flow",
+              "passed": true,
+              "detail": "exit=0",
+              "atUtc": "2026-11-13T01:35:46.0209320Z"
+            },
+            {
+              "check": "touches-only-selected-guest",
+              "passed": true,
+              "detail": "other guest tap count 0 -> 0",
+              "atUtc": "2026-11-13T01:35:46.6654859Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "remaining=0",
+              "atUtc": "2026-11-13T01:36:20.5221245Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-13T01:36:20.5261492Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "65f26f4150856644b0cb746f48bc1133ff1b629d88cea4acbbb6a6c6692ac41b"
+        },
+        {
+          "name": "adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "65f26f4150856644b0cb746f48bc1133ff1b629d88cea4acbbb6a6c6692ac41b"
+        },
+        {
+          "name": "adb-identity.json",
+          "bytes": 879,
+          "sha256": "b954215065e65e680a01d6cacad41e7b040f5938b975dca09d3b0f9f2cd1db92"
+        },
+        {
+          "name": "battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "battery.json",
+          "bytes": 78,
+          "sha256": "04913eeecf10ac5962a2725169ac97981d04a4d811cacf894b7a44bed7578a7b"
+        },
+        {
+          "name": "bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "09f79b84b537e4c6d0404d7e254439ad8277c6a83400d1157853276cc0e937d7"
+        },
+        {
+          "name": "bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "cross-guest.json",
+          "bytes": 35,
+          "sha256": "373a319be1cc4ba67675442717ed5b0b033cf6fbca285892dd318b013e76de72"
+        },
+        {
+          "name": "geo.json",
+          "bytes": 107,
+          "sha256": "ed197b31221549ed7ab19342caa689783457039044dac12325c3dec15bd54f6d"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "74cd0eb4b358e23608335a7a3da2101679a2ac120fe05dbfb2edd7984e20e15d"
+        },
+        {
+          "name": "maestro-duplicate.yaml",
+          "bytes": 182,
+          "sha256": "10d6cb19f38f897130cd0877ea9dc4fab9c0b06b446da731b8ee1e83faf892e8"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/commands.json",
+          "bytes": 3962,
+          "sha256": "05fc61561d712b83053f5019fbeeb1880225d5d344b55a22b12d306ad265671b"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 83752,
+          "sha256": "d8d9ed4b2adf95fc5156d750806e91a78ac8477eb74fa676f836d8ef308ea163"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/logs/maestro.log",
+          "bytes": 6347,
+          "sha256": "25ef94d2541b849b983cb20ac73f8d663cb604885d3ddf0d01d652d684f79996"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_063443/maestro-duplicate/manifest.json",
+          "bytes": 564,
+          "sha256": "e8b2a3c9748405da35ad189a155b615c27e2207013bb738e119ddba89855a08a"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_063443/maestro.log",
+          "bytes": 8835,
+          "sha256": "d1419d76f3b4c6eb12f2d317c68b956334ee6d2e8830374f52f34e22707ec1f3"
+        },
+        {
+          "name": "maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "278058710dd3ababedeeaf33f496756dc63d42243eaa40d760f88f72cba54944"
+        },
+        {
+          "name": "maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "maestro-run.txt",
+          "bytes": 245,
+          "sha256": "41f32b7d1b7f1b8701a09d1380550456ee9cec929b596737e82a0eafb843d286"
+        },
+        {
+          "name": "malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "package-dumpsys.txt",
+          "bytes": 3538,
+          "sha256": "43375d66562795d56b3c57e93caf1866dd14b4a055833e84e18a52209aa0d1e8"
+        },
+        {
+          "name": "phase2/20261113-061917/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase2/20261113-061917/args-168a0b69.json",
+          "bytes": 38,
+          "sha256": "b3b2aa156e306fbd2674f5d14c03abafc2c8a94f94f6e71f62ee2f92ad0b732e"
+        },
+        {
+          "name": "phase2/20261113-061917/args-1fe3ea26.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase2/20261113-061917/args-20a0b85f.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-061917/args-2baece4c.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-061917/args-2de265c7.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase2/20261113-061917/args-3423251d.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-061917/args-35333b79.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-061917/args-3c23f66a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-3f8e7871.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase2/20261113-061917/args-3fbf375c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-56cf7e05.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-061917/args-5b8c5f20.json",
+          "bytes": 54,
+          "sha256": "518cf2607598b377e503f0772e47503fdcfbf5ebbf0eca00eeb2055caab6abe5"
+        },
+        {
+          "name": "phase2/20261113-061917/args-77b193df.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase2/20261113-061917/args-77b6caf4.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase2/20261113-061917/args-8b5df487.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-061917/args-911c787a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-932af551.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase2/20261113-061917/args-a47dae76.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-ab159e11.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-ab307768.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase2/20261113-061917/args-afbb1e9d.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase2/20261113-061917/args-b281f5cf.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase2/20261113-061917/args-b2dfcaf0.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-b336bcf0.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-061917/args-cb34cd27.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-d543c7cb.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-d551b4ff.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-061917/args-db975e6e.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-061917/args-df250505.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase2/20261113-061917/args-f40cb809.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-061917/boot.txt",
+          "bytes": 350,
+          "sha256": "c7acb06d356f128ed847410659312ce6083b7e10e565143d9355019894203c32"
+        },
+        {
+          "name": "phase2/20261113-061917/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase2/20261113-061917/cli-transcript.json",
+          "bytes": 389546,
+          "sha256": "e317bf860eadeda2e8e1a289875463834299cca7f667f197ec492547e9ecd3dd"
+        },
+        {
+          "name": "phase2/20261113-061917/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "863703dbeaa53bacd7da2ea90228e53dfd3c42272fb39fdcec9c15a5c5afc768"
+        },
+        {
+          "name": "phase2/20261113-061917/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase2/20261113-061917/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase2/20261113-061917/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "bb31eae719d8c86685c72aad52fed00b1ed5572d8630f51f6be054d81bbcc9e7"
+        },
+        {
+          "name": "phase2/20261113-061917/mcp/python-mcp.json",
+          "bytes": 2240,
+          "sha256": "622ea06c5bb63a00862abccc63b688ce5cbcc2421b68f65cb4b5f9c089f34059"
+        },
+        {
+          "name": "phase2/20261113-061917/mcp-secure.txt",
+          "bytes": 565,
+          "sha256": "5b856dd11751bd152475fa6fa5126cd4e76872497f24d5488cd4ba2f19729299"
+        },
+        {
+          "name": "phase2/20261113-061917/mcp-workflow.txt",
+          "bytes": 1234,
+          "sha256": "a93ae4fc4be18fe958174f83ca5947ed5865f0afd40683b29d2fd9d700964b1f"
+        },
+        {
+          "name": "phase2/20261113-061917/network.json",
+          "bytes": 2069,
+          "sha256": "51ecf75e8f13e29750972d8264ca3260fd3b68497d5799e20bf5be4ccb0a5871"
+        },
+        {
+          "name": "phase2/20261113-061917/python-mcp.txt",
+          "bytes": 506,
+          "sha256": "f42d78b3406be85256a70a61ea8a792118de23b471c0bd23c3844bf50492d4e2"
+        },
+        {
+          "name": "phase2/20261113-061917/secure-cli.json",
+          "bytes": 251126,
+          "sha256": "78832db5db27dcd6b671314b07540a8de26d43b54dcb3fe0e5f69d4ec9dbfd15"
+        },
+        {
+          "name": "phase2/20261113-061917/security.json",
+          "bytes": 832,
+          "sha256": "9a2eec128749922490362721fed13bf50360d9ca6c3688423db1fe6b9f2a33ea"
+        },
+        {
+          "name": "phase2/20261113-061917/stale-frame.json",
+          "bytes": 52,
+          "sha256": "31cc17be648b6c09bab903bac8c603a30d9ad8759370e73da600a086ecd63602"
+        },
+        {
+          "name": "phase2/20261113-061917/summary.json",
+          "bytes": 12850,
+          "sha256": "5f62258e923028deedacbfe3e892806b6b541cfd77124cd1c02565664b88a47b"
+        },
+        {
+          "name": "phase2/20261113-061917/transcript.txt",
+          "bytes": 6269,
+          "sha256": "eb3cc1196430ff6b6e7b66eab1261c020b97a4888637584c48baf45b75b7f5e5"
+        },
+        {
+          "name": "phase2/20261113-061917/versions.json",
+          "bytes": 492,
+          "sha256": "131f33e2e5d098e9c2eef4437b2e10d6f01e4a5041d4ea3decd929d4c4e6d816"
+        },
+        {
+          "name": "phase2/20261113-061917/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase2-acceptance.txt",
+          "bytes": 11723,
+          "sha256": "1e13461070127c041155fbaaf718ce62e94b36812eb82e78f86b30409133ac91"
+        },
+        {
+          "name": "phase2-summary.json",
+          "bytes": 12850,
+          "sha256": "5f62258e923028deedacbfe3e892806b6b541cfd77124cd1c02565664b88a47b"
+        },
+        {
+          "name": "profile-export.json",
+          "bytes": 538,
+          "sha256": "4e75f233b95bce3ca147e4db876422fe2361f839918efbbac74a1e767aba061a"
+        },
+        {
+          "name": "profile-import-request.json",
+          "bytes": 928,
+          "sha256": "e96681de8d34f76fcdb434729287cf6d8a4d5f3233eef60e527b13e6b5dc971b"
+        },
+        {
+          "name": "race-logcat.txt",
+          "bytes": 170,
+          "sha256": "b86c376158b5e33d56b4132c4458301c60b710626b2151fb6a27394c332bce23"
+        },
+        {
+          "name": "race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "race-timeline.json",
+          "bytes": 648,
+          "sha256": "00c03442ed9423a624e70508c8cb93299f12cc1046bde03f7f6837b428d722f9"
+        },
+        {
+          "name": "race-ui.xml",
+          "bytes": 6742,
+          "sha256": "ea21ff7b73dcd30d8e23788930d3b9e3760cedb226be691773d61cc922a08ea9"
+        },
+        {
+          "name": "restore.json",
+          "bytes": 63,
+          "sha256": "effa523b7754934d0067024da03bd0e3b729362f8bcaf5e474b9cb15ca9107a4"
+        },
+        {
+          "name": "snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "645246821f962c008e6f0b248559b42d26bcaf7f497a0b784ff4738c1e4973a9"
+        },
+        {
+          "name": "stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "3bf0225a6ed5e7af509b8822852acf93ae3e6eebbb609574f9dec6ad6c0108df"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 37555,
+          "sha256": "f5d4045aa6e4e19b18dce4a56dadf3d7a3046d7b783fb70c084819b1e1d152fc"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5081,
+          "sha256": "cfafaf9aa718869bddfc6c594fc14ed301e43cd43c7759aa4a36e7cf360d0582"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 495,
+          "sha256": "3a471056148bad3b2b60d48251879670debd8aff52aadf31ebb78bf94697d1db"
+        }
+      ]
+    },
+    {
+      "kind": "recipe-fixture",
+      "runId": "20261113-060543",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-054840/recipe-fixture/20261113-060543",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "1d5395d",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:19:02.4097394Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-20261113-054840-recipe-fixture",
+      "freeBytesAtStart": 306085552128,
+      "failedChecks": 0,
+      "totalChecks": 37,
+      "lanes": {
+        "host": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=285.1 GB",
+              "atUtc": "2026-11-13T01:05:44.0192032Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-13T01:05:44.1001648Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on port 8765",
+              "atUtc": "2026-11-13T01:05:46.5066354Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-925caa bystander=ag-fb7692 replay=ag-a77982",
+              "atUtc": "2026-11-13T01:06:00.7935746Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-13T01:07:53.8910410Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-13T01:18:37.3330511Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-13T01:18:37.3992311Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/582 bystander=emulator-5558/583",
+              "atUtc": "2026-11-13T01:07:55.3522721Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-13T01:08:30.8942019Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-13T01:09:14.4758900Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-f7c4069a60 instance=ag-925caa",
+              "atUtc": "2026-11-13T01:09:15.8319872Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-13T01:10:18.9974300Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-13T01:10:44.4658152Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-13T01:11:06.3023481Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-13T01:11:16.9704615Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-13T01:11:20.4830975Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-13T01:11:20.5350271Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-13T01:11:30.5517422Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-13T01:12:52.8605319Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-13T01:12:53.1250869Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-13T01:12:54.8507928Z"
+            },
+            {
+              "check": "completed",
+              "passed": true,
+              "detail": "steps=15 baseline=created recovery=restored verified=True",
+              "atUtc": "2026-11-13T01:15:04.6658730Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": true,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-13T01:15:04.7061384Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-13T01:15:04.8147039Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "ok,ok,baseline_restored,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok",
+              "atUtc": "2026-11-13T01:15:05.4191542Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-13T01:15:13.2298726Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-13T01:15:13.2511951Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-13T01:15:40.4708241Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-13T01:15:40.4958917Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-13T01:16:43.3332331Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-13T01:18:30.1363244Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-fb7692', not 'ag-925caa'.",
+              "atUtc": "2026-11-13T01:18:30.9998244Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-13T01:18:33.9334106Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-13T01:18:34.9445171Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-13T01:18:37.3127632Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-13T01:19:01.6057457Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-13T01:19:01.6097512Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-7fb4b2.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-f90803.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-7b7acc.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-4fe873.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-9d2deb.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-0d67c2.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-e259a9.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-51e86c.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-a4c18a.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-d6994c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-91dc26.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-1c595b.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-beaae6.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-c94678.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-c8bf26.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-4cfb89.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-aba2c9.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-222a6c.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-df4a27.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-00d73d.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-78df17.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 834,
+          "sha256": "f4d88ef53abf941173765887d7d29ff64249d8e4629d2bf9f2e101e1197f5e2e"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "e10e0b1f2f862c407ed8b2e25ed3f88374bbb31dc565c1f22347ec98120a56de"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9333,
+          "sha256": "ee8370e9ffaffa6c1e538402576a7d877425d313475d57e52b9d5eb23de3828c"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4213,
+          "sha256": "c090679b46bf39985fb11163e66cbba434cf88e605bb54cb6328d0d9e83344d8"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "96f9494e225aeb75270b27d95df4fd74abbef5678b97b3b9a84e06d655369f63"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2634,
+          "sha256": "f2e9b016c3f8f52420edf482082e145bcb82d1bad2f268606c3037d6854715c3"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2635,
+          "sha256": "343d2ce4ebb403c38dd0d56e6dc7333733fe8484cea9a135b44bcaa8020b2abc"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 281,
+          "sha256": "feb90737cabe880a538a15cc35e284937ac0e9b21861b8747f52dc0c488a9196"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 12520,
+          "sha256": "baefc5e00020099865f4ee98cbd93ebce473207d5a0cb033c1bab068a79af810"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3659,
+          "sha256": "1aea1916653741a80aad66981fa40e7e2dfba1f39b03b9e770551b361c39339d"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 338,
+          "sha256": "d6f4e6b2203cf60fbecc2c4d1f2177a3764666b97cdcff292715466a85358522"
+        }
+      ]
+    },
+    {
+      "kind": "recipe-launcher",
+      "runId": "20261113-054841",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-054840/recipe-launcher/20261113-054841",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "fcb46e0",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:05:42.2004296Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-20261113-054840-recipe-launcher",
+      "freeBytesAtStart": 309308485632,
+      "failedChecks": 0,
+      "totalChecks": 37,
+      "lanes": {
+        "host": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=288.1 GB",
+              "atUtc": "2026-11-13T00:48:41.9393160Z"
+            },
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-13T00:48:42.0254829Z"
+            }
+          ]
+        },
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "login fixture on port 8765",
+              "atUtc": "2026-11-13T00:48:45.4556033Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "sessions",
+              "passed": true,
+              "detail": "target=ag-c143b0 bystander=ag-1fcdee replay=ag-4b78d2",
+              "atUtc": "2026-11-13T00:48:59.5566937Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 3,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "parallel-start",
+              "passed": true,
+              "detail": "guests started sequentially (-ParallelStart was not requested)",
+              "atUtc": "2026-11-13T00:50:32.4052411Z"
+            },
+            {
+              "check": "forced-interruption",
+              "passed": true,
+              "detail": "a replay client was cancelled mid-run and retried",
+              "atUtc": "2026-11-13T01:05:15.8698038Z"
+            },
+            {
+              "check": "low-space",
+              "passed": true,
+              "detail": "injected by the unit-level disk guard (no constrained volume on this host)",
+              "atUtc": "2026-11-13T01:05:15.9379530Z"
+            }
+          ]
+        },
+        "identity": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=emulator-5556/573 bystander=emulator-5558/574",
+              "atUtc": "2026-11-13T00:50:39.2784972Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "target=True bystander=True",
+              "atUtc": "2026-11-13T00:51:08.7405688Z"
+            }
+          ]
+        },
+        "markers": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "distinct",
+              "passed": true,
+              "detail": "target=DUP_TAPS=1 bystander=DUP_TAPS=2",
+              "atUtc": "2026-11-13T00:51:42.0604984Z"
+            }
+          ]
+        },
+        "record": {
+          "passed": 5,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "started",
+              "passed": true,
+              "detail": "recipeId=rcp-6deaf85332 instance=ag-c143b0",
+              "atUtc": "2026-11-13T00:51:42.7314575Z"
+            },
+            {
+              "check": "login-asserted",
+              "passed": true,
+              "detail": "WELCOME recorded",
+              "atUtc": "2026-11-13T00:52:42.5689855Z"
+            },
+            {
+              "check": "network-timeout-asserted",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT recorded",
+              "atUtc": "2026-11-13T00:53:10.2475017Z"
+            },
+            {
+              "check": "recovery-asserted",
+              "passed": true,
+              "detail": "WELCOME after the profile reset",
+              "atUtc": "2026-11-13T00:53:32.6614895Z"
+            },
+            {
+              "check": "stopped",
+              "passed": true,
+              "detail": "steps=15 runtime=login_pass,login_user",
+              "atUtc": "2026-11-13T00:53:44.9612491Z"
+            }
+          ]
+        },
+        "export": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "redacted",
+              "passed": true,
+              "detail": "secret absent=True runtime reference=True",
+              "atUtc": "2026-11-13T00:53:47.8275026Z"
+            },
+            {
+              "check": "no-host-paths",
+              "passed": true,
+              "detail": "no absolute host paths",
+              "atUtc": "2026-11-13T00:53:47.8673397Z"
+            }
+          ]
+        },
+        "replay": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recording-guest-removed",
+              "passed": true,
+              "detail": "the recording guest was deleted",
+              "atUtc": "2026-11-13T00:53:57.6397237Z"
+            },
+            {
+              "check": "clone-identity",
+              "passed": true,
+              "detail": "replay serial=emulator-5560",
+              "atUtc": "2026-11-13T00:55:42.2062741Z"
+            },
+            {
+              "check": "clone-transport",
+              "passed": true,
+              "detail": "the replay clone answers on its own transport",
+              "atUtc": "2026-11-13T00:55:42.5124326Z"
+            },
+            {
+              "check": "validate",
+              "passed": true,
+              "detail": "{\"schemaVersion\":1,\"steps\":15,\"runtimeRequired\":[\"login_pass\",\"login_user\"],\"targetCompatible\":true,\"errors\":[]}",
+              "atUtc": "2026-11-13T00:55:43.4874659Z"
+            },
+            {
+              "check": "completed",
+              "passed": true,
+              "detail": "steps=15 baseline=created recovery=cold_boot verified=True",
+              "atUtc": "2026-11-13T00:59:35.7111863Z"
+            },
+            {
+              "check": "baseline-verified",
+              "passed": true,
+              "detail": "the baseline was verified by an independent fixture assertion",
+              "atUtc": "2026-11-13T00:59:35.7420893Z"
+            },
+            {
+              "check": "network-reset",
+              "passed": true,
+              "detail": "networkRestored=restored",
+              "atUtc": "2026-11-13T00:59:35.8933853Z"
+            },
+            {
+              "check": "steps-green",
+              "passed": true,
+              "detail": "baseline_restored,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok,ok",
+              "atUtc": "2026-11-13T00:59:36.1765870Z"
+            }
+          ]
+        },
+        "isolation": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bystander-marker",
+              "passed": true,
+              "detail": "bystander marker=DUP_TAPS=2",
+              "atUtc": "2026-11-13T00:59:46.2991750Z"
+            },
+            {
+              "check": "bystander-network",
+              "passed": true,
+              "detail": "bystander network profile unchanged",
+              "atUtc": "2026-11-13T00:59:46.3565882Z"
+            }
+          ]
+        },
+        "interrupt": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "client-cancelled",
+              "passed": true,
+              "detail": "jobState=Running",
+              "atUtc": "2026-11-13T01:00:12.0953580Z"
+            },
+            {
+              "check": "journal-visible",
+              "passed": true,
+              "detail": "the interrupted run is visible in the operation journal",
+              "atUtc": "2026-11-13T01:00:12.1079648Z"
+            },
+            {
+              "check": "guest-reestablished",
+              "passed": true,
+              "detail": "serial=emulator-5560",
+              "atUtc": "2026-11-13T01:01:08.2239286Z"
+            },
+            {
+              "check": "safe-retry",
+              "passed": true,
+              "detail": "the recipe replays cleanly after the interruption",
+              "atUtc": "2026-11-13T01:05:07.1517749Z"
+            }
+          ]
+        },
+        "negative": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wrong-target",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-1fcdee', not 'ag-c143b0'.",
+              "atUtc": "2026-11-13T01:05:08.1327230Z"
+            },
+            {
+              "check": "malformed-recipe",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] The recipe file is not valid JSON: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that ",
+              "atUtc": "2026-11-13T01:05:11.6804260Z"
+            },
+            {
+              "check": "incompatible-baseline",
+              "passed": true,
+              "detail": "FAILED [recipe_invalid] the target guest uses a different system image than the recipe requires",
+              "atUtc": "2026-11-13T01:05:12.9678031Z"
+            },
+            {
+              "check": "revoked-session",
+              "passed": true,
+              "detail": "FAILED [revoked] The agent session has been revoked.",
+              "atUtc": "2026-11-13T01:05:15.8392610Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "only the template remains",
+              "atUtc": "2026-11-13T01:05:41.4071126Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-13T01:05:41.4121202Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "args-assert-recovered-75aa49.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-recovered-tap-99cfcc.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-timeout-a413a1.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-assert-timeout-tap-730fe8.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-assert-welcome-eb1da4.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-assert-welcome-tap-0ecf97.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-baseline-09f443.json",
+          "bytes": 30,
+          "sha256": "c45445634d2de86e33e7a050c1be99ded097bed65255e0ef7745b82ae99a3735"
+        },
+        {
+          "name": "args-bystander-network-e1a960.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-fg-state-16afc4.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-fg-state-806b26.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-install-e3e585.json",
+          "bytes": 22,
+          "sha256": "6a16bc3fb4e55f01c5dfe4d08d86d7518d8275103610fa3bc147fc43c06b3df4"
+        },
+        {
+          "name": "args-launch-23a42c.json",
+          "bytes": 47,
+          "sha256": "feb73f141e5072a25b6c787cc3a38c37519ece8905a7e65875620a6ef79e3bd0"
+        },
+        {
+          "name": "args-logs-c798f8.json",
+          "bytes": 44,
+          "sha256": "b1e77cc3e1fb57bc80f9caec4927bd760b511ed34b854a69ec0cbb9223b64a49"
+        },
+        {
+          "name": "args-marker-bystander-2-aab818.json",
+          "bytes": 40,
+          "sha256": "3cbabd3dda3a3e919a4f39f7353ef1346b1ee4109a8c284359ac36900a56ee45"
+        },
+        {
+          "name": "args-marker-bystander-3596f7.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-marker-target-0ce439.json",
+          "bytes": 40,
+          "sha256": "2e3fbf15853e1d6c095170a47f378a8d4a24af167993969b28a853edb94421b0"
+        },
+        {
+          "name": "args-screenshot-e3982c.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-shape-5cb1d1.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-type-pass-0a9066.json",
+          "bytes": 76,
+          "sha256": "1eaef8be49f54d4d149fb492c35279b2dc0b1f086193b54bcb5ddabb871ece0d"
+        },
+        {
+          "name": "args-type-user-0b12da.json",
+          "bytes": 70,
+          "sha256": "2490fe183753153eb431f0e7ff8ef7c5c65fc4f95fd3bed75f8958e1bc41b560"
+        },
+        {
+          "name": "args-unshape-fb0da4.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 834,
+          "sha256": "a574d2dc30c11536d8e5aa3a251daa8e75f9871cb6438445ae5ff5c6f0662ddf"
+        },
+        {
+          "name": "identities.json",
+          "bytes": 546,
+          "sha256": "33c0fd4f25c3d2749557742f0a04c92d6ede73f0cb1ea4cb998c858274d6c402"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "f66752e66c44d83bdcf8bf0acc9394e81176d665be5792242501d1189eac24cd"
+        },
+        {
+          "name": "operations-after-interrupt.json",
+          "bytes": 9334,
+          "sha256": "4fd37557d5cadb87dad5f7ff94a810d4e5c2c763a671787a98fb17bec844c028"
+        },
+        {
+          "name": "recipe-export.json",
+          "bytes": 4214,
+          "sha256": "78b8d97b5a6f2eeeef377bae65529350a2fd37ccdab509db9a304e11362be4fc"
+        },
+        {
+          "name": "recipe-exported.json",
+          "bytes": 11248,
+          "sha256": "c0f88cf37bb3a97b5837f15f3fdbab26deac50f43abb3158dff0f0e981d477c8"
+        },
+        {
+          "name": "recipe-replay.json",
+          "bytes": 2469,
+          "sha256": "6d8820866e9e7d44ac855cb7fc81e4febc660f254b989af3c09febe4c0bba419"
+        },
+        {
+          "name": "recipe-retry.json",
+          "bytes": 2471,
+          "sha256": "3da7973f3615d0e9c327320fc573738d54273890b9af29cd935ef922fea9264d"
+        },
+        {
+          "name": "recipe-stop.json",
+          "bytes": 282,
+          "sha256": "d1e5423daa7b5a1556222c7fbb134da9938e47b3357d8522941cd6ed05d1271d"
+        },
+        {
+          "name": "recipe-validate.json",
+          "bytes": 117,
+          "sha256": "1d49bdf266504f49fc85096605461ef0762c9d5490966bd91af4578eb06dc6f6"
+        },
+        {
+          "name": "runtime.json",
+          "bytes": 54,
+          "sha256": "f3b70a6263e9d2c63be9c71b37ca05c54777cba277348addc1b3cc23c853f87a"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 12521,
+          "sha256": "305f71afdb1a2d2774c99eee959501ccca96da00a6f62c42d31d65a3f6c70174"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 3662,
+          "sha256": "a22a9137ab0a87241d9da2806106e9f22e2291b45ce6dacd2a98391a18a6cda4"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 339,
+          "sha256": "cff0d16a1b7316c4a927ed24f722990a9de50c22e830722c8ce591015630d1cc"
         }
       ]
     }

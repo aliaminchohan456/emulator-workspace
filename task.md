@@ -619,6 +619,24 @@ All tasks start open. Check off an implementation task after its scoped verifica
   recipe baselines, then Phase 3. The 426-file stage passed hash
   verification. Check the wrapper and nested logs through cleanup. If
   these checks pass, run the remaining 0.1.4 installer and runtime lanes.
+- The 0.1.4 launcher-baseline run `20261113-054841` passed 37/37.
+  The first replay completed all 15 steps after a verified cold fallback,
+  and the interrupted retry passed. Scoped cleanup left only the stopped
+  template. Fixture-baseline run `20261113-060543` is next in the same
+  wrapper, followed by Phase 3.
+- The 0.1.4 fixture-baseline run `20261113-060543` also passed 37/37.
+  It verified a named restore, completed all 15 steps, passed the
+  interrupted retry, and removed its disposable guests.
+- The targeted 0.1.4 wrapper `20261113-054840` finished 2/3 with all
+  disposable guests removed. Phase 3 run `20261113-061905` passed 54/55,
+  including both takeover markers and the corrected Maestro flow. Its
+  nested Phase 2 run `20261113-061917` recorded four failures after the
+  TypeScript MCP client's 60 s request deadline, including missing duplicate
+  selectors. Preserve those failures and rerun the paired lane.
+- Installer run `20261113-063652` is exercising the exact 0.1.4 MSI with
+  0.1.3 as its predecessor. The same shell then runs Root Lab, import,
+  developer tools, WPF click-through and both Play profiles under
+  `D:/WS-Candidate-014-Finish-*` with the verified 0.1.4 stage.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
