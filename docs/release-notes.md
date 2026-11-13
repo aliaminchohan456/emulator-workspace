@@ -97,6 +97,8 @@ space. The [missing-image screen](../artifacts/phase3/wpf/20261113-084356/missin
 identifies the missing package and disables Create. Each run passed three
 checks and shut down its own supervisor. The raw PNGs contain local
 workspace details and stay in the evidence directory.
+The subsequent 0.1.5 package repeated both checks using paths containing
+spaces and non-ASCII text. [0.1.5 first-run screen](../artifacts/phase3/wpf/20261113-093906/first-run.png) · [0.1.5 missing-image screen](../artifacts/phase3/wpf/20261113-093939/missing-image.png)
 
 The workspace state lives in `%LOCALAPPDATA%\EmulatorWorkspace` (instances,
 AVDs, journals, evidence, recipes). It is deliberately outside the program

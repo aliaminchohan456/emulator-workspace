@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T04:19:34.2633403+00:00",
-  "headCommit": "7505fc1",
+  "latestFinishedUtc": "2026-11-13T04:40:08.3565662Z",
+  "headCommit": "7e0459e",
   "trackedWorkTree": "M docs/release-notes.md\n M task.md",
   "runs": [
     {
@@ -35072,6 +35072,198 @@
           "name": "ui-tree-setup.txt",
           "bytes": 5196,
           "sha256": "c303ee678359714c09635d8c5a38635e8bb29583aa32ceba3d1b119c99fdb18d"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-093906",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-093906",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "7e0459e954251afccf41289829aa821299f4da04",
+      "harnessSha256": "8F8C2B63982E6273F0FF97F9FF5DD663A5C9DF8982CB95DB1AD70DE96825803E",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T04:39:35.9572379Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Setup-015-20261113-093903/first run pr\u00fcfung",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 3,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-13T04:39:16.4822482Z"
+            }
+          ]
+        },
+        "clickthrough.first-run": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.first-run",
+              "passed": true,
+              "detail": "setup controls present=3/3, create enabled=True",
+              "atUtc": "2026-11-13T04:39:33.6264943Z"
+            }
+          ]
+        },
+        "cleanup.supervisor-stop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.supervisor-stop",
+              "passed": true,
+              "detail": "supervisor shutdown requested; running guests are left for reattachment",
+              "atUtc": "2026-11-13T04:39:35.9199342Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 102755,
+          "sha256": "4debf05a2c12152c1413b585c98820cd6acb381448557c68554701786fe20495"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 222,
+          "sha256": "d7de4d6f7550aeab16f7ee9d197503e990a312c524047313404132f94d84eb3a"
+        },
+        {
+          "name": "first-run.png",
+          "bytes": 141372,
+          "sha256": "2da4e2323e3c71290fea97b254bca5dbb9dfaec15a0ec94be5b69c4c4b6ad334"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2255,
+          "sha256": "54b231777ea2d20ec78202074c6c152716ead6fd3a8adea44953ee70ef11ad86"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 535,
+          "sha256": "ae5812d009e97234c2bd843c4f53ea25bf64105a42ae9a10ae0a893e161f9fe0"
+        },
+        {
+          "name": "ui-tree-setup.txt",
+          "bytes": 4978,
+          "sha256": "7dcfd0b72d1b1fd2c0e62521889f440d8ca378ca7dee29a1e8a4a8029a12f31b"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-093939",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-093939",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "7e0459e954251afccf41289829aa821299f4da04",
+      "harnessSha256": "8F8C2B63982E6273F0FF97F9FF5DD663A5C9DF8982CB95DB1AD70DE96825803E",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T04:40:08.3565662Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Setup-015-20261113-093903/missing image pr\u00fcfung",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 3,
+      "lanes": {
+        "clickthrough.window-open": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.window-open",
+              "passed": true,
+              "detail": "the desktop window is open and reachable by UI Automation",
+              "atUtc": "2026-11-13T04:39:47.4393140Z"
+            }
+          ]
+        },
+        "clickthrough.missing-image": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "clickthrough.missing-image",
+              "passed": true,
+              "detail": "setup controls present=4/4, create enabled=False",
+              "atUtc": "2026-11-13T04:40:06.4236611Z"
+            }
+          ]
+        },
+        "cleanup.supervisor-stop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.supervisor-stop",
+              "passed": true,
+              "detail": "supervisor shutdown requested; running guests are left for reattachment",
+              "atUtc": "2026-11-13T04:40:08.2803985Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "01-startup.png",
+          "bytes": 103357,
+          "sha256": "5dc95fd46d7bbb37c016d1b60407c8b4fe0601b0cd757e391eb703b1677b02f9"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 222,
+          "sha256": "d7de4d6f7550aeab16f7ee9d197503e990a312c524047313404132f94d84eb3a"
+        },
+        {
+          "name": "missing-image.png",
+          "bytes": 143095,
+          "sha256": "f0ff0fcf5a1e57ab9022062cb1203844ad29d9709fe21e6a285fa04835559210"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2273,
+          "sha256": "acdcc6295d29470bc848d2ef59466a0c437b3850af9094bd32aa1272a8e062c9"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 544,
+          "sha256": "69219641bc41850d078c78645f5a7d872c687744cc9fd09e440bc8f096b9e0f2"
+        },
+        {
+          "name": "ui-tree-setup.txt",
+          "bytes": 5201,
+          "sha256": "ae91049c4d1fddf5ff803e6cfb62fe1a5fea4fb81dba96c6831a7fda8f768a78"
         }
       ]
     },

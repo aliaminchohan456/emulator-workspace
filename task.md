@@ -710,6 +710,11 @@ All tasks start open. Check off an implementation task after its scoped verifica
   After the 0.1.4 soak and cleanup, run quiet-host comparisons and
   `tools/candidate-regression.ps1 -RequireInstrumentation` on the 0.1.5
   payload, and exercise the installed 0.1.4 to 0.1.5 upgrade.
+- Exact 0.1.5 first-run and missing-image checks each passed 3/3 in
+  `20261113-093906` and `20261113-093939`, with roots containing spaces
+  and non-ASCII text. The normal panel showed build 16428233, AOSP
+  revision 2, 1.51 GiB for `system.img` and usable WHPX. Missing-image
+  setup disabled Create. Both isolated supervisors shut down.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
