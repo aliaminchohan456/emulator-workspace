@@ -129,7 +129,10 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path, harness_comm
     if benchmark.get("harnessSha256"):
         harness_commit = verified_harness_commit(directory, benchmark, "tools/benchmark.ps1")
     elif kind == "wpf" and summary.get("harnessSha256"):
-        harness_commit = verified_harness_commit(directory, summary, "tools/latency-probe.ps1")
+        script = ("tools/wpf-clickthrough-acceptance.ps1"
+                  if summary.get("harness") == "wpf-clickthrough-acceptance"
+                  else "tools/latency-probe.ps1")
+        harness_commit = verified_harness_commit(directory, summary, script)
     elif kind == "candidate" and summary.get("harnessSha256"):
         harness_commit = verified_harness_commit(directory, summary, "tools/candidate-regression.ps1")
     return {

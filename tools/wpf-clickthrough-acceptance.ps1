@@ -25,8 +25,14 @@ param(
     [string]$Apk = "",
     [string]$OutDir = "artifacts\phase3\wpf",
     [int]$BootTimeoutSeconds = 600,
-    [switch]$KeepRoot
+    [switch]$KeepRoot,
+    [switch]$SetupOnly,
+    [switch]$ExpectMissingImage
 )
+
+if ($ExpectMissingImage -and -not $SetupOnly) {
+    throw "-ExpectMissingImage requires -SetupOnly and an SDK without the pinned image."
+}
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
@@ -41,7 +47,7 @@ Add-Type -AssemblyName System.Windows.Forms
 
 if (-not (Test-Path $desktopExe)) { throw "The desktop binary is not built: $desktopExe" }
 if (-not (Test-Path $wsctl)) { throw "The CLI binary is not built: $wsctl" }
-if (-not $Apk) {
+if (-not $SetupOnly -and -not $Apk) {
     $candidate = Join-Path $Root "apps\ws-sample.apk"
     if (-not (Test-Path $candidate)) {
         $candidate = (Get-ChildItem (Join-Path $repo "artifacts") -Recurse -Filter "ws-sample.apk" -ErrorAction SilentlyContinue |
@@ -49,7 +55,9 @@ if (-not $Apk) {
     }
     $Apk = $candidate
 }
-if (-not $Apk -or -not (Test-Path $Apk)) { throw "No APK was found for the drag-and-drop step." }
+if (-not $SetupOnly -and (-not $Apk -or -not (Test-Path $Apk))) {
+    throw "No APK was found for the drag-and-drop step."
+}
 
 $run = Get-Date -Format "yyyyMMdd-HHmmss"
 $out = Join-Path $repo (Join-Path $OutDir $run)
@@ -137,11 +145,20 @@ function Save-WindowShot([IntPtr]$handle, [string]$name) {
     $bitmap = New-Object System.Drawing.Bitmap($width, $height)
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     $hdc = $graphics.GetHdc()
-    [void][ClickThrough.Native]::PrintWindow($handle, $hdc, [ClickThrough.Native]::PW_RENDERFULLCONTENT)
-    $graphics.ReleaseHdc($hdc)
-    $graphics.Dispose()
-    $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-    $bitmap.Dispose()
+    try {
+        $captured = [ClickThrough.Native]::PrintWindow($handle, $hdc, [ClickThrough.Native]::PW_RENDERFULLCONTENT)
+    }
+    finally {
+        $graphics.ReleaseHdc($hdc)
+        $graphics.Dispose()
+    }
+    try {
+        if (-not $captured) { return $null }
+        $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $bitmap.Dispose()
+    }
     return $path
 }
 
@@ -243,6 +260,38 @@ function Parse-Json([string]$text) {
     try { return $text | ConvertFrom-Json } catch { return $null }
 }
 
+function Test-SetupScreen([System.Windows.Automation.AutomationElement]$window, [IntPtr]$handle) {
+    $message = if ($ExpectMissingImage) {
+        "Fix the blocking prerequisite below before creating a device."
+    } else {
+        "No managed device yet. Create the pinned AOSP API 35 profile to begin."
+    }
+    $expected = @("Set up your first device", $message, "Create AOSP API 35 device")
+    if ($ExpectMissingImage) {
+        $expected += 'The pinned image system-images;android-35;default;x86_64 is not installed. Install it with sdkmanager.'
+    }
+    $controls = @{}
+    $deadline = (Get-Date).AddSeconds(50)
+    do {
+        $controls.Clear()
+        foreach ($name in $expected) {
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::NameProperty, $name)
+            $element = $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            if ($element -and -not $element.Current.IsOffscreen) { $controls[$name] = $element }
+        }
+        if ($controls.Count -eq $expected.Count) { break }
+        Start-Sleep -Milliseconds 350
+    } while ((Get-Date) -lt $deadline)
+    $button = $controls["Create AOSP API 35 device"]
+    $createEnabled = $button -and $button.Current.IsEnabled
+    $matches = $controls.Count -eq $expected.Count -and $createEnabled -eq (-not $ExpectMissingImage)
+    $name = if ($ExpectMissingImage) { "missing-image" } else { "first-run" }
+    $shot = Save-WindowShot $handle "$name.png"
+    [void](Dump-UiTree $window "ui-tree-setup.txt")
+    Add-Step $name ($matches -and [bool]$shot) "setup controls present=$($controls.Count)/$($expected.Count), create enabled=$createEnabled" $shot
+}
+
 Log "WPF click-through $run root=$Root apk=$Apk"
 
 $desktopProcess = $null
@@ -250,13 +299,17 @@ try {
     if (-not $KeepRoot) {
         if (Test-Path -LiteralPath $Root) { throw "Use a new disposable root or explicitly pass -KeepRoot." }
         New-Item -ItemType Directory -Force $Root | Out-Null
-        $apps = Join-Path $Root "apps"
-        New-Item -ItemType Directory -Force $apps | Out-Null
-        Copy-Item $Apk (Join-Path $apps "ws-sample.apk") -Force
+        if (-not $SetupOnly) {
+            $apps = Join-Path $Root "apps"
+            New-Item -ItemType Directory -Force $apps | Out-Null
+            Copy-Item $Apk (Join-Path $apps "ws-sample.apk") -Force
+        }
     }
 
     # 1. start the desktop
-    $desktopProcess = Start-Process -FilePath $desktopExe -ArgumentList "--root", $Root, "--drop-file", $Apk -PassThru
+    $desktopArguments = @("--root", ('"{0}"' -f $Root))
+    if (-not $SetupOnly) { $desktopArguments += @("--drop-file", ('"{0}"' -f $Apk)) }
+    $desktopProcess = Start-Process -FilePath $desktopExe -ArgumentList $desktopArguments -PassThru
     $window = $null
     $windowDeadline = (Get-Date).AddSeconds(90)
     while ((Get-Date) -lt $windowDeadline) {
@@ -279,7 +332,10 @@ try {
     Start-Sleep -Seconds 2
     $handle = [IntPtr]([int]$desktopProcess.MainWindowHandle.ToInt64())
     $shot = Save-WindowShot $handle "01-startup.png"
-    Add-Step "window-open" $true ("the desktop window is open and reachable by UI Automation") $shot
+    Add-Step "window-open" ([bool]$shot) "the desktop window is open and reachable by UI Automation" $shot
+    if ($SetupOnly) {
+        Test-SetupScreen $window $handle
+    } else {
 
     # The automation tree is captured while the window is idle, because a modal
     # palette hides the rest of the tree.
@@ -488,6 +544,7 @@ try {
 
     $treeCount = Dump-UiTree $window "ui-tree-final.txt"
     Add-Check "ui-tree" ($treeCount -gt 20) "the UI tree has $treeCount automation elements"
+    }
 }
 catch {
     Add-Check "harness.fatal" $false $_.Exception.Message
@@ -495,7 +552,12 @@ catch {
 }
 finally {
     if ($desktopProcess -and -not $desktopProcess.HasExited) {
-        Stop-Process -Id $desktopProcess.Id -Force -ErrorAction SilentlyContinue
+        $desktopProcess.Kill()
+        [void]$desktopProcess.WaitForExit(5000)
+    }
+    if ($SetupOnly -and $desktopProcess) {
+        $stopResult = Invoke-Ws @("supervisor-stop", "--root", $Root) -AllowFailure
+        Add-Check "cleanup.supervisor-stop" ($stopResult.Code -eq 0) $stopResult.Text
     }
 }
 
@@ -503,6 +565,9 @@ $failed = @($script:results | Where-Object { -not $_.Passed }).Count
 $summary = [ordered]@{
     runId = $run
     finishedUtc = (Get-Date).ToUniversalTime().ToString("O")
+    sourceCommit = (& git -C $repo rev-parse HEAD | Out-String).Trim()
+    harnessSha256 = (Get-FileHash -LiteralPath $PSCommandPath).Hash
+    harness = "wpf-clickthrough-acceptance"
     root = $Root
     apk = $Apk
     failed = $failed
