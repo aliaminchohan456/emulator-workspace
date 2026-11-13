@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T03:44:22.7022561Z",
-  "headCommit": "6d158f6",
-  "trackedWorkTree": "M docs/release-notes.md\n M plan.md\n M src/EmulatorWorkspace.Core/Engine/ProcessRunner.cs\n M src/EmulatorWorkspace.Core/Host/HostDiagnostics.cs\n M src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs\n M src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs\n M task.md\n M tests/EmulatorWorkspace.Tests/EngineTests.cs",
+  "latestFinishedUtc": "2026-11-13T04:19:34.2633403+00:00",
+  "headCommit": "7505fc1",
+  "trackedWorkTree": "M docs/release-notes.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -35438,6 +35438,87 @@
           "name": "transcript.txt",
           "bytes": 1197,
           "sha256": "89e402f4c34180c51ea09e8441688a08e73fb4e315af329ed5d0240a64de0771"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-091920",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261113-091920",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "08e74b59c904adaf4a3bd04999e8e0610cb12dd3",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T04:19:34.2633403+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-APKSet-Evidence-014-20261113-091920",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 3,
+      "lanes": {
+        "build-apks.requires-test-signing": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "build-apks.requires-test-signing",
+              "passed": true,
+              "detail": "exit=5",
+              "atUtc": null
+            }
+          ]
+        },
+        "build-apks.output": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "build-apks.output",
+              "passed": true,
+              "detail": "bundletool=1.18.1, bytes=21095, sha256=F5A80EB71BB69169F8356B53E477EEEA58090BA01525B8E7FEE895C26882E366",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.supervisor-stop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.supervisor-stop",
+              "passed": true,
+              "detail": "Scoped shutdown",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "apk-set.json",
+          "bytes": 262,
+          "sha256": "d2b65410c6914be3dd56a02987122398f6c7d65838c7f2386a7f40d2dcba3baa"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 905,
+          "sha256": "c478d971e29e0217f58abf6dbb9c723b968355a7b2ed2e262a92f15c72290fa8"
+        },
+        {
+          "name": "without-test-signing.txt",
+          "bytes": 74,
+          "sha256": "cb776592ddab1c4176aafa8c8e36d81b316b3f0b0873ad7f920a274f1d5d2ec3"
         }
       ]
     },

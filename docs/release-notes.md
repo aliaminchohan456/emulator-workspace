@@ -160,9 +160,15 @@ wsctl instrumentation     --name dev --package dev.emulatorworkspace.sample --ro
 wsctl logcat-export       --name dev --lines 500 --root D:\Phase4Root
 wsctl crash-report        --name dev --package dev.emulatorworkspace.sample --root D:\Phase4Root
 wsctl bugreport           --name dev --root D:\Phase4Root
+wsctl build-apks          --aab D:\Phase3Tools\apks\ws-sample.aab --bundletool D:\Phase3Tools\bundletool-1.18.1.jar --test-signing --root D:\Phase4Root
 wsctl install-apks        --name dev --apks D:\Phase3Tools\apks\ws-sample.apks --root D:\Phase4Root
 wsctl import-avd          --source C:\Users\me\.android\avd\other.avd --target imported --root D:\Phase4Root
 ```
+
+The packaged 0.1.4 CLI requires an explicit Android debug signing choice
+when converting an AAB. Run `20261113-091920` verified the rejection
+without that choice and checked the generated APK set's hash and bundle
+provenance with bundletool 1.18.1. [Evidence manifest](phase3-manifest.json)
 
 The external ADB interoperability is opt-in: `wsctl` never starts or stops a
 global ADB server, and it only ever addresses the exact serial of a managed

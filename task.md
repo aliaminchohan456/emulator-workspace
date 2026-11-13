@@ -670,7 +670,9 @@ All tasks start open. Check off an implementation task after its scoped verifica
   changes on the next packaged payload after the soak.
 - The fixture now declares a positive smoke instrumentation test. Its
   debug APK signature, manifest, test-signed AAB and generated APK set
-  passed local build verification. Run the next candidate regression
+  passed local build verification. Exact 0.1.4 packaged CLI run
+  `20261113-091920` passed 3/3 for explicit test-signing, APK-set
+  generation and scoped shutdown, with no guest launched. Run the next candidate regression
   with `-RequireInstrumentation` to verify the test and invalid-runner
   rejection on the managed guest. The original 0.1.4 run covered the
   earlier capability check. Release build and 64 tests passed.
