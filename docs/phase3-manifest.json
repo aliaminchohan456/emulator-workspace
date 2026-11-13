@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
-  "headCommit": "148d584",
-  "trackedWorkTree": "M plan.md\n M task.md",
+  "headCommit": "6bcca53",
+  "trackedWorkTree": "M docs/benchmark.md\n M plan.md\n M task.md\n M tools/build-benchmark-doc.py",
   "runs": [
     {
       "kind": "phase3",
@@ -35457,6 +35457,109 @@
       ]
     },
     {
+      "kind": "wpf",
+      "runId": "20261113-100133",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-100133",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "6bcca538385cdb5ca5d4062fd12a2268bcd7c34b",
+      "harnessSha256": "E8270F84D6DA743176DB56187C648447460FC47C3E1D840BB358F966C229F1A0",
+      "candidate": {
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "CLI and sample APK"
+      },
+      "supervisorOverride": {
+        "version": "0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e",
+        "files": [
+          {
+            "sha256": "8815B2E5C316FC32D42C4B3BBEB93CDF643E59C0548128F6ECE2AD8EDB34385D",
+            "name": "EmulatorWorkspace.Supervisor.exe"
+          },
+          {
+            "sha256": "F00B91483C0F39793A5988A6AD5FBEFD6A2CCF38315553A33F9E3D36AE08BF9F",
+            "name": "EmulatorWorkspace.Supervisor.dll"
+          },
+          {
+            "sha256": "3806406D81131601E441073D77B93225A66B9538879F6A277AF65F9B8BE4D44A",
+            "name": "EmulatorWorkspace.Core.dll"
+          }
+        ]
+      },
+      "desktop": {
+        "sha256": "EE12D8C320A2BF30567874AC1752F342197C98430E10F4E02EEE50938CE632F7",
+        "assemblySha256": "389F9A53566AABCAA3AE02C25EC223F572930B31D6C2BAC9A00F45EF1B2C57F8",
+        "version": "0.1.0+65c2f15a2dd1e169721b661d750618698eb1f967",
+        "override": true
+      },
+      "finishedUtc": "2026-11-13T05:03:18.4116754+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-FrameTiming-20261113-100133",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 2,
+      "lanes": {
+        "diagnostic.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "diagnostic.coverage",
+              "passed": true,
+              "detail": "5/5 valid samples, p95=474.69 ms, delivered=32.38 FPS",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-100133",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 1269,
+          "sha256": "3c975a976084318dcd72017d66b2e23000f8edd5bd09d774b9d9546727af4e9d"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 34165,
+          "sha256": "64d8b6ad1baa7d599e58f5142e45194d647793626b2a664b91718af4951a8c8f"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 32851,
+          "sha256": "1970cff450edf466c85efea18f26e3d5836680198fdbfba0bd245c976ef0e3f7"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 1580,
+          "sha256": "f06a08ce8d9a2720f8a7d5dfafb967fbce10875fd4151ddbe7f808b6b6fa2b63"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2739,
+          "sha256": "eefa5bedd5eb3ef44762ce385edaa6187647c9126429ea59718548ada41ac487"
+        }
+      ]
+    },
+    {
       "kind": "devtools",
       "runId": "20261112-095717",
       "rawArtifactRoot": "artifacts/phase3/devtools/20261112-095717",
@@ -35900,6 +36003,242 @@
           "name": "without-test-signing.txt",
           "bytes": 74,
           "sha256": "cb776592ddab1c4176aafa8c8e36d81b316b3f0b0873ad7f920a274f1d5d2ec3"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-095700",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261113-095700",
+      "rawArtifactsAreGitignored": true,
+      "commit": "148d584cb09179195cd5f5a0d820261a5749d25e",
+      "harnessCommit": "148d584cb09179195cd5f5a0d820261a5749d25e",
+      "harnessSha256": null,
+      "candidate": null,
+      "supervisorOverride": {
+        "files": [
+          {
+            "name": "EmulatorWorkspace.Supervisor.exe",
+            "sha256": "8815B2E5C316FC32D42C4B3BBEB93CDF643E59C0548128F6ECE2AD8EDB34385D"
+          },
+          {
+            "name": "EmulatorWorkspace.Supervisor.dll",
+            "sha256": "F00B91483C0F39793A5988A6AD5FBEFD6A2CCF38315553A33F9E3D36AE08BF9F"
+          },
+          {
+            "name": "EmulatorWorkspace.Core.dll",
+            "sha256": "3806406D81131601E441073D77B93225A66B9538879F6A277AF65F9B8BE4D44A"
+          }
+        ],
+        "version": "0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e"
+      },
+      "finishedUtc": "2026-11-13T04:58:21.3644480+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Controller-Lifecycle-20261113-095700",
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 3,
+      "lanes": {
+        "initial.auth": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "initial.auth",
+              "passed": true,
+              "detail": "Missing and forged tokens rejected, authenticated PNG and identity verified",
+              "atUtc": null
+            }
+          ]
+        },
+        "workflow": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "workflow",
+              "passed": false,
+              "detail": "Conversion from JSON failed with error: Error parsing boolean value. Path '', line 1, position 1.",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "Guest removed, scoped supervisor shut down, ADB empty",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "initial-auth.txt",
+          "bytes": 581,
+          "sha256": "aef3004718d2a0facff91bc72accf8a49aceaf7f339ecce22b7ef4bd7414c55e"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1304,
+          "sha256": "7da118926411bfffb848d0c5a8915fa7d4658009e78cbdb7ba717537aa696d17"
+        }
+      ]
+    },
+    {
+      "kind": "devtools",
+      "runId": "20261113-095854",
+      "rawArtifactRoot": "artifacts/phase3/devtools/20261113-095854",
+      "rawArtifactsAreGitignored": true,
+      "commit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+      "harnessCommit": "148d584cb09179195cd5f5a0d820261a5749d25e",
+      "harnessSha256": null,
+      "candidate": {
+        "evidenceScope": "CLI only",
+        "sourceCommit": "a0624599ac1bbd7cea5d7c15a22cee308f7c615a",
+        "installerSha256": "0abf64ebaba4350e24227ce5118b588bfe1598228616b11f69c5fcc77f6bd53c"
+      },
+      "supervisorOverride": {
+        "version": "0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e",
+        "files": [
+          {
+            "sha256": "8815B2E5C316FC32D42C4B3BBEB93CDF643E59C0548128F6ECE2AD8EDB34385D",
+            "name": "EmulatorWorkspace.Supervisor.exe"
+          },
+          {
+            "sha256": "F00B91483C0F39793A5988A6AD5FBEFD6A2CCF38315553A33F9E3D36AE08BF9F",
+            "name": "EmulatorWorkspace.Supervisor.dll"
+          },
+          {
+            "sha256": "3806406D81131601E441073D77B93225A66B9538879F6A277AF65F9B8BE4D44A",
+            "name": "EmulatorWorkspace.Core.dll"
+          }
+        ]
+      },
+      "finishedUtc": "2026-11-13T05:01:20.7701859+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Controller-Lifecycle-20261113-095854",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 6,
+      "lanes": {
+        "initial.auth": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "initial.auth",
+              "passed": true,
+              "detail": "Missing and forged tokens rejected; authenticated PNG and identity verified",
+              "atUtc": null
+            }
+          ]
+        },
+        "initial.reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "initial.reuse",
+              "passed": true,
+              "detail": "first=110.59 ms, reuse=0.33 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "restart.auth": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "restart.auth",
+              "passed": true,
+              "detail": "Missing and forged tokens rejected; authenticated PNG and identity verified",
+              "atUtc": null
+            }
+          ]
+        },
+        "restart.reuse": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "restart.reuse",
+              "passed": true,
+              "detail": "first=140.65 ms, reuse=0.07 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "restart.generation": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "restart.generation",
+              "passed": true,
+              "detail": "Engine process generation changed",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "Guest removed, scoped supervisor shut down, ADB empty",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "initial-auth.txt",
+          "bytes": 580,
+          "sha256": "5107526f97e3a19076d30dc1d40aa0d0dcd8c0d8ee10d4f025a163694cdad861"
+        },
+        {
+          "name": "initial-taps.json",
+          "bytes": 1126,
+          "sha256": "27fec796b56aae1115352de1f175f5afcbbc27c323e8ac0d6a0bd0856ac24e7b"
+        },
+        {
+          "name": "restart-auth.txt",
+          "bytes": 583,
+          "sha256": "7b9144cc5543b5a396ac78170343ca94a76ec2d1d23598a69f554cd5c5753476"
+        },
+        {
+          "name": "restart-taps.json",
+          "bytes": 1127,
+          "sha256": "21c33dc3559f6394935ecee4161982da85ff71c20fba5902def6b1179d98b43f"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1867,
+          "sha256": "dfe6bc2bc3a25f16dda87bd6c8d69ba6111fa0ff126f87cce5e9c0bbc5e9e603"
+        },
+        {
+          "name": "tap-args.json",
+          "bytes": 46,
+          "sha256": "84543536c83984e2a7fe96ab4b599280f28c0d036a4f5f3eef7d2b921fdd1bf5"
         }
       ]
     },

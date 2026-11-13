@@ -419,7 +419,10 @@ The first 0.1.5 diagnostics completed with verified cleanup. Controller
 setup accounted for 245–275 ms per WPF tap. Reusing the channel for
 the verified engine generation reduced setup to 0.08–0.34 ms after
 the first tap. Five diagnostic trials measured a 211.72 ms median
-and 27.17 FPS. Verify channel behavior across restart and authentication
-failure, then measure the guest input and frame delivery stages.
+and 27.17 FPS. The same channel behavior passed checks before and after
+restart, including both rejected token cases. The frame timing diagnostic
+measured 3.59–11.82 ms for the changed-frame write and 21.92–47.87 ms
+for desktop decode and dispatch. Measure guest touch-to-draw and the
+first changed controller frame next.
 Three verified warm restores had a 13.13 s median. Full acceptance
 counts and targets remain for the selected release build.

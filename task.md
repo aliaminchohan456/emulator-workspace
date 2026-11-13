@@ -735,10 +735,23 @@ All tasks start open. Check off an implementation task after its scoped verifica
   desktop, CLI and fixture plus the separately hashed supervisor, median
   fell from 514.15 to 211.72 ms and throughput reached 27.17 FPS.
   First-tap setup took 160.71 ms. Reused setup took 0.08–0.34 ms.
-  Next, run the targeted controller-authentication and lifecycle checks
-  on the source build and measure guest input to changed frame.
-  Queued takeover and stale-observation acceptance are still pending
-  for this supervisor build.
+  The controller lifecycle rerun `20261113-095854` passed 6/6. Both
+  engine generations rejected absent and forged tokens, served an
+  authenticated PNG and reused the channel on the second tap
+  (0.33 ms initially, 0.07 ms after restart). The first run
+  `20261113-095700` passed authentication and cleanup but its tap
+  parser expected JSON from the text-only CLI command. The rerun used
+  `wsctl call --op input.tap --args-file <path>`. Queued takeover
+  and stale-observation acceptance remain pending for this build.
+- Frame timing diagnostic `20261113-100133` passed 5/5 and cleaned up.
+  Changed-frame writes took 3.59–11.82 ms and desktop decode plus
+  dispatch took 21.92–47.87 ms. Median dispatch to composition was
+  246.20 ms at 32.38 FPS. The supervisor and desktop were separate
+  source builds. The desktop was built with the changes later committed
+  as `6bcca53`, so its version embeds the preceding `65c2f15`.
+  Next, add a fixture draw marker paired with its input marker, and
+  record the raw controller's first changed frame in a five-trial run
+  to locate the gap before supervisor frame receipt.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

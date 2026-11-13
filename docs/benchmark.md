@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-071213`, `20261113-073629`, `20261113-074512`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`, `20261113-095328`, `20261113-100133`.
 
 Guest profile: AOSP API 35 x86_64 revision 2 on WHPX. Headless host GPU is the default. Renderer-specific viewport runs identify their GPU mode.
 
@@ -73,7 +73,7 @@ Minimum free physical RAM was 13,909 MiB. Minimum free virtual memory was 14,101
 
 ### Run `20261113-015728` (1 guest(s))
 
-This run used desktop `0.1.0+526fb72cf42700abc505d46ea443c50bc23b9e7a` with the hash-verified CLI, supervisor and fixture from `8d40469154965e08eb2e511fb70b6a4fff7a927d`.
+This run used desktop `0.1.0+526fb72cf42700abc505d46ea443c50bc23b9e7a`. The CLI, supervisor and fixture came from `8d40469154965e08eb2e511fb70b6a4fff7a927d`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -87,7 +87,7 @@ The endpoint is the WPF composition callback after the changed frame became avai
 
 ### Run `20261113-025638` (1 guest(s))
 
-This run used desktop `0.1.2+76454c91a8a972eb43b2633cb7d69982ed73d90a` with the hash-verified CLI, supervisor and fixture from `76454c91a8a972eb43b2633cb7d69982ed73d90a`.
+This run used desktop `0.1.2+76454c91a8a972eb43b2633cb7d69982ed73d90a`. The CLI, supervisor and fixture came from `76454c91a8a972eb43b2633cb7d69982ed73d90a`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -105,7 +105,7 @@ Both used the same 540 × 1200 foreground fixture. Guest HWUI timing is in `gues
 
 ### Run `20261113-040149` (1 guest(s))
 
-This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d` with the hash-verified CLI, supervisor and fixture from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
+This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`. The CLI, supervisor and fixture came from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -120,7 +120,7 @@ The endpoint is the WPF composition callback after the changed frame became avai
 
 ### Run `20261113-040351` (2 guest(s))
 
-This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d` with the hash-verified CLI, supervisor and fixture from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
+This run used desktop `0.1.3+ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`. The CLI, supervisor and fixture came from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -135,7 +135,7 @@ The endpoint is the WPF composition callback after the changed frame became avai
 
 ### Run `20261113-070554` (1 guest(s))
 
-This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701` with the hash-verified CLI, supervisor and fixture from `5448d15df6c2fdbe67ca5c35532509391420e701`.
+This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701`. The CLI, supervisor and fixture came from `5448d15df6c2fdbe67ca5c35532509391420e701`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -150,7 +150,7 @@ The endpoint is the WPF composition callback after the changed frame became avai
 
 ### Run `20261113-070756` (2 guest(s))
 
-This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701` with the hash-verified CLI, supervisor and fixture from `5448d15df6c2fdbe67ca5c35532509391420e701`.
+This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701`. The CLI, supervisor and fixture came from `5448d15df6c2fdbe67ca5c35532509391420e701`.
 The endpoint is the WPF composition callback after the changed frame became available.
 
 | Metric | Result |
@@ -162,6 +162,44 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Viewport throughput | 15.49 FPS at 540 × 1200 |
 | Dropped sequences | 454 |
 | Desktop dispatch to supervisor reply p95 | 846.15 ms |
+
+### Run `20261113-095328` (1 guest(s), diagnostic)
+
+This run used desktop `0.1.5+a0624599ac1bbd7cea5d7c15a22cee308f7c615a`. The CLI and fixture came from `a0624599ac1bbd7cea5d7c15a22cee308f7c615a`. The separately built supervisor was `0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 5 / 5 |
+| Dispatch to composition p50 / p95 | 211.72 / 426.99 ms |
+| Frame availability to composition p95 | 3.05 ms |
+| Supervisor frame arrival interval p95 | 57.15 ms |
+| Viewport throughput | 27.17 FPS at 540 × 1200 |
+| Dropped sequences | 14 |
+| Configured emulator GPU mode | `host` |
+| Desktop dispatch to supervisor reply p95 | 318.23 ms |
+| Supervisor controller setup p95 | 160.71 ms |
+| Supervisor controller tap p95 | 125.49 ms |
+
+### Run `20261113-100133` (1 guest(s), diagnostic)
+
+This run used desktop `0.1.0+65c2f15a2dd1e169721b661d750618698eb1f967`. The CLI and fixture came from `a0624599ac1bbd7cea5d7c15a22cee308f7c615a`. The separately built supervisor was `0.1.0+148d584cb09179195cd5f5a0d820261a5749d25e`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 5 / 5 |
+| Dispatch to composition p50 / p95 | 246.2 / 474.69 ms |
+| Frame availability to composition p95 | 4.62 ms |
+| Supervisor frame arrival interval p95 | 42.92 ms |
+| Viewport throughput | 32.38 FPS at 540 × 1200 |
+| Dropped sequences | 30 |
+| Configured emulator GPU mode | `host` |
+| Desktop dispatch to supervisor reply p95 | 355.86 ms |
+| Supervisor controller setup p95 | 188.48 ms |
+| Supervisor controller tap p95 | 147.32 ms |
+| Supervisor changed-frame write p95 | 11.82 ms |
+| Desktop changed-frame decode and dispatch p95 | 47.87 ms |
 
 ## Matched cold-boot comparison `20261113-023049`
 
