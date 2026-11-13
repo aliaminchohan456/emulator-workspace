@@ -47,7 +47,8 @@ Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out, (Join-Path $work "classes"), (Join-Path $work "dex") | Out-Null
 
 Write-Host "Compiling Java sources..."
-$sources = Get-ChildItem (Join-Path $PSScriptRoot "src") -Recurse -Filter "*.java" | ForEach-Object { $_.FullName }
+$sources = Get-ChildItem (Join-Path $PSScriptRoot "src"), (Join-Path $PSScriptRoot "instrumentation") -Recurse -Filter "*.java" |
+    ForEach-Object { $_.FullName }
 & (Join-Path $env:JAVA_HOME "bin\javac.exe") -encoding UTF-8 -source 8 -target 8 -Xlint:-options `
     -bootclasspath $androidJar -d (Join-Path $work "classes") $sources 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "javac failed with exit code $LASTEXITCODE" }

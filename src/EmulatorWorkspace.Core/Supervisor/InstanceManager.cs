@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Controller;
 using EmulatorWorkspace.Core.Engine;
@@ -1301,7 +1302,7 @@ public sealed class InstanceManager
         try
         {
             var record = Get(name);
-            var transportId = await RequireInstallTransportAsync(record, cancellationToken).ConfigureAwait(false);
+        var transportId = await RequireTransportAsync(record, ErrorCodes.InstallFailed, cancellationToken).ConfigureAwait(false);
             BundleApkSetBuilder.RejectReparsePoints(_paths.EvidenceDirectory);
             var scratch = Path.Combine(_paths.EvidenceDirectory, $"install-splits-{Guid.NewGuid():N}");
             Directory.CreateDirectory(scratch);
@@ -1310,7 +1311,7 @@ public sealed class InstanceManager
                 apkSet = Path.GetFullPath(apkSet);
                 var selected = await BundleApkSetBuilder.ExtractForDeviceAsync(
                     apkSet, bundletool, scratch, _adb.AdbPath, record.AdbSerial, cancellationToken).ConfigureAwait(false);
-                if (await RequireInstallTransportAsync(record, cancellationToken).ConfigureAwait(false) != transportId)
+                if (await RequireTransportAsync(record, ErrorCodes.InstallFailed, cancellationToken).ConfigureAwait(false) != transportId)
                 {
                     throw new SupervisorOperationException(ErrorCodes.InstallFailed, "The managed ADB transport changed before deployment.");
                 }
@@ -1342,9 +1343,11 @@ public sealed class InstanceManager
         finally { runtime.Gate.Release(); }
     }
 
-    private async Task<ulong> RequireInstallTransportAsync(InstanceRecord record, CancellationToken cancellationToken)
+    private async Task<ulong> RequireTransportAsync(
+        InstanceRecord record, string errorCode, CancellationToken cancellationToken)
     {
-        if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
+        if (string.IsNullOrWhiteSpace(record.EngineStartTimeUtc)
+            || !NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
         {
             throw new SupervisorOperationException(ErrorCodes.NotRunning, $"Instance '{record.Name}' has no live managed engine.");
         }
@@ -1354,7 +1357,7 @@ public sealed class InstanceManager
         if (transport?.State != "device" || !ulong.TryParse(transport.TransportId, NumberStyles.None,
                 CultureInfo.InvariantCulture, out var transportId) || transportId == 0)
         {
-            throw new SupervisorOperationException(ErrorCodes.InstallFailed, "The managed guest has no usable ADB transport ID.");
+            throw new SupervisorOperationException(errorCode, "The managed guest has no usable ADB transport ID.");
         }
 
         return transportId;
@@ -1834,8 +1837,18 @@ public sealed class InstanceManager
     public async Task<JsonObject> InstrumentationAsync(
         string name, string package, string? runner, CancellationToken cancellationToken)
     {
+        const string packagePattern = @"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+";
+        const string runnerPattern = @"\.?[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*";
+        if (package.Length > 255 || !Regex.IsMatch(package, $@"\A{packagePattern}\z")
+            || (!string.IsNullOrWhiteSpace(runner)
+                && (runner.Length > 511 || !Regex.IsMatch(runner, $@"\A{packagePattern}/{runnerPattern}\z"))))
+        {
+            throw new SupervisorOperationException(
+                ErrorCodes.InvalidRequest, "Use an Android package name and, optionally, a package/runner component.");
+        }
+
         var record = RuntimeFor(name).Record;
-        var arguments = new List<string> { "am", "instrument", "-w" };
+        var arguments = new List<string> { "shell", "am", "instrument", "-w" };
         if (!string.IsNullOrWhiteSpace(runner))
         {
             arguments.Add(runner);
@@ -1845,13 +1858,17 @@ public sealed class InstanceManager
             arguments.Add(package);
         }
 
-        var output = await _adb.ShellAsync(record.AdbSerial, arguments.ToArray(), cancellationToken)
-            .ConfigureAwait(false);
+        var transportId = await RequireTransportAsync(record, ErrorCodes.AdbFailure, cancellationToken).ConfigureAwait(false);
+        var result = await _adb.RunOnTransportAsync(transportId, arguments,
+            TimeSpan.FromSeconds(60), cancellationToken).ConfigureAwait(false);
+        var output = result.Combined.Trim();
 
         // When the package has no instrumentation, the guest prints the help
         // of the activity manager. That is a clean "not available" answer, not
         // a failure, and it is reported without the whole help text.
-        if (output.Contains("Activity manager (activity) commands:", StringComparison.Ordinal))
+        if (output.Contains("Activity manager (activity) commands:", StringComparison.Ordinal)
+            || output.Contains("Unable to find instrumentation info", StringComparison.OrdinalIgnoreCase)
+            || output.Contains("No instrumentation found", StringComparison.OrdinalIgnoreCase))
         {
             return new JsonObject
             {
@@ -1867,7 +1884,7 @@ public sealed class InstanceManager
             };
         }
 
-        var failures = 0;
+        int? failures = null;
         var tests = 0;
         foreach (var line in output.Split('\n'))
         {
@@ -1889,7 +1906,7 @@ public sealed class InstanceManager
                     }
                     else if (pair[0].Trim().Equals("numfailures", StringComparison.OrdinalIgnoreCase))
                     {
-                        _ = int.TryParse(pair[1].Trim(), out failures);
+                        failures = int.TryParse(pair[1].Trim(), out var count) ? count : null;
                     }
                 }
             }
@@ -1902,9 +1919,10 @@ public sealed class InstanceManager
             ["runner"] = runner ?? string.Empty,
             ["available"] = true,
             ["tests"] = tests,
-            ["failures"] = failures,
-            ["passed"] = failures == 0 && tests > 0,
-            ["output"] = output.Trim(),
+            ["failures"] = failures ?? 0,
+            ["passed"] = result.ExitCode == 0 && failures == 0 && tests > 0
+                && output.Split('\n').Any(line => line.Trim() == "INSTRUMENTATION_CODE: -1"),
+            ["output"] = output[..Math.Min(output.Length, 16000)],
             ["observedUtc"] = DateTimeOffset.UtcNow.ToString("O"),
         };
     }

@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][string]$CandidateRelease,
     [Parameter(Mandatory)][string]$CandidatePayload,
     [string]$McpExecutable = "",
+    [switch]$RequireInstrumentation,
     [ValidateSet("phase3", "recipe-launcher", "recipe-fixture", "rootlab", "import", "devtools", "wpf", "play36", "play35")]
     [string[]]$Lane = @("phase3", "recipe-launcher", "recipe-fixture", "rootlab", "import", "devtools", "wpf", "play36", "play35")
 )
@@ -52,7 +53,11 @@ foreach ($name in $Lane) {
         "recipe-fixture"  { $script = "recipe-acceptance.ps1"; $extra = @("-SkipBuild", "-Baseline", "FixtureForeground") }
         "rootlab"         { $script = "root-lab-acceptance.ps1"; $extra = @() }
         "import"          { $script = "avd-import-acceptance.ps1"; $extra = @("-ExternalHome", "$root-external", "-AvdName", "external-$run") }
-        "devtools"        { $script = "devtools-acceptance.ps1"; $extra = @() }
+        "devtools"        {
+            $script = "devtools-acceptance.ps1"
+            $extra = @()
+            if ($RequireInstrumentation) { $extra += "-RequireInstrumentation" }
+        }
         "wpf"             { $script = "wpf-clickthrough-acceptance.ps1"; $extra = @("-Apk", $fixture) }
         "play36"          { $script = "play-image-acceptance.ps1"; $extra = @("-Image", "system-images;android-36;google_apis_playstore;x86_64") }
         "play35"          { $script = "play-image-acceptance.ps1"; $extra = @("-Image", "system-images;android-35;google_apis_playstore_ps16k;x86_64") }

@@ -67,10 +67,14 @@ public sealed class AdbClient
 
     public Task<ProcessResult> InstallSplitsAsync(
         ulong transportId, IEnumerable<string> splits, CancellationToken cancellationToken) =>
+        RunOnTransportAsync(transportId, new[] { "install-multiple", "-r", "-t" }.Concat(splits),
+            TimeSpan.FromMinutes(3), cancellationToken);
+
+    public Task<ProcessResult> RunOnTransportAsync(
+        ulong transportId, IEnumerable<string> arguments, TimeSpan timeout, CancellationToken cancellationToken) =>
         ProcessRunner.RunAsync(_adbPath,
-            new[] { "-t", transportId.ToString(System.Globalization.CultureInfo.InvariantCulture), "install-multiple", "-r", "-t" }
-                .Concat(splits),
-            timeout: TimeSpan.FromMinutes(3), cancellationToken: cancellationToken);
+            new[] { "-t", transportId.ToString(System.Globalization.CultureInfo.InvariantCulture) }.Concat(arguments),
+            timeout: timeout, cancellationToken: cancellationToken);
 
     /// <summary>
     /// Read-only listing of every transport the pinned server can see. It never

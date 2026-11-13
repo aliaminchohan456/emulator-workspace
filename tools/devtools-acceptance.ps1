@@ -25,7 +25,8 @@
 param(
     [string]$Root = "D:\Phase4Root",
     [string]$OutDir = "artifacts\phase3\devtools",
-    [string]$Package = "dev.emulatorworkspace.sample"
+    [string]$Package = "dev.emulatorworkspace.sample",
+    [switch]$RequireInstrumentation
 )
 
 $ErrorActionPreference = "Continue"
@@ -99,8 +100,12 @@ try {
         Copy-Item -LiteralPath (Join-Path $env:WS_ACCEPTANCE_PAYLOAD "ws-sample.apk") -Destination $apk -ErrorAction Stop
     }
     if (-not (Test-Path $apk)) {
-        $found = Get-ChildItem (Join-Path $repo "artifacts") -Recurse -Filter "ws-sample.apk" -ErrorAction SilentlyContinue |
-            Select-Object -First 1
+        $builtSample = Join-Path $repo "artifacts/phase1/sample/ws-sample.apk"
+        $found = Get-Item -LiteralPath $builtSample -ErrorAction SilentlyContinue
+        if (-not $found) {
+            $found = Get-ChildItem (Join-Path $repo "artifacts") -Recurse -Filter "ws-sample.apk" -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+        }
         if ($found) {
             New-Item -ItemType Directory -Force (Split-Path $apk) | Out-Null
             Copy-Item $found.FullName $apk -Force
@@ -141,6 +146,13 @@ try {
     Set-Content -Path (Join-Path $out "instrumentation.json") -Value ($instrument | ConvertTo-Json -Depth 6) -Encoding UTF8
     Add-Check "instrumentation" ($null -ne $instrument -and $null -ne $instrument.available) `
         ("available=" + $instrument.available + " tests=" + $instrument.tests + " failures=" + $instrument.failures + " reason=" + $instrument.reason)
+    if ($RequireInstrumentation) {
+        Add-Check "instrumentation.passed" ($instrument.available -eq $true -and $instrument.passed -eq $true -and
+            $instrument.tests -eq 1 -and $instrument.failures -eq 0) "the fixture completed its smoke test"
+        $invalid = Invoke-Ws @("instrumentation", "--name", $instance, "--package", $Package, "--runner",
+            "invalid;true", "--root", $Root) -AllowFailure
+        Add-Check "instrumentation.invalid-runner" ($invalid.Code -ne 0 -and $invalid.Text -match "invalid_request") "invalid runner rejected"
+    }
 
     # ----------------------------------------------------------- logcat export
     $export = Parse-Json (Invoke-Ws @("logcat-export", "--name", $instance, "--lines", "300", "--root", $Root) -AllowFailure).Text

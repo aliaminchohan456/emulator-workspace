@@ -190,6 +190,10 @@ jobs:
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File tools\wpf-clickthrough-acceptance.ps1 -Root D:\HwWpfRoot
 
+      - name: Developer tooling and fixture instrumentation
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File tools\devtools-acceptance.ps1 -Root D:\HwDevToolsRoot -RequireInstrumentation
+
       - name: Benchmark
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File tools\benchmark.ps1 -Root D:\HwBenchRoot -Samples 20 -Cycles 30

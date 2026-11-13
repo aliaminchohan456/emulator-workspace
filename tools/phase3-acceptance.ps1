@@ -506,7 +506,7 @@ try {
         $apks = Join-Path $ToolDir "apks\ws-sample.apks"
         if ($bundletool -and (Test-Path $apks)) {
             $splitBuild = Join-Path $repo "sample\build-split-apk.ps1"
-            $newestSource = Get-ChildItem (Join-Path $repo "sample\src") -Recurse -Filter "*.java" |
+            $newestSource = Get-ChildItem (Join-Path $repo "sample") -Recurse -File |
                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
             if ((Test-Path $splitBuild) -and $newestSource -and $newestSource.LastWriteTime -gt (Get-Item $apks).LastWriteTime) {
                 Log "rebuilding the signed APK set from the current sample sources"

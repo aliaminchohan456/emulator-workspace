@@ -1,15 +1,15 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Builds a signed Android App Bundle and a targeted APK set (.apks) from the
+    Builds an Android App Bundle and a debug-signed APK set (.apks) from the
     sample fixture with pinned SDK tools and bundletool.
 
 .DESCRIPTION
     The pipeline is: javac -> d8 -> aapt2 link --proto-format -> module zip ->
     bundletool build-bundle -> bundletool build-apks. The resulting .apks can be
     installed on one selected guest with
-    "bundletool install-apks --device-id <serial>", which is the deployment path
-    exercised by tools\phase3-acceptance.ps1.
+    "wsctl install-apks --name <guest> --apks <path> --bundletool <jar>", which
+    is the deployment path exercised by tools\phase3-acceptance.ps1.
 
     The module zip is written with explicit forward-slash entry names because
     bundletool requires "manifest/AndroidManifest.xml" inside the module.
@@ -23,7 +23,8 @@ param(
     [string]$OutDir = "D:\Phase3Tools\apks",
     [string]$BuildTools = "35.0.0",
     [string]$Platform = "android-35",
-    [string]$Bundletool = "D:\Phase3Tools\bundletool-1.18.1.jar"
+    [string]$Bundletool = "D:\Phase3Tools\bundletool-1.18.1.jar",
+    [switch]$SignBundleForTesting
 )
 
 $ErrorActionPreference = "Continue"
@@ -47,7 +48,8 @@ Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force (Join-Path $work "classes"), (Join-Path $work "dex") | Out-Null
 
 Write-Host "Compiling and dexing..."
-$sources = Get-ChildItem (Join-Path $PSScriptRoot "src") -Recurse -Filter "*.java" | ForEach-Object { $_.FullName }
+$sources = Get-ChildItem (Join-Path $PSScriptRoot "src"), (Join-Path $PSScriptRoot "instrumentation") -Recurse -Filter "*.java" |
+    ForEach-Object { $_.FullName }
 & (Join-Path $env:JAVA_HOME "bin\javac.exe") -encoding UTF-8 -source 8 -target 8 -Xlint:-options `
     -bootclasspath $androidJar -d (Join-Path $work "classes") $sources 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "javac failed with exit code $LASTEXITCODE" }
@@ -108,6 +110,13 @@ $apks = Join-Path $OutDir "ws-sample.apks"
 Remove-Item $bundle, $apks -Force -ErrorAction SilentlyContinue
 & java -jar $Bundletool build-bundle --modules=$moduleZip --output=$bundle 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "bundletool build-bundle failed with exit code $LASTEXITCODE" }
+if ($SignBundleForTesting) {
+    $jarsigner = Join-Path $env:JAVA_HOME "bin\jarsigner.exe"
+    & $jarsigner -keystore $keystore -storepass android -keypass android $bundle androiddebugkey 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Test signing failed with exit code $LASTEXITCODE" }
+    & $jarsigner -verify $bundle 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "The test-signed app bundle did not verify" }
+}
 & java -jar $Bundletool build-apks --bundle=$bundle --output=$apks `
     --ks=$keystore --ks-pass=pass:android --ks-key-alias=androiddebugkey --key-pass=pass:android `
     --overwrite 2>&1 | Out-Host

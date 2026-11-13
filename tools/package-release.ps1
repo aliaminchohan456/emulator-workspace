@@ -22,6 +22,7 @@ param(
     [string]$Version = "",
     [string]$OutDir = "D:\Release",
     [string]$StageDir = "",
+    [string]$SampleApk = "",
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$CertificateThumbprint = "",
@@ -143,9 +144,14 @@ Publish-App "src\EmulatorWorkspace.Mcp" "EmulatorWorkspace.Mcp.exe" $true $false
 
 # The sample fixture belongs to the product: the desktop installs it as the
 # approved package.
-$sampleApk = Join-Path $repo "artifacts\phase1\sample\ws-sample.apk"
-if (Test-Path $sampleApk) {
-    Copy-Item $sampleApk (Join-Path $payload "ws-sample.apk") -Force
+if ($SampleApk) {
+    if (-not (Test-Path -LiteralPath $SampleApk -PathType Leaf)) { throw "The specified sample APK does not exist." }
+}
+else {
+    $SampleApk = Join-Path $repo "artifacts\phase1\sample\ws-sample.apk"
+}
+if (Test-Path -LiteralPath $SampleApk -PathType Leaf) {
+    Copy-Item -LiteralPath $SampleApk -Destination (Join-Path $payload "ws-sample.apk") -Force
 }
 
 # ------------------------------------------------------------------- notices
