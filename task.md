@@ -663,7 +663,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   single-guest trials, p50/p95 583.45/679.56 ms, and 23.09 delivered FPS.
   Two-guest run `20261113-070756` recorded 25/25, p50/p95 882.98/1,145.69 ms,
   and 15.49 delivered FPS. Both cleaned up. Both target misses are open.
-  The 30-cycle test is running at `artifacts/phase3/bench/20261113-071213`.
+  Lifecycle run `artifacts/phase3/bench/20261113-071213` passed 30/30 with
+  no reserved listeners left after any cycle, engine count 0 → 0, and
+  scoped cleanup. The cycle p50/p95 was 42.66/50.66 s. The exact 0.1.4
+  20-sample restore rerun is `artifacts/phase3/bench/20261113-073629`.
+- The exact 0.1.4 restore rerun verified 20 warm samples in 21 attempts
+  with fresh focus and independent state markers. Warm p50/p95 was
+  11.15/16.91 s, exceeding the 8 s median target. One cold fallback
+  took 135.26 s and was excluded from warm percentiles. The guest was
+  removed and the scoped supervisor was shut down. The exact 0.1.4
+  matched raw comparison is running at `artifacts/phase3/bench/20261113-074512`.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

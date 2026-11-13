@@ -373,6 +373,9 @@ build coalesces frames before UI dispatch and excludes stale subscriptions.
 The exact 0.1.4 payload delivered 23.09 FPS and 679.56 ms p95 with one
 guest, and 15.49 FPS and 1,145.69 ms p95 with two. All 50 trials were
 valid and the three test guests were removed. Both performance gates
-remain open. A separate 30-cycle lifecycle run is checking the shutdown
-and port cleanup fixes.
+remain open. The lifecycle rerun passed all 30 start/stop cycles with
+verified port release and no engines remaining. The current candidate
+verified 20 warm restores with 11.15 s median and one cold fallback.
+The 8 s target remains open. The current candidate's matched cold-boot
+comparison is in progress.
 [Benchmark evidence](docs/benchmark.md)

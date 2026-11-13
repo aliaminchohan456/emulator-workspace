@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T02:12:11.2700280+00:00",
-  "headCommit": "d713c96",
-  "trackedWorkTree": "M docs/benchmark.md\n M task.md",
+  "latestFinishedUtc": "2026-11-13T02:44:40.8736057Z",
+  "headCommit": "597ba59",
+  "trackedWorkTree": "M docs/benchmark.md\n M docs/phase3-manifest.json\n M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -41314,6 +41314,176 @@
           "name": "transcript.txt",
           "bytes": 1462,
           "sha256": "ba3df4d382786915123922d9cc30e835d5cd3d0c03e8839f5796d1e1af02013a"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-071213",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-071213",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "d713c96520d969261f8911f8fbbe3fe66dddf9bc",
+      "harnessSha256": "A303AEEE719DC5794BCC3DA1F27BF26C8AA6E28CD2526E26D5C5D00357E58FD9",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T02:35:50.3168894Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 3,
+      "lanes": {
+        "lifecycle.cycles": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "lifecycle.cycles",
+              "passed": true,
+              "detail": "30 start/stop cycles with 0 failures",
+              "atUtc": "2026-11-13T02:35:49.6070014Z"
+            }
+          ]
+        },
+        "lifecycle.no-leak": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "lifecycle.no-leak",
+              "passed": true,
+              "detail": "engine count 0 -> 0",
+              "atUtc": "2026-11-13T02:35:49.6161251Z"
+            }
+          ]
+        },
+        "cleanup.bench-d96c11dfeba9": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-d96c11dfeba9",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T02:35:50.2897285Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 3508,
+          "sha256": "b75ed391a20d0fdd71b9efc756630632eabf38f8d85ad172198002550ecb0520"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "2f4cbc83cd4121d2b0b1837e3343c3f893ad7f108694e6c310a628e044bfe7db"
+        },
+        {
+          "name": "lifecycle.jsonl",
+          "bytes": 19478,
+          "sha256": "3f54579e4bea5b6f77d8346007696a8fcf5fca843775a0530e702e43d17c3d4c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 5833,
+          "sha256": "a74adcfd6fccdf07a22c0a0ec7cf3050ccb636af64fd27a2da2af6218c86f4b5"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 1001,
+          "sha256": "93cf0b6feb3e98ed9576819cb05646c6eab894889926b98e97a8b14a5e8b3527"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-073629",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-073629",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "597ba59fd20e707a35d364661f5d0b63c411dc8e",
+      "harnessSha256": "A303AEEE719DC5794BCC3DA1F27BF26C8AA6E28CD2526E26D5C5D00357E58FD9",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T02:44:40.8736057Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 1,
+      "totalChecks": 2,
+      "lanes": {
+        "target.warm-restore": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "target.warm-restore",
+              "passed": false,
+              "detail": "warm restore p50 11.15s (target <= 8s)",
+              "atUtc": "2026-11-13T02:44:33.3820394Z"
+            }
+          ]
+        },
+        "cleanup.bench-86fadc62f0e4": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench-86fadc62f0e4",
+              "passed": true,
+              "detail": "stopped and removed through the supervisor",
+              "atUtc": "2026-11-13T02:44:40.8543377Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "benchmark.json",
+          "bytes": 17481,
+          "sha256": "8ad97f0b787d52dc520dc67e42de27fab5c7415c3060b48955bf6be71250c414"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "1a5b5342ef3b72a3fc5af04b31229fb5654295fe1e0129fb98b168ac663d9699"
+        },
+        {
+          "name": "restore.jsonl",
+          "bytes": 4822,
+          "sha256": "fc42caf6b9a349bba1cb63f715bf8bb5f9461afa2369869fb8f39c0541a595dc"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 24444,
+          "sha256": "df2df002b94982466c5953276fa53f479580c584faaced58e8f0eb223a8f789d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2341,
+          "sha256": "2714c76a6ea71d5239922b3ebd1d4a443cdc193d79e2d09785b1c275d7c445ce"
         }
       ]
     },
