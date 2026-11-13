@@ -648,10 +648,12 @@ All tasks start open. Check off an implementation task after its scoped verifica
   16/16, and both Play profiles 8/8. The Play profiles verified named
   snapshot rollback. No owned emulator remained. The paired Phase 3
   rerun with the updated MCP client is `20261113-065245`.
-- The exact 0.1.4 offline Sandbox configuration is at
-  `D:/WS-OfflineSandbox-014-20261113-064035/offline-acceptance.wsb`.
-  The copied candidate hash matches the MSI. Administrator enablement
-  and usable nested WHPX are still required.
+- The refreshed exact 0.1.4 offline Sandbox configuration is at
+  `D:/WS-OfflineSandbox-014-20261113-092237/offline-acceptance.wsb`.
+  The copied candidate hash matches the MSI. It disables networking,
+  clipboard and audio/video input and checks the engine and WHPX return
+  statuses in the sandbox. Administrator enablement and usable nested
+  WHPX are still required.
 - The verified 0.1.4 desktop displayed the first-run panel and enabled
   Create with the pinned SDK (`20261113-084323`, 3/3). A separate SDK
   directory exposed the installed tools while omitting the pinned image.
@@ -753,10 +755,9 @@ All tasks start open. Check off an implementation task after its scoped verifica
   authorized feature change requires an elevated Windows token. Run the
   prepared command after the timed host workloads and verify whether
   Windows requests a restart.
-- The network-disabled 0.1.3 Sandbox kit is ready at
-  `D:/WS-OfflineSandbox-013-20261113-041247/offline-acceptance.wsb`.
-  Its copied MSI was rehashed and its SDK, JDK and installer mappings are
-  read-only. After successful feature enablement and any required restart,
-  launch this file and retain the isolated `output` directory. The first
-  gate is `emulator -accel-check` inside the sandbox. If it cannot use WHPX,
-  use an isolated Windows 11 x64 VM with virtualization extensions exposed.
+- After successful feature enablement and any required restart, launch
+  the hash-verified Sandbox kit for the candidate under test and retain
+  its isolated `output` directory. The SDK, JDK and installer mappings
+  are read-only. The first gate is `emulator -accel-check` inside the
+  sandbox. If it cannot use WHPX, use an isolated Windows 11 x64 VM
+  with virtualization extensions exposed.
