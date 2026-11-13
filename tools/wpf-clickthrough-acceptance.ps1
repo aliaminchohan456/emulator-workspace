@@ -27,12 +27,16 @@ param(
     [int]$BootTimeoutSeconds = 600,
     [switch]$KeepRoot,
     [switch]$SetupOnly,
-    [switch]$ExpectMissingImage
+    [switch]$ExpectMissingImage,
+    [switch]$RecordDemo
 )
 
 if ($ExpectMissingImage -and -not $SetupOnly) {
     throw "-ExpectMissingImage requires -SetupOnly and an SDK without the pinned image."
 }
+if ($RecordDemo -and $SetupOnly) { throw "-RecordDemo requires a complete click-through." }
+$ffmpeg = if ($RecordDemo) { (Get-Command ffmpeg.exe -CommandType Application -ErrorAction Stop).Source }
+$ffprobe = if ($RecordDemo) { (Get-Command ffprobe.exe -CommandType Application -ErrorAction Stop).Source }
 
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
@@ -292,9 +296,48 @@ function Test-SetupScreen([System.Windows.Automation.AutomationElement]$window, 
     Add-Step $name ($matches -and [bool]$shot) "setup controls present=$($controls.Count)/$($expected.Count), create enabled=$createEnabled" $shot
 }
 
+function Start-Demo([IntPtr]$handle) {
+    $start = New-Object System.Diagnostics.ProcessStartInfo
+    $start.FileName = $ffmpeg
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardInput = $true
+    $start.RedirectStandardError = $true
+    $start.Arguments = '-hide_banner -loglevel warning -f gdigrab -framerate 8 -draw_mouse 0 -i hwnd=0x{0:X} -t 600 -vf scale=1280:-2 -c:v libx264 -preset ultrafast -pix_fmt yuv420p -movflags +faststart "{1}"' -f $handle.ToInt64(), (Join-Path $out "desktop-demo.mp4")
+    $process = [System.Diagnostics.Process]::Start($start)
+    [pscustomobject]@{ Process = $process; Errors = $process.StandardError.ReadToEndAsync() }
+}
+
+function Complete-Demo($recorder) {
+    $process = $recorder.Process
+    try {
+        if (-not $process.HasExited) {
+            $process.StandardInput.WriteLine("q")
+            $process.StandardInput.Flush()
+            if (-not $process.WaitForExit(15000)) { throw "The recording did not finalize." }
+        }
+        $recorder.Errors.GetAwaiter().GetResult() | Set-Content (Join-Path $out "desktop-demo.log") -Encoding UTF8
+        if ($process.ExitCode -ne 0) { throw "The window recorder exited with code $($process.ExitCode)." }
+        $probe = & $ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,nb_frames,duration -of json (Join-Path $out "desktop-demo.mp4") | Out-String
+        if ($LASTEXITCODE) { throw "ffprobe could not read the recording." }
+        $probe | Set-Content (Join-Path $out "desktop-demo-video.json") -Encoding UTF8
+        $video = ($probe | ConvertFrom-Json).streams[0]
+        Add-Check "demo.recording" ([int]$video.nb_frames -ge 8) "video=$($video.codec_name), frames=$($video.nb_frames), duration=$($video.duration)s"
+    }
+    catch { Add-Check "demo.recording" $false $_.Exception.Message }
+    finally {
+        if (-not $process.HasExited) {
+            $process.Kill()
+            [void]$process.WaitForExit(5000)
+        }
+        $process.Dispose()
+    }
+}
+
 Log "WPF click-through $run root=$Root apk=$Apk"
 
 $desktopProcess = $null
+$recorder = $null
 try {
     if (-not $KeepRoot) {
         if (Test-Path -LiteralPath $Root) { throw "Use a new disposable root or explicitly pass -KeepRoot." }
@@ -331,6 +374,7 @@ try {
     [void][ClickThrough.Native]::SetForegroundWindow($desktopProcess.MainWindowHandle)
     Start-Sleep -Seconds 2
     $handle = [IntPtr]([int]$desktopProcess.MainWindowHandle.ToInt64())
+    if ($RecordDemo) { $recorder = Start-Demo $handle }
     $shot = Save-WindowShot $handle "01-startup.png"
     Add-Step "window-open" ([bool]$shot) "the desktop window is open and reachable by UI Automation" $shot
     if ($SetupOnly) {
@@ -551,6 +595,7 @@ catch {
     Log ("fatal: " + $_.Exception.Message)
 }
 finally {
+    if ($recorder) { Complete-Demo $recorder }
     if ($desktopProcess -and -not $desktopProcess.HasExited) {
         $desktopProcess.Kill()
         [void]$desktopProcess.WaitForExit(5000)
