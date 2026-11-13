@@ -29,6 +29,7 @@ param(
     [string]$Root = "D:\Phase4Root",
     [string]$OutDir = "artifacts\phase3\bench",
     [ValidateRange(1, 1000)][int]$Samples = 20,
+    [switch]$Diagnostic,
     [ValidateRange(0, 1000)][int]$RestoreAttempts = 0,
     [int]$Cycles = 30,
     [string]$Apk = "",
@@ -79,6 +80,7 @@ if ($SoakMinutes -gt 0 -and $SkipTwoGuest) {
 if ($RestoreAttempts -gt 0 -and $RestoreAttempts -lt $Samples) {
     throw "RestoreAttempts must cover the requested verified samples."
 }
+if ($Diagnostic -and $SoakMinutes -gt 0) { throw "A soak is a separate acceptance run." }
 if ($RawBaseline -and ($SkipBaseline -or $SkipColdBoot)) {
     throw "A raw comparison requires both cold-boot scenarios."
 }
@@ -221,6 +223,7 @@ Log ("host: {0} / {1} / {2} / {3} GB RAM" -f $hostInfo.machine, $hostInfo.cpuCor
 if (-not $Apk) { $Apk = Join-Path $repo "artifacts/phase1/sample/ws-sample.apk" }
 
 $report = [ordered]@{
+    diagnostic = [bool]$Diagnostic
     runId = $run
     host = $hostInfo
     scenarios = [ordered]@{}
@@ -883,6 +886,10 @@ try {
     $restore = $report.scenarios["warmRestore"]
     if ($SkipRestore) {
         Log "SKIP target.warm-restore: restore scenario omitted"
+    }
+    elseif ($Diagnostic) {
+        Add-Check "diagnostic.restore" ($restore.samples -ge $Samples) (
+            "verified {0}/{1} warm restores, p50 {2}s" -f $restore.samples, $Samples, $restore.p50)
     }
     elseif ($restore.samples -ge 20) {
         Add-Check "target.warm-restore" ($restore.p50 -le 8) ("warm restore p50 {0}s (target <= 8s)" -f $restore.p50)

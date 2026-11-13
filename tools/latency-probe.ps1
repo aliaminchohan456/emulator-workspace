@@ -16,6 +16,7 @@ param(
     [string]$Root = "D:\Phase1Root",
     [string]$Name = "t1",
     [ValidateRange(1, 100)][int]$Count = 25,
+    [switch]$Diagnostic,
     [ValidateSet(1, 2)][int]$GuestCount = 1,
     [switch]$CompareCapture,
     [string]$Gpu,
@@ -221,9 +222,14 @@ try {
     }
     if (-not (Test-Path -LiteralPath $resultPath)) { throw "The desktop did not write presentation evidence." }
     $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
-    Check "presentation.coverage" ($result.valid -ge 20) "$($result.valid)/$($result.trials) valid samples"
-    Check "presentation.latency" ($result.valid -ge 20 -and $result.p95Ms -le 100) "p95=$($result.p95Ms) ms"
-    Check "presentation.throughput" ($result.deliveredFps -ge 60) "viewport-delivered FPS=$($result.deliveredFps), see workload evidence before evaluating the release gate"
+    if ($Diagnostic) {
+        Check "diagnostic.coverage" ($result.valid -eq $Count) "$($result.valid)/$($result.trials) valid samples, p95=$($result.p95Ms) ms, delivered=$($result.deliveredFps) FPS"
+    }
+    else {
+        Check "presentation.coverage" ($result.valid -ge 20) "$($result.valid)/$($result.trials) valid samples"
+        Check "presentation.latency" ($result.valid -ge 20 -and $result.p95Ms -le 100) "p95=$($result.p95Ms) ms"
+        Check "presentation.throughput" ($result.deliveredFps -ge 60) "viewport-delivered FPS=$($result.deliveredFps), see workload evidence before evaluating the release gate"
+    }
     $afterIdentity = Invoke-Wsctl @("adb-identity", "--json") | ConvertFrom-Json
     if ($afterIdentity.identity -ne $primaryIdentity.identity) { throw "The measured guest identity changed." }
     $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
@@ -285,6 +291,7 @@ finally {
         root = $Root
         guestCount = $GuestCount
         gpu = $effectiveGpu
+        diagnostic = [bool]$Diagnostic
         desktopSha256 = $desktopSha256
         desktopAssemblySha256 = $desktopAssemblySha256
         desktopVersion = $desktopVersion

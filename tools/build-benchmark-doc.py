@@ -25,6 +25,8 @@ def merge(runs: list[dict]) -> dict:
         merged["run_ids"].append(run["runId"])
         if report.get("host") and not merged["host"]:
             merged["host"] = report["host"]
+        if report.get("diagnostic"):
+            continue
         for name, data in (report.get("scenarios") or {}).items():
             if name == "warmRestore" and "restoreTrials" not in report:
                 name = "historicalRestore"
@@ -189,7 +191,8 @@ def main() -> int:
                           if not sample["timeout"] and sample.get("controllerTapMs") is not None]
         lines += [
             "",
-            f"### Run `{summary['runId']}` ({summary.get('guestCount', 1)} guest(s))",
+            f"### Run `{summary['runId']}` ({summary.get('guestCount', 1)} guest(s)"
+            f"{', diagnostic' if summary.get('diagnostic') else ''})",
             "",
             f"This run used desktop `{summary.get('desktopVersion')}` "
             f"with the hash-verified CLI, supervisor and fixture from `{candidate.get('sourceCommit')}`.",
