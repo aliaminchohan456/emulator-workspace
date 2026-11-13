@@ -668,6 +668,30 @@ All tasks start open. Check off an implementation task after its scoped verifica
   for 60 Hz arrival jitter and checks the advertised AVD name at frame
   subscription. The Release build and 64 tests passed. Measure both
   changes on the next packaged payload after the soak.
+- The fixture now declares a positive smoke instrumentation test. Its
+  debug APK signature, manifest, test-signed AAB and generated APK set
+  passed local build verification. Run the next candidate regression
+  with `-RequireInstrumentation` to verify the test and invalid-runner
+  rejection on the managed guest. The original 0.1.4 run covered the
+  earlier capability check. Release build and 64 tests passed.
+- Mobile MCP 1.0.17 with mobilecli 1.0.23 is staged under
+  `D:/WS-Compare-MobileMCP-1.0.17`. The server completed stdio
+  initialization and exposed install, launch, hierarchy and tap tools.
+  Run `tools/mobile-mcp-comparison.py` after soak cleanup with exactly one
+  owned, verified emulator and the packaged fixture. Android Studio
+  build `262.9437.185.2621.16467767` is installed for the separate
+  IDE comparison.
+- Source `6a474b2` shares one guest boot-and-focus query between normal
+  start and restore. It also shortens controller tap dwell to 32 ms,
+  attempts contact release after cancellation, and checks the verified
+  engine generation before controller dispatch. Release build and 64
+  tests passed. The next managed cold-boot run measures the interactive
+  `wsctl wait` reply and records independent endpoint verification
+  separately. Re-run quiet-host WPF and 20 restores after soak cleanup.
+- Window-only H.264 capture produced 16 frames in a two-second packaged
+  desktop smoke check. The full live demo uses
+  `tools/wpf-clickthrough-acceptance.ps1 -RecordDemo` after the timing
+  runs, with the fixture guest and an isolated workspace.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and

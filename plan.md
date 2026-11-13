@@ -392,3 +392,12 @@ Create. A source-only viewport change also avoids one full RGB copy per
 frame and relaxes the raw arrival threshold to accommodate 60 Hz jitter.
 Release build and 64 tests passed. Re-measure WPF with one and two guests
 after the soak and record the packaged source separately from 0.1.4.
+
+The next package uses the rebuilt fixture APK with its instrumentation
+runner. Verify the runner and invalid component rejection with
+`tools/candidate-regression.ps1 -RequireInstrumentation`. The app-bundle
+fixture build can explicitly use the local Android debug key with
+`-SignBundleForTesting`. That signed test AAB and its generated APK set
+built successfully. Run the scoped Mobile MCP comparison and the Android
+Studio deployment with one disposable guest after the timed workloads.
+Record the live desktop click-through separately.
