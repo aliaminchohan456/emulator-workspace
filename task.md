@@ -677,9 +677,18 @@ All tasks start open. Check off an implementation task after its scoped verifica
   49.90/54.90 s. The 14.53 s median overhead missed the 3.54 s allowance.
   Both profiles were removed and the scoped supervisor was shut down.
 - The 0.1.4 four-hour soak is `artifacts/phase3/bench/20261113-081953`
-  with root `D:/WS-Soak-014-20261113-081951`. The historical 0.1.1 soak
-  passed independently. Verify the new run with `tools/soak-progress.py
+  with root `D:/WS-Soak-014-20261113-081951`, harness PID 3632 created at
+  08:19:51 PKT. The timed paired window started at 08:25:18 PKT. The
+  historical 0.1.1 soak passed independently. Verify the new run with
+  `python tools/soak-progress.py artifacts/phase3/bench/20261113-081953
   --require-complete` after both guests are removed.
+- On 0.1.4, the restore median spent 3.27 s in the console load and
+  10.12 s through the CLI reply. Current source `1fc7564` combines the
+  fresh boot-property and focus checks in one bounded ADB command and
+  shortens the retry interval to 700 ms. The Release build and 59 tests
+  passed. The timing change needs a WHPX rerun after soak cleanup. The
+  matched boot harness now records the supervisor's boot and interactive
+  timestamps alongside the shared raw and managed readiness probe.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
