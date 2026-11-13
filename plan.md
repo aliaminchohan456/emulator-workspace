@@ -358,7 +358,12 @@ upgrade preserving a managed profile from 0.1.1. The preserved 0.1.1
 installer still has its original hash. The 0.1.2 runtime suite passed
 seven of nine lanes and exposed a recipe retry bug and a Maestro launcher
 ANR. The recipe fix and viewport changes are in the separate unsigned
-0.1.3 build. Verify both on the new stage. Disconnected reuse remains open.
+0.1.3 build. Its 22 installer checks passed. The runtime rerun found
+that launcher-baseline replay also needed to defer fixture verification
+until the recorded launch. The source fix and reserved-port cleanup are
+in 0.1.4. Later source work bounds app foreground waits after restore.
+Run the latest source through both recipe baselines before promoting a
+package. Disconnected reuse remains open.
 
 The packaged 0.1.2 viewport delivered 21.82 FPS and 789.56 ms p95 on
 25 valid single-guest trials. The separately measured controller RGB stream

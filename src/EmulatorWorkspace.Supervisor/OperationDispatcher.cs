@@ -531,12 +531,6 @@ public sealed class OperationDispatcher
                             .ConfigureAwait(false) as JsonObject;
                         recovery = restored?["recovery"]?.GetValue<string>() ?? "unknown";
 
-                        // A restored guest may come back without the fixture in
-                        // the foreground, so the recorded application is
-                        // relaunched and the hierarchy is awaited again.
-                        // A restored guest reboots: the fixture is relaunched
-                        // and the hierarchy is awaited, both retried until the
-                        // guest is back or the bound is exhausted.
                         var package = recipe["app"]?["package"]?.GetValue<string>();
 
                         // A recorded launch can bring up the fixture after the
