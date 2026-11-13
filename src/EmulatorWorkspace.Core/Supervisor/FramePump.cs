@@ -108,7 +108,9 @@ public sealed class FramePump : IAsyncDisposable
         var discovery = await EmulatorDiscovery.ReadAsync(adb, _record.AdbSerial, cancellationToken)
             .ConfigureAwait(false);
 
-        if (discovery.GrpcPort != _record.GrpcPort || discovery.AdbPort != _record.ConsolePort + 1)
+        if (discovery.GrpcPort != _record.GrpcPort
+            || discovery.AdbPort != _record.ConsolePort + 1
+            || discovery.AvdName != _record.AvdName)
         {
             throw new InvalidOperationException(
                 "The advertised controller endpoint does not match the managed instance.");
@@ -179,7 +181,7 @@ public sealed class FramePump : IAsyncDisposable
                     {
                         attempt = 0;
                         await PublishAsync(
-                            image.Image_.ToByteArray(),
+                            image.Image_.Memory,
                             (int)image.Format.Width,
                             (int)image.Format.Height,
                             image.Seq,
@@ -223,10 +225,13 @@ public sealed class FramePump : IAsyncDisposable
         }
     }
 
-    private async Task PublishAsync(byte[] payload, int width, int height, uint sequence, ulong timestampUs)
+    private async Task PublishAsync(ReadOnlyMemory<byte> payload, int width, int height, uint sequence, ulong timestampUs)
     {
         var received = DateTimeOffset.UtcNow;
-        if (_lastPublished != default && (received - _lastPublished).TotalMilliseconds < 16)
+        // A 60 Hz source can deliver frames less than 16 ms apart when the
+        // transport catches up. Leave enough headroom for that jitter.
+        var minimumIntervalMs = _options.IsRaw ? 8 : 16;
+        if (_lastPublished != default && (received - _lastPublished).TotalMilliseconds < minimumIntervalMs)
         {
             return;
         }
@@ -240,7 +245,7 @@ public sealed class FramePump : IAsyncDisposable
         }
         else if (width == 0)
         {
-            (width, height) = ReadPngSize(payload);
+            (width, height) = ReadPngSize(payload.Span);
             if (width <= 0)
             {
                 return;
@@ -325,7 +330,7 @@ public sealed class FramePump : IAsyncDisposable
         }
     }
 
-    private static (int Width, int Height) ReadPngSize(byte[] png)
+    private static (int Width, int Height) ReadPngSize(ReadOnlySpan<byte> png)
     {
         if (png.Length < 24 || png[0] != 0x89 || png[1] != 0x50)
         {
