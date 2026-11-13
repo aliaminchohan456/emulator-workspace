@@ -838,7 +838,9 @@ All tasks start open. Check off an implementation task after its scoped verifica
   and outcomes. YAML parsed locally. Dispatch still requires a configured
   GitHub repository and a self-hosted Windows x64 runner with the `wipx`
   label and the installed Android SDK, Java, Node, Python MCP and Phase 3
-  tools. This checkout has no Git remote configured.
+  tools. The private GitHub repository is
+  `aliaminchohan456/emulator-workspace`, with `master` tracking
+  `origin/master`. The self-hosted hardware lane still needs a runner.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
