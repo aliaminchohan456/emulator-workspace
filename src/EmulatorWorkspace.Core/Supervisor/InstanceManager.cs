@@ -683,14 +683,18 @@ public sealed class InstanceManager
             }
 
             var recovery = "none";
+            double? readinessSeconds = null;
             if (!save)
             {
                 // A snapshot load can leave the guest without an interactive
                 // Android runtime. The restore is only complete once the guest
                 // answers again; otherwise the supervisor performs a clean boot
                 // so the caller always gets a usable guest back.
-                if (!await WaitForInteractiveAsync(record, TimeSpan.FromSeconds(90), cancellationToken)
-                        .ConfigureAwait(false))
+                var readiness = Stopwatch.StartNew();
+                var interactive = await WaitForInteractiveAsync(record, TimeSpan.FromSeconds(90), cancellationToken)
+                    .ConfigureAwait(false);
+                readinessSeconds = Math.Round(readiness.Elapsed.TotalSeconds, 2);
+                if (!interactive)
                 {
                     await StopAsync(name, force: true, cancellationToken).ConfigureAwait(false);
                     await StartAsync(
@@ -715,6 +719,7 @@ public sealed class InstanceManager
                 ["tag"] = tag,
                 ["action"] = save ? "save" : "load",
                 ["seconds"] = Math.Round(stopwatch.Elapsed.TotalSeconds, 2),
+                ["readinessSeconds"] = readinessSeconds,
                 ["recovery"] = recovery,
             };
         }
@@ -740,7 +745,7 @@ public sealed class InstanceManager
             {
                 try
                 {
-                    var (booted, focus) = await ProbeInteractiveAsync(record, deadline.Token).ConfigureAwait(false);
+                    var (booted, focus) = await ProbeInteractiveAsync(record, deadline.Token, displayOnly: true).ConfigureAwait(false);
                     if (booted && focus is not null)
                     {
                         return true;
@@ -761,11 +766,13 @@ public sealed class InstanceManager
     }
 
     private async Task<(bool Booted, string? Focus)> ProbeInteractiveAsync(
-        InstanceRecord record, CancellationToken cancellationToken)
+        InstanceRecord record, CancellationToken cancellationToken, bool displayOnly = false)
     {
+        const string readiness = """boot=$(getprop sys.boot_completed); echo "$boot"; if [ "$boot" = 1 ]; then """;
+        var dump = displayOnly ? "dumpsys -t 5 window displays" : "dumpsys -t 5 window";
         var probe = await _adb.RunAsync(
             record.AdbSerial,
-            new[] { "shell", """boot=$(getprop sys.boot_completed); echo "$boot"; if [ "$boot" = 1 ]; then dumpsys -t 5 window; fi""" },
+            new[] { "shell", readiness + " " + dump + "; fi" },
             TimeSpan.FromSeconds(8), cancellationToken).ConfigureAwait(false);
         var output = probe.StandardOutput.AsSpan().TrimStart();
         var endOfBootProperty = output.IndexOf('\n');

@@ -35,6 +35,7 @@ param(
     [string]$Apk = "",
     [string]$CandidateRelease = "",
     [string]$CandidatePayload = "",
+    [string]$SupervisorExecutable = "",
     [ValidateRange(0, 240)][int]$SoakMinutes = 0,
     [ValidateRange(1, 60)][int]$SoakProbeSeconds = 60,
     [switch]$SkipTwoGuest,
@@ -61,6 +62,17 @@ if ($CandidateRelease -or $CandidatePayload) {
     $Apk = Join-Path $verifiedCandidate.payload "ws-sample.apk"
     $candidate = $verifiedCandidate.identity
     $env:EMULATORWORKSPACE_SUPERVISOR_EXE = Join-Path $verifiedCandidate.payload "EmulatorWorkspace.Supervisor.exe"
+}
+if ($SupervisorExecutable) {
+    if (-not ($Diagnostic -and $candidate)) { throw "Supervisor override requires a candidate diagnostic." }
+    $env:EMULATORWORKSPACE_SUPERVISOR_EXE = (Resolve-Path -LiteralPath $SupervisorExecutable -ErrorAction Stop).ProviderPath
+    $supervisorDirectory = Split-Path -Parent $env:EMULATORWORKSPACE_SUPERVISOR_EXE
+    $supervisorOverride = [ordered]@{
+        version = (Get-Item -LiteralPath $env:EMULATORWORKSPACE_SUPERVISOR_EXE).VersionInfo.ProductVersion
+        files = @("EmulatorWorkspace.Supervisor.exe", "EmulatorWorkspace.Supervisor.dll", "EmulatorWorkspace.Core.dll" |
+            ForEach-Object { @{ name = $_; sha256 = (Get-FileHash -LiteralPath (Join-Path $supervisorDirectory $_) -ErrorAction Stop).Hash } })
+    }
+    $candidate.evidenceScope = "CLI and sample APK"
 }
 $sdk = $env:ANDROID_HOME
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
@@ -224,6 +236,7 @@ if (-not $Apk) { $Apk = Join-Path $repo "artifacts/phase1/sample/ws-sample.apk" 
 
 $report = [ordered]@{
     diagnostic = [bool]$Diagnostic
+    supervisorOverride = $supervisorOverride
     runId = $run
     host = $hostInfo
     scenarios = [ordered]@{}
@@ -727,12 +740,12 @@ try {
                     $after = Get-GuestIdentity $guest
                     $verifyUntil = $timer.Elapsed.TotalSeconds + 30
                     do {
-                        $windows = Invoke-GuestAdb $after @("shell", "dumpsys", "window") 20000
-                        $focus = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
+                        $state = Invoke-GuestAdb $after @("shell", "settings get global $restoreKey; dumpsys -t 5 window") 20000
+                        $observedMarker = ($state -split '\r?\n', 2)[0].Trim()
+                        $focus = [regex]::Match($state, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
                         if ($focus) { break }
                         Start-Sleep -Milliseconds 700
                     } while ($timer.Elapsed.TotalSeconds -lt $verifyUntil)
-                    $observedMarker = Invoke-GuestAdb $after @("shell", "settings", "get", "global", $restoreKey) 20000
                 }
                 catch { $probeError = $_.Exception.Message }
             }
@@ -747,6 +760,8 @@ try {
                 wallSeconds = $elapsed
                 operationSeconds = [Math]::Round($operationSeconds, 2)
                 consoleSeconds = $result.seconds
+                readinessSeconds = $result.readinessSeconds
+                verificationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds - $operationSeconds, 2)
                 recovery = $result.recovery
                 interactive = $interactive
                 stateRestored = $stateRestored
