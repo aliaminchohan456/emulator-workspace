@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T02:05:25.7110380+00:00",
-  "headCommit": "f2518ca",
-  "trackedWorkTree": "M docs/release-notes.md\n M plan.md\n M task.md",
+  "latestFinishedUtc": "2026-11-13T02:12:11.2700280+00:00",
+  "headCommit": "d713c96",
+  "trackedWorkTree": "M docs/benchmark.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -34643,6 +34643,243 @@
           "name": "summary.json",
           "bytes": 2131,
           "sha256": "364686496fe5ba228f95ae4b19d2bd4284bba1d533e42dd29468deb6ef55abad"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-070554",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-070554",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "d713c96520d969261f8911f8fbbe3fe66dddf9bc",
+      "harnessSha256": "7F6D12C45797C66FD4F9643F12EBA6E5CD20C94609E419D89BD03708781DF78C",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload"
+      },
+      "desktop": {
+        "sha256": "79A617870B46300546E6A3007FD02E04F3FD8F9E1CFF232695B22E6637823336",
+        "assemblySha256": "9F7D599572EE642AC7C3A8772C2D99768A2504A4962E17F3FFE3C4D30F1FB3D7",
+        "version": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701",
+        "override": false
+      },
+      "finishedUtc": "2026-11-13T02:07:55.5805147+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-WPF-014-1-20261113-070554",
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 4,
+      "lanes": {
+        "presentation.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "presentation.coverage",
+              "passed": true,
+              "detail": "25/25 valid samples",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.latency",
+              "passed": false,
+              "detail": "p95=679.56 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.throughput": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.throughput",
+              "passed": false,
+              "detail": "viewport-delivered FPS=23.09, see workload evidence before evaluating the release gate",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-070554",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 3071,
+          "sha256": "12e8fae5da6c72b5af8cbe92e8aeefb61bd7e44f9aa5a72c9e232b894d6f1448"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 34219,
+          "sha256": "2dc05f5fca22f56de4775efa03a30a0582a6e77ba7424b2be7ff40d6d4cbf70d"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 188686,
+          "sha256": "cb68e27bc105cca041261baca80536062d2ac742862750332a0fea936c56bde7"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 3832,
+          "sha256": "db6b3c3c61a94e43a664a5f3ed83bd889b0f385f9426034f37aff209ede45d9c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1933,
+          "sha256": "e428d188d99fbc45dda76e98a0c3767c0b273d8a76a3db81d4db52bc0afc1295"
+        }
+      ]
+    },
+    {
+      "kind": "wpf",
+      "runId": "20261113-070756",
+      "rawArtifactRoot": "artifacts/phase3/wpf/20261113-070756",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "d713c96520d969261f8911f8fbbe3fe66dddf9bc",
+      "harnessSha256": "7F6D12C45797C66FD4F9643F12EBA6E5CD20C94609E419D89BD03708781DF78C",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload"
+      },
+      "desktop": {
+        "sha256": "79A617870B46300546E6A3007FD02E04F3FD8F9E1CFF232695B22E6637823336",
+        "assemblySha256": "9F7D599572EE642AC7C3A8772C2D99768A2504A4962E17F3FFE3C4D30F1FB3D7",
+        "version": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701",
+        "override": false
+      },
+      "finishedUtc": "2026-11-13T02:12:11.2700280+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-WPF-014-2-20261113-070755",
+      "freeBytesAtStart": null,
+      "failedChecks": 2,
+      "totalChecks": 5,
+      "lanes": {
+        "presentation.coverage": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "presentation.coverage",
+              "passed": true,
+              "detail": "25/25 valid samples",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.latency": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.latency",
+              "passed": false,
+              "detail": "p95=1145.69 ms",
+              "atUtc": null
+            }
+          ]
+        },
+        "presentation.throughput": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "presentation.throughput",
+              "passed": false,
+              "detail": "viewport-delivered FPS=15.49, see workload evidence before evaluating the release gate",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.peer": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.peer",
+              "passed": true,
+              "detail": "wpf-peer-20261113-070756",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup",
+              "passed": true,
+              "detail": "wpf-latency-20261113-070756",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "desktop.log",
+          "bytes": 3563,
+          "sha256": "fc121ccb57c55a2dd47af4109efd4e6356ab5c2e456dd8f7ffd905931ef72b7f"
+        },
+        {
+          "name": "guest-framestats.txt",
+          "bytes": 36194,
+          "sha256": "94ed843e12d79b8c9458fc2d59559c0390c9d901da8374c171118e65bfe19a66"
+        },
+        {
+          "name": "guest-identities.json",
+          "bytes": 1256,
+          "sha256": "738474280c2cc6a31a31b035adbf5a98b199b2433186b50d3c99ed38c7d0fd6f"
+        },
+        {
+          "name": "presentation.json",
+          "bytes": 196410,
+          "sha256": "3f9e62cf1fc7ff9ca7008629c9776bf202bb509523d7e4cba6aa78240b2961a6"
+        },
+        {
+          "name": "presentation.json.partial",
+          "bytes": 3845,
+          "sha256": "b66bb11299d9971da0726b7d9cbff050204efe10ad93c700d56bfa4ce2a3df4d"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 2131,
+          "sha256": "659335f50cceb5cb169e5d5cc0ae6e4b562a2c4c0bc2ffac83a75e34c9f9c946"
         }
       ]
     },

@@ -659,6 +659,11 @@ All tasks start open. Check off an implementation task after its scoped verifica
   there is passing evidence for all nine runtime lanes on exact 0.1.4.
   ADB showed no attached devices after cleanup. Quiet-host WPF and the
   30-cycle leak verification are next on the same candidate.
+- Exact 0.1.4 WPF quiet-host run `20261113-070554` recorded 25/25 valid
+  single-guest trials, p50/p95 583.45/679.56 ms, and 23.09 delivered FPS.
+  Two-guest run `20261113-070756` recorded 25/25, p50/p95 882.98/1,145.69 ms,
+  and 15.49 delivered FPS. Both cleaned up. Both target misses are open.
+  The 30-cycle test is running at `artifacts/phase3/bench/20261113-071213`.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

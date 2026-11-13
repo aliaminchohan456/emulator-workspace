@@ -2,7 +2,7 @@
 
 Raw evidence is under `artifacts/phase3/bench/` and `artifacts/phase3/wpf/`.
 
-Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`.
+Runs used for this report: `20261112-173642`, `20261112-190940`, `20261112-210012`, `20261112-205244`, `20261112-213629`, `20261113-020314`, `20261113-023049`, `20261113-015728`, `20261113-025638`, `20261113-040149`, `20261113-040351`, `20261113-070554`, `20261113-070756`.
 
 Guest profile: AOSP API 35 x86_64 revision 2, headless host GPU on WHPX.
 
@@ -132,6 +132,36 @@ The endpoint is the WPF composition callback after the changed frame became avai
 | Viewport throughput | 15.82 FPS at 540 × 1200 |
 | Dropped sequences | 349 |
 | Desktop dispatch to supervisor reply p95 | 891.31 ms |
+
+### Run `20261113-070554` (1 guest(s))
+
+This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701` with the hash-verified CLI, supervisor and fixture from `5448d15df6c2fdbe67ca5c35532509391420e701`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 25 / 25 |
+| Dispatch to composition p50 / p95 | 583.45 / 679.56 ms |
+| Frame availability to composition p95 | 1.88 ms |
+| Supervisor frame arrival interval p95 | 56.09 ms |
+| Viewport throughput | 23.09 FPS at 540 × 1200 |
+| Dropped sequences | 329 |
+| Desktop dispatch to supervisor reply p95 | 533.56 ms |
+
+### Run `20261113-070756` (2 guest(s))
+
+This run used desktop `0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701` with the hash-verified CLI, supervisor and fixture from `5448d15df6c2fdbe67ca5c35532509391420e701`.
+The endpoint is the WPF composition callback after the changed frame became available.
+
+| Metric | Result |
+| --- | --- |
+| Valid trials | 25 / 25 |
+| Dispatch to composition p50 / p95 | 882.98 / 1145.69 ms |
+| Frame availability to composition p95 | 2.53 ms |
+| Supervisor frame arrival interval p95 | 80.72 ms |
+| Viewport throughput | 15.49 FPS at 540 × 1200 |
+| Dropped sequences | 454 |
+| Desktop dispatch to supervisor reply p95 | 846.15 ms |
 
 ## Matched cold-boot comparison
 

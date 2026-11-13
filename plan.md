@@ -370,7 +370,9 @@ The packaged 0.1.2 viewport delivered 21.82 FPS and 789.56 ms p95 on
 25 valid single-guest trials. The separately measured controller RGB stream
 delivered 49.08 FPS and guest H.264 delivered 21.12 FPS. The next desktop
 build coalesces frames before UI dispatch and excludes stale subscriptions.
-The 0.1.3 payload delivered 27.04 FPS and 719.67 ms p95 with one guest,
-and 15.82 FPS and 1,147.53 ms p95 with two. All 50 trials were valid and
-the three test guests were removed. Both performance gates remain open.
+The exact 0.1.4 payload delivered 23.09 FPS and 679.56 ms p95 with one
+guest, and 15.49 FPS and 1,145.69 ms p95 with two. All 50 trials were
+valid and the three test guests were removed. Both performance gates
+remain open. A separate 30-cycle lifecycle run is checking the shutdown
+and port cleanup fixes.
 [Benchmark evidence](docs/benchmark.md)
