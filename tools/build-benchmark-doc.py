@@ -182,6 +182,10 @@ def main() -> int:
         candidate = summary.get("candidate") or {}
         acknowledged = [sample["tapAcknowledgedMs"] for sample in probe["samples"]
                         if not sample["timeout"] and "tapAcknowledgedMs" in sample]
+        controller_setup = [sample["controllerSetupMs"] for sample in probe["samples"]
+                            if not sample["timeout"] and sample.get("controllerSetupMs") is not None]
+        controller_tap = [sample["controllerTapMs"] for sample in probe["samples"]
+                          if not sample["timeout"] and sample.get("controllerTapMs") is not None]
         lines += [
             "",
             f"### Run `{summary['runId']}` ({summary.get('guestCount', 1)} guest(s))",
@@ -202,6 +206,10 @@ def main() -> int:
         ]
         if acknowledged:
             lines.append(f"| Desktop dispatch to supervisor reply p95 | {p95(acknowledged)} ms |")
+        if controller_setup:
+            lines.append(f"| Supervisor controller setup p95 | {p95(controller_setup)} ms |")
+        if controller_tap:
+            lines.append(f"| Supervisor controller tap p95 | {p95(controller_tap)} ms |")
         if (directory / "rgb-capture.json").is_file() and (directory / "encoded-capture.json").is_file():
             rgb = load(directory / "rgb-capture.json")
             encoded = load(directory / "encoded-capture.json")

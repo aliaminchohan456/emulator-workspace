@@ -636,6 +636,7 @@ try {
         $timer = [System.Diagnostics.Stopwatch]::StartNew()
         Invoke-Ws @("start", "--name", $guest, "--root", $Root) | Out-Null
         $ready = Invoke-Ws @("wait", "--name", $guest, "--timeout", "600", "--root", $Root) -AllowFailure
+        $readyReplySeconds = $timer.Elapsed.TotalSeconds
         $readyJson = Parse-Json $ready.Text
         $elapsed = ((Get-Date) - $started).TotalSeconds
         $reported = 0
@@ -658,11 +659,15 @@ try {
             if (-not $focus) {
                 throw "Managed cold boot trial $sample has no foreground window."
             }
-            $reported = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+            # wsctl wait returns when the supervisor has observed boot and a
+            # focused window. The independent post-check proves that endpoint
+            # and the exact transport after the timed reply.
+            $reported = [Math]::Round($readyReplySeconds, 2)
             $elapsed = $reported
             [pscustomobject]@{
                 trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId; focus = $focus
                 supervisorInteractiveSeconds = $readyJson.launchedToInteractiveSeconds
+                verificationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds - $readyReplySeconds, 2)
                 bootCompletedUtc = $readyJson.bootCompletedUtc; interactiveUtc = $readyJson.interactiveUtc
             } |
                 ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
