@@ -406,10 +406,12 @@ Unsigned 0.1.5 was packaged from `a062459`, with its MSI and all 426
 payload files verified against the release record and inventory. It
 includes the setup, frame, controller, readiness and fixture changes.
 The exact artifact and its pending checks are in [task.md](task.md).
-The 0.1.4 soak continues on its isolated root and will be verified through
-cleanup before any new guest workload starts.
+The intermediate 0.1.4 soak was stopped at the user's direction after
+64 successful paired probes over 4,793.44 seconds. Both owned guests
+and the scoped supervisor were cleaned up. Keep the partial run and
+use short diagnostics for the next changes.
 
 Use short functional and timing checks to evaluate intermediate changes.
 Schedule another full four-hour soak only after selecting the release
 candidate and passing its shorter checks. Preserve the completed 0.1.1
-run and the ongoing 0.1.4 run as evidence for their exact payloads.
+run and the partial 0.1.4 run as evidence for their exact payloads.

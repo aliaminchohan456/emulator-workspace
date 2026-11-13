@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T04:40:08.3565662Z",
-  "headCommit": "7e0459e",
-  "trackedWorkTree": "M docs/release-notes.md\n M task.md",
+  "latestFinishedUtc": "2026-11-13T09:45:53.4725721+05:00",
+  "headCommit": "2899b34",
+  "trackedWorkTree": "M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -42140,6 +42140,137 @@
           "name": "transcript.txt",
           "bytes": 2248,
           "sha256": "0b7fd3712e02cbf7b237aca082ec79bcf735480b8485951abe45bd4d0f79eda2"
+        }
+      ]
+    },
+    {
+      "kind": "bench",
+      "runId": "20261113-081953",
+      "rawArtifactRoot": "artifacts/phase3/bench/20261113-081953",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "435cd31347bbc23ed0f88ae65169ac3e1ea37f1b",
+      "harnessSha256": null,
+      "candidate": {
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "signingStatus": "unsigned"
+      },
+      "finishedUtc": "2026-11-13T09:45:53.4725721+05:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": "D:/WS-Soak-014-20261113-081951",
+      "freeBytesAtStart": null,
+      "failedChecks": 3,
+      "totalChecks": 6,
+      "lanes": {
+        "soak.duration": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "soak.duration",
+              "passed": false,
+              "detail": "Stopped at user direction after 4793.44s and 64 successful paired probes",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.bench-a8d058e25881": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "cleanup.bench-a8d058e25881",
+              "passed": false,
+              "detail": "Scoped stop failed",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.bench2-5a4b7bbe27f8": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.bench2-5a4b7bbe27f8",
+              "passed": true,
+              "detail": "Owned launcher and QEMU exited and test profile removed",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.transports-and-ports": {
+          "passed": 0,
+          "failed": 1,
+          "checks": [
+            {
+              "check": "cleanup.transports-and-ports",
+              "passed": false,
+              "detail": "owned ADB transports=1, reserved listeners=5",
+              "atUtc": null
+            }
+          ]
+        },
+        "cleanup.supervisor-stop": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cleanup.supervisor-stop",
+              "passed": true,
+              "detail": "Scoped supervisor exit verified from its log",
+              "atUtc": null
+            }
+          ]
+        },
+        "recovery.cleanup": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "recovery.cleanup",
+              "passed": true,
+              "detail": "Retry removed first guest; owned processes=0, listeners=0, profiles=0, empty ADB=True",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "adb-after-cancel.txt",
+          "bytes": 154,
+          "sha256": "6c662b1d30926d868638000dc10a70aa2bcf3b89d52b5ef0cb53349d0f29298b"
+        },
+        {
+          "name": "host.json",
+          "bytes": 836,
+          "sha256": "e538f370419e8abf1ff4acc8c8cab738cb024b04efb2a6be92b3b4829625b729"
+        },
+        {
+          "name": "run-context.json",
+          "bytes": 729,
+          "sha256": "0718765d38e38af218b395781743d62bbb32a2f6bf88fd4feba9984729878513"
+        },
+        {
+          "name": "soak.jsonl",
+          "bytes": 181431,
+          "sha256": "f421c64dc23d77c5c8c0cb1eb8c630fabd4d895f9906a50b903c28fd5ac20b6c"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 1534,
+          "sha256": "8826694bfaf43cc4065d48d41e6c02b7f70d40732495b48d93e6da8ecf75735d"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 2807,
+          "sha256": "338a37deccb57653beda083668734b1139a0e6fddf004b14a0324710c9929716"
         }
       ]
     },
