@@ -25,7 +25,8 @@ param(
     [string]$CandidateRelease = "",
     [string]$CandidatePayload = "",
     [string]$DesktopExecutable = "",
-    [string]$SupervisorExecutable = ""
+    [string]$SupervisorExecutable = "",
+    [string]$DiagnosticFixture = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,7 +55,7 @@ function Invoke-Wsctl([string[]]$arguments, [string]$guestName = $Name, [string]
 }
 
 function Install-ProbeFixture([string]$guestName, [string]$guestRoot) {
-    $fixture = Join-Path $verified.payload "ws-sample.apk"
+    $fixture = if ($DiagnosticFixture) { $DiagnosticFixture } else { Join-Path $verified.payload "ws-sample.apk" }
     $approved = Join-Path $guestRoot "apps/ws-sample.apk"
     New-Item -ItemType Directory -Force (Split-Path -Parent $approved) | Out-Null
     Copy-Item -LiteralPath $fixture -Destination $approved
@@ -126,6 +127,9 @@ function Measure-EncodedCapture([string]$adb, [string]$transportId) {
 }
 
 try {
+    if ($DiagnosticFixture -and (-not $Diagnostic -or -not ($CandidateRelease -and $CandidatePayload) -or $GuestCount -ne 1)) {
+        throw "A fixture override requires a single-guest diagnostic with verified candidate inputs."
+    }
     if ($GuestCount -eq 2 -and -not ($CandidateRelease -and $CandidatePayload)) {
         throw "The two-guest probe requires the verified candidate inputs."
     }
@@ -152,6 +156,11 @@ try {
                     @{ name = $_; sha256 = (Get-FileHash -LiteralPath (Join-Path $supervisorDirectory $_) -ErrorAction Stop).Hash }
                 })
             }
+        }
+        if ($DiagnosticFixture) {
+            $DiagnosticFixture = (Resolve-Path -LiteralPath $DiagnosticFixture).ProviderPath
+            $fixtureOverrideSha256 = (Get-FileHash -LiteralPath $DiagnosticFixture).Hash
+            $candidate.evidenceScope = @("CLI"; if (-not $DesktopExecutable) { "desktop" }; if (-not $SupervisorExecutable) { "supervisor" }) -join ", "
         }
         if (Get-Process qemu-system-x86_64-headless, qemu-system-x86_64 -ErrorAction SilentlyContinue) {
             throw "Run the quiet-host WPF probe after other emulator guests have stopped."
@@ -247,6 +256,28 @@ try {
     if ($afterIdentity.identity -ne $primaryIdentity.identity) { throw "The measured guest identity changed." }
     $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
     $adb = Join-Path $sdk 'platform-tools/adb.exe'
+    if ($DiagnosticFixture) {
+        $guestLog = & $adb -t $primaryIdentity.transportId logcat -d -s 'WS_SAMPLE:I' '*:S'
+        if ($LASTEXITCODE) { throw "Could not read the fixture draw markers." }
+        $markers = @($guestLog | Where-Object { $_ -match '\bTAP(?:_DRAW)? index=\d+.*\buptimeMs=\d+' })
+        $markers | Set-Content -LiteralPath (Join-Path $out "guest-tap-draw.txt") -Encoding UTF8
+        $touchTimes = @{}
+        $pairs = @(foreach ($line in $markers) {
+            if ($line -match '\bTAP index=(\d+) .*uptimeMs=(\d+)') {
+                $touchTimes[[int]$Matches[1]] = [long]$Matches[2]
+            } elseif ($line -match '\bTAP_DRAW index=(\d+) uptimeMs=(\d+)') {
+                $index = [int]$Matches[1]
+                if ($touchTimes.ContainsKey($index)) {
+                    [pscustomobject]@{ index = $index; touchToDrawMs = [long]$Matches[2] - $touchTimes[$index] }
+                    $touchTimes.Remove($index)
+                }
+            }
+        })
+        ConvertTo-Json -InputObject $pairs | Set-Content -LiteralPath (Join-Path $out "guest-tap-draw.json") -Encoding UTF8
+        $receivedSamples = @($result.samples | Where-Object { $null -ne $_.changedFrameReceivedMs -and $_.changedFrameReceivedMs -ge 0 })
+        Check "diagnostic.guest-draw" ($pairs.Count -eq $Count -and $receivedSamples.Count -eq $Count -and
+            @($pairs | Where-Object { $_.touchToDrawMs -lt 0 }).Count -eq 0) "draw pairs=$($pairs.Count), changed-frame receipt timings=$($receivedSamples.Count)"
+    }
     $gfx = & $adb -t $primaryIdentity.transportId shell dumpsys -t 10 gfxinfo $package framestats
     if ($LASTEXITCODE -ne 0 -or -not ($gfx -match '---PROFILEDATA---')) {
         throw "The measured guest did not return gfxinfo framestats."
@@ -310,6 +341,7 @@ finally {
         desktopVersion = $desktopVersion
         desktopOverride = [bool]$DesktopExecutable
         supervisorOverride = $supervisorOverride
+        fixtureOverrideSha256 = $fixtureOverrideSha256
         checks = $checks.ToArray()
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $out "summary.json") -Encoding UTF8
     Write-Host "Evidence: $out"

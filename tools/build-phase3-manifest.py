@@ -144,6 +144,7 @@ def collect(directory: pathlib.Path, kind: str, repo: pathlib.Path, harness_comm
         "harnessCommit": harness_commit,
         "harnessSha256": benchmark.get("harnessSha256") or summary.get("harnessSha256"),
         "candidate": candidate,
+        **({"fixtureOverrideSha256": summary["fixtureOverrideSha256"]} if summary.get("fixtureOverrideSha256") else {}),
         **({"supervisorOverride": summary["supervisorOverride"]} if summary.get("supervisorOverride") else {}),
         **({"rawControl": benchmark["rawControl"]} if benchmark.get("rawControl") else {}),
         **({"desktop": {"sha256": summary["desktopSha256"], "assemblySha256": summary.get("desktopAssemblySha256"),

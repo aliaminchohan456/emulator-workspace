@@ -79,6 +79,7 @@ public partial class MainWindow : Window
                     ["controllerSetupMs"] = latency.ControllerSetupMs,
                     ["controllerTapMs"] = latency.ControllerTapMs,
                     ["supervisorFrameWriteMs"] = latency.SupervisorFrameWriteMs,
+                    ["changedFrameReceivedMs"] = latency.ChangedFrameReceivedMs,
                     ["frameDecodeAndDispatchMs"] = latency.FrameDecodeAndDispatchMs,
                     ["timeout"] = false,
                 });

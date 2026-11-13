@@ -918,6 +918,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 probe.Completion.TrySetResult(new LatencyProbeSample(frameMs, probe.Clock.Elapsed.TotalMilliseconds)
                 {
                     SupervisorFrameWriteMs = probe.SupervisorFrameWriteMs,
+                    ChangedFrameReceivedMs = probe.ChangedFrameReceivedMs,
                     FrameDecodeAndDispatchMs = probe.FrameDecodeAndDispatchMs,
                 });
             }
@@ -926,6 +927,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         CompositionTarget.Rendering += OnRendering;
         try
         {
+            probe.DispatchUtc = DateTimeOffset.UtcNow;
             probe.Clock.Restart();
             var response = await RequestAsync(
                 OperationNames.InputTap,
@@ -1557,6 +1559,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             && ProbePixel(ReadProbeColumn(bitmap, probe.Row, 1), 0) == probe.ExpectedColor)
         {
             probe.FrameAvailableMs = probe.Clock.Elapsed.TotalMilliseconds;
+            if (source.ReceivedUtc is { } receivedUtc)
+            {
+                probe.ChangedFrameReceivedMs = (receivedUtc - probe.DispatchUtc).TotalMilliseconds;
+            }
             if (source.ReceivedUtc is { } frameReceived && source.WrittenUtc is { } frameWritten)
             {
                 probe.SupervisorFrameWriteMs = (frameWritten - frameReceived).TotalMilliseconds;
@@ -1800,6 +1806,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public double? ControllerSetupMs { get; init; }
         public double? ControllerTapMs { get; init; }
         public double? SupervisorFrameWriteMs { get; init; }
+        public double? ChangedFrameReceivedMs { get; init; }
         public double? FrameDecodeAndDispatchMs { get; init; }
     }
 
@@ -1809,6 +1816,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public Stopwatch Clock { get; } = Stopwatch.StartNew();
         public double? FrameAvailableMs { get; set; }
         public double? SupervisorFrameWriteMs { get; set; }
+        public DateTimeOffset DispatchUtc { get; set; }
+        public double? ChangedFrameReceivedMs { get; set; }
         public double? FrameDecodeAndDispatchMs { get; set; }
     }
 

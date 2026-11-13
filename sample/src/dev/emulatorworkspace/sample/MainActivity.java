@@ -248,6 +248,7 @@ public final class MainActivity extends Activity {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
         private int taps;
+        private int lastDrawnTap;
         private long frames;
         private long fpsWindowStart = SystemClock.uptimeMillis();
         private int fps;
@@ -315,6 +316,10 @@ public final class MainActivity extends Activity {
             RectF marker = new RectF(cx - side / 2f, cy - side / 2f, cx + side / 2f, cy + side / 2f);
             paint.setColor(PALETTE[taps % PALETTE.length]);
             canvas.drawRoundRect(marker, side * 0.08f, side * 0.08f, paint);
+            if (lastDrawnTap != taps) {
+                lastDrawnTap = taps;
+                Log.i(TAG, "TAP_DRAW index=" + taps + " uptimeMs=" + SystemClock.uptimeMillis());
+            }
 
             float sweep = width * 0.70f;
             float x = width * 0.15f + sweep * (phase < 0.5f ? phase * 2f : (1f - phase) * 2f);
