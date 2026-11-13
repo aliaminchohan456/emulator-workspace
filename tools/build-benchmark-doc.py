@@ -204,6 +204,8 @@ def main() -> int:
             f"{probe['deliveredWidth']} × {probe['deliveredHeight']} |",
             f"| Dropped sequences | {probe['dropped']} |",
         ]
+        if summary.get("gpu"):
+            lines.append(f"| Configured emulator GPU mode | `{summary['gpu']}` |")
         if acknowledged:
             lines.append(f"| Desktop dispatch to supervisor reply p95 | {p95(acknowledged)} ms |")
         if controller_setup:

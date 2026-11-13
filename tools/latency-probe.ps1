@@ -174,6 +174,11 @@ try {
     if (-not $primaryIdentity.transportUsable -or $primaryIdentity.transportId -notmatch '^\d+$') {
         throw "The foreground workload has no usable managed ADB transport."
     }
+    $primaryStatus = Invoke-Wsctl @("status", "--json") | ConvertFrom-Json
+    $effectiveGpu = $primaryStatus.gpu
+    if ($Gpu -and $effectiveGpu -ne $Gpu) {
+        throw "The active guest reports GPU '$effectiveGpu', expected '$Gpu'."
+    }
 
     if ($GuestCount -eq 2) {
         $peerRoot = "$Root-peer"
@@ -279,6 +284,7 @@ finally {
         candidate = $candidate
         root = $Root
         guestCount = $GuestCount
+        gpu = $effectiveGpu
         desktopSha256 = $desktopSha256
         desktopAssemblySha256 = $desktopAssemblySha256
         desktopVersion = $desktopVersion
