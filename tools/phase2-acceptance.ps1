@@ -420,7 +420,10 @@ try {
         }
         Set-Content (Join-Path $out "mcp-workflow.txt") $mcpOutText -Encoding UTF8
         $mcpSummary = Parse-Json (($mcpOutText -split "`n" | Where-Object { $_ -match '^\{' } | Select-Object -Last 1))
-        Add-Check "mcp.workflow" ($mcpCode -eq 0 -and $mcpSummary.login -eq $true -and (Test-Path (Join-Path $mcpOut "mcp-transcript.json"))) $mcpOutText.Trim()
+        Add-Check "mcp.workflow" ($mcpCode -eq 0 -and $mcpSummary.login -eq $true -and
+            $mcpSummary.snapshotSaved -eq "mcp-baseline" -and $mcpSummary.snapshotRestored -eq "mcp-baseline" -and
+            $mcpSummary.snapshotRecovery -in @("restored", "cold_boot") -and
+            (Test-Path (Join-Path $mcpOut "mcp-transcript.json"))) $mcpOutText.Trim()
 
         Push-Location (Join-Path $repo "clients\mcp-python")
         try {

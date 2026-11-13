@@ -633,10 +633,16 @@ All tasks start open. Check off an implementation task after its scoped verifica
   nested Phase 2 run `20261113-061917` recorded four failures after the
   TypeScript MCP client's 60 s request deadline, including missing duplicate
   selectors. Preserve those failures and rerun the paired lane.
-- Installer run `20261113-063652` is exercising the exact 0.1.4 MSI with
-  0.1.3 as its predecessor. The same shell then runs Root Lab, import,
+- Installer run `20261113-063652` passed 22/22 on the exact 0.1.4 MSI
+  with 0.1.3 as predecessor. The follow-on suite is
+  `artifacts/phase3/candidate/20261113-063943`, testing Root Lab, import,
   developer tools, WPF click-through and both Play profiles under
   `D:/WS-Candidate-014-Finish-*` with the verified 0.1.4 stage.
+- The TypeScript MCP acceptance client now records the failing tool and
+  partial transcript on timeout. It gives only `snapshot_restore` a 540 s
+  deadline to cover the supervisor's bounded cold fallback, and requires
+  a matching saved/restored tag and an explicit recovery outcome. Re-run
+  the paired Phase 3 lane after `20261113-063943` completes.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

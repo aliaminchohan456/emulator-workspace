@@ -43,7 +43,15 @@ const client = new Client(
 
 async function call(name, args) {
   const started = new Date().toISOString();
-  const result = await client.callTool({ name, arguments: args ?? {} });
+  const timeout = name === "snapshot_restore" ? 540_000 : 60_000;
+  let result;
+  try {
+    result = await client.callTool({ name, arguments: args ?? {} }, undefined, { timeout });
+  } catch (error) {
+    transcript.calls.push({ tool: name, at: started, error: error.message });
+    fs.writeFileSync(path.join(outDir, "mcp-transcript.json"), JSON.stringify(transcript, null, 2));
+    throw new Error(`${name} failed: ${error.message}`, { cause: error });
+  }
   const text = (result.content ?? [])
     .filter((item) => item.type === "text")
     .map((item) => item.text)
@@ -102,6 +110,9 @@ if (!assert.parsed.pass) throw new Error("login did not reach WELCOME: " + JSON.
 const logs = await call("logs_read", { lines: 200, contains: "LOGIN_RESULT" });
 const artifact = await call("artifact_read", { artifactId: shot.parsed.artifactId });
 const saved = await call("snapshot_save", { tag: "mcp-baseline" });
+if (saved.isError || saved.parsed.tag !== "mcp-baseline") {
+  throw new Error("snapshot_save did not save the requested baseline");
+}
 
 // Destructive restore requires an operator-issued single-use approval code.
 const wsctl = process.env.WS_WSCTL;
@@ -113,6 +124,10 @@ const approvalJson = execFileSync(wsctl, [
 ], { encoding: "utf8" });
 const approval = JSON.parse(approvalJson).code;
 const restored = await call("snapshot_restore", { tag: "mcp-baseline", approval });
+if (restored.isError || restored.parsed.tag !== "mcp-baseline" ||
+    !["restored", "cold_boot"].includes(restored.parsed.recovery)) {
+  throw new Error("snapshot_restore did not return a successful recovery result");
+}
 
 transcript.finishedUtc = new Date().toISOString();
 transcript.summary = {
@@ -124,6 +139,7 @@ transcript.summary = {
   artifactBytes: Buffer.from(artifact.parsed.base64 ?? "", "base64").length,
   snapshotSaved: saved.parsed.tag,
   snapshotRestored: restored.parsed.tag ?? null,
+  snapshotRecovery: restored.parsed.recovery,
 };
 fs.writeFileSync(path.join(outDir, "mcp-transcript.json"), JSON.stringify(transcript, null, 2));
 console.log(JSON.stringify(transcript.summary));
