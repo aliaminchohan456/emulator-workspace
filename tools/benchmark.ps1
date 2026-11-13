@@ -281,6 +281,16 @@ function Get-GuestIdentity([string]$name) {
     return $identity
 }
 
+function Get-ColdBootFocus($identity) {
+    try {
+        $state = Invoke-GuestAdb $identity @("shell", 'boot=$(getprop sys.boot_completed); echo "$boot"; [ "$boot" = 1 ] && dumpsys -t 5 window') 8000
+        if (($state -split '\r?\n', 2)[0].Trim() -eq "1") {
+            return [regex]::Match($state, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
+        }
+    }
+    catch { return $null }
+}
+
 function Get-RawEngineChildren($launcher, [datetime]$started, [string]$avdName) {
     $qemu = Join-Path $sdk "emulator/qemu/windows-x86_64/qemu-system-x86_64-headless.exe"
     $filter = "ParentProcessId=$($launcher.Id) AND Name='qemu-system-x86_64-headless.exe'"
@@ -390,14 +400,12 @@ function Measure-RawBoot($profile, [int]$sample) {
                 $loopback = @($listeners | Where-Object LocalAddress -in @('127.0.0.1', '::1'))
                 if (@($ports | Where-Object { $_ -notin $loopback.LocalPort }).Count -eq 0) {
                     $id = [pscustomobject]@{ name = $profile.name; transportId = $transport.Groups[1].Value }
-                    if ((Invoke-GuestAdb $id @("shell", "getprop", "sys.boot_completed")) -eq "1") {
-                        $windows = Invoke-GuestAdb $id @("shell", "dumpsys", "window")
-                        if ($windows -match '(?m)^\s*mCurrentFocus=Window\{') {
-                            return [pscustomobject]@{
-                                trial = $sample; arm = "raw"; seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
-                                launcherPid = $launcher.Id; qemuPids = @($owned.Id)
-                                transportId = $id.transportId; arguments = $info.Arguments
-                            }
+                    $focus = Get-ColdBootFocus $id
+                    if ($focus) {
+                        return [pscustomobject]@{
+                            trial = $sample; arm = "raw"; seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+                            launcherPid = $launcher.Id; qemuPids = @($owned.Id)
+                            transportId = $id.transportId; arguments = $info.Arguments; focus = $focus
                         }
                     }
                 }
@@ -643,8 +651,7 @@ try {
             $target = Get-GuestIdentity $guest
             $focus = $null
             do {
-                $windows = Invoke-GuestAdb $target @("shell", "dumpsys", "window") 20000
-                $focus = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=(Window\{[^\r\n]+)').Groups[1].Value
+                $focus = Get-ColdBootFocus $target
                 if ($focus) { break }
                 Start-Sleep -Milliseconds 700
             } while ($timer.Elapsed.TotalSeconds -lt 600)
@@ -653,7 +660,11 @@ try {
             }
             $reported = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
             $elapsed = $reported
-            [pscustomobject]@{ trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId; focus = $focus } |
+            [pscustomobject]@{
+                trial = $sample; arm = "managed"; seconds = $reported; transportId = $target.transportId; focus = $focus
+                supervisorInteractiveSeconds = $readyJson.launchedToInteractiveSeconds
+                bootCompletedUtc = $readyJson.bootCompletedUtc; interactiveUtc = $readyJson.interactiveUtc
+            } |
                 ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $out "cold-boot.jsonl") -Encoding UTF8
         }
         if ($reported -gt 0) { [void]$bootSamples.Add($reported) }
