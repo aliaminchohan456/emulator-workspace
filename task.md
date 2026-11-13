@@ -761,10 +761,14 @@ All tasks start open. Check off an implementation task after its scoped verifica
   dispatch-to-changed-frame receipt was 277–362 ms and viewport delivery
   was 15.91 FPS. The host GPU delivered 183–232 ms and 27.43 FPS.
   Both guests were removed. Keep the host renderer as the default.
-  Next, expose a diagnostic-only capture-size override in
-  `tools/latency-probe.ps1` and compare five trials at 270 × 600 against
-  the existing 540 × 1200 host run. Keep guest resolution fixed and verify
-  marker and input coordinates in both runs.
+- The 270 × 600 host diagnostic `20261113-101158` passed five
+  marker trials with the guest still at 1080 × 2400. Guest tap
+  coordinates moved one pixel on each axis (498,446 to 499,445).
+  Warm changed-frame receipt fell from 183–232 to 118–129 ms,
+  median composition fell from 232.91 to 166.12 ms, and throughput
+  rose from 27.43 to 37.28 FPS. Cleanup passed. The 100 ms and 60 FPS
+  gates remain open. Next, compare controller RGB and RGBA at 270 × 600
+  with the existing `wsctl capture-bench` on one disposable guest.
 - Phase 3 paired rerun `20261113-065245` passed 55/55, including the
   nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
   observation rejection, queued takeover, split install, Maestro and
