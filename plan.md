@@ -362,8 +362,9 @@ ANR. The recipe fix and viewport changes are in the separate unsigned
 that launcher-baseline replay also needed to defer fixture verification
 until the recorded launch. The source fix and reserved-port cleanup are
 in 0.1.4. Later source work bounds app foreground waits after restore.
-Run the latest source through both recipe baselines before promoting a
-package. Disconnected reuse remains open.
+The exact 0.1.4 candidate passed both recipe baselines, 22 installer
+checks and all nine runtime lanes across verified reruns. Its final
+performance, stability and disconnected reuse checks remain open.
 
 The packaged 0.1.2 viewport delivered 21.82 FPS and 789.56 ms p95 on
 25 valid single-guest trials. The separately measured controller RGB stream

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestFinishedUtc": "2026-11-13T01:52:13.3939787+00:00",
-  "headCommit": "5d2e88a",
-  "trackedWorkTree": "M task.md",
+  "latestFinishedUtc": "2026-11-13T02:05:25.7110380+00:00",
+  "headCommit": "f2518ca",
+  "trackedWorkTree": "M docs/release-notes.md\n M plan.md\n M task.md",
   "runs": [
     {
       "kind": "phase3",
@@ -57943,6 +57943,2205 @@
           "name": "ui-tree-start.txt",
           "bytes": 4264,
           "sha256": "3659bf93e0c3117828e834f3b705ad6748379b0a76c515f4f7906c997d4c1eed"
+        }
+      ]
+    },
+    {
+      "kind": "candidate",
+      "runId": "20261113-065245",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-065245",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "5d2e88a058b7e2d722809e38c6477b3172c59692",
+      "harnessSha256": "821134829C70F45B50FD530A6852D3C954AAB1FCFBA55B1D9081E0DF6213DECC",
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T02:05:25.7110380+00:00",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": null
+      },
+      "root": null,
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 1,
+      "lanes": {
+        "phase3": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "phase3",
+              "passed": true,
+              "detail": "exit=0, checks=55, failures=0, log=phase3.log",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-065245/adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "7d7dd3936205bd5caeb8a380c1ba465301d44f6bc63468791eb29806b63ab89e"
+        },
+        {
+          "name": "phase3/20261113-065245/adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "7d7dd3936205bd5caeb8a380c1ba465301d44f6bc63468791eb29806b63ab89e"
+        },
+        {
+          "name": "phase3/20261113-065245/adb-identity.json",
+          "bytes": 879,
+          "sha256": "35753e404d19b5df1748d65c341044fab7f217737f4f63eab979a105ccc5fdf3"
+        },
+        {
+          "name": "phase3/20261113-065245/battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "phase3/20261113-065245/battery.json",
+          "bytes": 78,
+          "sha256": "486f22da131bfed27b0ec18a3d989690204550aaf4edbbcafd62f26c257b2f5a"
+        },
+        {
+          "name": "phase3/20261113-065245/bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "ed33c73fcda47784df9ea2fea87abbd8adeb0166ea60e351904e8d44824bcfed"
+        },
+        {
+          "name": "phase3/20261113-065245/bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "phase3/20261113-065245/bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "phase3/20261113-065245/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-065245/cross-guest.json",
+          "bytes": 35,
+          "sha256": "13353b5d422fc90cc71b72e71b6311e08bce5e9c958d727f1333043e346f0e82"
+        },
+        {
+          "name": "phase3/20261113-065245/geo.json",
+          "bytes": 107,
+          "sha256": "72accaf35cad976030e8675c6dc570173d5ad01384cf19f747ce4ff975a75387"
+        },
+        {
+          "name": "phase3/20261113-065245/instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "351585b556569ab5a84b7f5128bf7bdc91776a188fa292b2524d680250dfa1d7"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-duplicate.yaml",
+          "bytes": 182,
+          "sha256": "10d6cb19f38f897130cd0877ea9dc4fab9c0b06b446da731b8ee1e83faf892e8"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/commands.json",
+          "bytes": 3963,
+          "sha256": "2b6625baf898d7b3d59c4b3e0824cdcb7a78d8d414334be57b225176dfadd92d"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 89838,
+          "sha256": "f468f7e4c49f72ac713384f4809033704ccf575056c475ddbbfa9c8434c78688"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/logs/maestro.log",
+          "bytes": 6347,
+          "sha256": "a22404b2637e0f698de47ea93548f8bcc2acbd8744de5fc89b7179b1d44a1628"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/manifest.json",
+          "bytes": 564,
+          "sha256": "9ed3ebe50db28b8558b9bd0592b9be71826bcf0bb69c4ef74af785d75a8dc6c8"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-evidence/.maestro/tests/2026-11-13_070349/maestro.log",
+          "bytes": 8835,
+          "sha256": "f5f11203e533324fc6fe1d98c393e5acbbf7ef961c4122ee19458b8b0efb14a0"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "25c0fd322e8254205b3c36cc3b51530515afdb4566d53851a7655df0240f1136"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "phase3/20261113-065245/maestro-run.txt",
+          "bytes": 245,
+          "sha256": "41f32b7d1b7f1b8701a09d1380550456ee9cec929b596737e82a0eafb843d286"
+        },
+        {
+          "name": "phase3/20261113-065245/malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "phase3/20261113-065245/package-dumpsys.txt",
+          "bytes": 3539,
+          "sha256": "fe8bc1b60a9eb089f513bdcd5ef866b04af9345c497309d5fd30bf8cdee6061d"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-01647787.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-17f4dfdf.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-1ff01446.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-2036352b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-2baf6b58.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-300edf81.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-371566ed.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-397ffc23.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-64a04365.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-66dc1437.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-68456458.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-68a31745.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-7ff724cb.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-8c67f85d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-981ed997.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-9871b55c.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-9a297f18.json",
+          "bytes": 54,
+          "sha256": "7210960d9ab6ef81999956397dea088334c39b87689f472c358a0d18980c5c96"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-a4ef51d0.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-ab8714e7.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-babfac34.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-c8fb56ea.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-d5cb87ef.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-d73f73e9.json",
+          "bytes": 38,
+          "sha256": "6413655e38cc894e54c118a640da867d98b600ad08a3450bdcc975fa7749dc66"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-d92cb1a3.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-daeb46ee.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-e03c86bc.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-e78363b0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-e7b293f3.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-ea070696.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/args-f3ec6e34.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/boot.txt",
+          "bytes": 356,
+          "sha256": "489831f3b306b180a43f4ac16a4c52a38380f321e4822db765de84e172591e72"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/cli-transcript.json",
+          "bytes": 388749,
+          "sha256": "4324bea71dec4d0e43f13d91d23d10cb3c8bc9eb22b9c38c80863d36bd2e61dc"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "82780daa1426641ec88b867401c5f6e104eb463402de640f09adbb06f21e093e"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "39e404e7e3dd912e8d12b1fbde02d00ed26a441b2e8fd5823ebc9e11a1797305"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/mcp/mcp-transcript.json",
+          "bytes": 242358,
+          "sha256": "9cf7545c504618bb42987960055a0caeacac6d72f54469285d6bd5b59fadb51c"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "a4d135e760ed0f3d0faae1d045318f5bc240fdfaa44dc324a9cfa16588cd2cd0"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/mcp-secure.txt",
+          "bytes": 572,
+          "sha256": "d5a349d074bd03376355856d3fb07e1edbaaad08d6d6713e401b380da5f41601"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/mcp-workflow.txt",
+          "bytes": 699,
+          "sha256": "7072f224246b417f509e3ba84ecc5a67e49fd5a704f8fefc7a47ddf3b146cd0f"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/network.json",
+          "bytes": 2069,
+          "sha256": "010449aedf692051200f3176c47cce4602e4de78db2f7971ce198c4f46480218"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/python-mcp.txt",
+          "bytes": 513,
+          "sha256": "85db1bd15abb1829995edf282fb06d8657f954dcc20bcf027a509268a300d131"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/secure-cli.json",
+          "bytes": 251788,
+          "sha256": "b8b0623c5d121f577a659eea467a3ffeabf09fc49cbc6197b0ec04d47972eb00"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/security.json",
+          "bytes": 1081,
+          "sha256": "4b6c1bb4abaf8916608c955143604d64a4fd0b9454416b1e7838488d59235c7e"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/stale-frame.json",
+          "bytes": 52,
+          "sha256": "7960ffc344be82333fe7b4d1474f7f4a444e6a53e28e48d9abe50579202b379b"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/summary.json",
+          "bytes": 12339,
+          "sha256": "a43d49414a2737882bf66ebfe7d90645140abefb59dfedaf8d84325d6dd60ebd"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/transcript.txt",
+          "bytes": 5778,
+          "sha256": "ed780528f7e5c2fa73bcd2b9d675836d2f013e6d4afcd3e9396170a5a96d8872"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/versions.json",
+          "bytes": 486,
+          "sha256": "3018d42aba88217ac14470a1a434c7163e64b8919da47b9d11f636f73ef3d8bf"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2/20261113-065258/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2-acceptance.txt",
+          "bytes": 11232,
+          "sha256": "251dac8bf339f606d1056fe9575e3b6a2dea46e54bfa5ca4940d07985d6d13fe"
+        },
+        {
+          "name": "phase3/20261113-065245/phase2-summary.json",
+          "bytes": 12339,
+          "sha256": "a43d49414a2737882bf66ebfe7d90645140abefb59dfedaf8d84325d6dd60ebd"
+        },
+        {
+          "name": "phase3/20261113-065245/profile-export.json",
+          "bytes": 538,
+          "sha256": "33c067141a69064af4478b6b5743ffaa75b497819a68a7ff47088d69a18b9200"
+        },
+        {
+          "name": "phase3/20261113-065245/profile-import-request.json",
+          "bytes": 928,
+          "sha256": "7e807d63e018ea3fd59f820415b6a50539aaf1b46c74796d2134cda9f2454677"
+        },
+        {
+          "name": "phase3/20261113-065245/race-logcat.txt",
+          "bytes": 994,
+          "sha256": "81cc288ab7e7909b15e7c70ba82ad949a95483fdb551d39bd0ca88837ead0eb5"
+        },
+        {
+          "name": "phase3/20261113-065245/race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "phase3/20261113-065245/race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "phase3/20261113-065245/race-timeline.json",
+          "bytes": 648,
+          "sha256": "adb03bac8ad41ff5472c7da165a3db42446d8ee9ccb1a6d15a83fc0a7cc471e4"
+        },
+        {
+          "name": "phase3/20261113-065245/race-ui.xml",
+          "bytes": 6742,
+          "sha256": "ea21ff7b73dcd30d8e23788930d3b9e3760cedb226be691773d61cc922a08ea9"
+        },
+        {
+          "name": "phase3/20261113-065245/restore.json",
+          "bytes": 63,
+          "sha256": "7137fe53ee433dc0f9386313cbe115d795b8354f8abf4a50b93f6c6f3f48804e"
+        },
+        {
+          "name": "phase3/20261113-065245/snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "7ef17c96cda6620cc54cef8ddba9707080379a8d2dc7f89946069b32b8a7e43c"
+        },
+        {
+          "name": "phase3/20261113-065245/stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "49227294d5bcc047a959ec5b4bddfc5b810192b294f6501cc19f78705b4a90f4"
+        },
+        {
+          "name": "phase3/20261113-065245/summary.json",
+          "bytes": 37045,
+          "sha256": "16eaf07acd04c26da04fd3fb464079eb7561dd7cd6b20c523e030d02a50d8ebf"
+        },
+        {
+          "name": "phase3/20261113-065245/transcript.txt",
+          "bytes": 5090,
+          "sha256": "b8617b489247d8417bb75d6941ed369d7e89e4d2e4105175401d1797593da316"
+        },
+        {
+          "name": "phase3/20261113-065245/versions.json",
+          "bytes": 489,
+          "sha256": "36649127d8f04a19097cd2631119d89b80e34c7961a6e717081c15ec770be96d"
+        },
+        {
+          "name": "phase3.log",
+          "bytes": 11989,
+          "sha256": "0627379fd5dc368e9b563dd85942ca74fbfb5ba32dc9af4e9bc470cae99f58ad"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 861,
+          "sha256": "0a5a5a7afc93a7c20eee9c6278376721b47215f4292e21ee0948c450edd3c8bd"
+        }
+      ]
+    },
+    {
+      "kind": "phase2",
+      "runId": "20261113-065258",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-065245/phase3/20261113-065245/phase2/20261113-065258",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "5d2e88a",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T01:57:38.7478239Z",
+      "pins": {
+        "emulator": null,
+        "image": null,
+        "imageRevision": null,
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-Paired-20261113-065245-phase3",
+      "freeBytesAtStart": null,
+      "failedChecks": 0,
+      "totalChecks": 43,
+      "lanes": {
+        "fixture": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture",
+              "passed": true,
+              "detail": "127.0.0.1:8765 body=65536",
+              "atUtc": null
+            }
+          ]
+        },
+        "build": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "build",
+              "passed": true,
+              "detail": "skipped (-SkipBuild; pre-captured)",
+              "atUtc": null
+            }
+          ]
+        },
+        "boot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "boot",
+              "passed": true,
+              "detail": "serial=emulator-5556",
+              "atUtc": null
+            }
+          ]
+        },
+        "status": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "status",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": null
+            }
+          ]
+        },
+        "fingerprint": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fingerprint",
+              "passed": true,
+              "detail": "Android/sdk_phone64_x86_64/emu64x:15/AE3A.240806.019/12368160:userdebug/test-keys",
+              "atUtc": null
+            }
+          ]
+        },
+        "install": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "install",
+              "passed": true,
+              "detail": "installed d:\\ws-candidate-014-paired-20261113-065245-phase3\\apps\\ws-sample.apk (16787 bytes) on ag-2078bf",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "launch": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "launch",
+              "passed": true,
+              "detail": "launched dev.emulatorworkspace.sample on ag-2078bf (dev.emulatorworkspace.sample/.MainActivity)",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "baseline.snapshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "baseline.snapshot",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-2078bf\",\r\n  \"tag\": \"phase2-boot-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.52,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.screenshot",
+              "passed": true,
+              "detail": "artifact=art-1462f77b6183",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.tree",
+              "passed": true,
+              "detail": "nodes=19",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.login": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.login",
+              "passed": true,
+              "detail": "{\r\n  \"pass\": true,\r\n  \"instance\": \"ag-2078bf\",\r\n  \"text\": \"WELCOME\",\r\n  \"bounds\": \"[42,467][1038,518]\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.logs": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.logs",
+              "passed": true,
+              "detail": "lines=1",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.artifact": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.artifact",
+              "passed": true,
+              "detail": "bytes=132728",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.save": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.save",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-2078bf\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"save\",\r\n  \"seconds\": 3.6,\r\n  \"recovery\": \"none\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore",
+              "passed": true,
+              "detail": "{\r\n  \"name\": \"ag-2078bf\",\r\n  \"tag\": \"phase2-cli-baseline\",\r\n  \"action\": \"load\",\r\n  \"seconds\": 4.15,\r\n  \"recovery\": \"restored\"\r\n}",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.readiness": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.readiness",
+              "passed": true,
+              "detail": "sys.boot_completed=1 after the snapshot load",
+              "atUtc": null
+            }
+          ]
+        },
+        "cli.snapshot.restore.fixture-ready": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "cli.snapshot.restore.fixture-ready",
+              "passed": true,
+              "detail": "the fixture is in the foreground after the restore",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.post-restore": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.post-restore",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-network",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "guest.no-anr-overlay.pre-network": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "guest.no-anr-overlay.pre-network",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.baseline": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.baseline",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.shaped": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.shaped",
+              "passed": true,
+              "detail": "NETWORK TIMEOUT",
+              "atUtc": null
+            }
+          ]
+        },
+        "network.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "network.recovered",
+              "passed": true,
+              "detail": "WELCOME",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.screenshot": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.screenshot",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-2078bf\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.tree": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.tree",
+              "passed": true,
+              "detail": "{\r\n  \"status\": \"secure_window\",\r\n  \"redacted\": true,\r\n  \"secure\": true,\r\n  \"instance\": \"ag-2078bf\",\r\n  \"generation\": 8,\r\n  \"nodes\": [],\r\n  \"message\": \"A FLAG_SE",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.selector": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.selector",
+              "passed": true,
+              "detail": "selector denied",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.cli.recovered": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.cli.recovered",
+              "passed": true,
+              "detail": "capture restored",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-mcp",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "secure.mcp": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "secure.mcp",
+              "passed": true,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-014-Paired-20261113-065245-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.workflow": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "mcp.workflow",
+              "passed": true,
+              "detail": "node.exe : ws-mcp ready root=D:/WS-Candidate-014-Paired-20261113-065245-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance",
+              "atUtc": null
+            }
+          ]
+        },
+        "mcp.python": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "mcp.python",
+              "passed": true,
+              "detail": "py.exe : ws-mcp ready root=D:/WS-Candidate-014-Paired-20261113-065245-phase3 token=paired\r\nAt C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\tools\\phase2-acceptance.p",
+              "atUtc": null
+            }
+          ]
+        },
+        "wpf.agent-sessions": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "wpf.agent-sessions",
+              "passed": true,
+              "detail": "2 sessions, 2 pairings",
+              "atUtc": null
+            }
+          ]
+        },
+        "adb.ready.pre-security": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "adb.ready.pre-security",
+              "passed": true,
+              "detail": "get-state=device",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.unpaired": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.unpaired",
+              "passed": true,
+              "detail": "unauthorized",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.wrong-instance": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.wrong-instance",
+              "passed": true,
+              "detail": "FAILED [wrong_instance] The session is bound to 'ag-2078bf', not 'tpl3'.",
+              "atUtc": null
+            }
+          ]
+        },
+        "stale.bump": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "stale.bump",
+              "passed": true,
+              "detail": "{\r\n  \"instance\": \"ag-2078bf\",\r\n  \"dispatchedUtc\": \"2026-11-13T01:57:24.2289048\\u002B00:00\",\r\n  \"queuedUtc\": \"2026-11-13T01:57:23.9254965\\u002B00:00\",\r\n  \"x\": 54",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.stale-frame": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.stale-frame",
+              "passed": true,
+              "detail": "FAILED [stale_observation] The guest generation changed.",
+              "atUtc": null
+            }
+          ]
+        },
+        "fixture.duplicate-selectors": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture.duplicate-selectors",
+              "passed": true,
+              "detail": "dup_action matches=2",
+              "atUtc": null
+            }
+          ]
+        },
+        "deny.ambiguous": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "deny.ambiguous",
+              "passed": true,
+              "detail": "FAILED [ambiguous_selector] 2 nodes matched; refine the selector.",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.replay": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.replay",
+              "passed": true,
+              "detail": "cached response identical",
+              "atUtc": null
+            }
+          ]
+        },
+        "idempotency.conflict": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "idempotency.conflict",
+              "passed": true,
+              "detail": "FAILED [idempotency_conflict] This idempotency key was used with different arguments.",
+              "atUtc": null
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "args-01647787.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-17f4dfdf.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-1ff01446.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-2036352b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-2baf6b58.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-300edf81.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "args-371566ed.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-397ffc23.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-64a04365.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "args-66dc1437.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "args-68456458.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-68a31745.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "args-7ff724cb.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-8c67f85d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-981ed997.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "args-9871b55c.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "args-9a297f18.json",
+          "bytes": 54,
+          "sha256": "7210960d9ab6ef81999956397dea088334c39b87689f472c358a0d18980c5c96"
+        },
+        {
+          "name": "args-a4ef51d0.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "args-ab8714e7.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-babfac34.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-c8fb56ea.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "args-d5cb87ef.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "args-d73f73e9.json",
+          "bytes": 38,
+          "sha256": "6413655e38cc894e54c118a640da867d98b600ad08a3450bdcc975fa7749dc66"
+        },
+        {
+          "name": "args-d92cb1a3.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "args-daeb46ee.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-e03c86bc.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-e78363b0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "args-e7b293f3.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "args-ea070696.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "args-f3ec6e34.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "boot.txt",
+          "bytes": 356,
+          "sha256": "489831f3b306b180a43f4ac16a4c52a38380f321e4822db765de84e172591e72"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "cli-transcript.json",
+          "bytes": 388749,
+          "sha256": "4324bea71dec4d0e43f13d91d23d10cb3c8bc9eb22b9c38c80863d36bd2e61dc"
+        },
+        {
+          "name": "fixture.jsonl",
+          "bytes": 572,
+          "sha256": "82780daa1426641ec88b867401c5f6e104eb463402de640f09adbb06f21e093e"
+        },
+        {
+          "name": "idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "39e404e7e3dd912e8d12b1fbde02d00ed26a441b2e8fd5823ebc9e11a1797305"
+        },
+        {
+          "name": "mcp/mcp-transcript.json",
+          "bytes": 242358,
+          "sha256": "9cf7545c504618bb42987960055a0caeacac6d72f54469285d6bd5b59fadb51c"
+        },
+        {
+          "name": "mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "a4d135e760ed0f3d0faae1d045318f5bc240fdfaa44dc324a9cfa16588cd2cd0"
+        },
+        {
+          "name": "mcp-secure.txt",
+          "bytes": 572,
+          "sha256": "d5a349d074bd03376355856d3fb07e1edbaaad08d6d6713e401b380da5f41601"
+        },
+        {
+          "name": "mcp-workflow.txt",
+          "bytes": 699,
+          "sha256": "7072f224246b417f509e3ba84ecc5a67e49fd5a704f8fefc7a47ddf3b146cd0f"
+        },
+        {
+          "name": "network.json",
+          "bytes": 2069,
+          "sha256": "010449aedf692051200f3176c47cce4602e4de78db2f7971ce198c4f46480218"
+        },
+        {
+          "name": "python-mcp.txt",
+          "bytes": 513,
+          "sha256": "85db1bd15abb1829995edf282fb06d8657f954dcc20bcf027a509268a300d131"
+        },
+        {
+          "name": "secure-cli.json",
+          "bytes": 251788,
+          "sha256": "b8b0623c5d121f577a659eea467a3ffeabf09fc49cbc6197b0ec04d47972eb00"
+        },
+        {
+          "name": "security.json",
+          "bytes": 1081,
+          "sha256": "4b6c1bb4abaf8916608c955143604d64a4fd0b9454416b1e7838488d59235c7e"
+        },
+        {
+          "name": "stale-frame.json",
+          "bytes": 52,
+          "sha256": "7960ffc344be82333fe7b4d1474f7f4a444e6a53e28e48d9abe50579202b379b"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 12339,
+          "sha256": "a43d49414a2737882bf66ebfe7d90645140abefb59dfedaf8d84325d6dd60ebd"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5778,
+          "sha256": "ed780528f7e5c2fa73bcd2b9d675836d2f013e6d4afcd3e9396170a5a96d8872"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 486,
+          "sha256": "3018d42aba88217ac14470a1a434c7163e64b8919da47b9d11f636f73ef3d8bf"
+        },
+        {
+          "name": "wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        }
+      ]
+    },
+    {
+      "kind": "phase3",
+      "runId": "20261113-065245",
+      "rawArtifactRoot": "artifacts/phase3/candidate/20261113-065245/phase3/20261113-065245",
+      "rawArtifactsAreGitignored": true,
+      "commit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+      "harnessCommit": "5d2e88a",
+      "harnessSha256": null,
+      "candidate": {
+        "sourceCommit": "5448d15df6c2fdbe67ca5c35532509391420e701",
+        "installerSha256": "0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d",
+        "payloadFilesVerified": 426,
+        "signingStatus": "unsigned",
+        "evidenceScope": "entire runtime payload",
+        "mcpExecutableSha256": "11A17D52E6F7409DBD07B3496DF99CEC4DE32BDFBD34CA79FA8F09D91CAB740A",
+        "mcpExecutableVersion": "0.1.4+5448d15df6c2fdbe67ca5c35532509391420e701"
+      },
+      "finishedUtc": "2026-11-13T02:05:23.2597090Z",
+      "pins": {
+        "emulator": "Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)",
+        "image": null,
+        "imageRevision": "Pkg.Revision=2",
+        "dotnet": "10.0.302"
+      },
+      "root": "D:/WS-Candidate-014-Paired-20261113-065245-phase3",
+      "freeBytesAtStart": 286336880640,
+      "failedChecks": 0,
+      "totalChecks": 55,
+      "lanes": {
+        "host": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "free-space",
+              "passed": true,
+              "detail": "free=266.7 GB",
+              "atUtc": "2026-11-13T01:52:47.0657823Z"
+            }
+          ]
+        },
+        "setup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "approved-apk",
+              "passed": true,
+              "detail": "09BA57AF004C54E7831E5565856875D9F80E261DC81FD59967BBCD0DBC7CD351",
+              "atUtc": "2026-11-13T01:52:47.1537633Z"
+            },
+            {
+              "check": "pairs",
+              "passed": true,
+              "detail": "P=ag-2078bf Q=ag-4edd25",
+              "atUtc": "2026-11-13T01:52:57.9626808Z"
+            }
+          ]
+        },
+        "phase2": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "acceptance",
+              "passed": true,
+              "detail": "exit=0 failed=0 run=20261113-065258",
+              "atUtc": "2026-11-13T01:57:38.9198262Z"
+            }
+          ]
+        },
+        "lifecycle": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "duplicate-running-refused",
+              "passed": true,
+              "detail": "running writable disks are never copied",
+              "atUtc": "2026-11-13T01:57:41.9134688Z"
+            },
+            {
+              "check": "duplicate",
+              "passed": true,
+              "detail": "target=p3-dup ports=5560/8557 lineage=c97ebac54d164adbb5c5ac7bb5f58ab0",
+              "atUtc": "2026-11-13T01:57:45.5338639Z"
+            },
+            {
+              "check": "duplicate-isolated",
+              "passed": true,
+              "detail": "source=24cb13e04b5989d249ce296c4d2f3cd193438f6d8f036acb514792dbc77c9bd2 target=635557162db0fa4873cb36bbb7f5194253cc1cad819a27811a07e63ba19de41f",
+              "atUtc": "2026-11-13T01:57:45.5548245Z"
+            },
+            {
+              "check": "template-untouched",
+              "passed": true,
+              "detail": "tpl3: state=Defined engineAlive=false pid=\r",
+              "atUtc": "2026-11-13T01:57:45.8600030Z"
+            },
+            {
+              "check": "reset",
+              "passed": true,
+              "detail": "freedBytes=0",
+              "atUtc": "2026-11-13T01:57:46.1972664Z"
+            },
+            {
+              "check": "presets",
+              "passed": true,
+              "detail": "presets=4",
+              "atUtc": "2026-11-13T01:57:48.2637023Z"
+            },
+            {
+              "check": "disk-estimate",
+              "passed": true,
+              "detail": "required=4294967296 free=274226065408",
+              "atUtc": "2026-11-13T01:57:48.2798464Z"
+            },
+            {
+              "check": "profile-export",
+              "passed": true,
+              "detail": "schema=1 secrets=False",
+              "atUtc": "2026-11-13T01:57:48.5904299Z"
+            },
+            {
+              "check": "profile-import",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:57:55.6357811Z"
+            }
+          ]
+        },
+        "snapshot": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "save",
+              "passed": true,
+              "detail": "snapshot save ag-2078bf tag=p3-base via=adb in 3.44s",
+              "atUtc": "2026-11-13T01:57:59.5514365Z"
+            },
+            {
+              "check": "list",
+              "passed": true,
+              "detail": "count=5 compatible=True",
+              "atUtc": "2026-11-13T01:57:59.9992241Z"
+            },
+            {
+              "check": "delete-older",
+              "passed": true,
+              "detail": "deleted=mcp-baseline",
+              "atUtc": "2026-11-13T01:58:01.3117506Z"
+            },
+            {
+              "check": "delete-guarded",
+              "passed": true,
+              "detail": "newest recovery point protected",
+              "atUtc": "2026-11-13T01:58:01.7949192Z"
+            },
+            {
+              "check": "delete-forced",
+              "passed": true,
+              "detail": "{\"name\":\"ag-2078bf\",\"tag\":\"p3-base\",\"deleted\":true,\"freedBytes\":2715355249,\"lastRecoveryPoint\":true}",
+              "atUtc": "2026-11-13T01:58:02.8506062Z"
+            },
+            {
+              "check": "restore",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T01:58:17.9742012Z"
+            },
+            {
+              "check": "restore-readiness",
+              "passed": true,
+              "detail": "the guest reports sys.boot_completed=1 after the restore",
+              "atUtc": "2026-11-13T01:58:18.1437908Z"
+            },
+            {
+              "check": "stale-frame-invalidated",
+              "passed": true,
+              "detail": "frame id rejected after restore",
+              "atUtc": "2026-11-13T01:58:23.0045541Z"
+            }
+          ]
+        },
+        "transport": {
+          "passed": 9,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "identity",
+              "passed": true,
+              "detail": "P=emulator-5556/621 Q=emulator-5558/622",
+              "atUtc": "2026-11-13T02:00:06.5260457Z"
+            },
+            {
+              "check": "distinct-targets",
+              "passed": true,
+              "detail": "serials and identities differ",
+              "atUtc": "2026-11-13T02:00:06.5590984Z"
+            },
+            {
+              "check": "cross-guest-denied",
+              "passed": true,
+              "detail": "agent on P cannot address Q",
+              "atUtc": "2026-11-13T02:00:09.2822353Z"
+            },
+            {
+              "check": "external-state-unchanged",
+              "passed": true,
+              "detail": "transport ids stable across agent calls",
+              "atUtc": "2026-11-13T02:00:09.4593142Z"
+            },
+            {
+              "check": "recycled-transport-resolves",
+              "passed": true,
+              "detail": "transportId=623 (was 622) enginePid=14420",
+              "atUtc": "2026-11-13T02:00:14.0372145Z"
+            },
+            {
+              "check": "disconnected-target-fails-closed",
+              "passed": true,
+              "detail": "FAILED [instance_unavailable] The managed serial 'emulator-5558' is not visible to the pinned ADB server.",
+              "atUtc": "2026-11-13T02:00:26.1004449Z"
+            },
+            {
+              "check": "disconnected-target-not-substituted",
+              "passed": true,
+              "detail": "a missing target is never substituted with another guest",
+              "atUtc": "2026-11-13T02:00:26.3620665Z"
+            },
+            {
+              "check": "reconnect-rebounds",
+              "passed": true,
+              "detail": "transportId=624 (was 622)",
+              "atUtc": "2026-11-13T02:01:18.5252217Z"
+            },
+            {
+              "check": "physical-devices-not-managed",
+              "passed": true,
+              "detail": "non-emulator transports visible=0; managed serials are emulator-only",
+              "atUtc": "2026-11-13T02:01:18.9091830Z"
+            }
+          ]
+        },
+        "guest": {
+          "passed": 1,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T02:01:19.6413441Z"
+            }
+          ]
+        },
+        "race": {
+          "passed": 6,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "marker before the race=DUP_TAPS=0",
+              "atUtc": "2026-11-13T02:01:32.6957319Z"
+            },
+            {
+              "check": "input-held",
+              "passed": true,
+              "detail": "{\"instance\":\"ag-2078bf\",\"held\":true,\"heldSinceUtc\":\"2026-11-13T02:01:34.0193942\\u002B00:00\",\"waiting\":0}",
+              "atUtc": "2026-11-13T02:01:34.1100692Z"
+            },
+            {
+              "check": "input-queued",
+              "passed": true,
+              "detail": "queuedUtc=2026-11-13T02:01:39.1007125+00:00",
+              "atUtc": "2026-11-13T02:01:39.7740067Z"
+            },
+            {
+              "check": "takeover",
+              "passed": true,
+              "detail": "{\r   \"instance\": \"ag-2078bf\",\r   \"revokedSessions\": 1\r }",
+              "atUtc": "2026-11-13T02:01:40.5052699Z"
+            },
+            {
+              "check": "queued-input-not-authorized",
+              "passed": true,
+              "detail": "wsctl.exe : FAILED [revoked] The agent session has been revoked.\r",
+              "atUtc": "2026-11-13T02:01:41.3468422Z"
+            },
+            {
+              "check": "guest-marker-unchanged",
+              "passed": true,
+              "detail": "marker=DUP_TAPS=0 dupTapLogLines=0 baseline=0",
+              "atUtc": "2026-11-13T02:01:44.6811366Z"
+            }
+          ]
+        },
+        "simulation": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "geo-fix",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T02:01:45.8640722Z"
+            },
+            {
+              "check": "battery",
+              "passed": true,
+              "detail": "{\r",
+              "atUtc": "2026-11-13T02:01:48.3901407Z"
+            },
+            {
+              "check": "battery-verified",
+              "passed": true,
+              "detail": "level: 42",
+              "atUtc": "2026-11-13T02:01:48.4962820Z"
+            },
+            {
+              "check": "rotation",
+              "passed": true,
+              "detail": "ag-4edd25 rotation set to 1",
+              "atUtc": "2026-11-13T02:01:49.0230137Z"
+            }
+          ]
+        },
+        "deployment": {
+          "passed": 8,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "bundletool",
+              "passed": true,
+              "detail": "1.18.1",
+              "atUtc": "2026-11-13T02:01:49.5798455Z"
+            },
+            {
+              "check": "target-selected",
+              "passed": true,
+              "detail": "target serial=emulator-5560",
+              "atUtc": "2026-11-13T02:03:11.4861263Z"
+            },
+            {
+              "check": "no-anr-overlay",
+              "passed": true,
+              "detail": "recovered=False",
+              "atUtc": "2026-11-13T02:03:11.9386347Z"
+            },
+            {
+              "check": "transport-usable",
+              "passed": true,
+              "detail": "round-trip probe on the selected serial",
+              "atUtc": "2026-11-13T02:03:20.6822504Z"
+            },
+            {
+              "check": "apks-install",
+              "passed": true,
+              "detail": "scoped install exit=0, transport=626",
+              "atUtc": "2026-11-13T02:03:30.1151182Z"
+            },
+            {
+              "check": "split-install-recorded",
+              "passed": true,
+              "detail": "package manager reports split APKs",
+              "atUtc": "2026-11-13T02:03:30.3415173Z"
+            },
+            {
+              "check": "target-explicit",
+              "passed": true,
+              "detail": "the other guest did not receive the deployment",
+              "atUtc": "2026-11-13T02:03:30.5497072Z"
+            },
+            {
+              "check": "malformed-apks-diagnosed",
+              "passed": true,
+              "detail": "exit=5 typed diagnostic returned",
+              "atUtc": "2026-11-13T02:03:31.9255771Z"
+            }
+          ]
+        },
+        "runner": {
+          "passed": 4,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "device-visible-to-runner",
+              "passed": true,
+              "detail": "serial=emulator-5560 listed for the external runner",
+              "atUtc": "2026-11-13T02:03:32.3220103Z"
+            },
+            {
+              "check": "fixture-foreground",
+              "passed": true,
+              "detail": "scoped launch exit=0",
+              "atUtc": "2026-11-13T02:03:40.2372786Z"
+            },
+            {
+              "check": "maestro-flow",
+              "passed": true,
+              "detail": "exit=0",
+              "atUtc": "2026-11-13T02:04:49.0530624Z"
+            },
+            {
+              "check": "touches-only-selected-guest",
+              "passed": true,
+              "detail": "other guest tap count 0 -> 0",
+              "atUtc": "2026-11-13T02:04:49.6056546Z"
+            }
+          ]
+        },
+        "cleanup": {
+          "passed": 2,
+          "failed": 0,
+          "checks": [
+            {
+              "check": "disposables-removed",
+              "passed": true,
+              "detail": "remaining=0",
+              "atUtc": "2026-11-13T02:05:23.2193072Z"
+            },
+            {
+              "check": "template-preserved",
+              "passed": true,
+              "detail": "template kept",
+              "atUtc": "2026-11-13T02:05:23.2253444Z"
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "name": "adb-devices-after.txt",
+          "bytes": 277,
+          "sha256": "7d7dd3936205bd5caeb8a380c1ba465301d44f6bc63468791eb29806b63ab89e"
+        },
+        {
+          "name": "adb-devices-before.txt",
+          "bytes": 277,
+          "sha256": "7d7dd3936205bd5caeb8a380c1ba465301d44f6bc63468791eb29806b63ab89e"
+        },
+        {
+          "name": "adb-identity.json",
+          "bytes": 879,
+          "sha256": "35753e404d19b5df1748d65c341044fab7f217737f4f63eab979a105ccc5fdf3"
+        },
+        {
+          "name": "battery-dumpsys.txt",
+          "bytes": 390,
+          "sha256": "f230521674e333d9f6fe21d63b929679b5001d1eb4504d5d57adf7aa4bfc347d"
+        },
+        {
+          "name": "battery.json",
+          "bytes": 78,
+          "sha256": "486f22da131bfed27b0ec18a3d989690204550aaf4edbbcafd62f26c257b2f5a"
+        },
+        {
+          "name": "bundletool-install.txt",
+          "bytes": 223,
+          "sha256": "ed33c73fcda47784df9ea2fea87abbd8adeb0166ea60e351904e8d44824bcfed"
+        },
+        {
+          "name": "bundletool-malformed.txt",
+          "bytes": 114,
+          "sha256": "744dc62b8af6fe351a8e5c6bba09ea5426c0023408f37345e01431e967eb269f"
+        },
+        {
+          "name": "bundletool-version.txt",
+          "bytes": 11,
+          "sha256": "03ba57412cce3aeb053eb7a9cba26be19299c317ec520c63662f6ca1b67b77bb"
+        },
+        {
+          "name": "candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "cross-guest.json",
+          "bytes": 35,
+          "sha256": "13353b5d422fc90cc71b72e71b6311e08bce5e9c958d727f1333043e346f0e82"
+        },
+        {
+          "name": "geo.json",
+          "bytes": 107,
+          "sha256": "72accaf35cad976030e8675c6dc570173d5ad01384cf19f747ce4ff975a75387"
+        },
+        {
+          "name": "instances-final.txt",
+          "bytes": 81,
+          "sha256": "b4c113e435455f23927043f794658a4717547fd4e236e4d7663eeaf80376c4b2"
+        },
+        {
+          "name": "maestro-devices.txt",
+          "bytes": 401,
+          "sha256": "351585b556569ab5a84b7f5128bf7bdc91776a188fa292b2524d680250dfa1d7"
+        },
+        {
+          "name": "maestro-duplicate.yaml",
+          "bytes": 182,
+          "sha256": "10d6cb19f38f897130cd0877ea9dc4fab9c0b06b446da731b8ee1e83faf892e8"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/commands.json",
+          "bytes": 3963,
+          "sha256": "2b6625baf898d7b3d59c4b3e0824cdcb7a78d8d414334be57b225176dfadd92d"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/logs/device-logcat.txt",
+          "bytes": 89838,
+          "sha256": "f468f7e4c49f72ac713384f4809033704ccf575056c475ddbbfa9c8434c78688"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/logs/maestro.log",
+          "bytes": 6347,
+          "sha256": "a22404b2637e0f698de47ea93548f8bcc2acbd8744de5fc89b7179b1d44a1628"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_070349/maestro-duplicate/manifest.json",
+          "bytes": 564,
+          "sha256": "9ed3ebe50db28b8558b9bd0592b9be71826bcf0bb69c4ef74af785d75a8dc6c8"
+        },
+        {
+          "name": "maestro-evidence/.maestro/tests/2026-11-13_070349/maestro.log",
+          "bytes": 8835,
+          "sha256": "f5f11203e533324fc6fe1d98c393e5acbbf7ef961c4122ee19458b8b0efb14a0"
+        },
+        {
+          "name": "maestro-foreground.txt",
+          "bytes": 529,
+          "sha256": "25c0fd322e8254205b3c36cc3b51530515afdb4566d53851a7655df0240f1136"
+        },
+        {
+          "name": "maestro-launch.json",
+          "bytes": 111,
+          "sha256": "f86c758c487c56f2b9f0d4ee1f1a30e5bd080b655bcbb7a897b1eb06f2190f75"
+        },
+        {
+          "name": "maestro-run.txt",
+          "bytes": 245,
+          "sha256": "41f32b7d1b7f1b8701a09d1380550456ee9cec929b596737e82a0eafb843d286"
+        },
+        {
+          "name": "malformed.apks",
+          "bytes": 27,
+          "sha256": "13c74e0893e4947c69cd7c26fb3eec53c6ae14963d247dc676b3054a5629d9e5"
+        },
+        {
+          "name": "package-dumpsys.txt",
+          "bytes": 3539,
+          "sha256": "fe8bc1b60a9eb089f513bdcd5ef866b04af9345c497309d5fd30bf8cdee6061d"
+        },
+        {
+          "name": "phase2/20261113-065258/agent-sessions-probe.json",
+          "bytes": 117,
+          "sha256": "d90fcb980716d9d16457fd15f85613d0be1a6a73a54cb57cde0ce7a88d78bb8d"
+        },
+        {
+          "name": "phase2/20261113-065258/args-01647787.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-17f4dfdf.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-065258/args-1ff01446.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-2036352b.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-065258/args-2baf6b58.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-300edf81.json",
+          "bytes": 75,
+          "sha256": "d14e90188c69510b85cb4b8fb64c3ed7543162acc460dbc264a8ffd38915fec6"
+        },
+        {
+          "name": "phase2/20261113-065258/args-371566ed.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-397ffc23.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-065258/args-64a04365.json",
+          "bytes": 52,
+          "sha256": "d2133ebb42ba7784c8e16e37dd71c3813c9469d3f4ff78eb952c6c34ff22c1b3"
+        },
+        {
+          "name": "phase2/20261113-065258/args-66dc1437.json",
+          "bytes": 34,
+          "sha256": "5b25d91301046c35725e893319e196bc804bbaf00f0a3eb2051e8e1a13956287"
+        },
+        {
+          "name": "phase2/20261113-065258/args-68456458.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-68a31745.json",
+          "bytes": 50,
+          "sha256": "d9b8f11b38a06c818e1afdebf9b0c6fe72bba23c6af822b1ef6237f273df5668"
+        },
+        {
+          "name": "phase2/20261113-065258/args-7ff724cb.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-065258/args-8c67f85d.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-981ed997.json",
+          "bytes": 45,
+          "sha256": "94491f4c37574db1ca903b029150128bdeae3a171d2b47e57f20ada084b13828"
+        },
+        {
+          "name": "phase2/20261113-065258/args-9871b55c.json",
+          "bytes": 55,
+          "sha256": "ca1874054a995f26e264dbe881f9694447e4bec34c5f5a4472369f289c02979a"
+        },
+        {
+          "name": "phase2/20261113-065258/args-9a297f18.json",
+          "bytes": 54,
+          "sha256": "7210960d9ab6ef81999956397dea088334c39b87689f472c358a0d18980c5c96"
+        },
+        {
+          "name": "phase2/20261113-065258/args-a4ef51d0.json",
+          "bytes": 53,
+          "sha256": "aa2cf8eeaa160c56c517a3d13deac815a4c57701253657106fa6b135dfd4638c"
+        },
+        {
+          "name": "phase2/20261113-065258/args-ab8714e7.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-065258/args-babfac34.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-c8fb56ea.json",
+          "bytes": 72,
+          "sha256": "49def3a489ffe2de16acfc3850222d5c611b5513fa44f23d0a408c864efd117e"
+        },
+        {
+          "name": "phase2/20261113-065258/args-d5cb87ef.json",
+          "bytes": 56,
+          "sha256": "4837c5997c730d4a12272ab285b5632c02b6185e98990b243b30694a12606ea0"
+        },
+        {
+          "name": "phase2/20261113-065258/args-d73f73e9.json",
+          "bytes": 38,
+          "sha256": "6413655e38cc894e54c118a640da867d98b600ad08a3450bdcc975fa7749dc66"
+        },
+        {
+          "name": "phase2/20261113-065258/args-d92cb1a3.json",
+          "bytes": 80,
+          "sha256": "71013b72ac05ff8715502906b696cbf84b123f112ff0908ee4860c4b14e336bd"
+        },
+        {
+          "name": "phase2/20261113-065258/args-daeb46ee.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-065258/args-e03c86bc.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-e78363b0.json",
+          "bytes": 55,
+          "sha256": "a66bc2c7fb94c9a480542cd22f95dcc630b683f9c18d428c891e5f5f95dd1743"
+        },
+        {
+          "name": "phase2/20261113-065258/args-e7b293f3.json",
+          "bytes": 35,
+          "sha256": "a072b21c19ae74ded2255f003498ce85c4c3c86ab868016277aa7364dbeba3ec"
+        },
+        {
+          "name": "phase2/20261113-065258/args-ea070696.json",
+          "bytes": 7,
+          "sha256": "9e1ab83190bccc9ea53ba40f856fbe5e5718bbc45eaf43a0cbd4f42fd4f01657"
+        },
+        {
+          "name": "phase2/20261113-065258/args-f3ec6e34.json",
+          "bytes": 71,
+          "sha256": "efa4c966e884d6654141be9ad8d037f924a640e0f27990f6699bd7944d1c2b72"
+        },
+        {
+          "name": "phase2/20261113-065258/boot.txt",
+          "bytes": 356,
+          "sha256": "489831f3b306b180a43f4ac16a4c52a38380f321e4822db765de84e172591e72"
+        },
+        {
+          "name": "phase2/20261113-065258/candidate.json",
+          "bytes": 439,
+          "sha256": "f8675adbe0bd08b7d37bc744398ee7add94adc6c876dfcfac8fb683e844b81a9"
+        },
+        {
+          "name": "phase2/20261113-065258/cli-transcript.json",
+          "bytes": 388749,
+          "sha256": "4324bea71dec4d0e43f13d91d23d10cb3c8bc9eb22b9c38c80863d36bd2e61dc"
+        },
+        {
+          "name": "phase2/20261113-065258/fixture.jsonl",
+          "bytes": 572,
+          "sha256": "82780daa1426641ec88b867401c5f6e104eb463402de640f09adbb06f21e093e"
+        },
+        {
+          "name": "phase2/20261113-065258/idem-a.json",
+          "bytes": 17,
+          "sha256": "19508c383b3586c32987c6f3cbfde59e3674daf4bedeea242b017bac70c29d8f"
+        },
+        {
+          "name": "phase2/20261113-065258/idem-b.json",
+          "bytes": 17,
+          "sha256": "9a7d4ba600f4e31966a00d64c336555247eba523153e35e6e1a13ed8df47f9ed"
+        },
+        {
+          "name": "phase2/20261113-065258/mcp/mcp-secure.json",
+          "bytes": 3260,
+          "sha256": "39e404e7e3dd912e8d12b1fbde02d00ed26a441b2e8fd5823ebc9e11a1797305"
+        },
+        {
+          "name": "phase2/20261113-065258/mcp/mcp-transcript.json",
+          "bytes": 242358,
+          "sha256": "9cf7545c504618bb42987960055a0caeacac6d72f54469285d6bd5b59fadb51c"
+        },
+        {
+          "name": "phase2/20261113-065258/mcp/python-mcp.json",
+          "bytes": 2401,
+          "sha256": "a4d135e760ed0f3d0faae1d045318f5bc240fdfaa44dc324a9cfa16588cd2cd0"
+        },
+        {
+          "name": "phase2/20261113-065258/mcp-secure.txt",
+          "bytes": 572,
+          "sha256": "d5a349d074bd03376355856d3fb07e1edbaaad08d6d6713e401b380da5f41601"
+        },
+        {
+          "name": "phase2/20261113-065258/mcp-workflow.txt",
+          "bytes": 699,
+          "sha256": "7072f224246b417f509e3ba84ecc5a67e49fd5a704f8fefc7a47ddf3b146cd0f"
+        },
+        {
+          "name": "phase2/20261113-065258/network.json",
+          "bytes": 2069,
+          "sha256": "010449aedf692051200f3176c47cce4602e4de78db2f7971ce198c4f46480218"
+        },
+        {
+          "name": "phase2/20261113-065258/python-mcp.txt",
+          "bytes": 513,
+          "sha256": "85db1bd15abb1829995edf282fb06d8657f954dcc20bcf027a509268a300d131"
+        },
+        {
+          "name": "phase2/20261113-065258/secure-cli.json",
+          "bytes": 251788,
+          "sha256": "b8b0623c5d121f577a659eea467a3ffeabf09fc49cbc6197b0ec04d47972eb00"
+        },
+        {
+          "name": "phase2/20261113-065258/security.json",
+          "bytes": 1081,
+          "sha256": "4b6c1bb4abaf8916608c955143604d64a4fd0b9454416b1e7838488d59235c7e"
+        },
+        {
+          "name": "phase2/20261113-065258/stale-frame.json",
+          "bytes": 52,
+          "sha256": "7960ffc344be82333fe7b4d1474f7f4a444e6a53e28e48d9abe50579202b379b"
+        },
+        {
+          "name": "phase2/20261113-065258/summary.json",
+          "bytes": 12339,
+          "sha256": "a43d49414a2737882bf66ebfe7d90645140abefb59dfedaf8d84325d6dd60ebd"
+        },
+        {
+          "name": "phase2/20261113-065258/transcript.txt",
+          "bytes": 5778,
+          "sha256": "ed780528f7e5c2fa73bcd2b9d675836d2f013e6d4afcd3e9396170a5a96d8872"
+        },
+        {
+          "name": "phase2/20261113-065258/versions.json",
+          "bytes": 486,
+          "sha256": "3018d42aba88217ac14470a1a434c7163e64b8919da47b9d11f636f73ef3d8bf"
+        },
+        {
+          "name": "phase2/20261113-065258/wrong-instance.json",
+          "bytes": 20,
+          "sha256": "ecf05482d2c7a60f507909da8441afe87fc23361d1fbdaffb71827b3ff728789"
+        },
+        {
+          "name": "phase2-acceptance.txt",
+          "bytes": 11232,
+          "sha256": "251dac8bf339f606d1056fe9575e3b6a2dea46e54bfa5ca4940d07985d6d13fe"
+        },
+        {
+          "name": "phase2-summary.json",
+          "bytes": 12339,
+          "sha256": "a43d49414a2737882bf66ebfe7d90645140abefb59dfedaf8d84325d6dd60ebd"
+        },
+        {
+          "name": "profile-export.json",
+          "bytes": 538,
+          "sha256": "33c067141a69064af4478b6b5743ffaa75b497819a68a7ff47088d69a18b9200"
+        },
+        {
+          "name": "profile-import-request.json",
+          "bytes": 928,
+          "sha256": "7e807d63e018ea3fd59f820415b6a50539aaf1b46c74796d2134cda9f2454677"
+        },
+        {
+          "name": "race-logcat.txt",
+          "bytes": 994,
+          "sha256": "81cc288ab7e7909b15e7c70ba82ad949a95483fdb551d39bd0ca88837ead0eb5"
+        },
+        {
+          "name": "race-tap-result.txt",
+          "bytes": 402,
+          "sha256": "226a360ff840f644d39dcb0c572b0a9dedac5eb22e57364205adbed1446b137e"
+        },
+        {
+          "name": "race-tap.json",
+          "bytes": 94,
+          "sha256": "a233d9d8c7ef5e00fed23ed0d7183ffcdc0ce9a7d90058c97222ea1dcdce34ab"
+        },
+        {
+          "name": "race-timeline.json",
+          "bytes": 648,
+          "sha256": "adb03bac8ad41ff5472c7da165a3db42446d8ee9ccb1a6d15a83fc0a7cc471e4"
+        },
+        {
+          "name": "race-ui.xml",
+          "bytes": 6742,
+          "sha256": "ea21ff7b73dcd30d8e23788930d3b9e3760cedb226be691773d61cc922a08ea9"
+        },
+        {
+          "name": "restore.json",
+          "bytes": 63,
+          "sha256": "7137fe53ee433dc0f9386313cbe115d795b8354f8abf4a50b93f6c6f3f48804e"
+        },
+        {
+          "name": "snapshot-list.json",
+          "bytes": 1948,
+          "sha256": "7ef17c96cda6620cc54cef8ddba9707080379a8d2dc7f89946069b32b8a7e43c"
+        },
+        {
+          "name": "stale-after-restore.json",
+          "bytes": 78,
+          "sha256": "49227294d5bcc047a959ec5b4bddfc5b810192b294f6501cc19f78705b4a90f4"
+        },
+        {
+          "name": "summary.json",
+          "bytes": 37045,
+          "sha256": "16eaf07acd04c26da04fd3fb464079eb7561dd7cd6b20c523e030d02a50d8ebf"
+        },
+        {
+          "name": "transcript.txt",
+          "bytes": 5090,
+          "sha256": "b8617b489247d8417bb75d6941ed369d7e89e4d2e4105175401d1797593da316"
+        },
+        {
+          "name": "versions.json",
+          "bytes": 489,
+          "sha256": "36649127d8f04a19097cd2631119d89b80e34c7961a6e717081c15ec770be96d"
         }
       ]
     }

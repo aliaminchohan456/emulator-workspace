@@ -652,6 +652,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
   `D:/WS-OfflineSandbox-014-20261113-064035/offline-acceptance.wsb`.
   The copied candidate hash matches the MSI. Administrator enablement
   and usable nested WHPX are still required.
+- Phase 3 paired rerun `20261113-065245` passed 55/55, including the
+  nested Phase 2 run `20261113-065258` at 43/43. The MCP workflow, stale
+  observation rejection, queued takeover, split install, Maestro and
+  cleanup all passed. Alongside `20261113-054840` and `20261113-063943`,
+  there is passing evidence for all nine runtime lanes on exact 0.1.4.
+  ADB showed no attached devices after cleanup. Quiet-host WPF and the
+  30-cycle leak verification are next on the same candidate.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and

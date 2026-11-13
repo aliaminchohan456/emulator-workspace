@@ -50,7 +50,18 @@ from `ad5e5a37ac2a8ddb1987cef0e949167b9d5b921d`. Its unsigned MSI is
 `D:/Release/emulator-workspace-0.1.3-20261113-032433/EmulatorWorkspace-0.1.3.msi`,
 SHA-256 `11adc6350d8319a9ab579e346dc9e9cc404f750e80b6009fafe32583bcdb7e34`.
 Installer run `20261113-040915` passed 22/22, with packaged MCP and managed
-profile retention through the 0.1.2 upgrade. Hardware regression is running.
+profile retention through the 0.1.2 upgrade. Its runtime suite passed five
+of nine lanes. Both recipes, Phase 3 and Play API 36 snapshot restore had
+failures recorded in the manifest.
+
+The latest unsigned candidate is 0.1.4 from
+`5448d15df6c2fdbe67ca5c35532509391420e701`. Its MSI is
+`D:/Release/emulator-workspace-0.1.4-20261113-042924/EmulatorWorkspace-0.1.4.msi`,
+SHA-256 `0b790e606b9a8eec7255d358ad2d803f5114bbee41c15c67a615b91b286af52d`.
+Installer run `20261113-063652` passed 22/22 including the 0.1.3 upgrade.
+All nine runtime lanes passed across the candidate reruns, with the paired
+Phase 3 run `20261113-065245` passing 55/55 and its nested Phase 2 passing
+43/43. Release readiness remains pending. [Raw run index](phase3-manifest.json)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/package-release.ps1 -Version 0.1.1 -OutDir D:/Release
