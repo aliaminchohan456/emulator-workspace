@@ -140,8 +140,25 @@ jobs:
         shell: pwsh
         run: |
           $emulator = Join-Path $env:ANDROID_HOME "emulator\emulator.exe"
-          & $emulator -accel-check
-          if ($LASTEXITCODE -ne 0) { throw "the emulator reports no usable acceleration" }
+          $acceleration = & $emulator -accel-check 2>&1 | Out-String
+          Write-Host $acceleration
+          if ($LASTEXITCODE -ne 0 -or $acceleration -notmatch 'WHPX.*is installed and usable') {
+            throw "The runner must expose usable WHPX to the pinned emulator."
+          }
+          $version = & $emulator -version 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0 -or $version -notmatch '37\.2\.12\.0.*16428233') { throw "Install Emulator 37.2.12.0 build 16428233." }
+          $image = Join-Path $env:ANDROID_HOME 'system-images/android-35/default/x86_64/source.properties'
+          if ((Get-Content -LiteralPath $image) -notcontains 'Pkg.Revision=2') { throw "Install AOSP API 35 x86_64 revision 2." }
+
+      - name: Prepare the pinned MCP clients
+        shell: pwsh
+        run: |
+          if ((node --version) -ne 'v24.16.0') { throw "Install Node.js 24.16.0 on the self-hosted runner." }
+          if ((py -3 -c 'import importlib.metadata as m; print(m.version("mcp"))') -ne '2.3.0') {
+            throw "Install mcp 2.3.0 for the runner's Python 3 launcher."
+          }
+          npm ci --prefix clients/mcp-client
+          if ($LASTEXITCODE -ne 0) { throw "Installing the locked TypeScript MCP dependencies failed." }
 
       - name: Build and test
         run: |
@@ -177,10 +194,24 @@ jobs:
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File tools\benchmark.ps1 -Root D:\HwBenchRoot -Samples 20 -Cycles 30
 
-      - name: Upload the evidence
+      - name: Upload redacted hardware check results
+        if: always()
+        shell: pwsh
+        run: |
+          $results = Get-ChildItem artifacts -Recurse -Filter summary.json -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $summary = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+            @{
+              runId = $summary.runId
+              finishedUtc = $summary.finishedUtc
+              checks = @($summary.checks | ForEach-Object { @{ lane = $_.lane; name = $_.check ?? $_.name; passed = $_.passed } })
+            }
+          }
+          @{ commit = $env:GITHUB_SHA; runs = @($results) } | ConvertTo-Json -Depth 6 | Set-Content hardware-results.json
+
+      - name: Upload hardware check results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hardware-evidence
-          path: "artifacts/**"
+          name: hardware-summaries
+          path: hardware-results.json
           if-no-files-found: ignore

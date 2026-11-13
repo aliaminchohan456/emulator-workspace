@@ -689,6 +689,13 @@ All tasks start open. Check off an implementation task after its scoped verifica
   passed. The timing change needs a WHPX rerun after soak cleanup. The
   matched boot harness now records the supervisor's boot and interactive
   timestamps alongside the shared raw and managed readiness probe.
+- The Windows CI workflow now checks the exact engine build, AOSP image
+  revision and usable WHPX, verifies the MCP client versions, and installs
+  the locked TypeScript dependencies. The upload is limited to check names
+  and outcomes. YAML parsed locally. Dispatch still requires a configured
+  GitHub repository and a self-hosted Windows x64 runner with the `wipx`
+  label and the installed Android SDK, Java, Node, Python MCP and Phase 3
+  tools. This checkout has no Git remote configured.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
