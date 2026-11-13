@@ -564,9 +564,9 @@ appId: dev.emulatorworkspace.sample
 ---
 - launchApp
 - extendedWaitUntil:
-    visible: "Emulator Workspace QA fixture"
+    visible: "DUP_TAPS=0"
     timeout: 30000
-- tapOn: "Duplicate A"
+- tapOn: "DUPLICATE A"
 - assertVisible: "DUP_TAPS=1"
 "@ | Set-Content $flow -Encoding UTF8
             $env:ANDROID_HOME = $sdk

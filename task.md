@@ -605,6 +605,10 @@ All tasks start open. Check off an implementation task after its scoped verifica
   with `revoked`. The independent UI markers remain failed. Future runs
   use the existing bounded ADB helper and require a successful fresh dump.
   Evidence `artifacts/phase3/candidate/20261113-041225/phase3/20261113-051314`.
+- The 0.1.3 Maestro debug hierarchy showed the fixture controls, including
+  `DUP_TAPS=0` and `DUPLICATE A`, with the title outside the visible
+  hierarchy. The runner now waits for the exact initial marker and taps
+  the displayed uppercase label. Rerun to verify the marker advances.
 - A separate source change removes synchronous trace writes from the frame
   and Logcat reader, queues one latest frame before UI dispatch, rejects
   late frames and gestures from previous viewport subscriptions, and
