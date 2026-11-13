@@ -169,14 +169,24 @@ function Save-WindowShot([IntPtr]$handle, [string]$name) {
 # ------------------------------------------------------------------ UIA help
 $script:desktop = [System.Windows.Automation.AutomationElement]::RootElement
 
-function Find-Element([string]$name, [string]$automationId = "", [int]$timeoutSeconds = 20) {
+function Find-Element([string]$name, [int]$timeoutSeconds = 20) {
     $deadline = (Get-Date).AddSeconds($timeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         $condition = New-Object System.Windows.Automation.PropertyCondition(
             [System.Windows.Automation.AutomationElement]::NameProperty, $name)
-        $found = $script:desktop.FindFirst(
+        $found = $script:targetWindow.FindFirst(
             [System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($found) { return $found }
+        if ($found -and -not $found.Current.IsOffscreen) { return $found }
+        if ($name -eq "Command palette filter") {
+            $windows = $script:desktop.FindAll(
+                [System.Windows.Automation.TreeScope]::Children,
+                [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($ownedWindow in $windows) {
+                if ($ownedWindow.Current.ProcessId -ne $script:targetWindow.Current.ProcessId) { continue }
+                $found = $ownedWindow.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+                if ($found -and -not $found.Current.IsOffscreen) { return $found }
+            }
+        }
         Start-Sleep -Milliseconds 250
     }
     return $null
@@ -370,6 +380,7 @@ try {
         Start-Sleep -Milliseconds 400
     }
     if (-not $window) { throw "The desktop window did not appear." }
+    $script:targetWindow = $window
     [void][ClickThrough.Native]::ShowWindow($desktopProcess.MainWindowHandle, 3)
     [void][ClickThrough.Native]::SetForegroundWindow($desktopProcess.MainWindowHandle)
     Start-Sleep -Seconds 2
@@ -387,7 +398,7 @@ try {
     Add-Check "ui-tree" ($treeCount -gt 20) "the UI tree has $treeCount automation elements"
 
     # 2. create the device through the real button
-    $create = Find-Element "Create device" "" 60
+    $create = Find-Element "Create device" 60
     if (-not $create) { throw "The 'Create device' control was not found." }
 
     Wait-Enabled $create
@@ -426,7 +437,7 @@ try {
     if (-not $booted) { throw "The guest did not reach readiness." }
 
     # 4. the Root Lab surface: the ADB root button
-    $adbRoot = Find-Element "ADB root" "" 20
+    $adbRoot = Find-Element "ADB root" 20
     Add-Check "rootlab.control-present" ($null -ne $adbRoot) "the Root Lab ADB root control exists in the desktop"
     if ($adbRoot) {
         Wait-Enabled $adbRoot
@@ -442,7 +453,7 @@ try {
         }
         Add-Step "adb-root" $rooted "the Root Lab ADB root button put the guest daemon at uid 0" (Save-WindowShot $handle "04-adb-root.png")
 
-        $adbUnroot = Find-Element "ADB unroot" "" 20
+        $adbUnroot = Find-Element "ADB unroot" 20
         if ($adbUnroot) {
             Wait-Enabled $adbUnroot
             $unrootDeadline = (Get-Date).AddSeconds(150)
@@ -474,7 +485,7 @@ try {
     Add-Step "apk-drag-drop" $installed "the APK was dropped on the desktop window and installed on the selected guest" (Save-WindowShot $handle "07-dropped.png")
 
     # 7. launch through the toolbar
-    $launch = Find-Element "Launch sample" "" 20
+    $launch = Find-Element "Launch sample" 20
     if (-not $launch) { throw "The 'Launch sample' control was not found." }
     Wait-Enabled $launch
     Click-Element $launch
@@ -490,7 +501,7 @@ try {
     # 8. tap through the viewport. The click is placed on the guest canvas and
     # the guest's own log proves that the tap arrived.
     $tapMapped = $false
-    $viewport = Find-Element "Embedded Android viewport" "" 20
+    $viewport = Find-Element "Embedded Android viewport" 20
     if ($viewport) {
         $bounds = $viewport.Current.BoundingRectangle
         # The sample scene occupies the lower half of the guest display, so a
@@ -518,20 +529,20 @@ try {
 
     # 9. logcat drawer
     # The Logcat drawer starts open, so it is only toggled when it is closed.
-    $logcatVisible = (Find-Element "Search logcat" "" 8) -ne $null
+    $logcatVisible = (Find-Element "Search logcat" 8) -ne $null
     if (-not $logcatVisible) {
-        $logcat = Find-Element "Toggle Logcat" "" 20
+        $logcat = Find-Element "Toggle Logcat" 20
         if ($logcat) {
             Wait-Enabled $logcat
             Click-Element $logcat
         }
         Start-Sleep -Seconds 6
-        $logcatVisible = (Find-Element "Search logcat" "" 8) -ne $null
+        $logcatVisible = (Find-Element "Search logcat" 8) -ne $null
     }
     Add-Step "logcat" $logcatVisible "the Logcat drawer opened and shows the guest log" (Save-WindowShot $handle "10-logcat.png")
 
     # 10. screenshot
-    $screenshot = Find-Element "Screenshot" "" 20
+    $screenshot = Find-Element "Screenshot" 20
     if ($screenshot) {
         Wait-Enabled $screenshot
         Click-Element $screenshot
@@ -548,8 +559,8 @@ try {
     Add-Step "screenshot" ($null -ne $shotFile) ("the Screenshot button produced " + $(if ($shotFile) { Split-Path $shotFile -Leaf } else { "no file" })) (Save-WindowShot $handle "11-screenshot.png")
 
     # 11. shutdown through the primary action
-    $stop = Find-Element "Stop" "" 30
-    if (-not $stop) { $stop = Find-Element "Primary device action" "" 10 }
+    $stop = Find-Element "Stop" 30
+    if (-not $stop) { $stop = Find-Element "Primary device action" 10 }
     if ($stop) {
         Wait-Enabled $stop
         Click-Element $stop
@@ -568,7 +579,7 @@ try {
     [void][ClickThrough.Native]::SetForegroundWindow($handle)
     Start-Sleep -Milliseconds 800
     [System.Windows.Forms.SendKeys]::SendWait("^k")
-    $palette = Find-Element "Command palette filter" "" 30
+    $palette = Find-Element "Command palette filter" 30
     Add-Check "palette.opens" ($null -ne $palette) "Ctrl+K opened the command palette"
     $shotPalette = Save-WindowShot $handle "13-palette.png"
     if ($palette) {
