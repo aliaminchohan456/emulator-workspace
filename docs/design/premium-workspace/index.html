@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Emulator Workspace · Graphite Studio</title><link rel="stylesheet" href="studio.css?v=3"></head>
+<body>
+<div class="previewbar"><span><b>DESIGN STUDY</b> 01 / Graphite Studio</span><span>Interactive prototype · simulated devices <button id="theme" title="Switch light and dark appearance">Light appearance</button></span></div>
+<div class="shell">
+ <aside class="sidebar">
+  <a class="brand" href="#studio" aria-label="Emulator Workspace home"><span class="brandmark"><i></i><i></i></span><span>Emulator<span class="brand-sub">WORKSPACE</span></span></a>
+  <div class="workspace"><span class="avatar">P</span><div>Personal workspace<small>On this computer</small></div></div>
+  <nav aria-label="Main navigation" id="nav"></nav>
+  <div class="side-heading">YOUR DEVICES <button class="iconbutton" data-action="create" title="Create device" aria-label="Create device">+</button></div>
+  <div id="device-list"></div>
+  <button class="add-device" data-action="create">+ <span>New device</span></button>
+  <div class="sidebottom"><button data-page="agents" class="side-link"><span data-icon="shield"></span> Agent access <span class="tiny-dot"></span></button><button data-page="settings" class="side-link"><span data-icon="settings"></span> Settings</button><div class="host"><span class="statusdot"></span><span>Local connection<small>Preview data only</small></span><span class="host-lock" data-icon="lock"></span></div></div>
+ </aside>
+ <div class="main">
+  <header class="titlebar"><span id="breadcrumb">Workspace <span>/</span> Studio</span><button class="search-command" data-action="palette"><span data-icon="search"></span><span>Search commands</span><kbd>Ctrl K</kbd></button><div class="windowmarks" aria-hidden="true"><span>−</span><span>□</span><span>×</span></div></header>
+  <main id="content"></main>
+  <footer class="statusbar"><span><i class="statusdot"></i> Design preview <span class="divider">/</span> No emulator connected</span><button data-action="scenarios">Explore states <span>↗</span></button><span>All values are illustrative</span></footer>
+ </div>
+</div>
+<dialog id="dialog"><form method="dialog"><button class="dialog-close iconbutton" aria-label="Close dialog">×</button></form><div id="dialog-body"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="studio.js?v=3"></script>
+</body></html>

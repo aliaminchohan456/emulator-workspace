@@ -1,4 +1,20 @@
-﻿# Implementation Tasks
+# Implementation Tasks
+
+## Active next work: premium native UI (2026-11-14)
+
+Owner requested research, detailed design and a handoff roadmap. Read
+[PREMIUM-UI-MASTER-PLAN.md](PREMIUM-UI-MASTER-PLAN.md) and
+[DEEPSEEK-UI-IMPLEMENTATION-PROMPT.md](DEEPSEEK-UI-IMPLEMENTATION-PROMPT.md).
+Graphite Studio/Porcelain browser prototype, research, tokens, full interaction
+spec and verification are in [the design package](docs/design/premium-workspace/README.md).
+Research/design/prototype are complete; native implementation is pending.
+Next: UX-00 baseline then UX-01 theme/control foundation. Continue UX-02 shell,
+UX-03 states, UX-04 library, UX-05 privileged flows, UX-06 tools, UX-07 finish
+only through the documented gates. No production/runtime edits in this task.
+Latest Grok approval of 24cc54d remains merge-only. Journal-write evidence nit
+is optional backlog. Fresh provenance-backed WHPX and existing power-loss,
+AOSP, signing/redistribution gates remain open; readiness patch excluded.
+
 
 All tasks start open. Check off an implementation task after its scoped verification passes. Close each phase only after its [exit gate](plan.md#phases-and-exit-gates) has evidence. Keep the milestone log current when a gate is blocked or verified.
 
