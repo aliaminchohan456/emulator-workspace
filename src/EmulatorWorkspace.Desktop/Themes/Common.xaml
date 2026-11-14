@@ -67,6 +67,21 @@
         <Setter Property="BorderBrush" Value="{DynamicResource FocusRing}" />
     </Style>
 
+    <!-- Keyboard-only focus visual. WPF shows a FocusVisualStyle only when the
+         element received focus through keyboard navigation, so a mouse click
+         never draws the ring while tab users still see exactly one. Set this
+         as FocusVisualStyle on every style that draws no other focus border. -->
+    <Style x:Key="FocusRingVisual" TargetType="Control">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Control">
+                    <Border Style="{StaticResource FocusRingBorder}" Opacity="1"
+                            SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Secondary (surface + border) button: normal/hover/pressed/focus/disabled
          states, pressed feedback without layout shift. -->
     <Style x:Key="ToolButton" TargetType="Button">
@@ -82,9 +97,10 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <!-- The template FocusRing is the one focus indicator; the system
-             dashed FocusVisualStyle would draw a second one on top. -->
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <!-- The FocusVisualStyle ring is the one focus indicator and WPF
+             shows it only for keyboard-initiated focus, so a mouse click
+             never draws it and no system dashed rectangle appears. -->
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -98,7 +114,6 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
                         </Border>
-                        <Border Style="{StaticResource FocusRingBorder}" x:Name="FocusRing" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -106,9 +121,6 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource PressedBg}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
@@ -134,7 +146,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -146,7 +158,6 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
                         </Border>
-                        <Border Style="{StaticResource FocusRingBorder}" x:Name="FocusRing" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -154,9 +165,6 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentPressed}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
@@ -179,7 +187,7 @@
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -190,7 +198,6 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
                         </Border>
-                        <Border Style="{StaticResource FocusRingBorder}" x:Name="FocusRing" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -198,9 +205,6 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource PressedBg}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.4" />
@@ -268,14 +272,18 @@
         </Setter>
     </Style>
 
-    <!-- ComboBox with a themed popup; the chevron is a line icon and open state
-         gets the focus ring so keyboard users see the expanded control. -->
+    <!-- ComboBox with a themed popup; the chevron is a line icon and the open
+         state is highlighted on the border. Keyboard focus draws the
+         FocusVisualStyle ring; mouse clicks do not. -->
     <Style TargetType="ComboBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Padding" Value="10,5" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- The template draws the keyboard-focus border itself; the system
+             dashed FocusVisualStyle would draw a second one on top. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
@@ -318,7 +326,7 @@
         <Setter Property="MaxDropDownHeight" Value="320" />
         <!-- Non-editable template: no PART_EditableTextBox, so IsEditable="True"
              is not supported by this style. -->
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -356,7 +364,6 @@
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Grid>
                         </Border>
-                        <Border Style="{StaticResource FocusRingBorder}" x:Name="FocusRing" />
                         <Popup x:Name="PART_Popup"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
                                AllowsTransparency="True"
@@ -386,10 +393,6 @@
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
-                            <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
@@ -408,7 +411,7 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -425,8 +428,6 @@
                         </Border>
                         <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
                                           RecognizesAccessKey="True" />
-                        <Border Style="{StaticResource FocusRingBorder}" x:Name="FocusRing" Width="16" Height="16"
-                                CornerRadius="6" Margin="-3" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <!-- Hover first: a checked box keeps its accent border
@@ -438,9 +439,6 @@
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Accent}" />
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}" />
                             <Setter TargetName="Check" Property="Opacity" Value="1" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Box" Property="Opacity" Value="0.45" />
@@ -465,6 +463,9 @@
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0,2" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- The template draws the keyboard-focus border itself; the system
+             dashed FocusVisualStyle would draw a second one on top. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">

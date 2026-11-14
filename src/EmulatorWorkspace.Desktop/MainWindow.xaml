@@ -336,7 +336,11 @@
                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                           ScrollViewer.HorizontalScrollBarVisibility="Auto">
                     <ListView.View>
-                        <GridView>
+                        <!-- AllowsColumnReorder=False: the themed
+                             GridViewColumnHeader template has no
+                             PART_FloatingHeaderCanvas, so a drag-reorder would
+                             show a blank floating ghost header. -->
+                        <GridView AllowsColumnReorder="False">
                             <GridViewColumn Header="Time" Width="90" DisplayMemberBinding="{Binding Time}" />
                             <GridViewColumn Header="Lvl" Width="36">
                                 <GridViewColumn.CellTemplate>
