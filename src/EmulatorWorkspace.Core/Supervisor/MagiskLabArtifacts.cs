@@ -66,9 +66,16 @@ public static class MagiskLabArtifacts
     public static FileStream LeaseVerified(string path, string hash)
     {
         NoReparse(path);
-        if (!File.Exists(path))
-            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Lab artifact is missing.");
-        var lease = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        FileStream lease;
+        try
+        {
+            lease = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest,
+                $"Cannot open lab artifact '{Path.GetFileName(path)}' for a verified read lease: {ex.Message}");
+        }
         try
         {
             var actual = Convert.ToHexString(SHA256.HashData(lease)).ToLowerInvariant();

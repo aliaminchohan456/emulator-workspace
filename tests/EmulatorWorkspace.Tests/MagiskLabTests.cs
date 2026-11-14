@@ -255,7 +255,7 @@ public sealed class MagiskLabTests : IDisposable
     }
 
     [Fact]
-    public void VerifiedLeaseIsRewoundAndExcludesWindowsWritesAndReplacement()
+    public void VerifiedLeaseIsRewoundAndReleased()
     {
         var path = Path.Combine(_root, "lease.img");
         File.WriteAllText(path, "expected");
@@ -263,14 +263,38 @@ public sealed class MagiskLabTests : IDisposable
         {
             Assert.Equal(0, lease.Position);
             Assert.Equal((int)'e', lease.ReadByte());
-            if (OperatingSystem.IsWindows())
-            {
-                Assert.Throws<IOException>(() => File.Open(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite));
-                Assert.Throws<IOException>(() => File.Move(path, path + ".moved"));
-                Assert.Throws<IOException>(() => File.Delete(path));
-            }
         }
         File.Move(path, path + ".moved");
+    }
+
+    [WindowsFact]
+    public void VerifiedLeaseExcludesWindowsWritesAndReplacement()
+    {
+        var path = Path.Combine(_root, "lease.img");
+        File.WriteAllText(path, "expected");
+        using var lease = MagiskLabArtifacts.LeaseVerified(path, MagiskLabArtifacts.Hash(path));
+        Assert.Throws<IOException>(() => File.Open(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite));
+        Assert.Throws<IOException>(() => File.Move(path, path + ".moved"));
+        Assert.Throws<IOException>(() => File.Delete(path));
+    }
+
+    [Fact]
+    public void MissingLeaseArtifactReturnsInvalidRequest()
+    {
+        var error = Assert.Throws<SupervisorOperationException>(() =>
+            MagiskLabArtifacts.LeaseVerified(Path.Combine(_root, "missing.img"), MagiskLabArtifacts.PatchHash));
+        Assert.Equal(ErrorCodes.InvalidRequest, error.Code);
+    }
+
+    [WindowsFact]
+    public void UnavailableLeaseArtifactReturnsInvalidRequest()
+    {
+        var path = Path.Combine(_root, "busy.img");
+        File.WriteAllText(path, "expected");
+        var hash = MagiskLabArtifacts.Hash(path);
+        using var writer = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+        var error = Assert.Throws<SupervisorOperationException>(() => MagiskLabArtifacts.LeaseVerified(path, hash));
+        Assert.Equal(ErrorCodes.InvalidRequest, error.Code);
     }
 
     [Theory]

@@ -552,3 +552,35 @@ warnings; `dotnet test tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csp
 -c Release --no-restore` passed 388/388 on Windows. Logs:
 `artifacts/magisk-review3-build.log` and `artifacts/magisk-review3-tests.log`.
 `git diff --check` passed. These are build/unit checks, not a fresh WHPX run.
+
+## Fourth Magisk review follow-up (2026-11-14)
+
+Grok independently passed the Linux Release build and 388 tests at 8eace58,
+with no merge blockers. The original N1 swapped-boot finding was withdrawn:
+the prior pins loop already re-hashed the patch under the lease before boot.
+
+F1: split rewind/release coverage from Windows write/delete/rename exclusion.
+WindowsFact reports an explicit skip on non-Windows runners; platform-specific
+assertions no longer silently disappear inside a passing portable test.
+F2: the 60 dispatcher magisk.* phase cases prove end-to-end scope denial, not
+phase-guard reach: AuthorizeAgent rejects them first. The direct Guard theory
+covers all 144 phase/operation pairs, including the magisk.* early-return fence.
+F3: removed the File.Exists precheck from LeaseVerified. IOException and
+UnauthorizedAccessException during open now return invalid_request, including
+missing/deleted and sharing-denied files. Hash/seek failures still dispose the
+opened handle. Tests cover missing files and Windows sharing denial.
+
+No new WHPX or WPF run is claimed. Fake-ADB cleanup tests, WPF Cancel,
+boot-completed exact markers, later operator-start lease and replay-loop
+session-forwarding regression coverage remain optional follow-ups. Power-loss,
+source-built AOSP, signing and redistribution gates remain open. Readiness
+changes remain excluded. Merge approval is not release-readiness approval.
+
+Verification: Release build passed with 22 existing warnings; Windows tests
+passed 391/391, zero skipped. The two WindowsFact cases executed on this host.
+Linux skip reporting is implemented but was not run here; expected Linux
+result is 389 passed / 2 skipped, subject to independent verification.
+Commands: `dotnet build -c Release --no-restore` and
+`dotnet test -c Release --no-build --no-restore`. Logs:
+`artifacts/magisk-review4-build.log`, `artifacts/magisk-review4-tests.log`.
+`git diff --check` passed. No fresh hardware evidence is attached to this change.
