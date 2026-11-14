@@ -81,6 +81,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         AdbRootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(true), () => SelectedDevice is not null && !IsBusy);
         AdbUnrootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(false), () => SelectedDevice is not null && !IsBusy);
         RefreshAdbStateCommand = new AsyncRelayCommand(RefreshAdbStateAsync, () => SelectedDevice is not null && !IsBusy);
+        MagiskInstallCommand = new AsyncRelayCommand(InstallMagiskAsync, () => SelectedDevice is not null && !IsBusy);
+        MagiskRecoverCommand = new AsyncRelayCommand(RecoverMagiskAsync, () => SelectedDevice is not null && !IsBusy);
 
         LogView = CollectionViewSource.GetDefaultView(LogEntries);
         LogView.Filter = FilterLog;
@@ -161,6 +163,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncRelayCommand AdbUnrootCommand { get; }
 
     public AsyncRelayCommand RefreshAdbStateCommand { get; }
+    public AsyncRelayCommand MagiskInstallCommand { get; }
+    public AsyncRelayCommand MagiskRecoverCommand { get; }
+    private string _magiskState = "Magisk lab: not checked";
+    public string MagiskState { get => _magiskState; private set => SetProperty(ref _magiskState, value); }
 
     /// <summary>Effective ADB daemon user of the selected guest ("n/a" when unknown).</summary>
     public string AdbUid { get; private set; } = "n/a";
@@ -1713,6 +1719,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DesktopLog.Write($"ADB daemon state unavailable: {ex.Message}");
         }
 
+        try
+        {
+            var lab = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30));
+            if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + lab["phase"];
+        }
+        catch (SupervisorRequestException ex)
+        {
+            if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + ex.Message;
+        }
         OnPropertyChanged(nameof(AdbUid));
         OnPropertyChanged(nameof(AdbRootCapable));
         OnPropertyChanged(nameof(AdbBuildType));
@@ -1743,6 +1758,70 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         await RefreshAdbStateAsync().ConfigureAwait(true);
+    }
+
+    private async Task InstallMagiskAsync()
+    {
+        if (SelectedDevice is not { } device) return;
+        string? Pick(string title, string filter)
+        {
+            var dialog = new OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+        var patch = Pick("Select the verified Magisk lab ramdisk", "Ramdisk (*.img)|*.img");
+        if (patch is null) return;
+        var apk = Pick("Select the pinned Magisk manager APK", "Android package (*.apk)|*.apk");
+        if (apk is null) return;
+        var probe = Pick("Select the lab app root probe APK", "Android package (*.apk)|*.apk");
+        if (probe is null) return;
+        await RunBusyAsync("Checking Magisk lab inputs...", async () =>
+        {
+            var prepared = await RequestAsync("magisk.prepare", new JsonObject
+            {
+                ["name"] = device.Name, ["patch"] = patch, ["apk"] = apk,
+                ["probe"] = probe, ["allowProvisioningAdbRoot"] = true,
+            }, TimeSpan.FromMinutes(3));
+            MagiskState = "Magisk lab: prepared";
+            if (MessageBox.Show($"Install the verified base-only Magisk lab on {device.Name}?\n\n" +
+                "This temporarily enables ADB root for provisioning, then returns it to UID 2000. " +
+                "Zygisk stays off and no modules are installed. Stock and guest-data backups are preserved. " +
+                "Two cold boots verify app root. Snapshots are fenced for this lab generation.\n\n" +
+                "Transaction: " + prepared["transaction"], "Approve Magisk lab installation",
+                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            await ApprovedMagiskAction(device.Name, prepared, "install");
+        });
+    }
+
+    private async Task RecoverMagiskAsync()
+    {
+        if (SelectedDevice is not { } device) return;
+        await RunBusyAsync("Checking stock recovery...", async () =>
+        {
+            var state = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30));
+            if (state["transaction"] is null) { MagiskState = "Magisk lab: not configured"; return; }
+            if (MessageBox.Show($"Restore stock boot for {device.Name}?\n\n" +
+                "The supervisor can stop an unbootable guest from Windows. It preserves current guest data " +
+                "when possible; if stock cannot boot, it restores the verified pre-install data backup. " +
+                "Failed overlays remain available as evidence.\n\nTransaction: " + state["transaction"],
+                "Approve stock recovery", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            await ApprovedMagiskAction(device.Name, state, "recover");
+        });
+    }
+
+    private async Task ApprovedMagiskAction(string name, JsonObject state, string action)
+    {
+        var approval = await RequestAsync("magisk.approve", new JsonObject
+        {
+            ["name"] = name, ["transaction"] = state["transaction"]!.DeepClone(), ["action"] = action,
+        }, TimeSpan.FromSeconds(30));
+        var result = await RequestAsync("magisk." + action, new JsonObject
+        {
+            ["name"] = name, ["transaction"] = state["transaction"]!.DeepClone(),
+            ["approval"] = approval["approval"]!.DeepClone(),
+        }, TimeSpan.FromMinutes(15));
+        MagiskState = "Magisk lab: " + result["phase"];
+        StatusMessage = MagiskState;
+        await RefreshDevicesAsync();
     }
 
     private async Task<JsonObject> RequestAsync(string op, JsonObject? args, TimeSpan deadline)
@@ -1780,6 +1859,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         AdbRootCommand.RaiseCanExecuteChanged();
         AdbUnrootCommand.RaiseCanExecuteChanged();
         RefreshAdbStateCommand.RaiseCanExecuteChanged();
+        MagiskInstallCommand.RaiseCanExecuteChanged();
+        MagiskRecoverCommand.RaiseCanExecuteChanged();
     }
 
     private static double Percentile(List<double> values, double fraction)

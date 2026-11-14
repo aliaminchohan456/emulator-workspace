@@ -1,0 +1,236 @@
+# Magisk Lab Windows evidence
+
+## Base-only boot feasibility: passed
+
+Run `artifacts/magisk-lab/windows-baseonly-20261114-131551/` passed
+132 checks through the Release CLI and explicitly pinned Release supervisor.
+This is the boot-input/provisioning probe, not transactional product acceptance.
+
+Host: Windows 11 Pro 26H2 build 26300.9974, Intel i5-8265U, 31.8 GiB,
+UHD 620 driver 31.0.101.2135. Engine 37.2.12.0 build 16428233 with WHPX.
+SDK image `system-images;android-35;default;x86_64` revision 2, API 35,
+x86_64 userdebug. SwiftShader indirect, 1080 x 2400, 4 vCPU, 3072 MiB.
+The managed profile has more CPU/RAM than the Linux run (2 vCPU/2048 MiB).
+Snapshot load and save disabled; all boots were cold.
+
+The owner explicitly authorized temporary ADB root for provisioning.
+The pinned 13-file environment was staged without the upstream test APK or
+modules. Guest hashes matched. Provisioning returned adbd from UID 0 to 2000
+before any Magisk proof. Every evidence request verified the managed process
+generation, emulator serial, AVD name and transport ID.
+
+Both post-provisioning cold boots reported Magisk 30700. Shell UID 2000 and
+app `dev.emulatorworkspace.suprobe`, UID 10149, `untrusted_app`, independently
+reached UID 0 with SELinux context `u:r:magisk:s0`. Adbd remained UID 2000.
+Modules and boot-script directories were empty, Zygisk was explicitly off,
+zygote had no Zygisk mapping, and there was no hosts mount.
+
+Stock ramdisk restoration completed boot, preserved the guest marker and
+app UID, removed Magisk elevation, and made the app probe report permission
+denied (`error=13`). The original stock ramdisk hash remained unchanged.
+Each cold boot followed `sync` and guest power-off; cleanup removed the
+disposable guest and stopped its supervisor.
+
+The generic instrumentation API reports `tests=0, passed=false` because
+this probe returns identity fields rather than JUnit test counts. Acceptance
+asserts the raw caller UID/context, root result and instrumentation output;
+it does not reinterpret that generic JUnit flag as success.
+
+Reproduction:
+
+```powershell
+python tools/magisk-baseonly-acceptance.py --root D:/WS-Magisk-NewProbe --allow-provisioning-adb-root
+```
+
+## Supervisor transaction verification
+
+The initial run `artifacts/magisk-lab/transaction-20261114-132646/` failed
+at a provisioning precondition after baseline boot and backup. Automatic
+stock rollback completed, and cleanup removed the guest. This failure is
+retained separately; it is not successful install evidence. The revised
+adapter accepts an empty pre-existing environment directory, normalizes
+Windows ADB line endings and records bounded command evidence. Rerun
+`transaction-20261114-133402` passed all seven transaction assertions,
+including two app-root cold boots, stock recovery and guest cleanup.
+That iteration passed its Release build and 72 tests. The Grok-review revision
+below adds stricter enrollment/probe checks and passes 89 tests.
+
+New source exposes operator-only `magisk.prepare`, `magisk.status`,
+`magisk.approve`, `magisk.install` and `magisk.recover` through the supervisor.
+Approval binds the caller, instance generation, transaction and action, expires
+in ten minutes and is consumed durably. Prepared inputs are privately copied
+and pinned; stock and data backups are preserved. Snapshots are conservatively
+fenced for enrolled lab generations. Windows recovery does not require a
+booted Android guest. A recovery failure keeps the journal and artifacts and
+requires explicit recovery before other mutations.
+
+Failure evidence:
+
+- `transaction-20261114-135144-329361`: the actual supervisor process was
+  terminated while the journal said `staging`. The harness held a Windows
+  process handle after verifying the exact executable path and the PID
+  returned by this isolated root. After restart, `staging` persisted, normal
+  start was fenced, approved recovery passed without Android, and cleanup
+  passed. This is process-crash evidence, not sudden host-power-loss testing.
+
+- `transaction-20261114-134311-642159`: staging failed after a partial copy
+  because the manager APK was missing. After supervisor shutdown/restart,
+  the durable `staging` phase fenced normal start and approved recovery
+  completed without booting Android. This is partial staging/restart
+  evidence, not a power-loss durability claim.
+- `transaction-20261114-134827-108536`: a deliberately corrupted private
+  patch was rejected before guest mutation; restart, recovery and cleanup passed.
+- `transaction-20261114-134330-858968`: patched boot exceeded its approved
+  one-second deadline. Automatic stock rollback returned `recovered`, with
+  boot complete, adbd UID 2000 and shell `su` denied. The original harness
+  expected the words "timed out" rather than the actual "readiness within
+  1s" message; its failed summary is retained alongside the independent
+  `corrected-assertion-review.json` against the saved raw response.
+- Corrupt-patch attempt `transaction-20261114-134253` hit a shutdown/restart
+  pipe race; attempt `transaction-20261114-134347-650783` passed the safety
+  checks but cleanup encountered ports used by the concurrent timeout run.
+  The harness now waits for the supervisor lock to release. Run guest lanes
+  sequentially; later isolated cleanup and the corrupt-patch rerun passed.
+
+`transaction-20261114-134857-299370` passed the full install and two
+cold-boot proofs again. The harness then replaced only its stopped disposable
+userdata overlay with invalid bytes. The live WPF Recover stock control
+presented the exact guest/transaction and submitted approval and recovery.
+The first stock attempt failed on the invalid overlay; the supervisor
+preserved failed userdata/encryption overlays, restored all hash-verified
+baseline files, booted stock, proved shell root denial and adbd UID 2000,
+then booted stock again with no private ramdisk override. The UI reported
+`Magisk lab: recovered`; normal supervisor deletion and empty-list cleanup
+passed. Raw approval/result UI trees, a screenshot, failed overlays and
+payload hashes are retained in that run. Following Grok review, the actual
+summary.json label was corrected to `stock-recovery-from-compatible-data-backup`,
+with a correction note. After baseline restoration the probe app is absent,
+so this lane proves stock shell denial and baseline data recovery. App denial
+on preserved installed data was proved by `transaction-20261114-133402`.
+The final screenshot's pipe error follows the harness's intentional
+supervisor shutdown after successful recovery.
+
+Two small fixes followed that hardware run: status reads no longer wait
+behind the transaction mutation lease, and journal retirement creates its
+directory if a crash preceded directory creation. Build/unit verification
+and final process-crash smoke `transaction-20261114-140455-708817`
+(passed, including restart/recovery/deletion) cover those changes; the full hardware run
+above identifies its earlier exact binaries in `payloads.json`.
+Source-built AOSP image capacity and redistribution/signing reviews remain
+separate gates. No release-readiness claim is made.
+
+## Operator entry points
+
+The shared supervisor locator now prefers repository Release over Debug
+(including a Release DLL over a Debug executable). A packaged adjacent
+supervisor or explicit path retains precedence. An invalid explicit path
+fails closed instead of silently selecting another binary. For reproducible
+acceptance, keep `EMULATORWORKSPACE_SUPERVISOR_EXE` explicitly set. Send JSON using
+`wsctl call --op OP --args-file FILE --root ROOT`.
+
+1. `magisk.prepare`: `name`, `patch`, `apk`, `probe`, and
+   `allowProvisioningAdbRoot: true`. The guest must be stopped and stock.
+   An optional `bootTimeoutSeconds` (1–300, default 300) is bound into
+   the prepared transaction; the short setting exercises timeout recovery.
+2. Review `magisk.status` and its exact `transaction`.
+3. `magisk.approve`: `name`, `transaction`, `action: "install"` or `"recover"`.
+4. Call `magisk.install` or `magisk.recover` with `name`, `transaction`
+   and the returned single-use `approval`. Do not publish the credential.
+
+The WPF Root Lab panel exposes separate Install Magisk lab and Recover stock
+controls. It selects pinned inputs, prepares them, and displays the concrete
+transaction and provisioning/recovery effects before approval. Recovery is
+available for a stopped or unbootable enrolled guest. Agent credentials
+cannot call these operator-only operations; MCP remains off by default.
+Snapshots stay fenced for this lab generation, even after stock recovery;
+use a fresh stock profile for snapshot work. Existing snapshots are retained.
+
+Reproduce failure lanes with a new root for each:
+
+```powershell
+python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-NewRun --allow-provisioning-adb-root --mode normal
+# Other modes: corrupt, interrupted-staging, crash-staging, timeout, data-recovery.
+# --desktop-recovery waits for recovery through the live WPF controls.
+```
+
+## Grok review follow-up (2026-11-14)
+
+Yes: `magisk.install` calls `MagiskGuestAdapter.Provision`, which requests
+ADB root. This is limited to the explicitly opted-in, enrolled SDK lab
+transaction; it is not a general product/agent entitlement. Before starting
+provisioning and immediately before requesting root, the supervisor rereads
+the journal, verifies its instance-generation binding, exact transaction,
+`activating` phase, opted-in flag, pinned image, private transaction directory
+and active patched ramdisk. The adapter provisioning method is internal.
+The narrow owner-approved provisioning exception is documented in agents.md;
+normal Magisk verification does not rely on a rooted adbd.
+
+Every new journal starts with `adbProvisioning.rootRequested=false` and
+`unrootAttempted=false`. Provisioning durably records intent before requesting
+root, the root result, the unroot attempt, the unroot result (including exact
+transport, observed time and `uidAfter`), and `adbdUid2000Verified` before
+root proofs proceed. Cleanup attempts unroot even when the root request or
+provisioning fails. Recovery independently saves `recoveryAdbUnroot` and
+requires UID 2000. A process crash can leave an incomplete attempt in the
+journal; it cannot fabricate a successful unroot check, and the generation
+remains fenced for explicit stock recovery.
+
+`ls -A` includes hidden files and symlink entries when determining whether
+the environment is empty; command failure is fatal. The adapter rejects
+symlinks at `/data/adb` and `/data/adb/magisk`, requires root:root ownership,
+and validates exact path/SELinux-label pairs: `/data/adb` must be
+`adb_data_file`; `/data/adb/magisk` may be `system_file` (observed for the
+pinned Magisk-created empty directory), `adb_data_file` (newly created
+under the data directory), or `magisk_file`. Other labels are refused. Directory ownership, permissions and labels are captured in the
+provisioning output. A populated or unexpectedly labeled environment is
+refused, not wiped.
+
+The pinned probe APK is unchanged. It returns a valid instrumentation result
+bundle and completion code, but no JUnit tests. `MagiskProbeEvidence` parses
+that exact bundle, requires all eight fields once, the exact package/UID,
+a valid app PID/context, a matching caller identity, successful completion,
+and explicit su output. Missing, truncated, duplicate, malformed, wrong-UID
+or failed output throws `adb_failure`. The transaction returns a separate
+`appProof` with verified caller/root results; generic JUnit `passed=false`
+remains untouched. Regression tests cover the failure cases and Windows ADB
+line endings. Acceptance requires both parsed app proofs and journaled
+provisioning unroot verification.
+
+Linux passed on Emulator 37.2.13.0 (build 16740729, KVM); Windows passed on
+37.2.12.0 (build 16428233, WHPX). These are distinct tested rows, not a claim
+that the engine builds are identical. Source-built AOSP, signing,
+redistribution and sudden host-power-loss testing remain outside this result.
+
+Final Release hardware rerun **passed**:
+`transaction-20261114-142606-818906`, with eight acceptance assertions,
+including install, two parsed app-root cold-boot proofs, journaled unroot,
+approval replay rejection, snapshot fencing, stock recovery with app-root
+denial and guest cleanup. Release build passed (21 existing warnings on the
+final incremental build; no new warnings) and all 89 tests passed. Both the
+source manifest and payload hashes were rechecked unchanged after completion.
+No code was changed after this successful full run.
+
+[Committed compact evidence, payload hashes and corrected prior summary](evidence/magisk-windows-review-20261114.json)
+
+The running supervisor path and creation time were checked against the
+Release payload. A concurrent magisk.status request completed during
+baseline_boot in 0.219 seconds. A separate live CLI launch, without an
+explicit environment override, selected the Release supervisor. Raw logs,
+journals and binaries remain local; the committed JSON provides reviewable
+results and hashes without redistributing SDK or Magisk assets.
+
+| Final Release file | SHA-256 |
+| --- | --- |
+| `wsctl.exe` | `b95e32aea6fe5e84f235e8c2cf3bf4a24fa0ce8341fb925e647ad9f41d25ec75` |
+| `EmulatorWorkspace.Supervisor.exe` | `0f039b61c5ba308ac2a5ca0b7dcaae2f5fdce06d4681502e8d5a0e8791e43ad2` |
+| `EmulatorWorkspace.Supervisor.dll` | `61144dc3d34469a6422a989d64372ad2bdde13a55585a0f2ba47ab637cee5857` |
+| `EmulatorWorkspace.Core.dll` | `3be84449838941e7689efb80c765ee288ca6bfbb3a8fe76175caccb29a83eb62` |
+
+The first Grok-review hardware run `transaction-20261114-141840-349692`
+exposed the pinned Magisk-created empty directory's `system_file` context.
+The initially narrower check refused provisioning. The journal recorded
+`rootRequested=true`, `unrootAttempted=true`, `adbdUid2000Verified=true`,
+and the exact ownership/label trace. Automatic stock rollback completed
+with `recoveryAdbUnroot.uidAfter=2000`; guest deletion and supervisor shutdown
+completed. This failed attempt is retained separately. The corrected check permits `system_file` only for the exact
+`/data/adb/magisk` path; it does not relax the parent directory check.

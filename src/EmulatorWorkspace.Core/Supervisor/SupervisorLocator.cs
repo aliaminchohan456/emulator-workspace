@@ -94,16 +94,19 @@ public static class SupervisorLocator
     }
 
     public static (string FileName, IReadOnlyList<string> Args) ResolveLaunchTarget(string? explicitPath = null)
-    {
-        var candidate = explicitPath
-                        ?? Environment.GetEnvironmentVariable(ExecutableEnvironmentVariable);
+        => ResolveLaunchTargetFrom(AppContext.BaseDirectory,
+            explicitPath ?? Environment.GetEnvironmentVariable(ExecutableEnvironmentVariable));
 
-        if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+    public static (string FileName, IReadOnlyList<string> Args) ResolveLaunchTargetFrom(string baseDirectory, string? candidate)
+    {
+        if (!string.IsNullOrWhiteSpace(candidate))
         {
-            return (candidate, Array.Empty<string>());
+            if (!File.Exists(candidate))
+                throw new SupervisorUnavailableException("Explicit supervisor path does not exist: " + candidate);
+            return candidate.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                ? ("dotnet", new[] { candidate }) : (candidate, Array.Empty<string>());
         }
 
-        var baseDirectory = AppContext.BaseDirectory;
         var sameDirectoryExe = Path.Combine(baseDirectory, "EmulatorWorkspace.Supervisor.exe");
         if (File.Exists(sameDirectoryExe))
         {
@@ -113,7 +116,7 @@ public static class SupervisorLocator
         var repo = FindRepositoryRoot(baseDirectory);
         if (repo is not null)
         {
-            foreach (var configuration in new[] { "Debug", "Release" })
+            foreach (var configuration in new[] { "Release", "Debug" })
             {
                 var exe = Path.Combine(repo, "src", "EmulatorWorkspace.Supervisor", "bin", configuration,
                     "net10.0-windows", "EmulatorWorkspace.Supervisor.exe");

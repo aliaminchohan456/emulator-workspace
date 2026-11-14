@@ -12,7 +12,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Compare supported hardware and software render modes using the same scene. Capture frame pacing and input traces before selecting the production viewport path.
   Boot-time comparison is recorded (host GPU 43-70 s, swiftshader 66-95 s); 20+ sample pacing and latency traces remain open.
 - [ ] Start the Magisk feasibility probe early. Identify a suitable Linux AOSP builder, pin a source candidate, record provenance and rights, prove stock cold boot, and identify the boot artifacts and verification policy actually consumed by the chosen engine.
-  Boot artifacts and verification policy are proven, and an unsigned repacked `-ramdisk` boots with a guest-visible marker. On 2026-11-13 the Linux builder compiled Magisk v30.7 from the pinned commit, patched the SDK regression ramdisk, booted it twice with `su` UID 0, and restored stock. The first run used the upstream full test environment (Shamiko and test modules, shell UID 2000 `su` only). The 2026-11-14 base-only rerun had no modules, Zygisk off, and proved shell UID 2000 and an app probe at UID 10149 reaching UID 0. The source-built AOSP image is still blocked by capacity (8 threads, 15.6 GiB RAM, 106 GiB free; requires 64 GB RAM and 400 GB). Windows WHPX acceptance remains open. [Linux evidence](docs/magisk-lab-linux-evidence.md)
+  Boot artifacts and verification policy are proven, and an unsigned repacked `-ramdisk` boots with a guest-visible marker. On 2026-11-13 the Linux builder compiled Magisk v30.7 from the pinned commit, patched the SDK regression ramdisk, booted it twice with `su` UID 0, and restored stock. The first run used the upstream full test environment (Shamiko and test modules, shell UID 2000 `su` only). The 2026-11-14 base-only rerun had no modules, Zygisk off, and proved shell UID 2000 and an app probe at UID 10149 reaching UID 0. The source-built AOSP image is still blocked by capacity (8 threads, 15.6 GiB RAM, 106 GiB free; requires 64 GB RAM and 400 GB). Windows WHPX base-only boot and supervisor install/stock recovery passed; data-fallback and desktop validation are tracked in the Windows evidence. [Linux evidence](docs/magisk-lab-linux-evidence.md)
 - [x] Save commands, outputs, matrix rows, and blockers. If a suitable WHPX host is unavailable, prepare the runnable validation harness and mark hardware results pending.
 
 ## 1. Developer MVP
@@ -67,14 +67,48 @@ All tasks start open. Check off an implementation task after its scoped verifica
 
 ## 4. Root Lab
 
-- [ ] Add separate ADB root and Magisk controls and capability badges. Verify targeted `adb root` and `adb unroot` with effective UID after reconnect. Recheck after boots, restores, and updates.
-  The CLI side is implemented and verified: `wsctl adb-root`, `wsctl adb-unroot`, `wsctl adb-root-state` (ops `instance.adbRoot`, `instance.adbRootState`) are scoped to one managed guest by its exact ADB serial, refuse a non-userdebug image with the typed `capability_unavailable` error and re-read the effective user. Run `artifacts/phase3/rootlab/20261111-222756` passed 10 of 10 checks: uid 2000 -> 0 -> 2000, transport reattachment 301 -> 302, state refresh after boot and after a snapshot restore, named snapshot round-trip and cleanup. The WPF Root Lab surface is built: the inspector carries an **ADB root** / **ADB unroot** / **Refresh** group that shows the effective uid, the build type and the transport, and the same actions are in the Ctrl+K command palette. The Linux builder now produces the pinned Magisk APK and the patched ramdisk; the Windows Magisk controls and install lifecycle remain open.
+Windows handoff review (2026-11-14): docs fast-forwarded locally to `378d5a9`;
+all eight split-part hashes, the uncompressed tar hash and all 55 inner file
+hashes passed. Installed SDK ramdisk/kernel/system/vendor match the bundle.
+Baseline `dotnet build -c Release` passed with 22 existing warnings;
+`dotnet test -c Release --no-build` passed 64/64. The unrelated Linux
+readiness-probe patch remains unapplied.
+
+**Setup clarification gate:** the pinned `Environment#setupEnvironment`
+also installs Shamiko and test modules, contrary to the base-only lab scope.
+The Windows probe was interrupted during stock boot wait before any patched
+boot, APK installation or setup. Its guest and supervisors were cleaned up,
+and ADB was empty. No Windows Magisk success is claimed. See
+[the exact questions for Grok](docs/magisk-handoff-questions.md) and raw
+`artifacts/magisk-lab/windows-20261114-123747/`. The probe automatically
+resolved a Debug supervisor beside the Release CLI; the next run must pin
+the supervisor explicitly. Reproduce inner verification with
+`python tools/verify-magisk-handoff.py artifacts/magisk-lab/linux-20261113-110018 --report artifacts/magisk-lab/windows-handoff-verification.json`.
+Next: obtain a verified base-only setup and explicit app UID evidence, then
+resume Windows cold boots and transactional install/recovery implementation.
+
+Follow-up review: both requested evidence items arrived in corrected docs
+`485b093` and `linux-20261114-124924-baseonly`. Local fast-forward preserved
+the Windows notes. Tar and inventory pins, all 48 files, 13 independently
+staged payload files and the probe APK signature verify. Reports:
+`artifacts/magisk-lab/windows-baseonly-verification.json` and
+`artifacts/magisk-lab/windows-baseonly-staged-verification.json`.
+The exact app probe shows app UID 10149 reaching Magisk UID 0 on Linux and
+permission denial after stock restoration. The owner approved temporary ADB
+root for provisioning, reverted before Magisk proof. Windows feasibility
+passed 132 checks; supervisor transaction `transaction-20261114-133402`
+passed install, two cold boots, app root, fencing, replay denial and stock
+recovery. See [Windows evidence](docs/magisk-lab-windows-evidence.md) for
+current failure-path validation. The readiness patch stays separate.
+
+- [x] Add separate ADB root and Magisk controls and capability badges. Verify targeted `adb root` and `adb unroot` with effective UID after reconnect. Recheck after boots, restores, and updates.
+  The CLI side is implemented and verified: `wsctl adb-root`, `wsctl adb-unroot`, `wsctl adb-root-state` (ops `instance.adbRoot`, `instance.adbRootState`) are scoped to one managed guest by its exact ADB serial, refuse a non-userdebug image with the typed `capability_unavailable` error and re-read the effective user. Run `artifacts/phase3/rootlab/20261111-222756` passed 10 of 10 checks: uid 2000 -> 0 -> 2000, transport reattachment 301 -> 302, state refresh after boot and after a snapshot restore, named snapshot round-trip and cleanup. The WPF Root Lab surface is built: the inspector carries an **ADB root** / **ADB unroot** / **Refresh** group that shows the effective uid, the build type and the transport, and the same actions are in the Ctrl+K command palette. The Linux builder now produces the pinned Magisk APK and the patched ramdisk; separate Windows Magisk controls and the supervisor install lifecycle are implemented; live WPF recovery passed, including a corrupt userdata overlay and verified baseline restoration.
 - [ ] Pin AOSP, engine, and Magisk versions and document image provenance and the verified patch flow. Preserve pristine artifacts and patch a per-instance copy of the actual boot inputs.
   [The build procedure](docs/magisk-lab-build.md) pins the experimental AOSP manifest and Magisk v30.7, records the SDK stock ramdisk hash, and provides the Linux capacity check and exact pinned patch command. On 2026-11-13 the pinned `avd_patch` helper patched a copy of the SDK stock ramdisk; the stock hash stayed `60eb16b9…`, the patched hash is `d5b47070…`, and the APK hash is `d820319e…`. The source AOSP build is still blocked by capacity, so source-built image provenance remains open.
-- [ ] Implement approved Magisk install with durable backup, journaled staging, validated activation, cold boot, and incompatible snapshot fencing. Provide progress and exact compatibility failure reasons.
-- [ ] Verify Android boot, expected Magisk version, and approved guest app or probe `su` with UID 0. Repeat after a second cold boot and verify the original profile still boots.
-  Linux verified on the SDK regression profile with the base-only setup (`artifacts/magisk-lab/linux-20261114-124924-baseonly`): two patched cold boots returned `boot_completed=1`, `magisk -V` 30700, an empty module inventory, `zygisk=0`, `su -c id` from shell UID 2000 -> 0, and the app probe UID 10149 -> UID 0 `u:r:magisk:s0`. The stock cold boot kept the guest marker, removed Magisk, and rejected `su`. The 2026-11-13 run used the upstream full test environment, so it is not base-only evidence. The Windows pinned engine and WHPX repeat remains open.
-- [ ] Recover from the Windows app while Android is unavailable. Test exact stock boot and compatible guest data restoration after interrupted writes, corrupt patches, and boot timeouts. Preserve evidence before allowing retries.
+- [x] Implement approved Magisk install with durable backup, journaled staging, validated activation, cold boot, and incompatible snapshot fencing. Provide progress and exact compatibility failure reasons.
+- [x] Verify Android boot, expected Magisk version, and approved guest app or probe `su` with UID 0. Repeat after a second cold boot and verify the original profile still boots.
+  Linux verified on the SDK regression profile with the base-only setup (`artifacts/magisk-lab/linux-20261114-124924-baseonly`): two patched cold boots returned `boot_completed=1`, `magisk -V` 30700, an empty module inventory, `zygisk=0`, `su -c id` from shell UID 2000 -> 0, and the app probe UID 10149 -> UID 0 `u:r:magisk:s0`. The stock cold boot kept the guest marker, removed Magisk, and rejected `su`. The 2026-11-13 run used the upstream full test environment, so it is not base-only evidence. The Windows pinned engine/WHPX repeat passed; see the Windows evidence record.
+- [x] Recover from the Windows app while Android is unavailable. Test exact stock boot and compatible guest data restoration after interrupted writes, corrupt patches, and boot timeouts. Preserve evidence before allowing retries.
 - [ ] Add opt-in module import and recovery only after base install and restore pass. Expose Zygisk or module toggles only for verified combinations.
 
 ## 5. Release
@@ -867,3 +901,22 @@ All tasks start open. Check off an implementation task after its scoped verifica
   are read-only. The first gate is `emulator -accel-check` inside the
   sandbox. If it cannot use WHPX, use an isolated Windows 11 x64 VM
   with virtualization extensions exposed.
+
+- Windows Magisk acceptance (2026-11-14): base-only feasibility passed 132 checks;
+  supervised install passed two shell/app-root cold boots and stock recovery.
+  Corrupt patch, real staging process crash, one-second boot-timeout rollback,
+  and WPF recovery of a corrupt data overlay passed. All disposable guests
+  were removed. Release build and 72 tests pass; details and exact evidence
+  are in [Windows Magisk evidence](docs/magisk-lab-windows-evidence.md).
+  The unrelated readiness patch remains unapplied; source AOSP capacity,
+  redistribution review and release signing remain open.
+
+- Grok review follow-up: isolated branch `codex/magisk-windows-lab` from
+  `485b093`; enrollment recheck and journaled provisioning unroot, strict
+  app-proof parsing, directory ownership/SELinux checks, Release-first
+  supervisor selection and invalid-path rejection implemented. Release
+  build and 89 tests pass. Live CLI discovery selected Release without an
+  explicit override. Full final-binary transaction `transaction-20261114-142606-818906` passed
+  all eight assertions before commit; source/payload hashes were unchanged.
+  The earlier label-check rejection recovered stock and verified unroot.
+  Compact evidence is in `docs/evidence/magisk-windows-review-20261114.json`.

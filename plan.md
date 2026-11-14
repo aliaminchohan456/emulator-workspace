@@ -53,6 +53,25 @@ samples, and open gates are in
 
 ## Initial architecture decisions
 
+Magisk handoff review (2026-11-14): the Linux bundle is checksum-verified,
+but Windows setup is gated on clarification. The pinned upstream
+`Environment#setupEnvironment` installs Shamiko and test modules as well as
+the base environment, conflicting with this lab's scope. Preserve the Linux
+raw results but do not treat them as base-only installation acceptance.
+The Windows stock-only probe was interrupted and cleaned up before patched
+boot or setup. [Questions and evidence](docs/magisk-handoff-questions.md).
+
+Follow-up: corrected docs `485b093` and the fresh base-only Linux bundle
+have now been reviewed. All 48 file hashes, the tar/inventory hashes, the
+13 staged payload hashes and the app probe signature pass verification.
+The new procedure uses ADB root temporarily for provisioning, then verifies
+Magisk with adbd back at UID 2000. Grok explicitly requested an owner decision
+on that dependency; the owner explicitly approved it. Windows feasibility
+passed 132 checks and the supervisor install/two-cold-boot/stock-recovery
+transaction passed. Failure-path and desktop validation are recorded in
+[Windows evidence](docs/magisk-lab-windows-evidence.md). The app-UI
+provisioning alternative remains unverified.
+
 | Area | Starting decision | What must be proven |
 | --- | --- | --- |
 | Windows desktop | WPF, C#, .NET 10 LTS, MVVM, and native Windows packaging | Mixed-DPI rendering, accessible controls, and a responsive embedded viewport |
@@ -227,8 +246,11 @@ test modules, and proved only shell UID 2000 `su`. A base-only rerun on a fresh
 guest then passed two cold boots with no modules and Zygisk off. Shell UID 2000
 and an app-level probe (UID 10149) both reached UID 0, and a stock cold boot
 restored the guest marker and removed Magisk. The source-built AOSP image is still
-blocked by builder capacity, and Windows WHPX acceptance of the install and
-recovery lifecycle remains open. [Linux evidence](docs/magisk-lab-linux-evidence.md)
+blocked by builder capacity. Windows WHPX base-only install, two app-root
+cold boots and stock recovery now pass. The supervisor also rejects corrupt
+patches and recovers interrupted staging and boot timeouts.
+[Windows evidence](docs/magisk-lab-windows-evidence.md),
+[Linux evidence](docs/magisk-lab-linux-evidence.md)
 
 ## Phase 2 outcomes and blockers
 
@@ -273,7 +295,7 @@ Each verified run must record the host architecture and CPU, Windows build, engi
 | Second developer profile | Same host | Same engine and image, second AVD | API 35, x86_64 | Own ports, token, and data; concurrent boot verified | Same image | Verified concurrently; desktop viewport on this profile |
 | Google Play profile | Windows 11 x64 with WHPX | Official Play API 36 rev 7 and API 35 16 KB rev 5 | API 35/36, x86_64 | Host GPU, APK and PNG on both. API 36 restored. API 35 used cold-boot fallback | Stock user builds, ADB UID 2000 | Measured in the compatibility matrix |
 | Magisk Lab (Linux) | Debian 13 x86_64, 8 threads, 15.6 GiB RAM, KVM | Emulator 37.2.13.0 build 16740729; `system-images;android-35;default;x86_64` rev 2; Magisk v30.7 `e8a58776` | API 35, x86_64, userdebug | Software GPU; cold boot with `-ramdisk`; patched ramdisk hash `d5b47070…` | Base-only (no modules, Zygisk off): shell UID 2000 and app probe UID 10149 -> 0 on two cold boots; stock restore passed | Verified on Linux (SDK profile) |
-| Magisk Lab (Windows) | Windows 11 x64 with WHPX | Emulator 37.2.12.0 build 16428233; same image and Magisk APK | API 35, x86_64 | `-ramdisk` substitution proven in Phase 0 | Supervisor install/recovery and app-level `su` pending | In progress |
+| Magisk Lab (Windows) | Windows 11 x64 with WHPX | Emulator 37.2.12.0 build 16428233; same image and Magisk APK | API 35, x86_64 | `-ramdisk` substitution proven in Phase 0 | Two cold boots with shell/app root and stock recovery passed; failure-path verification in progress | Experimental SDK lab |
 
 Track Windows on ARM, other host OSes, nonstandard GPUs, and ARM-only APKs as separate compatibility entries. Inspect native APK ABIs before deployment and surface incompatibility with the selected guest. Publish simulation and interoperability support per verified configuration.
 
@@ -449,3 +471,16 @@ readiness query and combining independent ADB verification. One
 attempt fell back to a 139.45 s cold boot. Measure readiness outcomes
 per attempt next. Full acceptance counts and targets remain for the
 selected release build.
+
+## Magisk review follow-up (2026-11-14)
+
+Work is isolated on `codex/magisk-windows-lab` from `485b093`. Grok review
+confirmed temporary provisioning ADB root is part of the lab adapter. Its
+owner-approved exception is now explicit in agents.md, restricted to the
+opted-in activating instance generation, and root/unroot evidence is durable.
+The strict probe parser fails closed on incomplete or malformed output.
+Supervisor discovery prefers Release, with fail-closed explicit paths.
+Release build and 89 tests pass. Full final-binary hardware transaction `transaction-20261114-142606-818906`
+passed install, two parsed app-root cold boots, journaled unroot, stock
+recovery/app denial and cleanup. Source and payload hashes stayed unchanged;
+results and hashes are committed with the Windows evidence record.

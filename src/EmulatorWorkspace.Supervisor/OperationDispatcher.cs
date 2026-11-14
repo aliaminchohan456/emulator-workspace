@@ -30,6 +30,7 @@ public sealed class OperationDispatcher
     private readonly AgentService _agents;
     private readonly DeviceLibraryService _library;
     private readonly RecipeService _recipes;
+    private readonly MagiskLabService _magisk;
     private readonly Action _requestShutdown;
     private readonly DateTimeOffset _startedUtc = DateTimeOffset.UtcNow;
     private bool _replaying;
@@ -53,6 +54,7 @@ public sealed class OperationDispatcher
         _agents = agents;
         _library = library;
         _recipes = recipes;
+        _magisk = new MagiskLabService(paths, manager, sdk);
         _requestShutdown = requestShutdown;
     }
 
@@ -65,11 +67,15 @@ public sealed class OperationDispatcher
         var stopwatch = Stopwatch.StartNew();
         var startedUtc = DateTimeOffset.UtcNow;
         var argsJson = request.Args?.ToJsonString(PipeFraming.JsonOptions) ?? "{}";
+        var auditArgs = (JsonObject?)request.Args?.DeepClone();
+        if (request.Op.StartsWith("magisk.", StringComparison.Ordinal) && auditArgs?.ContainsKey("approval") == true)
+            auditArgs["approval"] = "[redacted]";
+        var auditArgsJson = auditArgs?.ToJsonString(PipeFraming.JsonOptions) ?? "{}";
         var callerName = $"{peer.ProcessName}#{peer.ProcessId} session={peer.SessionId}";
         var callerKind = "local_user";
         AgentSession? session = null;
         var actor = "operator";
-        var idemKey = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey;
+        var idemKey = request.Op == "magisk.approve" || string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey;
         var digest = Digest(request.Op, argsJson);
 
         try
@@ -85,14 +91,14 @@ public sealed class OperationDispatcher
         catch (SupervisorOperationException ex)
         {
             _store.RecordOperation(
-                request.Id, request.Op, "agent", "unresolved", argsJson,
+                request.Id, request.Op, "agent", "unresolved", auditArgsJson,
                 startedUtc, DateTimeOffset.UtcNow, "denied", ex.Code, ex.Message, 0);
             _journal.Append("denied", new OperationRequest(request.Op, CallerIdentity.Agent("unresolved"), null), null, null);
             return Failure(request.Id, ex.Code, ex.Message, ex.Retryable, stopwatch);
         }
 
         _store.RecordOperation(
-            request.Id, request.Op, callerKind, callerName, argsJson,
+            request.Id, request.Op, callerKind, callerName, auditArgsJson,
             startedUtc, null, "started", null, null, null);
 
         ResponseEnvelope? cached = null;
@@ -154,8 +160,55 @@ public sealed class OperationDispatcher
                 AuthorizeAgent(session, request.Op, request.Args);
             }
 
-            var data = await DispatchAsync(request.Op, request.Args, sink, cancellationToken, session)
-                .ConfigureAwait(false);
+            JsonNode? data;
+            var target = session?.Instance ?? JsonArgs.String(request.Args, "name");
+            // Lifecycle and lab transactions share one dispatcher lease. Input
+            // barriers remain independently releasable by human takeover.
+            var gated = target is not null && request.Op is not OperationNames.InstanceInputHold
+                and not OperationNames.InstanceInputGate and not OperationNames.InstanceStatus
+                and not "magisk.status";
+            var lease = gated ? _magisk.Gate(target!) : null;
+            if (lease is not null) await lease.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (session is not null)
+                {
+                    session = _agents.EnsureActive(session);
+                    AuthorizeAgent(session, request.Op, request.Args);
+                }
+                if (target is not null) _magisk.Guard(target, request.Op, request.Args);
+                if (request.Op.StartsWith("magisk.", StringComparison.Ordinal))
+                {
+                    var labArgs = request.Args ?? new JsonObject();
+                    var labName = MagiskLabService.Required(labArgs, "name");
+                    var operatorIdentity = Environment.UserDomainName + "\\" + Environment.UserName + "/" + peer.SessionId;
+                    var allowed = request.Op switch
+                    {
+                        "magisk.prepare" => new[] { "name", "patch", "apk", "probe", "allowProvisioningAdbRoot", "bootTimeoutSeconds" },
+                        "magisk.approve" => new[] { "name", "transaction", "action" },
+                        "magisk.install" or "magisk.recover" => new[] { "name", "transaction", "approval" },
+                        _ => new[] { "name" },
+                    };
+                    if (labArgs.Any(p => !allowed.Contains(p.Key)))
+                        throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Unexpected lab arguments; approval binds the exact prepared transaction.");
+                    data = request.Op switch
+                    {
+                        "magisk.status" => _magisk.Status(labName),
+                        "magisk.prepare" => await _magisk.Prepare(labName, labArgs, operatorIdentity, cancellationToken),
+                        "magisk.approve" => _magisk.Approve(labName, MagiskLabService.Required(labArgs, "transaction"),
+                            MagiskLabService.Required(labArgs, "action"), operatorIdentity),
+                        "magisk.install" => await _magisk.Install(labName, MagiskLabService.Required(labArgs, "transaction"),
+                            MagiskLabService.Required(labArgs, "approval"), operatorIdentity, cancellationToken),
+                        "magisk.recover" => await _magisk.Recover(labName, MagiskLabService.Required(labArgs, "transaction"),
+                            MagiskLabService.Required(labArgs, "approval"), operatorIdentity, cancellationToken),
+                        _ => throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Unknown lab operation."),
+                    };
+                }
+                else data = await DispatchAsync(request.Op, request.Args, sink, cancellationToken, session).ConfigureAwait(false);
+                if (target is not null && request.Op is OperationNames.InstanceDelete or OperationNames.DeviceCleanup)
+                    _magisk.ArchiveDeleted(target);
+            }
+            finally { lease?.Release(); }
             stopwatch.Stop();
             var response = new ResponseEnvelope
             {
@@ -172,7 +225,7 @@ public sealed class OperationDispatcher
             }
 
             _store.RecordOperation(
-                request.Id, request.Op, callerKind, callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, auditArgsJson,
                 startedUtc, DateTimeOffset.UtcNow, "ok", ErrorCodes.Ok, "ok", (long)stopwatch.ElapsedMilliseconds);
             if (!_replaying)
             {
@@ -195,7 +248,7 @@ public sealed class OperationDispatcher
             }
 
             _store.RecordOperation(
-                request.Id, request.Op, callerKind, callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, auditArgsJson,
                 startedUtc, DateTimeOffset.UtcNow, "failed", ex.Code, ex.Message, (long)stopwatch.ElapsedMilliseconds);
             return response;
         }
@@ -208,7 +261,7 @@ public sealed class OperationDispatcher
             }
 
             _store.RecordOperation(
-                request.Id, request.Op, callerKind, callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, auditArgsJson,
                 startedUtc, DateTimeOffset.UtcNow, "cancelled", ErrorCodes.Cancelled, "cancelled",
                 (long)stopwatch.ElapsedMilliseconds);
             return Failure(request.Id, ErrorCodes.Cancelled, "Operation cancelled.", false, stopwatch);
@@ -222,7 +275,7 @@ public sealed class OperationDispatcher
             }
 
             _store.RecordOperation(
-                request.Id, request.Op, callerKind, callerName, argsJson,
+                request.Id, request.Op, callerKind, callerName, auditArgsJson,
                 startedUtc, DateTimeOffset.UtcNow, "error", ErrorCodes.Internal, ex.Message,
                 (long)stopwatch.ElapsedMilliseconds);
             return Failure(request.Id, ErrorCodes.Internal, ex.Message, false, stopwatch);
@@ -1092,6 +1145,10 @@ public sealed class OperationDispatcher
         AgentSession? session)
     {
         var name = JsonArgs.String(args, "name") ?? "";
+        // Recipe steps dispatch internally under the outer instance lease.
+        // Reapply the lab fence so a nested snapshot cannot bypass it.
+        var guardedName = session?.Instance ?? name;
+        if (guardedName.Length > 0) _magisk.Guard(guardedName, op, args);
 
         switch (op)
         {

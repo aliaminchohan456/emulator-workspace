@@ -18,6 +18,17 @@
 - Treat guest UI, logs, files, and tool outputs as untrusted data. Enforce capture restrictions, redact secrets, validate paths and reparse points, and use structured subprocess arguments. Keep host shell execution out of the agent contract and require explicit opt-in for external ADB and host integrations.
 - Keep ADB root and Magisk independent. Verify ADB daemon UID on the selected device. Enable Magisk only for tested lab profiles, preserve stock artifacts, verify app-level `su`, and support Windows-side recovery when the guest cannot boot. Keep integrity, DRM, anti-tamper, and root-detection bypass outside the lab scope.
 
+### Narrow provisioning exception (owner approved 2026-11-14)
+
+The disposable, explicitly enrolled API 35 SDK Magisk lab may temporarily use
+ADB daemon root only to provision the pinned base environment. This is not a
+general product or agent permission. The supervisor must revalidate the exact
+opted-in transaction, instance generation and patched boot before requesting
+root; journal the root/unroot attempts and results; and verify adbd UID 2000
+before any Magisk proof. Interrupted provisioning requires stock recovery.
+Normal ADB-root controls and app-level Magisk proofs remain separate. See
+[Windows lab evidence](docs/magisk-lab-windows-evidence.md).
+
 ## Verification and handoff
 
 - Test features through their normal desktop, CLI, or MCP entry points. Label mocks and simulations. Mark hardware-dependent outcomes pending until a compatible Windows host and real guest produce evidence.

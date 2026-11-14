@@ -4,6 +4,7 @@ artifacts/*
 !artifacts/.gitkeep
 !artifacts/README.md
 .work/
+grok-bot-findings/
 *.user
 *.suo
 .vs/

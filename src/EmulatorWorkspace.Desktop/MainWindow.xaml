@@ -278,6 +278,13 @@
                         </StackPanel>
                         <TextBlock Text="ADB root and unroot apply to the selected lab guest only."
                                    Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding MagiskState}" Style="{StaticResource Mono}" TextWrapping="Wrap" Margin="0,10,0,6" />
+                        <WrapPanel>
+                            <Button Content="Install Magisk lab" Style="{StaticResource ToolButton}"
+                                    Command="{Binding MagiskInstallCommand}" AutomationProperties.Name="Install Magisk lab" />
+                            <Button Content="Recover stock" Style="{StaticResource ToolButton}" Margin="6,0,0,0"
+                                    Command="{Binding MagiskRecoverCommand}" AutomationProperties.Name="Recover stock boot" />
+                        </WrapPanel>
 
                         <TextBlock Text="{Binding SelectedDevice.LastError}" Foreground="{DynamicResource Danger}"
                                    TextWrapping="Wrap" Margin="0,8,0,0" />

@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "485b093fcad048811825e4647da9dd79f4f6c72c",
+  "branch": "codex/magisk-windows-lab",
+  "run": "transaction-20261114-142606-818906",
+  "command": "python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-GrokReview-Final-20261114 --allow-provisioning-adb-root --mode normal",
+  "summary": {
+    "root": "D:\\WS-Magisk-GrokReview-Final-20261114",
+    "mode": "normal",
+    "checks": [
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "instance.start-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "journaled-adb-unroot-and-parsed-app-proofs",
+        "passed": true
+      },
+      {
+        "check": "two-supervised-cold-boots",
+        "passed": true
+      },
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "snapshot.load-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "stock-recovery-with-app-denial",
+        "passed": true
+      },
+      {
+        "check": "guest-cleanup",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "releasePayloadSha256": {
+    "wsctl.exe": "b95e32aea6fe5e84f235e8c2cf3bf4a24fa0ce8341fb925e647ad9f41d25ec75",
+    "EmulatorWorkspace.Supervisor.exe": "0f039b61c5ba308ac2a5ca0b7dcaae2f5fdce06d4681502e8d5a0e8791e43ad2",
+    "EmulatorWorkspace.Supervisor.dll": "61144dc3d34469a6422a989d64372ad2bdde13a55585a0f2ba47ab637cee5857",
+    "EmulatorWorkspace.Core.dll": "3be84449838941e7689efb80c765ee288ca6bfbb3a8fe76175caccb29a83eb62"
+  },
+  "payloadsUnchangedThroughCompletion": true,
+  "sourceManifest": {
+    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "48f21f7323b61989ad0744d4d35b3bf29ae9934c6f48cd1604fc819b2a7b8831",
+    "src/EmulatorWorkspace.Core/Engine/MagiskProbeEvidence.cs": "c12565ed05ff9744a0da00f40e65a6ea27473f83084df2ed1f77a1b42c315a1a",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "e26a38a491e71f721065ae08e3307aed6f19f996086c295487eea996b99e6126",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabArtifacts.cs": "de32a7542597ca7d423f414b80e9b439fd9999e40adbbd0606b064c8c945822f",
+    "src/EmulatorWorkspace.Core/Supervisor/SupervisorLocator.cs": "c12a195759512a64e52c1586829f2546e57300d1cf336ff146e41c85fc66b658",
+    "src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs": "7eecfd1cb20ddc3982d4faba801917979c30e454f8ca3b35be605af6d43f3f8a",
+    "src/EmulatorWorkspace.Desktop/MainWindow.xaml": "ffee5dabf796ee655a0d5a39068b8a1b5b1df5d2b119a9be75119c242ac86982",
+    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "07fb0dc48eff027df5b78a05d3da1fad6237afa268af59e609948e4f2b56acde"
+  },
+  "host": {
+    "windows": "11 Pro 26H2 build 26300.9974",
+    "cpu": "Intel i5-8265U",
+    "ramGiB": 31.8,
+    "engine": "37.2.12.0 build 16428233",
+    "acceleration": "WHPX",
+    "image": "system-images;android-35;default;x86_64 revision 2",
+    "gpu": "swiftshader_indirect",
+    "cores": 4,
+    "guestRamMiB": 3072,
+    "snapshotLoadSave": false
+  },
+  "build": {
+    "configuration": "Release",
+    "passed": true,
+    "warnings": 21,
+    "newWarnings": 0,
+    "testsPassed": 89
+  },
+  "adbProvisioning": {
+    "rootRequested": true,
+    "unrootAttempted": true,
+    "root": {
+      "name": "transaction-lab",
+      "serial": "emulator-5554",
+      "requested": "root",
+      "buildType": "userdebug",
+      "uidBefore": "2000",
+      "uidAfter": "0",
+      "effectiveRoot": true,
+      "transportId": "83",
+      "output": "restarting adbd as root",
+      "observedUtc": "2026-11-14T09:29:31.6414028+00:00"
+    },
+    "unroot": {
+      "name": "transaction-lab",
+      "serial": "emulator-5554",
+      "requested": "unroot",
+      "buildType": "userdebug",
+      "uidBefore": "0",
+      "uidAfter": "2000",
+      "effectiveRoot": false,
+      "transportId": "84",
+      "output": "",
+      "observedUtc": "2026-11-14T09:29:35.9411871+00:00"
+    },
+    "adbdUid2000Verified": true
+  },
+  "directoryMetadata": [
+    "DIRECTORY /data/adb",
+    "0:0 700",
+    "u:object_r:adb_data_file:s0 /data/adb",
+    "DIRECTORY /data/adb/magisk",
+    "0:0 755",
+    "u:object_r:system_file:s0 /data/adb/magisk",
+    "DIRECTORY /data/adb",
+    "0:0 700",
+    "u:object_r:adb_data_file:s0 /data/adb",
+    "DIRECTORY /data/adb/magisk",
+    "0:0 755",
+    "u:object_r:system_file:s0 /data/adb/magisk"
+  ],
+  "boots": [
+    {
+      "appProof": {
+        "callerUid": 10149,
+        "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+        "suExit": "0",
+        "rootGranted": true,
+        "verified": true
+      },
+      "adbdUid2000": true,
+      "magiskVersion30700": true,
+      "baseOnlyInventory": "MODULES\nSETTINGS\nkey=zygisk|value=0\nkey=bootloop|value=0\nZYGOTE\nHOSTS\nEND\n"
+    },
+    {
+      "appProof": {
+        "callerUid": 10149,
+        "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+        "suExit": "0",
+        "rootGranted": true,
+        "verified": true
+      },
+      "adbdUid2000": true,
+      "magiskVersion30700": true,
+      "baseOnlyInventory": "MODULES\nSETTINGS\nkey=zygisk|value=0\nkey=bootloop|value=0\nZYGOTE\nHOSTS\nEND\n"
+    }
+  ],
+  "recovery": {
+    "phase": "recovered",
+    "adbUnroot": {
+      "name": "transaction-lab",
+      "serial": "emulator-5554",
+      "requested": "unroot",
+      "buildType": "userdebug",
+      "uidBefore": "2000",
+      "uidAfter": "2000",
+      "effectiveRoot": false,
+      "transportId": "90",
+      "output": "adbd not running as root",
+      "observedUtc": "2026-11-14T09:33:30.7348285+00:00"
+    },
+    "appProof": {
+      "callerUid": 10149,
+      "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+      "suExit": "exception",
+      "rootGranted": false,
+      "verified": true
+    },
+    "shellSuDenied": true
+  },
+  "concurrentStatusRead": {
+    "passed": true,
+    "operation": "magisk.status",
+    "duringPhase": "baseline_boot",
+    "elapsedSeconds": 0.21899999999732245
+  },
+  "runningSupervisor": {
+    "pid": 21432,
+    "path": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.exe",
+    "processStartUtc": "2026-11-14T09:26:08.9898101Z",
+    "coreLastWriteUtc": "2026-11-14T09:25:53.6456789Z",
+    "coreSha256": "3BE84449838941E7689EFB80C765EE288CA6BFBB3A8FE76175CACCB29A83EB62",
+    "verified": true
+  },
+  "cliReleaseSelectionWithoutOverride": {
+    "passed": true,
+    "explicitEnvironmentSet": false,
+    "pid": 7272,
+    "path": "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.exe",
+    "sha256": "0F039B61C5BA308AC2A5CA0B7DCAAE2F5FDCE06D4681502E8D5A0E8791E43AD2"
+  },
+  "correctedPriorSummary": {
+    "artifact": "artifacts/magisk-lab/transaction-20261114-134857-299370/summary.json",
+    "sha256": "fa1c94141666977c07db961b9255c599a67baeabc9b506843482814950c20c88",
+    "summary": {
+      "root": "D:\\WS-Magisk-Data-20261114",
+      "mode": "data-recovery",
+      "checks": [
+        {
+          "check": "magisk.install-approval_required",
+          "passed": true
+        },
+        {
+          "check": "instance.start-capability_unavailable",
+          "passed": true
+        },
+        {
+          "check": "two-supervised-cold-boots",
+          "passed": true
+        },
+        {
+          "check": "magisk.install-approval_required",
+          "passed": true
+        },
+        {
+          "check": "snapshot.load-capability_unavailable",
+          "passed": true
+        },
+        {
+          "check": "stock-recovery-from-compatible-data-backup",
+          "passed": true
+        },
+        {
+          "check": "guest-cleanup",
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "labelCorrection": "Corrected after Grok review: restored baseline has no probe app; this lane verifies baseline recovery and stock shell denial."
+    }
+  },
+  "limitations": [
+    "Raw bundles and binaries remain local/gitignored.",
+    "Host power-loss testing not performed.",
+    "Source-built AOSP capacity, signing and redistribution remain open."
+  ]
+}
