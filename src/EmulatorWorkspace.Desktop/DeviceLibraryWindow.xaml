@@ -1,0 +1,1210 @@
+<Window x:Class="EmulatorWorkspace.Desktop.DeviceLibraryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:EmulatorWorkspace.Desktop.Views"
+        Title="Emulator Workspace - Devices"
+        Width="1320" Height="840" MinWidth="1024" MinHeight="640"
+        Background="{DynamicResource WindowBg}"
+        KeyDown="OnKeyDown">
+
+    <Window.Resources>
+        <views:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <views:BoolToVisibilityConverter x:Key="InverseBoolToVis" Invert="True" />
+        <views:TextToVisibilityConverter x:Key="TextToVis" />
+        <views:TextToVisibilityConverter x:Key="EmptyToVis" Invert="True" />
+        <views:StringEqualsToVisibilityConverter x:Key="KindVis" />
+        <views:ToneToBrushConverter x:Key="ToneBrush" />
+
+        <!-- Chips kept short: mono for identifiers and numbers. -->
+        <Style x:Key="Chip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="ChipText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="LineHeight" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+
+        <Style x:Key="FieldError" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+
+        <!-- State colours are DataTriggers on DynamicResource brushes, not
+             converter results, so a live theme switch repaints the cards instead
+             of leaving dark-theme tints behind. -->
+        <Style x:Key="StateMedia" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StateKey}" Value="running">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="starting">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="stopping">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="failed">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="dead">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="StateChipSurface" TargetType="Border" BasedOn="{StaticResource Badge}">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StateKey}" Value="running">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="starting">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="stopping">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="failed">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="dead">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="StateChipText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StateKey}" Value="running">
+                    <Setter Property="Foreground" Value="{DynamicResource Success}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="starting">
+                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="stopping">
+                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="failed">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="dead">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="StateDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="Height" Value="6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Fill" Value="{DynamicResource TextSecondary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StateKey}" Value="running">
+                    <Setter Property="Fill" Value="{DynamicResource Success}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="starting">
+                    <Setter Property="Fill" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="stopping">
+                    <Setter Property="Fill" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="failed">
+                    <Setter Property="Fill" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKey}" Value="dead">
+                    <Setter Property="Fill" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The device silhouette is a dark object in both themes, like the
+             mockup; it is a drawing, never a captured frame. -->
+        <Style x:Key="DeviceSilhouette" TargetType="Border">
+            <Setter Property="Width" Value="62" />
+            <Setter Property="Height" Value="118" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource DeviceBodyBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DeviceBodyBorder}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+
+        <Style x:Key="CompatibleChip" TargetType="Border" BasedOn="{StaticResource Badge}">
+            <Setter Property="Margin" Value="8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Compatible}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource Success}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CompatibleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Compatible}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Success}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- One inline error band, reused inside every dialog: a failed
+             supervisor call must be visible in the dialog that triggered it,
+             not only in the page behind the scrim. -->
+        <ControlTemplate x:Key="InlineError" TargetType="ContentControl">
+            <Border Background="{DynamicResource DangerBg}" BorderBrush="{DynamicResource DangerBorder}"
+                    BorderThickness="1" CornerRadius="10" Padding="10,8">
+                <StackPanel>
+                    <TextBlock Text="{Binding ErrorTitle}" Foreground="{DynamicResource Danger}"
+                               FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ErrorText}" Style="{StaticResource Caption}"
+                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                </StackPanel>
+            </Border>
+        </ControlTemplate>
+
+        <!-- Floating overlays fade in with the design's 180 ms drawer step on
+             cubic-bezier(.2,.8,.2,1); nothing bounces, and the guest viewport is
+             never animated. Reduced-motion handling belongs to the UX-07 pass. -->
+        <Style x:Key="Overlay" TargetType="Grid">
+            <Setter Property="Opacity" Value="1" />
+            <Style.Triggers>
+                <Trigger Property="Visibility" Value="Visible">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                    <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                                    <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1"
+                                                          KeySpline="0.2,0.8,0.2,1" />
+                                </DoubleAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Slide-over drawer surface. A drawer is a floating panel, so it is
+             the one place besides dialogs that carries a shadow, and it carries
+             two layers: a wide ambient shadow behind the panel and a tight key
+             shadow on the panel itself. 12 radius on the left corners only,
+             because the right edge is the window edge. -->
+        <Style x:Key="DrawerAmbient" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PopupBg}" />
+            <Setter Property="CornerRadius" Value="12,0,0,12" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="46" ShadowDepth="0" Direction="180"
+                                      Opacity="0.5" Color="#000000" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DrawerSurface" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PopupBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="CornerRadius" Value="12,0,0,12" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="6" Direction="180"
+                                      Opacity="0.4" Color="#000000" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rail item: a 36 DIP icon target inside a 40 DIP tile. On hover the
+             glyph scales to 1.07 and a soft accent-soft radial fades in behind
+             it (polish addendum item 10, local to this window's rail; the global
+             version is UX-04b). views:RailHover drives the two named parts and
+             skips the motion when Windows reports reduced motion. -->
+        <Style x:Key="RailItem" TargetType="Button">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Ellipse x:Name="PART_Glow" Width="34" Height="34" Opacity="0"
+                                     Fill="{DynamicResource AccentSoftBg}" />
+                            <Border x:Name="B" Background="Transparent" CornerRadius="6" />
+                            <ContentPresenter x:Name="PART_Glyph" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <ContentPresenter.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                </ContentPresenter.RenderTransform>
+                            </ContentPresenter>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource PressedBg}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="56" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Navigation rail. Only the two destinations this window can reach are
+             present: the Studio window and this Devices view. -->
+        <Border x:Name="NavRail" Grid.Column="0" Background="{DynamicResource NavBg}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="0,12">
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Button Style="{StaticResource RailItem}" Command="{Binding RefreshCommand}"
+                            views:RailHover.IsEnabled="True"
+                            ToolTip="Reload instances, profiles and readiness"
+                            AutomationProperties.Name="Refresh the device library">
+                        <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
+                    </Button>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <Button Style="{StaticResource RailItem}" Command="{Binding OpenStudioCommand}"
+                            views:RailHover.IsEnabled="True"
+                            ToolTip="Studio: the running guest view"
+                            AutomationProperties.Name="Studio">
+                        <Path Data="{StaticResource IconMonitor}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Grid Width="44" Height="40" Margin="6,0,0,0" ToolTip="Devices: the managed instance library"
+                          AutomationProperties.Name="Devices (current view)">
+                        <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
+                        <Border Width="2" Height="18" HorizontalAlignment="Left"
+                                Background="{DynamicResource Accent}" CornerRadius="1" />
+                        <Path Data="{StaticResource IconGrid}" Stroke="{DynamicResource Accent}"
+                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+                <Grid />
+            </DockPanel>
+        </Border>
+
+        <!-- Page. It is made inert (no hit-testing, no tab stop) while a
+             slide-over drawer is open, so nothing behind the scrim can take
+             focus from the drawer. -->
+        <Grid x:Name="LibraryPage" Grid.Column="1" Margin="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header: eyebrow, page title, one sentence; then search, sort and
+                 the single accent action of the page. -->
+            <Grid Grid.Row="0" Margin="24,20,24,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
+                    <TextBlock Text="LIBRARY" Style="{StaticResource Eyebrow}" />
+                    <TextBlock Text="Devices" Style="{StaticResource PageText}" Margin="0,2,0,0" />
+                    <TextBlock Text="Managed instances in this workspace. Each runs isolated, with its own ports and data."
+                               Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"
+                               HorizontalAlignment="Left" MaxWidth="520" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <!-- Live count from instance.list: the total, or "shown of
+                         total" while a search narrows the grid. Tabular mono so
+                         the number never jitters as state ticks. -->
+                    <TextBlock Text="{Binding CardCountText}" Style="{StaticResource Mono}"
+                               FontSize="12" Typography.NumeralAlignment="Tabular"
+                               Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                               Margin="0,0,12,0" ToolTip="Managed devices the supervisor reports" />
+                    <Border Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource InputBorder}"
+                            BorderThickness="1" CornerRadius="6" Height="32" Width="268" Margin="0,0,8,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconSearch}"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="16" Height="16" Stretch="None"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Search name, API, ABI, serial"
+                                       IsHitTestVisible="False" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextTertiary}" FontSize="12"
+                                       Visibility="{Binding SearchText, Converter={StaticResource EmptyToVis}}" />
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0" Padding="0" MinHeight="0"
+                                     VerticalContentAlignment="Center" FontSize="12"
+                                     ToolTip="Filter the library (name, image, ABI, API level, serial)"
+                                     AutomationProperties.Name="Search devices" />
+                        </Grid>
+                    </Border>
+
+                    <ComboBox Width="132" Margin="0,0,8,0" ItemsSource="{Binding SortOptions}"
+                              SelectedItem="{Binding SortKey}" VerticalAlignment="Center"
+                              ToolTip="Sort order for the cards"
+                              AutomationProperties.Name="Sort the device library">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Button x:Name="NewDeviceButton" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding NewDeviceCommand}"
+                            Height="32" Margin="0" Padding="14,0"
+                            ToolTip="Create a device from the pinned AOSP profile"
+                            AutomationProperties.Name="New device">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconPlus}" Width="16" Height="16" Stretch="None"
+                                  Stroke="{DynamicResource AccentText}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="New device" VerticalAlignment="Center" FontSize="12"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Summary: four counters, every one of them from supervisor data. -->
+            <UniformGrid Grid.Row="1" Columns="4" Margin="18,0,18,6">
+                <Border Style="{StaticResource Card}" Margin="6" Padding="14,12" MinHeight="80">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconStack}" Width="16" Height="16" Stretch="None"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Instances" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding InstanceCountText}" Style="{StaticResource PageText}"
+                                   FontSize="24" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="6" Padding="14,12" MinHeight="80">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconPlay}" Width="16" Height="16" Stretch="None"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeLineJoin="Round" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Running" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding RunningCountText}" Style="{StaticResource PageText}"
+                                       FontSize="24" />
+                            <TextBlock Text="{Binding RunningOfText}" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                                       Margin="8,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="6" Padding="14,12" MinHeight="80">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconChip}" Width="16" Height="16" Stretch="None"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Configured RAM" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding RamText}" Style="{StaticResource PageText}" FontSize="24"
+                                   Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding RamOfText}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="6" Padding="14,12" MinHeight="80">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconWarning}" Width="16" Height="16" Stretch="None"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Needs attention" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding AttentionCountText}" Style="{StaticResource PageText}"
+                                   FontSize="24" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding AttentionText}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Typed error band: err-soft surface, coloured title, one next safe
+                 action, and the details stay copyable. -->
+            <Border Grid.Row="2" Margin="24,4,24,8" Background="{DynamicResource DangerBg}"
+                    BorderBrush="{DynamicResource DangerBorder}" BorderThickness="1" CornerRadius="10"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
+                    AutomationProperties.Name="Library error">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="{DynamicResource Danger}" CornerRadius="10,0,0,10" />
+                    <Path Grid.Column="1" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Danger}"
+                          StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                          VerticalAlignment="Top" Margin="12,12,10,0" />
+                    <StackPanel Grid.Column="2" Margin="0,10,12,10">
+                        <TextBlock Text="{Binding ErrorTitle}" FontWeight="SemiBold" Foreground="{DynamicResource Danger}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ErrorText}" Style="{StaticResource Body}" Foreground="{DynamicResource TextPrimary}"
+                                   TextWrapping="Wrap" Margin="0,2,0,0" />
+                        <TextBlock Text="{Binding ErrorAction}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,8,8,0">
+                        <Button Content="Copy details" Style="{StaticResource ToolButton}"
+                                Command="{Binding CopyErrorDetailsCommand}"
+                                AutomationProperties.Name="Copy the error details" />
+                        <Button Content="Dismiss" Style="{StaticResource ToolButton}" Margin="0"
+                                Command="{Binding DismissErrorCommand}"
+                                AutomationProperties.Name="Dismiss the error" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Cards -->
+            <Grid Grid.Row="3" Margin="24,0,24,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Tiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Polish item 10: hovering one card dims every
+                                     sibling (including the dashed tile) to 82 %
+                                     over 120 ms; the hovered card stays at 100 %. -->
+                                <Grid Width="280" Margin="0,0,16,16"
+                                      views:CardHoverFocus.IsEnabled="True">
+                                    <!-- Real card -->
+                                    <Border Visibility="{Binding IsPlaceholder, Converter={StaticResource InverseBoolToVis}}">
+                                        <Border.Style>
+                                            <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorder}" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <!-- 16:9 media at the card's 280 DIP width. -->
+                                                <RowDefinition Height="157" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Media: a silhouette tinted by state. It is a
+                                                 drawing, not a guest screenshot, so it never
+                                                 implies a captured frame. -->
+                                            <Grid Grid.Row="0">
+                                                <Border CornerRadius="9,9,0,0" Style="{StaticResource StateMedia}" />
+                                                <Border Style="{StaticResource DeviceSilhouette}">
+                                                    <Grid>
+                                                        <Path Data="{StaticResource IconPower}" Width="16" Height="16" Stretch="None"
+                                                              Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=start}" />
+                                                        <Border Height="2" Width="18" CornerRadius="1" Margin="0,0,0,8"
+                                                                Background="{DynamicResource TextTertiary}" Opacity="0.5"
+                                                                VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                                                                Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=open}" />
+                                                    </Grid>
+                                                </Border>
+
+                                                <Border Style="{StaticResource StateChipSurface}" Margin="10,10,0,0"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                        ToolTip="{Binding StateTooltip}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse Style="{StaticResource StateDot}" />
+                                                        <TextBlock Text="{Binding DisplayState}" Style="{StaticResource StateChipText}" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Button Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,6,6,0"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                        Click="OnCardMenu"
+                                                        ToolTip="More actions for this device"
+                                                        AutomationProperties.Name="More actions">
+                                                    <Button.ContextMenu>
+                                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                            <MenuItem Header="Open in Studio" Command="{Binding OpenCommand}" />
+                                                            <MenuItem Header="Clone device..." Command="{Binding CloneCommand}" />
+                                                            <MenuItem Header="Recovery points..." Command="{Binding RecoveryCommand}" />
+                                                            <Separator />
+                                                            <MenuItem Header="Reset to baseline..." Command="{Binding ResetCommand}" />
+                                                            <MenuItem Header="Delete device..." Command="{Binding DeleteCommand}" />
+                                                            <Separator />
+                                                            <MenuItem Header="Copy profile JSON" Command="{Binding CopyProfileCommand}" />
+                                                        </ContextMenu>
+                                                    </Button.ContextMenu>
+                                                    <Path Data="{StaticResource IconMore}" Style="{StaticResource Glyph}"
+                                                          Stroke="{DynamicResource TextPrimary}" />
+                                                </Button>
+                                            </Grid>
+
+                                            <!-- Body -->
+                                            <StackPanel Grid.Row="1" Margin="14,12,14,14">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource SectionHeader}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding NameTooltip}" />
+                                                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Caption}"
+                                                           Foreground="{DynamicResource TextTertiary}"
+                                                           Margin="0,1,0,8" TextTrimming="CharacterEllipsis" />
+
+                                                <WrapPanel Margin="0,0,0,10" ToolTip="{Binding ChipTooltip}">
+                                                    <Border Style="{StaticResource Chip}">
+                                                        <TextBlock Text="{Binding RamChip}" Style="{StaticResource ChipText}" />
+                                                    </Border>
+                                                    <Border Style="{StaticResource Chip}">
+                                                        <TextBlock Text="{Binding TagText}" Style="{StaticResource ChipText}" />
+                                                    </Border>
+                                                </WrapPanel>
+
+                                                <Grid Height="32">
+                                                    <Button Style="{StaticResource ToolButton}" Command="{Binding OpenCommand}"
+                                                            HorizontalAlignment="Stretch" Margin="0,0,40,0"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=open}"
+                                                            ToolTip="Show this guest in the Studio window"
+                                                            AutomationProperties.Name="Open the device in Studio">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Path Data="{StaticResource IconMonitor}" Style="{StaticResource Glyph}"
+                                                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                            <TextBlock Text="Open in Studio" VerticalAlignment="Center" FontSize="12" />
+                                                        </StackPanel>
+                                                    </Button>
+
+                                                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding StartCommand}"
+                                                            HorizontalAlignment="Stretch" Margin="0" Height="32"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=start}"
+                                                            ToolTip="Start this guest (instance.start, cold boot)"
+                                                            AutomationProperties.Name="Start the device">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Path Data="{StaticResource IconPlay}" Width="16" Height="16" Stretch="None"
+                                                                  Stroke="{DynamicResource AccentText}" StrokeThickness="1.5"
+                                                                  StrokeLineJoin="Round" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                            <TextBlock Text="Start" VerticalAlignment="Center" FontSize="12"
+                                                                       FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" />
+                                                        </StackPanel>
+                                                    </Button>
+
+                                                    <Button Style="{StaticResource WarnButton}" Command="{Binding RecoveryCommand}"
+                                                            HorizontalAlignment="Stretch" Margin="0" Height="32"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=recover}"
+                                                            ToolTip="The guest failed; open its recovery points"
+                                                            AutomationProperties.Name="Recover the device">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Path Data="{StaticResource IconRecovery}" Style="{StaticResource Glyph}"
+                                                                  VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                            <TextBlock Text="Recover…" VerticalAlignment="Center" FontSize="12" />
+                                                        </StackPanel>
+                                                    </Button>
+
+                                                    <Button Content="Starting…" Style="{StaticResource ToolButton}"
+                                                            HorizontalAlignment="Stretch" Margin="0" Height="32" IsEnabled="False"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=starting}" />
+                                                    <Button Content="Stopping…" Style="{StaticResource ToolButton}"
+                                                            HorizontalAlignment="Stretch" Margin="0" Height="32" IsEnabled="False"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=stopping}" />
+                                                    <Button Content="State unknown" Style="{StaticResource ToolButton}"
+                                                            HorizontalAlignment="Stretch" Margin="0" Height="32" IsEnabled="False"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=unknown}" />
+
+                                                    <Button Style="{StaticResource IconButton}" Width="32" Height="32"
+                                                            HorizontalAlignment="Right" Margin="0"
+                                                            Command="{Binding StopCommand}"
+                                                            Visibility="{Binding PrimaryKind, Converter={StaticResource KindVis}, ConverterParameter=open}"
+                                                            ToolTip="Stop this guest"
+                                                            AutomationProperties.Name="Stop the device">
+                                                        <Path Data="{StaticResource IconPower}" Style="{StaticResource Glyph}" />
+                                                    </Button>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Dashed "New device" tile -->
+                                    <Button Command="{Binding DataContext.NewDeviceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            MinHeight="268"
+                                            Visibility="{Binding IsPlaceholder, Converter={StaticResource BoolToVis}}"
+                                            AutomationProperties.Name="Create a device"
+                                            ToolTip="Create a device from the pinned AOSP profile">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid>
+                                                    <Rectangle x:Name="Frame" RadiusX="10" RadiusY="10"
+                                                               Stroke="{DynamicResource BorderBrush}" StrokeThickness="1"
+                                                               StrokeDashArray="4 3" Fill="Transparent" />
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Frame" Property="Stroke" Value="{DynamicResource Accent}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                                        <Setter TargetName="Frame" Property="Stroke" Value="{DynamicResource FocusRing}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                        <StackPanel Margin="24,40" MaxWidth="220">
+                                            <Border Width="48" Height="48" CornerRadius="24"
+                                                    Background="{DynamicResource PanelAlt}"
+                                                    HorizontalAlignment="Center">
+                                                <Path Data="{StaticResource IconPlus}" Width="20" Height="20" Stretch="None"
+                                                      Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="Create device" Style="{StaticResource SectionHeader}"
+                                                       HorizontalAlignment="Center" Margin="0,12,0,0" />
+                                            <TextBlock Text="Pick an image, profile and resources. The pinned AOSP API 35 profile is one click."
+                                                       Style="{StaticResource Caption}" Foreground="{DynamicResource TextTertiary}"
+                                                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty state: icon, one sentence, one action. -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
+                            Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}">
+                    <Border Width="56" Height="56" CornerRadius="28" Background="{DynamicResource PanelAlt}"
+                            HorizontalAlignment="Center">
+                        <Path Data="{StaticResource IconStack}" Width="24" Height="24" Stretch="Uniform"
+                              Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.26"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Border>
+                    <TextBlock Text="No managed devices yet" Style="{StaticResource PageText}" FontSize="20"
+                               HorizontalAlignment="Center" Margin="0,14,0,0" />
+                    <TextBlock Text="This workspace has no AVD to run. Create one from the pinned AOSP API 35 image; it gets its own ports and disk."
+                               Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap"
+                               Margin="0,6,0,16" />
+                    <Button Content="Create device" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Center" Command="{Binding NewDeviceCommand}"
+                            AutomationProperties.Name="Create device" />
+                </StackPanel>
+
+                <!-- No-match state -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
+                            Visibility="{Binding ShowNoMatchState, Converter={StaticResource BoolToVis}}">
+                    <Border Width="56" Height="56" CornerRadius="28" Background="{DynamicResource PanelAlt}"
+                            HorizontalAlignment="Center">
+                        <Path Data="{StaticResource IconSearch}" Width="22" Height="22" Stretch="Uniform"
+                              Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.36"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    </Border>
+                    <TextBlock Text="{Binding NoMatchTitle}" Style="{StaticResource PageText}" FontSize="20"
+                               HorizontalAlignment="Center" Margin="0,14,0,0" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding NoMatchText}" Style="{StaticResource Caption}" TextAlignment="Center"
+                               TextWrapping="Wrap" Margin="0,6,0,16" />
+                    <Button Content="Clear search" Style="{StaticResource ToolButton}" HorizontalAlignment="Center"
+                            Command="{Binding ClearSearchCommand}"
+                            AutomationProperties.Name="Clear the search" />
+                </StackPanel>
+
+                <!-- Busy strip: real indeterminate progress, no dimming. -->
+                <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,8,0,0" MaxWidth="460"
+                        Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="12,10" IsHitTestVisible="False"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                        AutomationProperties.Name="Operation in progress">
+                    <StackPanel>
+                        <TextBlock Text="{Binding BusyText}" TextWrapping="Wrap" />
+                        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Status bar -->
+            <Border Grid.Row="4" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,1,0,0" Padding="24,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{DynamicResource Danger}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Fill" Value="{DynamicResource Success}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Style="{StaticResource Caption}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ConnectionText}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" Margin="0,0,12,0" />
+                        <TextBlock Text="{Binding WorkspaceRoot, StringFormat=workspace: {0}}" Style="{StaticResource Mono}"
+                                   FontSize="11" Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                                   ToolTip="{Binding WorkspaceRoot}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Create device: a 460 DIP right-side slide-over, full window height,
+             over a ~50 % scrim. Open slides in from the right over 220 ms on
+             cubic-bezier(0.22,1,0.36,1) and the scrim fades in alongside; Esc
+             and a scrim click close. Tab focus cycles inside the host, and the
+             page behind is made inert while it is open
+             (DeviceLibraryWindow.xaml.cs). The width is min(460, window-48),
+             clamped in code-behind on SizeChanged. -->
+        <Grid x:Name="CreateDrawerHost" Grid.ColumnSpan="2"
+              KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle"
+              Visibility="{Binding IsCreateOpen, Converter={StaticResource BoolToVis}}">
+            <Border x:Name="CreateScrim" Background="{DynamicResource ScrimBg}"
+                    MouseLeftButtonDown="OnCreateScrimClick" />
+            <Grid x:Name="CreateDrawerShell" Width="460" HorizontalAlignment="Right">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="CreateDrawerSlide" X="0" />
+                </Grid.RenderTransform>
+
+                <Border Style="{StaticResource DrawerAmbient}" />
+                <Border Style="{StaticResource DrawerSurface}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Specular top edge of the floating surface. -->
+                        <Border Height="1" Margin="12,0,0,0" VerticalAlignment="Top" IsHitTestVisible="False"
+                                Background="{DynamicResource SpecularEdge}" />
+
+                        <Grid Grid.Row="0" Margin="24,20,20,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="NEW DEVICE" Style="{StaticResource Eyebrow}" />
+                                <TextBlock Text="Create device" Style="{StaticResource DialogTitle}" Margin="0,2,0,0" />
+                                <TextBlock Text="One AVD from the pinned image, with its own port pair and writable disk."
+                                           Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource IconButton}" Margin="0"
+                                    VerticalAlignment="Top" Command="{Binding CloseCreateCommand}"
+                                    ToolTip="Close (Esc)" AutomationProperties.Name="Close the create drawer">
+                                <Path Data="{StaticResource IconClose}" Style="{StaticResource Glyph}" />
+                            </Button>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,0,0,0">
+                        <StackPanel Margin="0,0,24,8">
+
+                        <TextBlock Text="NAME" Style="{StaticResource Eyebrow}" />
+                        <TextBox x:Name="CreateNameBox" Margin="0,4,0,0"
+                                 Text="{Binding CreateName, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Device name"
+                                 ToolTip="Lowercase letters, digits and hyphens; 1-32 characters" />
+                        <TextBlock Text="{Binding CreateNameError}" Style="{StaticResource FieldError}"
+                                   Visibility="{Binding HasCreateNameError, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="The name becomes the AVD name ws_&lt;name&gt;. Names must be unique in this workspace."
+                                   Style="{StaticResource Caption}" Foreground="{DynamicResource TextTertiary}"
+                                   TextWrapping="Wrap" Margin="0,4,0,14" />
+
+                        <TextBlock Text="FIXED BY THE SUPERVISOR" Style="{StaticResource Eyebrow}" Margin="0,0,0,6" />
+                        <Border Style="{StaticResource Card}" Padding="12" Background="{DynamicResource PanelAlt}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Image" Style="{StaticResource FieldLabel}" />
+                                <Grid Grid.Row="0" Grid.Column="1" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Top" Margin="0,5,6,0"
+                                             Fill="{Binding CreateImageTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding CreateImageText}" Style="{StaticResource Mono}"
+                                               Foreground="{Binding CreateImageTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Profile" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CreateProfileText}"
+                                           Style="{StaticResource Mono}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Acceleration" Style="{StaticResource FieldLabel}" />
+                                <Grid Grid.Row="2" Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Top" Margin="0,5,6,0"
+                                             Fill="{Binding CreateWhpxTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding CreateWhpxText}" Style="{StaticResource Mono}"
+                                               Foreground="{Binding CreateWhpxTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="DISK PRE-FLIGHT (instance.diskEstimate)" Style="{StaticResource Eyebrow}"
+                                   Margin="0,14,0,6" />
+                        <Border Style="{StaticResource Card}" Padding="12" Background="{DynamicResource PanelAlt}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Data partition" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="2048M" Style="{StaticResource Mono}" Margin="0,0,0,4" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="With one snapshot" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CreateDiskReserveText}"
+                                           Style="{StaticResource Mono}" Margin="0,0,0,4" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Free on the volume" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CreateDiskFreeText}"
+                                           Style="{StaticResource Mono}" Margin="0,0,0,4" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Verdict" Style="{StaticResource FieldLabel}" />
+                                <Grid Grid.Row="3" Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Top" Margin="0,5,6,0"
+                                             Fill="{Binding CreateDiskTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding CreateDiskVerdict}" Style="{StaticResource Mono}"
+                                               Foreground="{Binding CreateDiskTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="{Binding CreateNote}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                        <TextBlock Text="{Binding CreateBlockedReason}" Style="{StaticResource FieldError}"
+                                   Visibility="{Binding CreateBlockedReason, Converter={StaticResource TextToVis}}" />
+                        <ContentControl Template="{StaticResource InlineError}" Margin="0,10,0,0"
+                                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+
+                        </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Sticky footer: the drawer's single accent action stays
+                             visible while the body scrolls. -->
+                        <Border Grid.Row="2" Background="{DynamicResource PanelBg}"
+                                BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0"
+                                Padding="24,12">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Cancel" Style="{StaticResource ToolButton}"
+                                        Command="{Binding CloseCreateCommand}"
+                                        AutomationProperties.Name="Cancel creating a device" />
+                                <Button Content="Create device" Style="{StaticResource PrimaryButton}" Margin="0"
+                                        Command="{Binding SubmitCreateCommand}"
+                                        AutomationProperties.Name="Create the device" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Clone device: the same 460 DIP right-side slide-over as Create. -->
+        <Grid x:Name="CloneDrawerHost" Grid.ColumnSpan="2"
+              KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle"
+              Visibility="{Binding IsCloneOpen, Converter={StaticResource BoolToVis}}">
+            <Border x:Name="CloneScrim" Background="{DynamicResource ScrimBg}"
+                    MouseLeftButtonDown="OnCloneScrimClick" />
+            <Grid x:Name="CloneDrawerShell" Width="460" HorizontalAlignment="Right">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="CloneDrawerSlide" X="0" />
+                </Grid.RenderTransform>
+
+                <Border Style="{StaticResource DrawerAmbient}" />
+                <Border Style="{StaticResource DrawerSurface}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Height="1" Margin="12,0,0,0" VerticalAlignment="Top" IsHitTestVisible="False"
+                                Background="{DynamicResource SpecularEdge}" />
+
+                        <Grid Grid.Row="0" Margin="24,20,20,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="CLONE" Style="{StaticResource Eyebrow}" />
+                                <TextBlock Text="Clone device" Style="{StaticResource DialogTitle}" Margin="0,2,0,0" />
+                                <TextBlock Text="instance.duplicate copies a stopped guest into an independent instance."
+                                           Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource IconButton}" Margin="0"
+                                    VerticalAlignment="Top" Command="{Binding CloseCloneCommand}"
+                                    ToolTip="Close (Esc)" AutomationProperties.Name="Close the clone drawer">
+                                <Path Data="{StaticResource IconClose}" Style="{StaticResource Glyph}" />
+                            </Button>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,0,0,0">
+                        <StackPanel Margin="0,0,24,8">
+
+                    <Border Style="{StaticResource Card}" Padding="12" Background="{DynamicResource PanelAlt}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Source" Style="{StaticResource FieldLabel}" Width="70" />
+                                <TextBlock Text="{Binding CloneSource}" FontWeight="SemiBold" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding CloneSourceState}" Style="{StaticResource Caption}"
+                                           Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding CloneSourceImage}" Style="{StaticResource Mono}"
+                                       Foreground="{DynamicResource TextTertiary}" Margin="70,2,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="NEW NAME" Style="{StaticResource Eyebrow}" Margin="0,14,0,4" />
+                    <TextBox x:Name="CloneNameBox" Text="{Binding CloneName, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="Clone target name" />
+                    <TextBlock Text="{Binding CloneNameError}" Style="{StaticResource FieldError}"
+                               Visibility="{Binding HasCloneNameError, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding CloneBlockedReason}" Style="{StaticResource FieldError}"
+                               Visibility="{Binding CloneBlockedReason, Converter={StaticResource TextToVis}}" />
+                    <TextBlock Text="{Binding CloneNote}" Style="{StaticResource Caption}"
+                               Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <ContentControl Template="{StaticResource InlineError}" Margin="0,10,0,0"
+                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+
+                        </StackPanel>
+                        </ScrollViewer>
+
+                        <Border Grid.Row="2" Background="{DynamicResource PanelBg}"
+                                BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0"
+                                Padding="24,12">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Cancel" Style="{StaticResource ToolButton}" Command="{Binding CloseCloneCommand}"
+                                        AutomationProperties.Name="Cancel cloning" />
+                                <Button Content="Clone device" Style="{StaticResource PrimaryButton}" Margin="0"
+                                        Command="{Binding SubmitCloneCommand}"
+                                        AutomationProperties.Name="Clone the device" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Recovery points dialog -->
+        <Grid Grid.ColumnSpan="2" Style="{StaticResource Overlay}"
+              Visibility="{Binding IsRecoveryOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ScrimBg}" />
+            <Border Style="{StaticResource DialogSurface}" Width="760" MaxHeight="720"
+                    KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Recovery points" Style="{StaticResource DialogTitle}" />
+                            <TextBlock Text="{Binding RecoveryDevice}" Style="{StaticResource SectionHeader}"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding RecoverySubtitle}" Style="{StaticResource Caption}"
+                                   TextWrapping="Wrap" Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,14,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Width="240" Text="{Binding SavePointTag, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="New recovery point tag"
+                                     ToolTip="Letters, digits, dot, dash and underscore" />
+                            <Button Content="Save point" Style="{StaticResource ToolButton}" Margin="8,0,0,0"
+                                    Command="{Binding SavePointCommand}"
+                                    AutomationProperties.Name="Save a recovery point" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding SavePointError}" Style="{StaticResource FieldError}"
+                                   Visibility="{Binding HasSavePointError, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="{Binding SavePointHint}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Visibility="{Binding SavePointHint, Converter={StaticResource TextToVis}}" />
+                        <TextBlock Text="{Binding RecoveryMessage}" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource Success}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                   Visibility="{Binding HasRecoveryMessage, Converter={StaticResource BoolToVis}}" />
+                        <ContentControl Template="{StaticResource InlineError}" Margin="0,8,0,0"
+                                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                        <ItemsControl ItemsSource="{Binding RecoveryPoints}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" Padding="12,10" Margin="0,0,0,8"
+                                            Background="{DynamicResource PanelAlt}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Tag}" Style="{StaticResource Mono}"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding MetaText}" Style="{StaticResource Caption}"
+                                                           Foreground="{DynamicResource TextTertiary}" />
+                                                <TextBlock Text="{Binding Reason}" Style="{StaticResource Caption}"
+                                                           Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
+                                                           Visibility="{Binding Reason, Converter={StaticResource TextToVis}}" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1" Style="{StaticResource CompatibleChip}" Margin="8,0">
+                                                <TextBlock Text="{Binding CompatibleText}" Style="{StaticResource CompatibleText}" />
+                                            </Border>
+                                            <Button Grid.Column="2" Content="Restore" Style="{StaticResource ToolButton}"
+                                                    Margin="0,0,6,0" Command="{Binding RestoreCommand}"
+                                                    ToolTip="{Binding RestoreTooltip}"
+                                                    AutomationProperties.Name="Restore this recovery point" />
+                                            <Button Grid.Column="3" Style="{StaticResource IconButton}" Width="32" Height="32"
+                                                    Margin="0" Command="{Binding DeleteCommand}"
+                                                    ToolTip="Delete this recovery point"
+                                                    AutomationProperties.Name="Delete this recovery point">
+                                                <Path Data="{StaticResource IconTrash}" Style="{StaticResource Glyph}" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="380"
+                                Visibility="{Binding ShowRecoveryEmpty, Converter={StaticResource BoolToVis}}">
+                        <Border Width="44" Height="44" CornerRadius="22" Background="{DynamicResource PanelAlt}"
+                                HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconRecovery}" Width="20" Height="20" Stretch="Uniform"
+                                  Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                        </Border>
+                        <TextBlock Text="No recovery point yet" Style="{StaticResource SectionHeader}"
+                                   HorizontalAlignment="Center" Margin="0,10,0,0" />
+                        <TextBlock Text="Start the guest, then save a point. The supervisor records the image, the device profile and the configuration fingerprint with each point."
+                                   Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                        <Button Content="Close" Style="{StaticResource ToolButton}" Margin="0"
+                                Command="{Binding CloseRecoveryCommand}"
+                                AutomationProperties.Name="Close the recovery points" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Destructive confirmation -->
+        <Grid Grid.ColumnSpan="2" Style="{StaticResource Overlay}"
+              Visibility="{Binding IsConfirmOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ScrimBg}" />
+            <Border Style="{StaticResource DialogSurface}" Width="520"
+                    KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="{Binding ConfirmTitle}" Style="{StaticResource DialogTitle}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ConfirmText}" Style="{StaticResource Body}"
+                               Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Cancel" Style="{StaticResource ToolButton}"
+                                Command="{Binding CancelConfirmCommand}"
+                                AutomationProperties.Name="Cancel" />
+                        <Button Content="{Binding ConfirmActionText}" Style="{StaticResource DangerButton}" Margin="0"
+                                Command="{Binding ConfirmCommand}"
+                                AutomationProperties.Name="Confirm the destructive action" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

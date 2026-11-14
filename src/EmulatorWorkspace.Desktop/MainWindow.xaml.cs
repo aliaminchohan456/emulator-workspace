@@ -37,7 +37,10 @@ public partial class MainWindow : Window
                 $"layout window={ActualWidth:N0} body={BodyGrid.ActualWidth:N0} viewport={ViewportScroll.ActualWidth:N0} inspector={InspectorPanel.ActualWidth:N0} dpi={VisualTreeHelper.GetDpi(this).DpiScaleX}");
         };
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.OpenLibraryRequested += OnOpenLibraryRequested;
     }
+
+    private void OnOpenLibraryRequested() => OpenDeviceLibrary();
 
     public async Task<int> RunLatencyProbeAsync(int count, string outPath, int frameTimeoutSeconds = 45)
     {
@@ -149,6 +152,35 @@ public partial class MainWindow : Window
         {
             UpdateViewportSize();
         }
+    }
+
+    // ---- UX-04 device library ---------------------------------------------
+
+    private DeviceLibraryWindow? _library;
+
+    private void OnDevices(object sender, RoutedEventArgs e) => OpenDeviceLibrary();
+
+    /// <summary>Opens (or re-activates) the device library window.</summary>
+    public DeviceLibraryWindow OpenDeviceLibrary()
+    {
+        if (_library is { IsLoaded: true })
+        {
+            _library.Activate();
+            return _library;
+        }
+
+        var library = new DeviceLibraryWindow { Owner = this };
+        library.DeviceChosen += name =>
+        {
+            if (_viewModel.SelectDevice(name))
+            {
+                Activate();
+            }
+        };
+        library.Closed += (_, _) => _library = null;
+        _library = library;
+        library.Show();
+        return library;
     }
 
     private void OnViewportSizeChanged(object sender, SizeChangedEventArgs e) => UpdateViewportSize();

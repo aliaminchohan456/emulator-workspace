@@ -27,14 +27,33 @@
     <SolidColorBrush x:Key="AccentHover" Color="#C4E2FB" />
     <SolidColorBrush x:Key="AccentPressed" Color="#9CC8EF" />
     <SolidColorBrush x:Key="AccentText" Color="#142A3B" />
+    <!-- Accent-soft = accent at 10% over the navigation surface (#252A30); used
+          by the active navigation item and the neutral "info" chip. -->
+    <SolidColorBrush x:Key="AccentSoftBg" Color="#252A30" />
+    <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
+    <!-- UX-04 fix pass: the 1px specular top edge of a floating drawer. White
+          at 12% fading to 2%, as the polish addendum asks. -->
+    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#1FFFFFFF" Offset="0" />
+        <GradientStop Color="#05FFFFFF" Offset="1" />
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="Danger" Color="#FFA6A6" />
-    <SolidColorBrush x:Key="DangerBg" Color="#3A2528" />
+    <!-- UX-04: err-soft is error at 12% over the base surface (not a solid
+          maroon): #2E2526 = #111315 + 12% #FFA6A6. DangerBorder is the same
+          error colour at 35% so the band keeps a visible 1px edge without a
+          saturated fill. Error text on DangerBg measures 8.0:1. -->
+    <SolidColorBrush x:Key="DangerBg" Color="#2E2526" />
+    <SolidColorBrush x:Key="DangerBorder" Color="#59FFA6A6" />
     <SolidColorBrush x:Key="Success" Color="#8ED8AF" />
     <SolidColorBrush x:Key="SuccessBg" Color="#1E2E26" />
     <SolidColorBrush x:Key="Warning" Color="#EFC58A" />
     <SolidColorBrush x:Key="WarningBg" Color="#33291C" />
     <SolidColorBrush x:Key="LogBg" Color="#0C0E10" />
     <SolidColorBrush x:Key="ViewportBg" Color="#0C0E10" />
+    <!-- UX-04: the library card silhouette is a drawn device, dark in every
+          theme like the mockup, so it never impersonates a captured frame. -->
+    <SolidColorBrush x:Key="DeviceBodyBg" Color="#0B0D0F" />
+    <SolidColorBrush x:Key="DeviceBodyBorder" Color="#3A4249" />
     <SolidColorBrush x:Key="SelectionBg" Color="#243441" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#3D5266" />
     <SolidColorBrush x:Key="FocusRing" Color="#B3D9FA" />

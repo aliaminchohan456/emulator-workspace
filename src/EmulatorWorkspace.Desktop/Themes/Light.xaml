@@ -26,14 +26,32 @@
     <SolidColorBrush x:Key="AccentHover" Color="#1D5078" />
     <SolidColorBrush x:Key="AccentPressed" Color="#18445F" />
     <SolidColorBrush x:Key="AccentText" Color="#FFFFFF" />
+    <!-- Accent-soft = accent at 10% over the light base (#E1E8ED). -->
+    <SolidColorBrush x:Key="AccentSoftBg" Color="#E1E8ED" />
+    <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
+    <!-- UX-04 fix pass: a white specular line is invisible on a white drawer,
+          so the light theme uses a 6% ink hairline instead (still a top-edge
+          highlight, never a full border). -->
+    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#0F000000" Offset="0" />
+        <GradientStop Color="#03000000" Offset="1" />
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="Danger" Color="#A52C36" />
-    <SolidColorBrush x:Key="DangerBg" Color="#F6E3E5" />
+    <!-- UX-04: err-soft is error at 12% over the light base (#ECDFE1); the
+          border is the same error at 35%. Error text on the band measures
+          5.4:1. -->
+    <SolidColorBrush x:Key="DangerBg" Color="#ECDFE1" />
+    <SolidColorBrush x:Key="DangerBorder" Color="#59A52C36" />
     <SolidColorBrush x:Key="Success" Color="#216443" />
     <SolidColorBrush x:Key="SuccessBg" Color="#E2EFE8" />
     <SolidColorBrush x:Key="Warning" Color="#845716" />
     <SolidColorBrush x:Key="WarningBg" Color="#F5EEDF" />
     <SolidColorBrush x:Key="LogBg" Color="#E0E5E9" />
     <SolidColorBrush x:Key="ViewportBg" Color="#E0E5E9" />
+    <!-- UX-04: the drawn device silhouette stays a dark object on a light
+          surface, as in the light mockup. -->
+    <SolidColorBrush x:Key="DeviceBodyBg" Color="#171C20" />
+    <SolidColorBrush x:Key="DeviceBodyBorder" Color="#2B3238" />
     <SolidColorBrush x:Key="SelectionBg" Color="#DCEAF4" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#9DC1D9" />
     <SolidColorBrush x:Key="FocusRing" Color="#235E89" />

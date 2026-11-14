@@ -22,6 +22,8 @@
         <views:StageToneToBrushConverter x:Key="ToneBrush" />
         <views:StepStateToBrushConverter x:Key="StepBrush" />
         <views:TextToVisibilityConverter x:Key="TextToVis" />
+        <views:ToneToBrushConverter x:Key="ToneRoles" />
+        <views:StringEqualsToVisibilityConverter x:Key="StringVis" />
 
         <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,0,8,4" />
@@ -105,38 +107,47 @@
                     </Button>
                     <Button Content="Theme" Style="{StaticResource ToolButton}" Command="{Binding ToggleThemeCommand}" />
                     <Button Content="Refresh" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}" />
+                    <Button Content="Devices" Style="{StaticResource ToolButton}" Click="OnDevices"
+                            ToolTip="Device library: search, create, clone and recovery points"
+                            AutomationProperties.Name="Device library" />
                     <Button Content="Agents" Style="{StaticResource ToolButton}" Click="OnAgents"
                             AutomationProperties.Name="Agent sessions" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- UX-03 typed error bar: persistent until dismissed, cause + next safe
-             action + copyable details. It never auto-hides. -->
-        <Border Grid.Row="1" Background="{DynamicResource DangerBg}" BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,0,0,1" Padding="12,8"
+        <!-- UX-03 typed error bar, UX-04 tone pass: err-soft surface (~12% tint),
+             1px error border, a 3px error bar on the leading edge, coloured
+             title, body in text1, one next safe action. Inset from the window
+             edges and above the viewport card, so it never covers the frame.
+             It stays until dismissed and never hides itself. -->
+        <Border Grid.Row="1" Margin="8,6,8,0" Background="{DynamicResource DangerBg}"
+                BorderBrush="{DynamicResource DangerBorder}" BorderThickness="1" CornerRadius="10"
                 Visibility="{Binding HasErrorBar, Converter={StaticResource BoolToVis}}"
                 AutomationProperties.Name="Error">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Path Grid.Column="0" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Danger}"
+                <Border Grid.Column="0" Background="{DynamicResource Danger}" CornerRadius="10,0,0,10" />
+                <Path Grid.Column="1" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Danger}"
                       StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                       StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
-                      VerticalAlignment="Top" Margin="0,2,10,0" />
-                <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                      VerticalAlignment="Top" Margin="12,12,10,0" />
+                <StackPanel Grid.Column="2" Margin="0,10,12,10">
                     <TextBlock Text="{Binding ErrorBarTitle}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding ErrorBarText}" Style="{StaticResource Caption}"
+                               Foreground="{DynamicResource Danger}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ErrorBarText}" Style="{StaticResource Body}"
                                Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,2,0,0" />
                     <TextBlock Text="{Binding ErrorBarAction}" Style="{StaticResource Caption}"
                                TextWrapping="Wrap" Margin="0,2,0,0" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,8,8,0">
                     <Button Content="Retry" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}"
+                            ToolTip="Re-read the supervisor, the SDK report and the device state"
                             Visibility="{Binding ShowErrorRetry, Converter={StaticResource BoolToVis}}"
                             AutomationProperties.Name="Retry the failed operation" />
                     <Button Content="Copy details" Style="{StaticResource ToolButton}"
@@ -294,7 +305,7 @@
                          the supervisor owns the operation. -->
                     <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" MaxWidth="460"
                             Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="12,10" IsHitTestVisible="False"
+                            BorderThickness="1" CornerRadius="10" Padding="12,10" IsHitTestVisible="False"
                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
                             AutomationProperties.Name="Operation in progress">
                         <StackPanel>
@@ -305,23 +316,42 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- UX-03 stale frame: the last frame stays visible and is
-                         timestamped; input is paused until a fresh frame arrives. -->
-                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16" MaxWidth="420"
-                            Background="{DynamicResource WarningBg}" BorderBrush="{DynamicResource Warning}"
+                    <!-- UX-03 stale frame, UX-04 tone and wrap pass: the last frame
+                         stays visible and is stamped. A supervised operation that
+                         holds the ADB channel reads as information ("Frames
+                         paused - the APK install is using the ADB channel"); a
+                         stream that stalled on its own reads as a warning. Both
+                         wrap onto two short lines so the chip never clips at
+                         1024 px, and input stays paused either way. -->
+                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16" MaxWidth="380"
+                            Background="{Binding StaleFrameTone, Converter={StaticResource ToneRoles}, ConverterParameter=bg}"
+                            BorderBrush="{Binding StaleFrameTone, Converter={StaticResource ToneRoles}, ConverterParameter=border}"
                             BorderThickness="1" CornerRadius="6" Padding="10,6" IsHitTestVisible="False"
-                            Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}">
+                            Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Frame stream paused">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Path Grid.Column="0" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Warning}"
+                            <Path Grid.Column="0" Data="{StaticResource IconWarning}"
+                                  Stroke="{Binding StaleFrameTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}"
                                   StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
-                                  VerticalAlignment="Top" Margin="0,1,8,0" />
-                            <TextBlock Grid.Column="1" Text="{Binding StaleFrameText}" Style="{StaticResource Caption}"
-                                       Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                                  VerticalAlignment="Top" Margin="0,1,8,0"
+                                  Visibility="{Binding StaleFrameTone, Converter={StaticResource StringVis}, ConverterParameter=warning}" />
+                            <Path Grid.Column="0" Data="{StaticResource IconInfo}"
+                                  Stroke="{Binding StaleFrameTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}"
+                                  StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                                  VerticalAlignment="Top" Margin="0,1,8,0"
+                                  Visibility="{Binding StaleFrameTone, Converter={StaticResource StringVis}, ConverterParameter=info}" />
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding StaleFrameTitle}" Style="{StaticResource Caption}"
+                                           Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding StaleFrameDetail}" Style="{StaticResource Caption}"
+                                           TextWrapping="Wrap" Margin="0,1,0,0" />
+                            </StackPanel>
                         </Grid>
                     </Border>
 
@@ -356,7 +386,7 @@
                          hover, with Open and Copy. Errors go to the error bar. -->
                     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" MaxWidth="360"
                             Background="{DynamicResource PopupBg}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="12,10"
+                            BorderThickness="1" CornerRadius="10" Padding="12,10"
                             Visibility="{Binding ToastVisible, Converter={StaticResource BoolToVis}}"
                             MouseEnter="OnToastEnter" MouseLeave="OnToastLeave"
                             AutomationProperties.Name="Result">
@@ -607,8 +637,13 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                <Grid Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
                                 <Setter Property="Fill" Value="{DynamicResource Danger}" />
@@ -620,11 +655,15 @@
                             </Style>
                         </Ellipse.Style>
                     </Ellipse>
-                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource Danger}"
-                               Style="{StaticResource Caption}" Margin="12,0,0,0" VerticalAlignment="Center"
-                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
-                </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Style="{StaticResource Caption}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding StatusMessage}" Margin="0,0,12,0" />
+                    <TextBlock Grid.Column="2" Text="{Binding ErrorMessage}" Foreground="{DynamicResource Danger}"
+                               Style="{StaticResource Caption}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="380"
+                               ToolTip="{Binding ErrorMessage}"
+                               Visibility="{Binding ShowStatusError, Converter={StaticResource BoolToVis}}" />
+                </Grid>
                 <TextBlock Grid.Column="1" Text="{Binding WorkspaceRoot, StringFormat=workspace: {0}}"
                            Style="{StaticResource Caption}" VerticalAlignment="Center" />
             </Grid>

@@ -206,6 +206,32 @@ public partial class App : Application
             };
         }
 
+        // UX-04 evidence hook: opens the device library through the same handler
+        // the command-bar button and the palette entry use, and optionally one
+        // of its dialogs for capture. It creates, clones and deletes nothing by
+        // itself.
+        var libraryDialog = "";
+        for (var index = 0; index < e.Args.Length - 1; index++)
+        {
+            if (e.Args[index].Equals("--library-open", StringComparison.OrdinalIgnoreCase))
+            {
+                libraryDialog = e.Args[index + 1];
+            }
+        }
+
+        if (e.Args.Contains("--open-library", StringComparer.OrdinalIgnoreCase) || libraryDialog.Length > 0)
+        {
+            window.Loaded += async (_, _) =>
+            {
+                var library = window.OpenDeviceLibrary();
+                if (libraryDialog.Length > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                    await library.RunEvidenceHookAsync(libraryDialog);
+                }
+            };
+        }
+
         window.Show();
     }
 }

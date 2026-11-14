@@ -74,6 +74,21 @@
          for a finished boot stage. -->
     <Geometry x:Key="IconWarning">M 8,2.8 L 14,12.6 L 2,12.6 Z M 8,6.4 L 8,9.4 M 8,11 L 8,11.01</Geometry>
     <Geometry x:Key="IconCheck">M 3.4,8.4 L 6.6,11.4 L 12.6,4.6</Geometry>
+    <!-- UX-04 library glyphs. -->
+    <Geometry x:Key="IconSearch">M 7,3.4 A 3.6,3.6 0 1 1 6.99,3.4 Z M 9.9,9.9 L 13,13</Geometry>
+    <Geometry x:Key="IconSort">M 4,5 L 12,5 M 5,8 L 11,8 M 6.4,11 L 9.6,11</Geometry>
+    <Geometry x:Key="IconMore">M 3.2,8 L 3.21,8 M 8,8 L 8.01,8 M 12.8,8 L 12.81,8</Geometry>
+    <Geometry x:Key="IconClone">M 6,5.6 L 6,12.8 L 12.8,12.8 L 12.8,5.6 Z M 3.2,10.4 L 3.2,3.2 L 10.4,3.2</Geometry>
+    <Geometry x:Key="IconRecovery">M 3.4,8 A 4.6,4.6 0 1 1 8,12.6 A 4.6,4.6 0 1 1 3.4,8 M 8,5.4 L 8,8 L 10.2,9.2</Geometry>
+    <Geometry x:Key="IconTrash">M 3.2,4.8 L 12.8,4.8 M 6.2,4.8 L 6.2,3 L 9.8,3 L 9.8,4.8 M 4.8,4.8 L 5.6,13 L 10.4,13 L 11.2,4.8 M 6.9,7 L 6.9,11 M 9.1,7 L 9.1,11</Geometry>
+    <Geometry x:Key="IconRefresh">M 12.6,5.6 A 4.8,4.8 0 1 0 13,9.8 M 12.6,2.6 L 12.6,5.9 L 9.3,5.9</Geometry>
+    <Geometry x:Key="IconInfo">M 3.4,8 A 4.6,4.6 0 1 1 12.6,8 A 4.6,4.6 0 1 1 3.4,8 M 8,7.4 L 8,11 M 8,5.1 L 8,5.11</Geometry>
+    <Geometry x:Key="IconClose">M 4.2,4.2 L 11.8,11.8 M 11.8,4.2 L 4.2,11.8</Geometry>
+    <Geometry x:Key="IconMonitor">M 3,3.6 L 13,3.6 L 13,11.4 L 3,11.4 Z M 6.2,13.6 L 9.8,13.6 M 8,11.4 L 8,13.6</Geometry>
+    <Geometry x:Key="IconGrid">M 3,3.6 L 7.2,3.6 L 7.2,7.6 L 3,7.6 Z M 8.8,3.6 L 13,3.6 L 13,7.6 L 8.8,7.6 Z M 3,8.8 L 7.2,8.8 L 7.2,12.8 L 3,12.8 Z M 8.8,8.8 L 13,8.8 L 13,12.8 L 8.8,12.8 Z</Geometry>
+    <Geometry x:Key="IconPower">M 8,2.8 L 8,7.8 M 5.4,4.4 A 4.6,4.6 0 1 0 10.6,4.4</Geometry>
+    <Geometry x:Key="IconStack">M 3,5.2 L 8,2.8 L 13,5.2 L 8,7.6 Z M 3,8.6 L 8,11 L 13,8.6 M 3,11.6 L 8,14 L 13,11.6</Geometry>
+    <Geometry x:Key="IconChip">M 4.6,4.6 L 11.4,4.6 L 11.4,11.4 L 4.6,11.4 Z M 2.8,6.4 L 4.6,6.4 M 2.8,9.6 L 4.6,9.6 M 11.4,6.4 L 13.2,6.4 M 11.4,9.6 L 13.2,9.6</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
@@ -206,8 +221,21 @@
         </Setter>
     </Style>
 
-    <!-- 36 DIP icon-only action with an accessible name supplied at the call site. -->
-    <Style x:Key="IconButton" TargetType="Button">
+    <!-- UX-04: caution and destructive ghost actions. Same geometry as the
+         secondary button; only the text and border carry the tone, and the
+         words in the label always name the consequence. -->
+    <Style x:Key="WarnButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+        <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Warning}" />
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+        <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}" />
+        <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+    </Style>
+
+    <!-- 36 DIP icon-only action with an accessible name supplied at the call site. -->    <Style x:Key="IconButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
         <Setter Property="Width" Value="36" />
@@ -250,6 +278,45 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <!-- UX-04: a library card is a panel surface with a 1px stroke; depth comes
+         from the surface colour, never from a hard shadow. -->
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- Floating surfaces (dialogs and flyouts) are the only place a soft,
+         large shadow is allowed. -->
+    <Style x:Key="DialogSurface" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource PopupBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="28" ShadowDepth="8" Direction="270"
+                                  Opacity="0.45" Color="#000000" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DialogTitle" TargetType="TextBlock" BasedOn="{StaticResource PageText}">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="LineHeight" Value="28" />
+    </Style>
+
+    <!-- Caps eyebrow above a page title (LIBRARY). -->
+    <Style x:Key="Eyebrow" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="LineHeight" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <Style x:Key="Badge" TargetType="Border">
@@ -403,7 +470,7 @@
                             <Border Background="{DynamicResource PopupBg}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="10"
                                     Margin="0,4,0,0"
                                     Padding="0,4"
                                     MinWidth="{TemplateBinding ActualWidth}"
@@ -928,7 +995,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="GroupBox">
                     <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Background="Transparent" Padding="{TemplateBinding Padding}"
+                            CornerRadius="10" Background="Transparent" Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <DockPanel>
                             <ContentPresenter ContentSource="Header" DockPanel.Dock="Top"

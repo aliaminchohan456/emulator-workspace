@@ -61,6 +61,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _labRecoveryDetail = "";
     private bool _statusPollInFlight;
     private bool _frameStale;
+    private string _frameHold = "";
     private bool _dropVisible;
     private bool _dropAccepted;
     private string _dropTitle = "";
@@ -127,6 +128,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         DismissToastCommand = new RelayCommand(HideToast);
         CopyToastCommand = new RelayCommand(CopyToastPath);
         OpenToastCommand = new RelayCommand(OpenToastArtifact);
+        // UX-04: the palette and the command bar open the device library window.
+        OpenLibraryCommand = new RelayCommand(() => OpenLibraryRequested?.Invoke());
         BootStages.Add(new BootStageViewModel("Engine"));
         BootStages.Add(new BootStageViewModel("Android boot"));
         BootStages.Add(new BootStageViewModel("Interactive"));
@@ -135,6 +138,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         LogView.Filter = FilterLog;
 
         Palette.Add(new PaletteEntryViewModel("Create device", "Create a new managed guest", CreateDeviceCommand));
+        Palette.Add(new PaletteEntryViewModel("Device library", "Browse, search and manage the device library", OpenLibraryCommand));
         Palette.Add(new PaletteEntryViewModel("Start device", "Start the selected guest", StartCommand));
         Palette.Add(new PaletteEntryViewModel("Stop device", "Stop the selected guest", StopCommand));
         Palette.Add(new PaletteEntryViewModel("Restart device", "Restart the selected guest", RestartCommand));
@@ -238,13 +242,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand CopyToastCommand { get; }
     public RelayCommand OpenToastCommand { get; }
 
+    /// <summary>UX-04: opens the device library window; the window itself is created by the shell.</summary>
+    public RelayCommand OpenLibraryCommand { get; }
+
+    /// <summary>Raised when the operator asks for the device library.</summary>
+    public event Action? OpenLibraryRequested;
+
     /// <summary>Boot stages in supervisor order, each an evidence-backed word.</summary>
     public ObservableCollection<BootStageViewModel> BootStages { get; } = new();
 
     public bool HasErrorBar
     {
         get => _hasErrorBar;
-        private set => SetProperty(ref _hasErrorBar, value);
+        private set
+        {
+            if (SetProperty(ref _hasErrorBar, value))
+            {
+                OnPropertyChanged(nameof(ShowStatusError));
+            }
+        }
     }
 
     public bool ShowErrorRetry
@@ -323,12 +339,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _frameStale, value))
             {
-                OnPropertyChanged(nameof(StaleFrameText));
+                OnPropertyChanged(nameof(StaleFrameTitle));
+                OnPropertyChanged(nameof(StaleFrameDetail));
+                OnPropertyChanged(nameof(StaleFrameTone));
             }
         }
     }
 
-    public string StaleFrameText
+    /// <summary>
+    /// "warning" when the stream stalled on its own, "info" when a supervised
+    /// operation that owns the guest's ADB channel is running. The tone only
+    /// styles the chip; both sentences say what happened and what is blocked.
+    /// </summary>
+    public string StaleFrameTone => _frameHold.Length > 0 ? "info" : "warning";
+
+    public string StaleFrameTitle
     {
         get
         {
@@ -337,11 +362,45 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return "";
             }
 
+            if (_frameHold.Length > 0)
+            {
+                return $"Paused while {_frameHold} runs";
+            }
+
             var age = _lastFramePresented == default
                 ? 0
                 : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
-            return $"Frame stalled · last frame {age:N0} s ago · input paused";
+            return $"Frame stalled · last frame {age:N0} s ago";
         }
+    }
+
+    /// <summary>
+    /// Kept short and split from the title so the chip wraps instead of clipping
+    /// at the narrow layouts (1024 px) the design matrix requires.
+    /// </summary>
+    public string StaleFrameDetail => _frameStale
+        ? "The frame stream resumes with the next frame; input is paused until then."
+        : "";
+
+    /// <summary>
+    /// Marks the start of a supervised operation that holds the guest's ADB
+    /// channel (install, launch). The stale chip then reads as information, not
+    /// as a warning about a broken stream.
+    /// </summary>
+    public void BeginFrameHold(string label)
+    {
+        _frameHold = label;
+        OnPropertyChanged(nameof(StaleFrameTone));
+        OnPropertyChanged(nameof(StaleFrameTitle));
+        UpdateFrameHealth();
+    }
+
+    public void EndFrameHold()
+    {
+        _frameHold = "";
+        OnPropertyChanged(nameof(StaleFrameTone));
+        OnPropertyChanged(nameof(StaleFrameTitle));
+        UpdateFrameHealth();
     }
 
     /// <summary>The APK drag affordance: visible while a file drag is over the window.</summary>
@@ -446,6 +505,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public bool HasSelection => SelectedDevice is not null;
 
+    /// <summary>
+    /// Selects a managed device by name. The device library uses it so "Open in
+    /// Studio" lands on exactly the card the operator acted on.
+    /// </summary>
+    public bool SelectDevice(string name)
+    {
+        var match = Devices.FirstOrDefault(device => device.Name == name);
+        if (match is null)
+        {
+            return false;
+        }
+
+        SelectedDevice = match;
+        return true;
+    }
+
     public bool CanSendInput => SelectedDevice?.IsRunning == true;
 
     private bool _isConnected;
@@ -497,11 +572,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _errorMessage, value))
             {
                 OnPropertyChanged(nameof(HasError));
+                OnPropertyChanged(nameof(ShowStatusError));
             }
         }
     }
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    /// <summary>
+    /// UX-04: while the typed error bar is on screen it carries the cause, so
+    /// the status bar stops repeating the same sentence (which used to collide
+    /// with the workspace path at 980 px).
+    /// </summary>
+    public bool ShowStatusError => HasError && !HasErrorBar;
 
     private bool _hasBlockingIssue;
 
@@ -812,16 +895,35 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             IsConnected = false;
+            if (IsSupervisorFailure(ex) && _connection is { } dead)
+            {
+                _connection = null;
+                _ = dead.DisposeAsync();
+            }
+
             ShowError(ex, "desktop.initialize");
             StatusMessage = "Supervisor or SDK unavailable.";
             ShowSetup = true;
             HasBlockingIssue = true;
-            SetupSummary = "The pinned Android SDK could not be used. Fix the items below, then choose Refresh.";
             SetupIssues.Clear();
-            SetupIssues.Add("Android SDK incomplete or missing: " + ex.Message);
-            SetupIssues.Add("Install cmdline-tools, platform-tools, emulator 37.2.12, and system-images;android-35;default;x86_64 revision 2 from the official SDK Manager.");
-            SetupIssues.Add("Accept the SDK licenses, set ANDROID_HOME to that SDK, then restart the workspace supervisor.");
-            DoctorText = "No SDK report available. The pinned image and emulator are never substituted automatically.";
+            if (IsSupervisorFailure(ex))
+            {
+                // A broken pipe is not a missing SDK. Keep the two failure
+                // classes apart so the setup card does not send the operator to
+                // the SDK manager for a supervisor that is simply not running.
+                SetupSummary = "The local supervisor did not answer. Start it for this workspace root, then choose Refresh.";
+                SetupIssues.Add("Supervisor not reachable: " + ex.Message);
+                SetupIssues.Add("The pinned image, emulator and SDK licences are not changed by this failure.");
+                DoctorText = "No supervisor report available. The pinned image and emulator are never substituted automatically.";
+            }
+            else
+            {
+                SetupSummary = "The pinned Android SDK could not be used. Fix the items below, then choose Refresh.";
+                SetupIssues.Add("Android SDK incomplete or missing: " + ex.Message);
+                SetupIssues.Add("Install cmdline-tools, platform-tools, emulator 37.2.12, and system-images;android-35;default;x86_64 revision 2 from the official SDK Manager.");
+                SetupIssues.Add("Accept the SDK licenses, set ANDROID_HOME to that SDK, then restart the workspace supervisor.");
+                DoctorText = "No SDK report available. The pinned image and emulator are never substituted automatically.";
+            }
         }
         finally
         {
@@ -1430,7 +1532,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             // UX-03: a stalled frame must not accept coordinates. The mapping is
             // unchanged; only the freshness gate is new.
-            StatusMessage = "Input paused: " + StaleFrameText;
+            StatusMessage = "Input paused: " + StaleFrameTitle + ". " + StaleFrameDetail;
             return;
         }
 
@@ -1459,7 +1561,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (IsFrameStale)
         {
-            StatusMessage = "Input paused: " + StaleFrameText;
+            StatusMessage = "Input paused: " + StaleFrameTitle + ". " + StaleFrameDetail;
             return;
         }
 
@@ -1587,8 +1689,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         ApkPath = path;
-        await RunBusyAsync("Installing " + Path.GetFileName(path) + "...", async () =>
+        BeginFrameHold("the APK install");        try
         {
+            await RunBusyAsync("Installing " + Path.GetFileName(path) + "...", async () =>
+            {
             var install = await RequestAsync(
                 OperationNames.AppInstall,
                 new JsonObject { ["name"] = device.Name, ["path"] = path, ["inspectManifest"] = true },
@@ -1622,7 +1726,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // The result is a toast as well as the status line: a drop or a
             // dialog install ends with Open/Copy for the exact file and guest.
             ShowToast("APK installed", StatusMessage, path);
-        }).ConfigureAwait(true);
+            }).ConfigureAwait(true);
+        }
+        finally
+        {
+            EndFrameHold();
+        }
     }
 
     private async Task LaunchAsync(string package)
@@ -1632,6 +1741,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        BeginFrameHold("the app launch");
         try
         {
             await RequestAsync(
@@ -1643,6 +1753,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             ShowError(ex, "app.launch", device.Name);
+        }
+        finally
+        {
+            EndFrameHold();
         }
     }
 
@@ -2312,7 +2426,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (stale)
         {
             // The age is part of the sentence, so refresh it while it holds.
-            OnPropertyChanged(nameof(StaleFrameText));
+            OnPropertyChanged(nameof(StaleFrameTitle));
+            OnPropertyChanged(nameof(StaleFrameDetail));
+            OnPropertyChanged(nameof(StaleFrameTone));
         }
     }
 
@@ -2330,7 +2446,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (IsFrameStale)
         {
-            OnPropertyChanged(nameof(StaleFrameText));
+            OnPropertyChanged(nameof(StaleFrameTitle));
         }
     }
 
@@ -2355,6 +2471,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
+    /// A closed pipe, a refused connect or an unavailable endpoint is a
+    /// supervisor failure; nothing else in the setup card should be blamed for
+    /// it.
+    /// </summary>
+    private static bool IsSupervisorFailure(Exception ex) =>
+        ex is SupervisorUnavailableException or IOException or ObjectDisposedException
+        || ex.Message.Contains("Pipe is broken", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("supervisor", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Turns a failed operation into a persistent, typed error bar: plain cause,
     /// next safe action, and copyable details. It never disappears on its own.
     /// </summary>
@@ -2363,8 +2489,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var code = ex switch
         {
             SupervisorRequestException supervisor => supervisor.Code,
+            SupervisorUnavailableException => "supervisor_unavailable",
             TimeoutException => "timeout",
             OperationCanceledException => "cancelled",
+            IOException => "supervisor_unavailable",
+            _ when IsSupervisorFailure(ex) => "supervisor_unavailable",
             _ => "error",
         };
 
@@ -2372,7 +2501,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ErrorBarTitle = title;
         ErrorBarText = ex.Message;
         ErrorBarAction = action;
-        ShowErrorRetry = code is "supervisor_unavailable" or "timeout";
+        // Retry re-reads the supervisor, the SDK report and the device state; it
+        // is only offered for failures where that is safe (no mutation is
+        // replayed automatically).
+        ShowErrorRetry = code is "supervisor_unavailable" or "timeout" or "adb_failure"
+            or "instance_unavailable" or "image_missing";
         ErrorBarDetails = string.Join(Environment.NewLine, new[]
         {
             $"code: {code}",
@@ -2774,13 +2907,30 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             throw new InvalidOperationException("The supervisor is not connected.");
         }
 
-        var response = await _connection.RequestAsync(op, args, deadline).ConfigureAwait(true);
-        if (!response.Ok)
+        try
         {
-            throw new SupervisorRequestException(response.Code, response.Message);
-        }
+            var response = await _connection.RequestAsync(op, args, deadline).ConfigureAwait(true);
+            if (!response.Ok)
+            {
+                throw new SupervisorRequestException(response.Code, response.Message);
+            }
 
-        return response.Data as JsonObject ?? new JsonObject();
+            return response.Data as JsonObject ?? new JsonObject();
+        }
+        catch (SupervisorUnavailableException)
+        {
+            // The pipe is gone. Drop the client so Refresh can reconnect instead
+            // of reusing a dead stream forever.
+            var dead = _connection;
+            _connection = null;
+            IsConnected = false;
+            if (dead is not null)
+            {
+                _ = dead.DisposeAsync();
+            }
+
+            throw;
+        }
     }
 
     private void RaiseCommandStates()
