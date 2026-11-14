@@ -352,3 +352,37 @@ Commands: `dotnet build -c Release --no-restore` and
 `dotnet test -c Release --no-build --no-restore`. Logs:
 `artifacts/magisk-review4-build.log`, `artifacts/magisk-review4-tests.log`.
 `git diff --check` passed. No fresh hardware evidence is attached to this change.
+
+
+## WSL and provisioning cleanup verification (2026-11-14)
+
+Extracted the existing lab-only root/provision/finally-unroot lifetime into an
+internal helper without changing enrollment, targeting, or authorization.
+Six simulated-ADB tests use real subprocesses to cover cancellation during
+root/provision, root timeout, double failure, enrollment rejection and initial
+journal failure. This is simulated failure evidence, not a power-loss test.
+
+Windows Release: 397 passed, zero skipped. WSL Ubuntu 24.04.5 / .NET 10.0.404:
+395 passed, two Windows-only skips. Both builds: 22 existing warnings, no errors.
+The local 7f08299 archive baseline had one CRLF-dependent test fixture failure;
+normalizing only the fixture fixes it. See [WSL setup and baseline](wsl-development.md).
+
+Fresh real WHPX acceptance passed 8/8 on the tested binaries: two cold boots,
+journaled unroot to UID 2000, app-level Magisk proof, stock recovery with app
+root denial, and guest deletion. WPF consent Cancel was clicked after selecting
+the three pinned files on a separate stopped guest; status remained
+not_configured, state Defined, enginePid null, and no Magisk transaction or
+operation journal was created. That guest was then deleted normally.
+
+Reproduce hardware acceptance with:
+`python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-CleanupVerification-NEW --allow-provisioning-adb-root --mode normal`.
+The root must be fresh and the documented pinned local artifacts must exist.
+Evidence: [binary hashes, source identities and results](evidence/magisk-cleanup-verification-20261114.json).
+Raw local run: `artifacts/magisk-lab/transaction-20261114-163803-229961`.
+WPF local evidence: `artifacts/wpf-cancel-{consent,after}.txt` and
+`artifacts/wpf-cancel-{status,instances}.json`.
+
+Remaining optional work: exact boot-completed marker, verified-boot lease on
+later operator starts, replay-loop session-forwarding test, and narrower
+IOException classification. Power-loss, source-built AOSP, signing and
+redistribution remain release gates. Readiness changes remain excluded.

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="EmulatorWorkspace.Tests" />
     <ProjectReference Include="..\EmulatorWorkspace.Contracts\EmulatorWorkspace.Contracts.csproj" />
     <ProjectReference Include="..\EmulatorWorkspace.Controller\EmulatorWorkspace.Controller.csproj" />
   </ItemGroup>

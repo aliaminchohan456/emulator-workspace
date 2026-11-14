@@ -43,7 +43,7 @@ public sealed class MagiskProbeEvidenceTests
 
     [Fact] public void StockDenialRequiresExplicitProbeFailure()
     {
-        var stock = Valid.Replace("su_exit=0", "su_exit=exception").Replace("su_stderr=", "su_stderr=java.io.IOException: Cannot run program su: error=13, Permission denied")
+        var stock = Valid.Replace("\r", "").Replace("su_exit=0", "su_exit=exception").Replace("su_stderr=", "su_stderr=java.io.IOException: Cannot run program su: error=13, Permission denied")
             .Replace("su_stdout=uid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0\ncontext=u:r:magisk:s0", "su_stdout=");
         Assert.True(MagiskProbeEvidence.Validate(stock, 10149, false)["verified"]!.GetValue<bool>());
         Assert.Throws<SupervisorOperationException>(() => MagiskProbeEvidence.Validate(Valid, 10149, false));

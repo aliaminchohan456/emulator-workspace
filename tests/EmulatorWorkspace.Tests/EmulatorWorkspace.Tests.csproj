@@ -13,5 +13,12 @@
   <ItemGroup>
     <Compile Include="../../src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs" Link="Supervisor/OperationDispatcher.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
+    <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+  <Target Name="CopyFakeAdb" AfterTargets="Build">
+    <ItemGroup>
+      <FakeAdbFiles Include="../EmulatorWorkspace.FakeAdb/bin/$(Configuration)/$(TargetFramework)/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FakeAdbFiles)" DestinationFolder="$(OutDir)fake-adb" />
+  </Target>
 </Project>

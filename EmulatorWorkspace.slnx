@@ -9,6 +9,7 @@
     <Project Path="src/EmulatorWorkspace.Supervisor/EmulatorWorkspace.Supervisor.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" />
     <Project Path="tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csproj" />
   </Folder>
 </Solution>

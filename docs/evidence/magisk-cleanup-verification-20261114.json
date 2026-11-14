@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "7f08299",
+  "run": "transaction-20261114-163803-229961",
+  "command": "python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-CleanupVerification-20261114 --allow-provisioning-adb-root --mode normal",
+  "sourceGitBlobIds": {
+    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "7fa361495a005c390634001a1a8814679ff1fed7",
+    "src/EmulatorWorkspace.Core/Engine/ProvisioningAdbRoot.cs": "62d58bc8ca9bebce54d04bf17bf9f5ca32434815",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "4f195c195cbdb6b5cee33954309fb618832704fe",
+    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "afa64c58473f9afa67198e7e36668ef6a52c4e8f",
+    "tests/EmulatorWorkspace.Tests/ProvisioningAdbRootTests.cs": "255527a265163b5b01b9b8b97aac5cd236077361",
+    "tests/EmulatorWorkspace.Tests/MagiskProbeEvidenceTests.cs": "b17c3237d94074c505ed1dbafcf3016e7946d259",
+    "tests/EmulatorWorkspace.FakeAdb/Program.cs": "389dd64308ff42997e5eae7ba02144b0552db2d0"
+  },
+  "releasePayloadSha256": {
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Cli\\bin\\Release\\net10.0\\wsctl.exe": "6867298843875a3b9aca6ad2592fb45e5ad0c90ed7c6b41015c4c9bf3c84f49f",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.exe": "7bed267b65e02d2a0e38bb22adea5e501ba68a5c69e4bb6cccd500c9bd848972",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.dll": "fe90d508a39ed4f94eb3928c552ad1558e0e506c962c905150d806015b9bbc2a",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Core.dll": "5c4109ce7237fa2c2453051bdac832928ed8a91a842cd95ec87d72c1e722498f",
+    "src/EmulatorWorkspace.Desktop/bin/Release/net10.0-windows/EmulatorWorkspace.Desktop.dll": "de3eaba73bbca940f4e07d063760de6e7fb371a3a94f16b5b8b70a695b8f0fa8",
+    "src/EmulatorWorkspace.Desktop/bin/Release/net10.0-windows/EmulatorWorkspace.Core.dll": "5c4109ce7237fa2c2453051bdac832928ed8a91a842cd95ec87d72c1e722498f"
+  },
+  "unitTests": {
+    "windows": {
+      "passed": 397,
+      "skipped": 0,
+      "failed": 0
+    },
+    "linux": {
+      "passed": 395,
+      "skipped": 2,
+      "failed": 0
+    }
+  },
+  "wpfCancel": {
+    "method": "Selected three pinned files through desktop dialogs, clicked consent Cancel",
+    "instance": "cancel-lab",
+    "consolePort": 5596,
+    "grpcPort": 8596,
+    "status": {
+      "name": "cancel-lab",
+      "phase": "not_configured"
+    },
+    "instances": {
+      "instances": [
+        {
+          "name": "cancel-lab",
+          "avdName": "ws_cancel-lab",
+          "imagePackage": "system-images;android-35;default;x86_64",
+          "deviceProfile": "pixel_6",
+          "consolePort": 5596,
+          "grpcPort": 8596,
+          "serial": "emulator-5596",
+          "state": "Defined",
+          "enginePid": null,
+          "gpu": "host",
+          "headless": true
+        }
+      ]
+    },
+    "magiskJournalCreated": false,
+    "guestOperationJournalFiles": 0,
+    "cleanup": "instance.delete and supervisor.shutdown succeeded"
+  },
+  "host": {
+    "windows": "10.0.26300.9974",
+    "engine": "37.2.12.0 build 16428233",
+    "image": "system-images;android-35;default;x86_64 rev 2",
+    "gpu": "swiftshader_indirect",
+    "acceleration": "WHPX",
+    "snapshots": "no-snapshot-load / no-snapshot-save",
+    "magisk": "30.7 (30700), base-only; Zygisk off; no modules"
+  },
+  "limitations": [
+    "Simulated ADB failures use real subprocesses but do not model physical power loss.",
+    "Power loss, source-built AOSP, signing and redistribution gates remain open.",
+    "Exact boot marker, later operator-start lease, replay-loop session forwarding and IOException classification remain follow-ups."
+  ],
+  "summary": {
+    "root": "D:\\WS-Magisk-CleanupVerification-20261114",
+    "mode": "normal",
+    "checks": [
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "instance.start-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "journaled-adb-unroot-and-parsed-app-proofs",
+        "passed": true
+      },
+      {
+        "check": "two-supervised-cold-boots",
+        "passed": true
+      },
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "snapshot.load-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "stock-recovery-with-app-denial",
+        "passed": true
+      },
+      {
+        "check": "guest-cleanup",
+        "passed": true
+      }
+    ],
+    "passed": true
+  }
+}

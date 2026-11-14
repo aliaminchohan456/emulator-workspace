@@ -77,19 +77,10 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
             throw new SupervisorOperationException(ErrorCodes.AdbFailure, "App probe did not resolve to an unprivileged app UID.");
         var pushed = await Run(name, ["push", Path.Combine(directory, "environment") + "/.", "/data/local/tmp/ws-magisk-env/"], ct);
         if (pushed.ExitCode != 0) throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Lab payload push failed.");
-        var rootEvidence = new JsonObject { ["rootRequested"] = false, ["unrootAttempted"] = false };
         var provisioning = new JsonObject { ["probeUid"] = uid };
-        requireEnrollment();
-        rootEvidence["rootRequested"] = true;
-        journal(rootEvidence); // Persist intent before restarting adbd.
-        Exception? provisioningError = null;
-        try
+        return await ProvisioningAdbRoot.Run(requireEnrollment,
+            (root, token) => manager.SetAdbRootAsync(name, root, token), async token =>
         {
-            var before = await manager.SetAdbRootAsync(name, true, ct);
-            rootEvidence["root"] = before.DeepClone();
-            journal(rootEvidence);
-            if (before["uidAfter"]?.GetValue<string>() != "0")
-                throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Provisioning adbd did not become root.");
             var output = await Shell(name, $$"""
                 set -ex
                 test "$(id -u)" = 0
@@ -127,7 +118,7 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
                 cd /data/adb/magisk
                 find . -type f | sort | xargs sha256sum
                 sync
-                """, ct);
+                """, token);
             var expectedHashes = Directory.EnumerateFiles(Path.Combine(directory, "environment"), "*", SearchOption.AllDirectories)
                 .Select(file => MagiskLabArtifacts.Hash(file) + "  ./" +
                     Path.GetRelativePath(Path.Combine(directory, "environment"), file).Replace('\\', '/'))
@@ -137,39 +128,8 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
             if (!expectedHashes.SequenceEqual(actualHashes))
                 throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Provisioned payload inventory or hash mismatch.");
             provisioning["payloadHashes"] = output;
-        }
-        catch (Exception ex)
-        {
-            provisioningError = ex;
-            rootEvidence["provisioningError"] = ex.Message;
-            throw;
-        }
-        finally
-        {
-            // Cancellation must not intentionally leave adbd rooted.
-            using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-            try
-            {
-                rootEvidence["unrootAttempted"] = true;
-                JsonObject after;
-                try { journal(rootEvidence); }
-                finally { after = await manager.SetAdbRootAsync(name, false, cleanup.Token); }
-                rootEvidence["unroot"] = after.DeepClone();
-                rootEvidence["adbdUid2000Verified"] = after["uidAfter"]?.GetValue<string>() == "2000";
-                journal(rootEvidence);
-                if (rootEvidence["adbdUid2000Verified"]!.GetValue<bool>() != true)
-                    throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Could not restore adbd UID 2000.");
-            }
-            catch (Exception ex)
-            {
-                rootEvidence["unrootError"] = ex.Message;
-                journal(rootEvidence);
-                if (provisioningError is not null)
-                    throw new AggregateException("Provisioning and unroot both failed.", provisioningError, ex);
-                throw;
-            }
-        }
-        return provisioning;
+            return provisioning;
+        }, journal, ct);
     }
 
     public async Task<JsonObject> Verify(string name, int? uid, bool patched, CancellationToken ct)
