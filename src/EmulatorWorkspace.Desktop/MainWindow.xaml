@@ -6,7 +6,7 @@
         Width="1180" Height="820" MinWidth="980" MinHeight="620"
         Background="{DynamicResource WindowBg}"
         AllowDrop="True"
-        Drop="OnFileDrop" DragOver="OnDragOver"
+        Drop="OnFileDrop" DragOver="OnDragOver" DragEnter="OnDragEnter" DragLeave="OnDragLeave"
         Closing="OnClosing" KeyDown="OnKeyDown">
 
     <Window.Resources>
@@ -17,6 +17,11 @@
         <views:InverseBoolConverter x:Key="InverseBool" />
         <views:StateToBrushConverter x:Key="StateBrush" />
         <views:SeverityToBrushConverter x:Key="SeverityBrush" />
+        <!-- UX-03: stage tone and boot-step colour mapping; both always pair the
+             brush with a printed word. -->
+        <views:StageToneToBrushConverter x:Key="ToneBrush" />
+        <views:StepStateToBrushConverter x:Key="StepBrush" />
+        <views:TextToVisibilityConverter x:Key="TextToVis" />
 
         <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,0,8,4" />
@@ -37,6 +42,9 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- UX-03: a persistent error bar sits between the command bar and
+                 the body so it never covers the guest frame. -->
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="{Binding LogcatDrawerHeight}" />
@@ -62,6 +70,18 @@
                     <TextBlock Text="Emulator Workspace" Style="{StaticResource H1}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding SelectedDevice.Name}" Style="{StaticResource Caption}"
                                VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <!-- UX-03: the selected guest's supervisor state as a word,
+                         never colour alone. -->
+                    <Border Style="{StaticResource Badge}" Background="{DynamicResource ChipBg}" Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,6,0"
+                                     Fill="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                            <TextBlock Text="{Binding SelectedDevice.State}" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -91,8 +111,46 @@
             </Grid>
         </Border>
 
+        <!-- UX-03 typed error bar: persistent until dismissed, cause + next safe
+             action + copyable details. It never auto-hides. -->
+        <Border Grid.Row="1" Background="{DynamicResource DangerBg}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="12,8"
+                Visibility="{Binding HasErrorBar, Converter={StaticResource BoolToVis}}"
+                AutomationProperties.Name="Error">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Path Grid.Column="0" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Danger}"
+                      StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                      VerticalAlignment="Top" Margin="0,2,10,0" />
+                <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                    <TextBlock Text="{Binding ErrorBarTitle}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ErrorBarText}" Style="{StaticResource Caption}"
+                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    <TextBlock Text="{Binding ErrorBarAction}" Style="{StaticResource Caption}"
+                               TextWrapping="Wrap" Margin="0,2,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Content="Retry" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}"
+                            Visibility="{Binding ShowErrorRetry, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Retry the failed operation" />
+                    <Button Content="Copy details" Style="{StaticResource ToolButton}"
+                            Command="{Binding CopyErrorDetailsCommand}"
+                            AutomationProperties.Name="Copy error details" />
+                    <Button Content="Dismiss" Style="{StaticResource ToolButton}"
+                            Command="{Binding DismissErrorCommand}" Margin="0"
+                            AutomationProperties.Name="Dismiss the error" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Body -->
-        <Grid x:Name="BodyGrid" Grid.Row="1" Margin="8">
+        <Grid x:Name="BodyGrid" Grid.Row="2" Margin="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="238" MinWidth="180" />
                 <ColumnDefinition Width="6" />
@@ -154,18 +212,52 @@
                         </Grid>
                     </Grid>
 
-                    <!-- Waiting for a frame -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
-                                Visibility="{Binding HasFrame, Converter={StaticResource InverseBoolToVis}}">
-                        <TextBlock Text="Waiting for the first frame" Style="{StaticResource H1}"
-                                   HorizontalAlignment="Center"
-                                   Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
-                        <TextBlock Text="Start the device to stream the guest display."
-                                   Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,8,0,0"
-                                   Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
-                        <TextBlock Text="No device selected" Style="{StaticResource H1}"
-                                   Visibility="{Binding HasSelection, Converter={StaticResource InverseBoolToVis}}" />
-                    </StackPanel>
+                    <!-- UX-03 inline stage: boot readiness, frame wait, stopped,
+                         failed, lab recovery and restricted capture. It is a
+                         non-blocking card sourced from supervisor state; the
+                         guest frame and the input surface are never covered or
+                         dimmed by it. -->
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480" Margin="24"
+                            Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10" Padding="20" IsHitTestVisible="False"
+                            Visibility="{Binding StageVisible, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Device state">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,10,0"
+                                         Fill="{Binding StageTone, Converter={StaticResource ToneBrush}}" />
+                                <TextBlock Text="{Binding StageTitle}" Style="{StaticResource PageText}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding StageDetail}" Style="{StaticResource Body}"
+                                       Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                                       Margin="18,6,0,0" />
+                            <ItemsControl ItemsSource="{Binding BootStages}" Margin="18,14,0,0"
+                                          Visibility="{Binding ShowBootStages, Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,22,0">
+                                            <Ellipse Width="8" Height="8" VerticalAlignment="Top" Margin="0,6,8,0"
+                                                     Fill="{Binding State, Converter={StaticResource StepBrush}}" />
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource SectionHeader}" />
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}"
+                                                           Margin="0,1,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding StageHint}" Style="{StaticResource Caption}"
+                                       TextWrapping="Wrap" Margin="18,12,0,0"
+                                       Visibility="{Binding StageHint, Converter={StaticResource TextToVis}}" />
+                        </StackPanel>
+                    </Border>
 
                     <!-- First-run setup -->
                     <Border Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
@@ -197,17 +289,96 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Busy -->
-                    <Border Background="#99000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-                        <Border Background="{DynamicResource PanelBg}" CornerRadius="8" Padding="20"
-                                HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
-                            <StackPanel>
-                                <TextBlock Text="{Binding BusyText}" TextWrapping="Wrap" />
-                                <ProgressBar IsIndeterminate="True" Height="4" Margin="0,12,0,0" />
-                                <TextBlock Text="The supervisor owns the operation; closing this window will not stop the guest."
-                                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <!-- UX-03 busy strip: real indeterminate progress, no dimming
+                         and no hit-test cover, so the window keeps working while
+                         the supervisor owns the operation. -->
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" MaxWidth="460"
+                            Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="12,10" IsHitTestVisible="False"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Operation in progress">
+                        <StackPanel>
+                            <TextBlock Text="{Binding BusyText}" TextWrapping="Wrap" />
+                            <ProgressBar IsIndeterminate="True" Height="4" Margin="0,8,0,0" />
+                            <TextBlock Text="The supervisor owns the operation; closing this window will not stop the guest. Other panes stay usable."
+                                       Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- UX-03 stale frame: the last frame stays visible and is
+                         timestamped; input is paused until a fresh frame arrives. -->
+                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16" MaxWidth="420"
+                            Background="{DynamicResource WarningBg}" BorderBrush="{DynamicResource Warning}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,6" IsHitTestVisible="False"
+                            Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconWarning}" Stroke="{DynamicResource Warning}"
+                                  StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                                  VerticalAlignment="Top" Margin="0,1,8,0" />
+                            <TextBlock Grid.Column="1" Text="{Binding StaleFrameText}" Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+
+                    <!-- UX-03 APK drag affordance: names the exact target guest and
+                         refuses a stopped guest or a non-APK file in words. -->
+                    <Border Margin="20" CornerRadius="10" Padding="24" IsHitTestVisible="False"
+                            Background="{DynamicResource PanelBg}" BorderThickness="2"
+                            Visibility="{Binding DropVisible, Converter={StaticResource BoolToVis}}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="{DynamicResource Warning}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DropAccepted}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420">
+                            <Path Data="{StaticResource IconInstall}" Stroke="{DynamicResource Accent}"
+                                  StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Width="32" Height="32" Stretch="Uniform"
+                                  HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding DropTitle}" Style="{StaticResource H1}" TextAlignment="Center"
+                                       TextWrapping="Wrap" Margin="0,12,0,0" />
+                            <TextBlock Text="{Binding DropDetail}" Style="{StaticResource Caption}"
+                                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- UX-03 capture/install toast: success only, ~6 s, paused on
+                         hover, with Open and Copy. Errors go to the error bar. -->
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" MaxWidth="360"
+                            Background="{DynamicResource PopupBg}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="12,10"
+                            Visibility="{Binding ToastVisible, Converter={StaticResource BoolToVis}}"
+                            MouseEnter="OnToastEnter" MouseLeave="OnToastLeave"
+                            AutomationProperties.Name="Result">
+                        <StackPanel>
+                            <TextBlock Text="{Binding ToastTitle}" Style="{StaticResource SectionHeader}"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <TextBlock Text="{Binding ToastText}" Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                       Margin="0,2,0,8" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Open" Style="{StaticResource ToolButton}"
+                                        Command="{Binding OpenToastCommand}"
+                                        Visibility="{Binding HasToastPath, Converter={StaticResource BoolToVis}}"
+                                        AutomationProperties.Name="Open the saved artifact" />
+                                <Button Content="Copy path" Style="{StaticResource ToolButton}"
+                                        Command="{Binding CopyToastCommand}"
+                                        Visibility="{Binding HasToastPath, Converter={StaticResource BoolToVis}}"
+                                        AutomationProperties.Name="Copy the artifact path" />
+                                <Button Content="Dismiss" Style="{StaticResource ToolButton}"
+                                        Command="{Binding DismissToastCommand}" Margin="0"
+                                        AutomationProperties.Name="Dismiss the result" />
                             </StackPanel>
-                        </Border>
+                        </StackPanel>
                     </Border>
                 </Grid>
             </Border>
@@ -370,7 +541,7 @@
         </Grid>
 
         <!-- Logcat drawer -->
-        <Border Grid.Row="2" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+        <Border Grid.Row="3" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0" Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}"
                 AutomationProperties.Name="Logcat drawer">
             <DockPanel Margin="8">
@@ -403,7 +574,8 @@
                 <ListView ItemsSource="{Binding LogView}" Background="{DynamicResource LogBg}"
                           BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          AutomationProperties.Name="Logcat entries">
                     <ListView.View>
                         <!-- AllowsColumnReorder=False: the themed
                              GridViewColumnHeader template has no
@@ -428,7 +600,7 @@
         </Border>
 
         <!-- Status bar -->
-        <Border Grid.Row="3" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+        <Border Grid.Row="4" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0" Padding="12,5">
             <Grid>
                 <Grid.ColumnDefinitions>

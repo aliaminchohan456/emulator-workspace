@@ -136,6 +136,34 @@ public partial class App : Application
             }
         }
 
+        // UX-03 evidence hook: renders the APK drag affordance through the same
+        // view-model call the drag handlers use, so the surface can be captured
+        // on a host where an always-on-top window intercepts real shell drags.
+        // It never installs anything and never fakes a drop.
+        var dropPreview = "";
+        for (var index = 0; index < e.Args.Length - 1; index++)
+        {
+            if (e.Args[index].Equals("--drop-preview", StringComparison.OrdinalIgnoreCase))
+            {
+                dropPreview = Path.GetFullPath(e.Args[index + 1]);
+            }
+        }
+
+        if (dropPreview.Length > 0)
+        {
+            var previewTimer = new System.Windows.Threading.DispatcherTimer(
+                System.Windows.Threading.DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromSeconds(2),
+            };
+            previewTimer.Tick += (_, _) => window.ViewModel.ShowDropTarget(new[] { dropPreview });
+            window.Loaded += (_, _) =>
+            {
+                window.ViewModel.ShowDropTarget(new[] { dropPreview });
+                previewTimer.Start();
+            };
+        }
+
         if (dropFile.Length > 0)
         {
             // The file is dropped on the window once a guest is running and

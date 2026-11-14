@@ -24,6 +24,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _statusTimer;
     private readonly DispatcherTimer _logTimer;
+    private readonly DispatcherTimer _toastTimer;
+    private readonly DispatcherTimer _clockTimer;
     private readonly ConcurrentQueue<LogEntryViewModel> _logInbox = new();
     private readonly List<double> _frameIntervals = new();
     private readonly List<double> _inputLatencies = new();
@@ -47,6 +49,39 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private DateTimeOffset _lastFrameInfoUpdated;
     private int _droppedFrames;
     private bool _initialized;
+
+    // UX-03 state evidence. Everything below is derived from a supervisor
+    // response or frame event; nothing here decides that a guest is ready.
+    private const int StaleFrameSeconds = 5;
+    private DateTimeOffset? _frameWaitSince;
+    private DateTimeOffset? _launchedUtc;
+    private bool _captureRestricted;
+    private string _captureRestrictedReason = "";
+    private bool _labRecoveryRequired;
+    private string _labRecoveryDetail = "";
+    private bool _statusPollInFlight;
+    private bool _frameStale;
+    private bool _dropVisible;
+    private bool _dropAccepted;
+    private string _dropTitle = "";
+    private string _dropDetail = "";
+    private bool _toastVisible;
+    private bool _toastHovered;
+    private string _toastTitle = "";
+    private string _toastText = "";
+    private string? _toastPath;
+    private bool _hasErrorBar;
+    private bool _showErrorRetry;
+    private string _errorBarTitle = "";
+    private string _errorBarText = "";
+    private string _errorBarAction = "";
+    private string _errorBarDetails = "";
+    private bool _stageVisible;
+    private string _stageTone = "info";
+    private string _stageTitle = "";
+    private string _stageDetail = "";
+    private string _stageHint = "";
+    private bool _showBootStages;
 
     private readonly bool _halfCapture;
 
@@ -84,6 +119,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         MagiskInstallCommand = new AsyncRelayCommand(InstallMagiskAsync, () => SelectedDevice is not null && !IsBusy);
         MagiskRecoverCommand = new AsyncRelayCommand(RecoverMagiskAsync, () => SelectedDevice is not null && !IsBusy);
 
+        // UX-03 presentation state: the error bar, the drag affordance and the
+        // capture toast. All three are driven by the outcome of a real
+        // supervisor operation, never by a timer that decides success.
+        DismissErrorCommand = new RelayCommand(ClearError);
+        CopyErrorDetailsCommand = new RelayCommand(CopyErrorDetails);
+        DismissToastCommand = new RelayCommand(HideToast);
+        CopyToastCommand = new RelayCommand(CopyToastPath);
+        OpenToastCommand = new RelayCommand(OpenToastArtifact);
+        BootStages.Add(new BootStageViewModel("Engine"));
+        BootStages.Add(new BootStageViewModel("Android boot"));
+        BootStages.Add(new BootStageViewModel("Interactive"));
+
         LogView = CollectionViewSource.GetDefaultView(LogEntries);
         LogView.Filter = FilterLog;
 
@@ -105,6 +152,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
         _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
         _logTimer.Start();
+        _toastTimer = new DispatcherTimer(TimeSpan.FromSeconds(6), DispatcherPriority.Background, (_, _) =>
+        {
+            if (!ToastHovered)
+            {
+                HideToast();
+            }
+        }, _dispatcher);
+
+        // UX-03: the elapsed and stale sentences carry a clock. The clock never
+        // changes a state word; it only re-renders the age of the evidence that
+        // the supervisor already reported.
+        _clockTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => TickClock(), _dispatcher);
+        _clockTimer.Start();
     }
 
     public ObservableCollection<DeviceItemViewModel> Devices { get; } = new();
@@ -165,6 +225,188 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncRelayCommand RefreshAdbStateCommand { get; }
     public AsyncRelayCommand MagiskInstallCommand { get; }
     public AsyncRelayCommand MagiskRecoverCommand { get; }
+
+    // ---- UX-03 honest state surfaces -------------------------------------
+
+    /// <summary>Dismisses the persistent error bar without touching the guest.</summary>
+    public RelayCommand DismissErrorCommand { get; }
+
+    /// <summary>Copies the typed error (code, operation, device, message) for a report.</summary>
+    public RelayCommand CopyErrorDetailsCommand { get; }
+
+    public RelayCommand DismissToastCommand { get; }
+    public RelayCommand CopyToastCommand { get; }
+    public RelayCommand OpenToastCommand { get; }
+
+    /// <summary>Boot stages in supervisor order, each an evidence-backed word.</summary>
+    public ObservableCollection<BootStageViewModel> BootStages { get; } = new();
+
+    public bool HasErrorBar
+    {
+        get => _hasErrorBar;
+        private set => SetProperty(ref _hasErrorBar, value);
+    }
+
+    public bool ShowErrorRetry
+    {
+        get => _showErrorRetry;
+        private set => SetProperty(ref _showErrorRetry, value);
+    }
+
+    public string ErrorBarTitle
+    {
+        get => _errorBarTitle;
+        private set => SetProperty(ref _errorBarTitle, value);
+    }
+
+    public string ErrorBarText
+    {
+        get => _errorBarText;
+        private set => SetProperty(ref _errorBarText, value);
+    }
+
+    public string ErrorBarAction
+    {
+        get => _errorBarAction;
+        private set => SetProperty(ref _errorBarAction, value);
+    }
+
+    public string ErrorBarDetails
+    {
+        get => _errorBarDetails;
+        private set => SetProperty(ref _errorBarDetails, value);
+    }
+
+    /// <summary>True while the viewport shows a stage card instead of a live frame.</summary>
+    public bool StageVisible
+    {
+        get => _stageVisible;
+        private set => SetProperty(ref _stageVisible, value);
+    }
+
+    /// <summary>"info" | "warning" | "error" | "success" — styling only; the words carry the state.</summary>
+    public string StageTone
+    {
+        get => _stageTone;
+        private set => SetProperty(ref _stageTone, value);
+    }
+
+    public string StageTitle
+    {
+        get => _stageTitle;
+        private set => SetProperty(ref _stageTitle, value);
+    }
+
+    public string StageDetail
+    {
+        get => _stageDetail;
+        private set => SetProperty(ref _stageDetail, value);
+    }
+
+    public string StageHint
+    {
+        get => _stageHint;
+        private set => SetProperty(ref _stageHint, value);
+    }
+
+    public bool ShowBootStages
+    {
+        get => _showBootStages;
+        private set => SetProperty(ref _showBootStages, value);
+    }
+
+    /// <summary>True when the last delivered frame is older than the stale budget.</summary>
+    public bool IsFrameStale
+    {
+        get => _frameStale;
+        private set
+        {
+            if (SetProperty(ref _frameStale, value))
+            {
+                OnPropertyChanged(nameof(StaleFrameText));
+            }
+        }
+    }
+
+    public string StaleFrameText
+    {
+        get
+        {
+            if (!_frameStale)
+            {
+                return "";
+            }
+
+            var age = _lastFramePresented == default
+                ? 0
+                : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
+            return $"Frame stalled · last frame {age:N0} s ago · input paused";
+        }
+    }
+
+    /// <summary>The APK drag affordance: visible while a file drag is over the window.</summary>
+    public bool DropVisible
+    {
+        get => _dropVisible;
+        private set => SetProperty(ref _dropVisible, value);
+    }
+
+    /// <summary>Whether the current drag would be accepted (drives DragDropEffects).</summary>
+    public bool DropAccepted
+    {
+        get => _dropAccepted;
+        private set => SetProperty(ref _dropAccepted, value);
+    }
+
+    public string DropTitle
+    {
+        get => _dropTitle;
+        private set => SetProperty(ref _dropTitle, value);
+    }
+
+    public string DropDetail
+    {
+        get => _dropDetail;
+        private set => SetProperty(ref _dropDetail, value);
+    }
+
+    public bool ToastVisible
+    {
+        get => _toastVisible;
+        private set => SetProperty(ref _toastVisible, value);
+    }
+
+    /// <summary>Set by the toast surface: a hovered toast is not auto-dismissed.</summary>
+    public bool ToastHovered
+    {
+        get => _toastHovered;
+        set
+        {
+            if (SetProperty(ref _toastHovered, value) && value)
+            {
+                _toastTimer.Stop();
+            }
+            else if (!value && _toastVisible)
+            {
+                _toastTimer.Stop();
+                _toastTimer.Start();
+            }
+        }
+    }
+
+    public string ToastTitle
+    {
+        get => _toastTitle;
+        private set => SetProperty(ref _toastTitle, value);
+    }
+
+    public string ToastText
+    {
+        get => _toastText;
+        private set => SetProperty(ref _toastText, value);
+    }
+
+    public bool HasToastPath => _toastPath is { Length: > 0 };
     private string _magiskState = "Magisk lab: not checked";
     public string MagiskState { get => _magiskState; private set => SetProperty(ref _magiskState, value); }
 
@@ -361,10 +603,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var readiness = SelectedDevice?.Readiness;
             if (readiness is null)
             {
-                return "not measured this session";
+                return "boot not measured this session";
             }
 
-            return $"boot {readiness["launchedToBootSeconds"]}s  -  interactive {readiness["launchedToInteractiveSeconds"]}s";
+            var boot = readiness["launchedToBootSeconds"];
+            var interactive = readiness["launchedToInteractiveSeconds"];
+            if (boot is null || interactive is null)
+            {
+                // UX-03: a half-filled readiness object is "not reported yet",
+                // not "boot s - interactive s".
+                return "readiness not reported yet";
+            }
+
+            return $"boot {boot.GetValue<double>():N1}s  -  interactive {interactive.GetValue<double>():N1}s";
         }
     }
 
@@ -518,7 +769,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         IsBusy = true;
         BusyText = "Connecting to the local supervisor...";
-        ErrorMessage = "";
+        ClearError();
 
         try
         {
@@ -561,7 +812,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             IsConnected = false;
-            ErrorMessage = ex.Message;
+            ShowError(ex, "desktop.initialize");
             StatusMessage = "Supervisor or SDK unavailable.";
             ShowSetup = true;
             HasBlockingIssue = true;
@@ -576,6 +827,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             IsBusy = false;
             BusyText = "";
+            UpdateStage();
         }
     }
 
@@ -680,7 +932,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         FramesPerSecond = 0;
         _frameIntervals.Clear();
         _pendingInput = null;
-        ErrorMessage = "";
+        _frameWaitSince = null;
+        _launchedUtc = null;
+        _captureRestricted = false;
+        _captureRestrictedReason = "";
+        _labRecoveryRequired = false;
+        _labRecoveryDetail = "";
+        IsFrameStale = false;
+        ClearError();
+        ResetBootStages();
+        UpdateStage();
         await StopLogcatAsync().ConfigureAwait(true);
         await unsubscribe.ConfigureAwait(true);
 
@@ -698,6 +959,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DesktopLog.Write($"selected status {device.State}");
             device.ApplyStatus(status);
             DesktopLog.Write($"applied status {device.State}");
+            if (SelectedDevice?.Name == device.Name)
+            {
+                ApplyBootEvidence(status);
+                UpdateFrameWait(device);
+                UpdateStage();
+            }
+
             OnPropertyChanged(nameof(ReadinessText));
             OnPropertyChanged(nameof(PrimaryActionText));
 
@@ -712,36 +980,62 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ShowError(ex, "instance.status", device.Name);
+        }
+
+        // The Magisk lab state lives in the supervisor, not in the window: read
+        // it so a guest that needs stock recovery says so on selection instead
+        // of waiting for someone to open the Root Lab panel.
+        await RefreshMagiskStatusAsync(device).ConfigureAwait(true);
+        if (SelectedDevice?.Name == device.Name)
+        {
+            UpdateStage();
         }
     }
 
     private async Task RefreshStatusAsync()
     {
         DesktopLog.Write("refresh tick");
-        if (SelectedDevice is null || _connection is null || IsBusy)
+        // UX-03: the status poll no longer stops while an operation is busy.
+        // It is read-only, it is the only evidence source for the boot stages
+        // and it keeps the state current while a long install or boot runs.
+        if (SelectedDevice is not { } device || _connection is null || _statusPollInFlight)
         {
             return;
         }
 
+        _statusPollInFlight = true;
         try
         {
             var status = await RequestAsync(
                 OperationNames.InstanceStatus,
-                new JsonObject { ["name"] = SelectedDevice.Name },
+                new JsonObject { ["name"] = device.Name },
                 TimeSpan.FromSeconds(20)).ConfigureAwait(true);
-            SelectedDevice.ApplyStatus(status);
+            if (SelectedDevice?.Name != device.Name)
+            {
+                return;
+            }
+
+            device.ApplyStatus(status);
+            ApplyBootEvidence(status);
+            UpdateFrameWait(device);
+            UpdateFrameHealth();
+            UpdateStage();
             OnPropertyChanged(nameof(PrimaryActionText));
             OnPropertyChanged(nameof(ReadinessText));
             OnPropertyChanged(nameof(AbiApiText));
-            if (SelectedDevice.IsRunning && _frameSubscription is null)
+            if (device.State == "Running" && _frameSubscription is null)
             {
-                await SubscribeFramesAsync(SelectedDevice).ConfigureAwait(true);
+                await SubscribeFramesAsync(device).ConfigureAwait(true);
             }
         }
         catch (Exception ex)
         {
             StatusMessage = "Status refresh failed: " + ex.Message;
+        }
+        finally
+        {
+            _statusPollInFlight = false;
         }
     }
 
@@ -793,39 +1087,119 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task StartDeviceAsync()
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
 
+        var name = device.Name;
         await RunBusyAsync("Starting engine...", async () =>
         {
             await RequestAsync(
                 OperationNames.InstanceStart,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["coldBoot"] = true },
+                new JsonObject { ["name"] = name, ["coldBoot"] = true },
                 TimeSpan.FromMinutes(2)).ConfigureAwait(true);
             await RefreshDevicesAsync().ConfigureAwait(true);
         }).ConfigureAwait(true);
 
         await RunBusyAsync("Waiting for Android to reach interactive readiness...", async () =>
         {
-            var readiness = await RequestAsync(
+            // UX-03: the wait is driven by supervisor evidence. While the
+            // readiness call runs, the boot stepper is refreshed from
+            // instance.status, so each step is a reported stage and a stage
+            // the supervisor never reports stays worded as unreported.
+            var waitTask = RequestAsync(
                 OperationNames.InstanceWait,
-                new JsonObject { ["name"] = SelectedDevice!.Name, ["timeoutSeconds"] = 600 },
-                TimeSpan.FromMinutes(11)).ConfigureAwait(true);
-            SelectedDevice!.Readiness = readiness;
-            OnPropertyChanged(nameof(ReadinessText));
+                new JsonObject { ["name"] = name, ["timeoutSeconds"] = 600 },
+                TimeSpan.FromMinutes(11));
+            while (!waitTask.IsCompleted)
+            {
+                await Task.Delay(1200).ConfigureAwait(true);
+                if (!waitTask.IsCompleted)
+                {
+                    await PollBootEvidenceAsync(name).ConfigureAwait(true);
+                }
+            }
+
+            var readiness = await waitTask.ConfigureAwait(true);
+            var target = Devices.FirstOrDefault(d => d.Name == name) ?? device;
+            target.Readiness = readiness;
+            if (SelectedDevice?.Name == target.Name)
+            {
+                _launchedUtc = TryReadUtc(readiness["launchedUtc"]) ?? _launchedUtc;
+                OnPropertyChanged(nameof(ReadinessText));
+            }
+
             var status = await RequestAsync(
                 OperationNames.InstanceStatus,
-                new JsonObject { ["name"] = SelectedDevice.Name },
+                new JsonObject { ["name"] = name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
-            SelectedDevice.ApplyStatus(status);
-            await SubscribeFramesAsync(SelectedDevice).ConfigureAwait(true);
-            if (IsLogcatOpen)
+            target.ApplyStatus(status);
+            if (SelectedDevice?.Name == target.Name)
             {
-                await EnsureLogcatAsync().ConfigureAwait(true);
+                ApplyBootEvidence(status);
+                UpdateFrameWait(target);
+                UpdateStage();
+            }
+
+            if (SelectedDevice?.Name == target.Name)
+            {
+                await SubscribeFramesAsync(target).ConfigureAwait(true);
+                if (IsLogcatOpen)
+                {
+                    await EnsureLogcatAsync().ConfigureAwait(true);
+                }
             }
         }).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// UX-03: one status poll while a boot is in progress. It only updates the
+    /// stepper of the guest that is booting; a selection change mid-boot leaves
+    /// the other guest's presentation alone.
+    /// </summary>
+    private async Task PollBootEvidenceAsync(string name)
+    {
+        if (_connection is null || _statusPollInFlight)
+        {
+            return;
+        }
+
+        _statusPollInFlight = true;
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var status = await RequestAsync(
+                OperationNames.InstanceStatus,
+                new JsonObject { ["name"] = name },
+                TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+            var device = Devices.FirstOrDefault(d => d.Name == name);
+            if (device is null)
+            {
+                return;
+            }
+
+            device.ApplyStatus(status);
+            DesktopLog.Write($"boot poll {name} state={device.State} adb={status["adbState"]} "
+                + $"boot={status["bootCompleted"]} in {stopwatch.ElapsedMilliseconds} ms");
+            if (SelectedDevice?.Name == name)
+            {
+                ApplyBootEvidence(status);
+                UpdateFrameWait(device);
+                UpdateStage();
+                OnPropertyChanged(nameof(PrimaryActionText));
+            }
+        }
+        catch (Exception ex)
+        {
+            // The wait itself reports a failure with a typed code; a poll that
+            // races the engine start must not raise a second error surface.
+            DesktopLog.Write($"boot poll {name} failed after {stopwatch.ElapsedMilliseconds} ms: {ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            _statusPollInFlight = false;
+        }
     }
 
     private async Task StopDeviceAsync()
@@ -845,7 +1219,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             await StopLogcatAsync().ConfigureAwait(true);
             await RefreshDevicesAsync().ConfigureAwait(true);
             Frame = null;
+            _frameWaitSince = null;
+            IsFrameStale = false;
+            ResetBootStages();
         }).ConfigureAwait(true);
+        UpdateStage();
     }
 
     private async Task RestartAsync()
@@ -886,7 +1264,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task KeyAsync(string key)
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
@@ -895,12 +1273,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             await RequestAsync(
                 OperationNames.InputKey,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["key"] = key },
+                new JsonObject { ["name"] = device.Name, ["key"] = key },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ShowError(ex, "input.key", device.Name);
         }
     }
 
@@ -1043,8 +1421,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public async Task SendTapAsync(int x, int y)
     {
-        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        if (SelectedDevice is not { } device || !device.IsRunning)
         {
+            return;
+        }
+
+        if (IsFrameStale)
+        {
+            // UX-03: a stalled frame must not accept coordinates. The mapping is
+            // unchanged; only the freshness gate is new.
+            StatusMessage = "Input paused: " + StaleFrameText;
             return;
         }
 
@@ -1054,20 +1440,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             await RequestAsync(
                 OperationNames.InputTap,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["x"] = x, ["y"] = y },
+                new JsonObject { ["name"] = device.Name, ["x"] = x, ["y"] = y },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             _pendingInput = null;
-            ErrorMessage = "Input failed: " + ex.Message;
+            ShowError(ex, "input.tap", device.Name);
         }
     }
 
     public async Task SendSwipeAsync(int x1, int y1, int x2, int y2)
     {
-        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        if (SelectedDevice is not { } device || !device.IsRunning)
         {
+            return;
+        }
+
+        if (IsFrameStale)
+        {
+            StatusMessage = "Input paused: " + StaleFrameText;
             return;
         }
 
@@ -1077,7 +1469,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OperationNames.InputSwipe,
                 new JsonObject
                 {
-                    ["name"] = SelectedDevice.Name,
+                    ["name"] = device.Name,
                     ["x1"] = x1,
                     ["y1"] = y1,
                     ["x2"] = x2,
@@ -1088,36 +1480,36 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Swipe failed: " + ex.Message;
+            ShowError(ex, "input.swipe", device.Name);
         }
     }
 
     private async Task ToggleRotationAsync()
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
 
-        var next = SelectedDevice.Rotation == 1 ? 0 : 1;
+        var next = device.Rotation == 1 ? 0 : 1;
         try
         {
             await RequestAsync(
                 OperationNames.DisplayRotate,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["rotation"] = next },
+                new JsonObject { ["name"] = device.Name, ["rotation"] = next },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
-            SelectedDevice.Rotation = next;
+            device.Rotation = next;
             StatusMessage = next == 1 ? "Rotation: landscape." : "Rotation: portrait.";
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ShowError(ex, "display.rotate", SelectedDevice?.Name);
         }
     }
 
     private async Task ScreenshotAsync()
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
@@ -1126,19 +1518,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             var data = await RequestAsync(
                 OperationNames.FrameSnapshot,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["width"] = 1080 },
+                new JsonObject { ["name"] = device.Name, ["width"] = 1080 },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
             var bytes = Convert.FromBase64String(data["pngBase64"]!.GetValue<string>());
             var directory = Path.Combine(_paths.Root, "screenshots");
             Directory.CreateDirectory(directory);
-            var path = Path.Combine(directory, $"{SelectedDevice.Name}-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            var path = Path.Combine(directory, $"{device.Name}-{DateTime.Now:yyyyMMdd-HHmmss}.png");
             await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(true);
             ScreenshotPath = path;
             StatusMessage = "Screenshot saved: " + path;
+            _captureRestricted = false;
+            _captureRestrictedReason = "";
+            UpdateStage();
+            var size = TryReadPngSize(bytes, out var width, out var height) ? $"{width}×{height} PNG" : "PNG";
+            ShowToast("Screenshot saved", $"{device.Name} · {size} · {DateTime.Now:HH:mm:ss}", path);
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Screenshot failed: " + ex.Message;
+            ShowError(ex, "frame.snapshot", device.Name);
         }
     }
 
@@ -1221,12 +1618,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 await EnsureLogcatAsync().ConfigureAwait(true);
             }
+
+            // The result is a toast as well as the status line: a drop or a
+            // dialog install ends with Open/Copy for the exact file and guest.
+            ShowToast("APK installed", StatusMessage, path);
         }).ConfigureAwait(true);
     }
 
     private async Task LaunchAsync(string package)
     {
-        if (SelectedDevice is null)
+        if (SelectedDevice is not { } device)
         {
             return;
         }
@@ -1235,13 +1636,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             await RequestAsync(
                 OperationNames.AppLaunch,
-                new JsonObject { ["name"] = SelectedDevice.Name, ["package"] = package },
+                new JsonObject { ["name"] = device.Name, ["package"] = package },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
             StatusMessage = "Launched " + package;
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ShowError(ex, "app.launch", device.Name);
         }
     }
 
@@ -1256,7 +1657,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Could not copy diagnostics: " + ex.Message;
+            ShowError(ex, "diagnostics.summary", SelectedDevice?.Name);
         }
     }
 
@@ -1285,7 +1686,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         await _subscribeGate.WaitAsync().ConfigureAwait(true);
         try
         {
-            if (_frameSubscription is not null || !device.IsRunning || SelectedDevice?.Name != device.Name)
+            // UX-03: a frame subscription is only opened for a guest the
+            // supervisor reports as Running. Starting one while Android boots
+            // holds the guest's ADB channel, which starves the status reads the
+            // boot stepper and the state pill depend on.
+            if (_frameSubscription is not null || device.State != "Running" || SelectedDevice?.Name != device.Name)
             {
                 return;
             }
@@ -1311,11 +1716,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             Volatile.Write(ref _frameSubscription, subscription);
             DesktopLog.Write($"frame subscribed {device.Name} sub={subscription}");
+            _frameWaitSince = DateTimeOffset.UtcNow;
             StartFrameLoop();
+            if (SelectedDevice?.Name == device.Name)
+            {
+                UpdateStage();
+            }
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Frame stream unavailable: " + ex.Message;
+            // A frame subscription that fails while Android is still starting is
+            // a normal part of boot; it is reported in the status line and the
+            // frame-wait stage, not as a persistent error the operator must clear.
+            if (device.State == "Starting")
+            {
+                StatusMessage = "Frame stream waits for the guest display: " + ex.Message;
+            }
+            else
+            {
+                ShowError(ex, "frame.subscribe", device.Name);
+            }
         }
         finally
         {
@@ -1362,7 +1782,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Logcat unavailable: " + ex.Message;
+            ShowError(ex, "logcat.subscribe", SelectedDevice?.Name);
         }
     }
 
@@ -1529,10 +1949,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _frameSequence = source.Sequence;
         GuestWidth = source.GuestWidth > 0 ? source.GuestWidth : GuestWidth;
         GuestHeight = source.GuestHeight > 0 ? source.GuestHeight : GuestHeight;
+        var hadFrame = Frame is not null;
         Frame = bitmap;
         var widthChanged = FrameWidth != bitmap.PixelWidth || FrameHeight != bitmap.PixelHeight;
         FrameWidth = bitmap.PixelWidth;
         FrameHeight = bitmap.PixelHeight;
+
+        // UX-03: a delivered frame is the only thing that clears the frame-wait
+        // and stale stages; no timer does it.
+        _frameWaitSince = null;
+        if (IsFrameStale)
+        {
+            IsFrameStale = false;
+        }
+
+        if (!hadFrame)
+        {
+            UpdateStage();
+        }
 
         if (_lastFramePresented != default)
         {
@@ -1671,21 +2105,479 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         IsBusy = true;
         BusyText = busyText;
-        ErrorMessage = "";
+        ClearError();
         try
         {
             await action().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            ShowError(ex, busyText);
             StatusMessage = "Operation failed.";
         }
         finally
         {
             IsBusy = false;
             BusyText = "";
+            UpdateStage();
         }
+    }
+
+    // ---- UX-03 state mapping ---------------------------------------------
+
+    /// <summary>
+    /// Chooses the viewport stage from the supervisor's reported state. Every
+    /// branch is evidence: instance.status fields, the readiness timestamps or
+    /// the presence of a delivered frame. No timer decides that a guest is ready.
+    /// </summary>
+    private void UpdateStage()
+    {
+        if (ShowSetup)
+        {
+            StageVisible = false;
+            ShowBootStages = false;
+            return;
+        }
+
+        var device = SelectedDevice;
+        if (device is null)
+        {
+            SetStage("info", "No device selected",
+                "Create or select a managed device to stream its Android display.",
+                "Guests are isolated per instance; nothing boots until you start one.");
+            ShowBootStages = false;
+            return;
+        }
+
+        if (device.State == "Failed")
+        {
+            SetStage("error", "Guest failed",
+                string.IsNullOrWhiteSpace(device.LastError)
+                    ? "The supervisor reported a failed state for this guest."
+                    : device.LastError,
+                "Inspect Diagnostics and the instance log, then retry. A cold boot is only safe once the cause is known.");
+            ShowBootStages = true;
+            return;
+        }
+
+        if (_labRecoveryRequired)
+        {
+            SetStage("warning", "Lab recovery required",
+                string.IsNullOrWhiteSpace(_labRecoveryDetail) ? MagiskState : _labRecoveryDetail,
+                "Agents are fenced while a lab needs recovery. Use Recover stock in Root Lab first.");
+            ShowBootStages = false;
+            return;
+        }
+
+        if (device.IsRunning && HasFrame)
+        {
+            StageVisible = false;
+            ShowBootStages = false;
+            return;
+        }
+
+        if (_captureRestricted)
+        {
+            SetStage("warning", "Capture restricted",
+                string.IsNullOrWhiteSpace(_captureRestrictedReason)
+                    ? "The guest refused the last capture."
+                    : _captureRestrictedReason,
+                "A FLAG_SECURE window blocks pixels. Close the protected app or window in the guest, then capture again.");
+            ShowBootStages = false;
+            return;
+        }
+
+        if (device.State == "Starting")
+        {
+            var elapsed = ElapsedSinceLaunch();
+            SetStage("info", "Starting Android",
+                string.IsNullOrEmpty(elapsed)
+                    ? "The engine is running. Waiting for the supervisor's boot stages."
+                    : $"The engine is running. Elapsed since launch: {elapsed}.",
+                "");
+            ShowBootStages = true;
+            return;
+        }
+
+        if (device.State == "Stopping")
+        {
+            SetStage("info", "Stopping the guest",
+                "The supervisor is shutting the engine down. The window can stay open; the guest is not tied to it.",
+                "");
+            ShowBootStages = false;
+            return;
+        }
+
+        if (device.IsRunning)
+        {
+            var waited = _frameWaitSince is { } since
+                ? Math.Max(0, (DateTimeOffset.UtcNow - since).TotalSeconds)
+                : 0;
+            SetStage("info", "Waiting for the first frame",
+                $"Android reports running. The frame stream has not delivered a frame yet — {waited:N0}s.",
+                waited >= 10
+                    ? "If the guest stays dark, open Logcat or Diagnostics and check the instance log for the frame pump."
+                    : "");
+            ShowBootStages = true;
+            return;
+        }
+
+        SetStage("info", "Guest stopped",
+            $"{device.Name} is stopped. Start it to stream the guest display.",
+            "Stopped guests keep their profile, disks and snapshots.");
+        ShowBootStages = false;
+    }
+
+    private void SetStage(string tone, string title, string detail, string hint)
+    {
+        StageTone = tone;
+        StageTitle = title;
+        StageDetail = detail;
+        StageHint = hint;
+        StageVisible = true;
+    }
+
+    /// <summary>
+    /// Maps instance.status evidence onto the three boot steps. A stage the
+    /// supervisor cannot report yet is worded "not reported", never "done".
+    /// </summary>
+    private void ApplyBootEvidence(JsonObject status)
+    {
+        var state = status["state"]?.GetValue<string>() ?? "";
+        var engineAlive = status["engineAlive"]?.GetValue<bool>() == true;
+        var adbState = (status["adbState"]?.GetValue<string>() ?? "").Trim();
+        var bootCompleted = status["bootCompleted"]?.GetValue<string>() == "1";
+        // adb get-state returns "device", "offline" or an error sentence. Only
+        // the exact word means the transport is usable.
+        var adbOnline = adbState == "device";
+        var interactive = false;
+        if (status["readiness"] is JsonObject readiness)
+        {
+            interactive = readiness["interactiveUtc"] is not null;
+            _launchedUtc = TryReadUtc(readiness["launchedUtc"]) ?? _launchedUtc;
+        }
+
+        var booting = state is "Starting" or "Running";
+
+        BootStages[0].Set(
+            engineAlive ? "done" : state == "Starting" ? "active" : "pending",
+            engineAlive ? "process alive" : state == "Starting" ? "starting process" : "not started");
+        BootStages[1].Set(
+            bootCompleted ? "done" : adbOnline ? "active" : state == "Starting" ? "active" : booting ? "unknown" : "pending",
+            bootCompleted ? "boot_completed reported"
+                : adbOnline ? "ADB transport online"
+                : state == "Starting" ? (adbState == "offline" ? "ADB transport offline" : "waiting for ADB")
+                : booting ? "not reported" : "not started");
+        BootStages[2].Set(
+            interactive ? "done" : bootCompleted ? "active" : "pending",
+            interactive ? "launcher interactive"
+                : bootCompleted ? "waiting for the launcher"
+                : "not reached");
+    }
+
+    private void ResetBootStages()
+    {
+        foreach (var stage in BootStages)
+        {
+            stage.Set("pending", "not started");
+        }
+    }
+
+    /// <summary>Starts the frame-wait clock once the guest reports running.</summary>
+    private void UpdateFrameWait(DeviceItemViewModel device)
+    {
+        if (!device.IsRunning || HasFrame)
+        {
+            if (!device.IsRunning)
+            {
+                _frameWaitSince = null;
+            }
+
+            return;
+        }
+
+        _frameWaitSince ??= DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// A frame older than the stale budget is visibly stale and stops accepting
+    /// input; the last delivered frame is timestamped in the chip, never hidden.
+    /// </summary>
+    private void UpdateFrameHealth()
+    {
+        var running = SelectedDevice?.IsRunning == true;
+        var stale = running && HasFrame && _lastFramePresented != default
+                       && (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds > StaleFrameSeconds;
+        IsFrameStale = stale;
+        if (stale)
+        {
+            // The age is part of the sentence, so refresh it while it holds.
+            OnPropertyChanged(nameof(StaleFrameText));
+        }
+    }
+
+    /// <summary>
+    /// One-second presentation tick: refresh only the sentences that contain a
+    /// timestamp. It cannot promote a stage, clear an error or declare readiness.
+    /// </summary>
+    private void TickClock()
+    {
+        if (StageVisible && SelectedDevice is { } device
+            && (device.State == "Starting" || (device.IsRunning && !HasFrame)))
+        {
+            UpdateStage();
+        }
+
+        if (IsFrameStale)
+        {
+            OnPropertyChanged(nameof(StaleFrameText));
+        }
+    }
+
+    private string ElapsedSinceLaunch()
+    {
+        if (_launchedUtc is not { } launched)
+        {
+            return "";
+        }
+
+        var seconds = Math.Max(0, (DateTimeOffset.UtcNow - launched).TotalSeconds);
+        return $"{seconds:N0}s";
+    }
+
+    private static DateTimeOffset? TryReadUtc(JsonNode? node)
+    {
+        var raw = node?.GetValue<string>();
+        return DateTimeOffset.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal, out var value)
+            ? value
+            : null;
+    }
+
+    /// <summary>
+    /// Turns a failed operation into a persistent, typed error bar: plain cause,
+    /// next safe action, and copyable details. It never disappears on its own.
+    /// </summary>
+    private void ShowError(Exception ex, string operation, string? device = null)
+    {
+        var code = ex switch
+        {
+            SupervisorRequestException supervisor => supervisor.Code,
+            TimeoutException => "timeout",
+            OperationCanceledException => "cancelled",
+            _ => "error",
+        };
+
+        var (title, action) = DescribeError(code);
+        ErrorBarTitle = title;
+        ErrorBarText = ex.Message;
+        ErrorBarAction = action;
+        ShowErrorRetry = code is "supervisor_unavailable" or "timeout";
+        ErrorBarDetails = string.Join(Environment.NewLine, new[]
+        {
+            $"code: {code}",
+            $"operation: {operation}",
+            $"device: {device ?? SelectedDevice?.Name ?? "(none)"}",
+            $"time: {DateTimeOffset.Now:O}",
+            $"workspace: {_paths.Root}",
+            $"message: {ex.Message}",
+        });
+        HasErrorBar = true;
+        ErrorMessage = ex.Message;
+
+        if (code == "secure_window")
+        {
+            _captureRestricted = true;
+            _captureRestrictedReason = ex.Message;
+        }
+
+        UpdateStage();
+    }
+
+    private static (string Title, string Action) DescribeError(string code) => code switch
+    {
+        "supervisor_unavailable" => ("Supervisor is not connected",
+            "Start the workspace supervisor for this root, then Retry."),
+        "timeout" => ("The operation timed out",
+            "Check the guest state and the instance log, then retry when the engine is responsive."),
+        "instance_not_running" => ("The guest is not running",
+            "Start the device, then repeat the action."),
+        "instance_already_running" => ("The guest is already running",
+            "Stop it first if you need a cold start."),
+        "instance_unavailable" => ("The guest is unavailable",
+            "Refresh the device list and reattach before retrying."),
+        "low_disk" => ("Not enough disk space",
+            "Free space on the workspace volume; verified recovery artifacts are never deleted automatically."),
+        "image_missing" => ("The pinned system image is missing",
+            "Install the pinned image with sdkmanager, then Refresh."),
+        "port_conflict" => ("A required port is in use",
+            "Close whatever owns the ports, or recreate the guest to get a new pair."),
+        "capability_unavailable" => ("This guest cannot do that",
+            "The image does not support it. Use a supported profile; the reason above names the capability."),
+        "secure_window" => ("Capture restricted by the guest",
+            "A FLAG_SECURE window blocks pixels. Close the protected window in the guest, then capture again."),
+        "install_failed" => ("The APK could not be installed",
+            "Check the package, its ABI and minimum API, then try again."),
+        "app_launch_failed" => ("The app did not start",
+            "Check the package id and Logcat, then launch it again."),
+        "adb_failure" => ("ADB reported a failure",
+            "Refresh the device state; if it persists, cold boot the guest."),
+        "denied" or "forbidden_scope" or "unauthorized" => ("Permission denied",
+            "Pair the client, or approve the exact action, then retry."),
+        "cancelled" => ("The operation was cancelled",
+            "Nothing else changed. Retry when ready."),
+        _ => ("The operation failed",
+            "Retry, or copy the details into a report. The guest state was not changed silently."),
+    };
+
+    private void ClearError()
+    {
+        HasErrorBar = false;
+        ShowErrorRetry = false;
+        ErrorBarTitle = "";
+        ErrorBarText = "";
+        ErrorBarAction = "";
+        ErrorBarDetails = "";
+        ErrorMessage = "";
+    }
+
+    private void CopyErrorDetails()
+    {
+        try
+        {
+            if (ErrorBarDetails.Length == 0)
+            {
+                return;
+            }
+
+            Clipboard.SetText(ErrorBarDetails);
+            StatusMessage = "Error details copied to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not copy the error details: " + ex.Message;
+        }
+    }
+
+    // ---- UX-03 feedback surfaces -----------------------------------------
+
+    /// <summary>
+    /// The APK drag affordance. It names the exact target guest, refuses a
+    /// stopped guest or a non-APK file with words, and is driven by the same
+    /// selection and run state the install command uses.
+    /// </summary>
+    public void ShowDropTarget(string[]? files)
+    {
+        DropVisible = true;
+        var device = SelectedDevice;
+        if (device is null)
+        {
+            DropAccepted = false;
+            DropTitle = "Select a device first";
+            DropDetail = "An install targets exactly one guest. Choose a device, then drop the APK again.";
+            return;
+        }
+
+        if (device.State != "Running")
+        {
+            DropAccepted = false;
+            DropTitle = device.State == "Starting"
+                ? $"{device.Name} is still starting"
+                : $"Start {device.Name} to install";
+            DropDetail = device.State == "Starting"
+                ? "The supervisor installs into a running guest. Drop the APK again once Android is interactive."
+                : "The supervisor installs into a running guest. Start this device, then drop the APK again.";
+            return;
+        }
+
+        if (files is { Length: > 0 }
+            && !files.Any(path => path.EndsWith(".apk", StringComparison.OrdinalIgnoreCase)))
+        {
+            DropAccepted = false;
+            DropTitle = "Only .apk files install here";
+            DropDetail = "Split APK sets use Build APK set in the palette, and an .aab bundle has to be built first.";
+            return;
+        }
+
+        DropAccepted = true;
+        DropTitle = $"Drop APK to install on {device.Name}";
+        DropDetail = "The APK installs on this guest and launches when its package is readable.";
+    }
+
+    public void HideDropTarget()
+    {
+        DropVisible = false;
+        DropAccepted = false;
+    }
+
+    private void ShowToast(string title, string text, string? path)
+    {
+        ToastTitle = title;
+        ToastText = text;
+        _toastPath = path;
+        OnPropertyChanged(nameof(HasToastPath));
+        ToastVisible = true;
+        ToastHovered = false;
+        _toastTimer.Stop();
+        _toastTimer.Start();
+    }
+
+    private void HideToast()
+    {
+        _toastTimer.Stop();
+        ToastVisible = false;
+    }
+
+    private void CopyToastPath()
+    {
+        if (_toastPath is not { Length: > 0 } path)
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(path);
+            StatusMessage = "Copied: " + path;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not copy the path: " + ex.Message;
+        }
+    }
+
+    private void OpenToastArtifact()
+    {
+        if (_toastPath is not { Length: > 0 } path)
+        {
+            return;
+        }
+
+        try
+        {
+            var arguments = File.Exists(path) ? $"/select,\"{path}\"" : $"\"{path}\"";
+            Process.Start(new ProcessStartInfo("explorer.exe", arguments) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not open the artifact: " + ex.Message;
+        }
+    }
+
+    /// <summary>Reads the exact pixel size from a PNG IHDR; used by the capture toast.</summary>
+    private static bool TryReadPngSize(byte[] bytes, out int width, out int height)
+    {
+        width = 0;
+        height = 0;
+        if (bytes.Length < 24
+            || bytes[0] != 0x89 || bytes[1] != 0x50 || bytes[2] != 0x4E || bytes[3] != 0x47)
+        {
+            return false;
+        }
+
+        width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+        height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+        return width > 0 && height > 0;
     }
 
     /// <summary>
@@ -1718,23 +2610,70 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             AdbRootCapable = false;
             AdbBuildType = "";
             AdbTransportId = "";
+            StatusMessage = "ADB daemon state unavailable: " + ex.Message;
             DesktopLog.Write($"ADB daemon state unavailable: {ex.Message}");
         }
 
         try
         {
             var lab = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30));
-            if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + lab["phase"];
+            ApplyMagiskStatus(device, lab);
         }
         catch (SupervisorRequestException ex)
         {
             if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + ex.Message;
+            _labRecoveryRequired = false;
+            _labRecoveryDetail = "";
         }
         OnPropertyChanged(nameof(AdbUid));
         OnPropertyChanged(nameof(AdbRootCapable));
         OnPropertyChanged(nameof(AdbBuildType));
         OnPropertyChanged(nameof(AdbTransportId));
         OnPropertyChanged(nameof(AdbRootState));
+        UpdateStage();
+    }
+
+    /// <summary>
+    /// UX-03: reads only the Magisk lab transaction state for the selected
+    /// guest, so a lab that needs stock recovery is visible on selection
+    /// without opening the Root Lab panel or touching the ADB daemon.
+    /// </summary>
+    private async Task RefreshMagiskStatusAsync(DeviceItemViewModel device)
+    {
+        if (_connection is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var lab = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30))
+                .ConfigureAwait(true);
+            if (SelectedDevice?.Name == device.Name)
+            {
+                ApplyMagiskStatus(device, lab);
+            }
+        }
+        catch (SupervisorRequestException ex)
+        {
+            DesktopLog.Write($"Magisk lab state unavailable: {ex.Message}");
+        }
+    }
+
+    private void ApplyMagiskStatus(DeviceItemViewModel device, JsonObject lab)
+    {
+        if (SelectedDevice?.Name != device.Name)
+        {
+            return;
+        }
+
+        var phase = lab["phase"]?.GetValue<string>() ?? "unknown";
+        var recoveryRequired = lab["recoveryRequired"]?.GetValue<bool>() == true;
+        MagiskState = "Magisk lab: " + phase + (recoveryRequired ? " (recovery required)" : "");
+        _labRecoveryRequired = recoveryRequired;
+        _labRecoveryDetail = recoveryRequired
+            ? $"The Magisk lab transaction is in phase '{phase}'. Use Recover stock in Root Lab before starting or changing this guest."
+            : "";
     }
 
     private async Task SetAdbRootAsync(bool root)
@@ -1757,6 +2696,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (SupervisorRequestException ex)
         {
             DesktopLog.Write($"ADB {(root ? "root" : "unroot")} refused: {ex.Code} {ex.Message}");
+            ShowError(ex, root ? "instance.adbRoot" : "instance.adbUnroot", device.Name);
         }
 
         await RefreshAdbStateAsync().ConfigureAwait(true);
@@ -1922,6 +2862,37 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 public sealed class SupervisorRequestException(string code, string message) : Exception(message)
 {
     public string Code { get; } = code;
+}
+
+/// <summary>
+/// UX-03: one evidence-backed boot step. <see cref="State"/> drives colour only;
+/// <see cref="Status"/> always prints the state as a word ("done", "active",
+/// "unknown", "pending") so colour is never the only signal.
+/// </summary>
+public sealed class BootStageViewModel(string label) : ObservableObject
+{
+    private string _state = "pending";
+    private string _status = "not started";
+
+    public string Label { get; } = label;
+
+    public string State
+    {
+        get => _state;
+        private set => SetProperty(ref _state, value);
+    }
+
+    public string Status
+    {
+        get => _status;
+        private set => SetProperty(ref _status, value);
+    }
+
+    public void Set(string state, string status)
+    {
+        State = state;
+        Status = status;
+    }
 }
 
 public sealed class DeviceItemViewModel : ObservableObject

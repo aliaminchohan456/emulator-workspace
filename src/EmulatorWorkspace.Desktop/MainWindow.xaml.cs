@@ -420,10 +420,23 @@ public partial class MainWindow : Window
     /// </summary>
     public async Task DeliverFileDropAsync(IEnumerable<string> files)
     {
+        _viewModel.HideDropTarget();
+        _dropTargetActive = false;
         var apk = files.FirstOrDefault(f => f.EndsWith(".apk", StringComparison.OrdinalIgnoreCase));
         if (apk is null)
         {
+            _viewModel.StatusMessage = "Only .apk files install from a drop; build an .aab bundle with Build APK set.";
             Services.DesktopLog.Write("drop with no APK: " + string.Join(", ", files));
+            return;
+        }
+
+        var device = _viewModel.SelectedDevice;
+        if (device is null || device.State != "Running")
+        {
+            _viewModel.StatusMessage = device is null
+                ? "Select a device before dropping an APK."
+                : $"{device.Name} must be running before an APK can be installed.";
+            Services.DesktopLog.Write("drop refused: no running target guest");
             return;
         }
 
@@ -431,19 +444,66 @@ public partial class MainWindow : Window
         await _viewModel.InstallApkAsync(Path.GetFullPath(apk)).ConfigureAwait(true);
     }
 
-    private void OnDragOver(object sender, DragEventArgs e)
+    private bool _dropTargetActive;
+
+    // UX-03: the drag affordance is computed once per drag-entered state and
+    // logged once, instead of writing a log line for every DragOver event.
+    private void OnDragEnter(object sender, DragEventArgs e) => UpdateDropTarget(e);
+
+    private void OnDragOver(object sender, DragEventArgs e) => UpdateDropTarget(e);
+
+    private void OnDragLeave(object sender, DragEventArgs e)
     {
-        var accepted = e.Data.GetDataPresent(DataFormats.FileDrop);
-        e.Effects = accepted ? DragDropEffects.Copy : DragDropEffects.None;
-        e.Handled = true;
-        if (accepted)
+        _dropTargetActive = false;
+        _viewModel.HideDropTarget();
+    }
+
+    private void UpdateDropTarget(DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop))
         {
-            Services.DesktopLog.Write("drag over the desktop window");
+            if (_dropTargetActive)
+            {
+                _dropTargetActive = false;
+                _viewModel.HideDropTarget();
+            }
+
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        string[]? files = null;
+        try
+        {
+            files = e.Data.GetData(DataFormats.FileDrop) as string[];
+        }
+        catch (Exception)
+        {
+            // Shell drags can refuse the data object while the drag is moving;
+            // the affordance still names the target guest.
+        }
+
+        _viewModel.ShowDropTarget(files);
+        e.Effects = _viewModel.DropAccepted ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+
+        if (!_dropTargetActive)
+        {
+            _dropTargetActive = true;
+            Services.DesktopLog.Write("drag entered with "
+                + (files is null ? "an unreadable file list" : $"{files.Length} file(s)"));
         }
     }
 
+    private void OnToastEnter(object sender, MouseEventArgs e) => _viewModel.ToastHovered = true;
+
+    private void OnToastLeave(object sender, MouseEventArgs e) => _viewModel.ToastHovered = false;
+
     private async void OnFileDrop(object sender, DragEventArgs e)
     {
+        _viewModel.HideDropTarget();
+        _dropTargetActive = false;
         if (!e.Data.GetDataPresent(DataFormats.FileDrop))
         {
             Services.DesktopLog.Write("drop without a file list");

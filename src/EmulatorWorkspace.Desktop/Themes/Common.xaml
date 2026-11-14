@@ -70,6 +70,10 @@
     <Geometry x:Key="IconFullscreen">M 6,3 L 3,3 L 3,6 M 10,3 L 13,3 L 13,6 M 3,10 L 3,13 L 6,13 M 13,10 L 13,13 L 10,13</Geometry>
     <Geometry x:Key="IconFocus">M 3,8 C 4.6,5.6 11.4,5.6 13,8 C 11.4,10.4 4.6,10.4 3,8 Z M 9.6,8 A 1.6,1.6 0 1 1 6.4,8 A 1.6,1.6 0 1 1 9.6,8</Geometry>
     <Geometry x:Key="IconDetails">M 3,4 L 13,4 L 13,12 L 3,12 Z M 9.2,4 L 9.2,12</Geometry>
+    <!-- UX-03 state glyphs: an alert triangle for persistent errors and a check
+         for a finished boot stage. -->
+    <Geometry x:Key="IconWarning">M 8,2.8 L 14,12.6 L 2,12.6 Z M 8,6.4 L 8,9.4 M 8,11 L 8,11.01</Geometry>
+    <Geometry x:Key="IconCheck">M 3.4,8.4 L 6.6,11.4 L 12.6,4.6</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
