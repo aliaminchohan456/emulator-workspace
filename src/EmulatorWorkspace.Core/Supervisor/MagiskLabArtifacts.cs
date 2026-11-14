@@ -62,6 +62,28 @@ public static class MagiskLabArtifacts
         Verify(destination, hash);
     }
 
+    /// <summary>Hash the opened file and retain the Windows write/delete exclusion until disposed.</summary>
+    public static FileStream LeaseVerified(string path, string hash)
+    {
+        NoReparse(path);
+        if (!File.Exists(path))
+            throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Lab artifact is missing.");
+        var lease = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            var actual = Convert.ToHexString(SHA256.HashData(lease)).ToLowerInvariant();
+            if (actual != hash)
+                throw new SupervisorOperationException(ErrorCodes.InvalidRequest, $"Lab artifact hash mismatch: {Path.GetFileName(path)}.");
+            lease.Seek(0, SeekOrigin.Begin);
+            return lease;
+        }
+        catch
+        {
+            lease.Dispose();
+            throw;
+        }
+    }
+
     public static void WriteAtomic(string path, JsonObject value)
     {
         NoReparse(path);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedCommit": "4d8d314",
+  "baseCommit": "4d8d314",
   "run": "transaction-20261114-150136-508009",
   "command": "python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-Review2-20261114 --allow-provisioning-adb-root --mode normal",
   "unitTests": 114,

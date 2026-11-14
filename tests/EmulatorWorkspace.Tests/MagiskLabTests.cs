@@ -167,17 +167,18 @@ public sealed class MagiskLabTests : IDisposable
         Assert.Equal("older evidence", File.ReadAllText(Path.Combine(avd, "userdata-qemu.img.failed-existing")));
     }
 
+    public static IEnumerable<object[]> AgentPhases()
+    {
+        foreach (var phase in new[] { "staging", "prepared", "baseline_boot", "activating", "provisioned",
+            "verifying_boot_1", "verifying_boot_2", "verified", "rollback_required", "recovery_required", "recovering", "recovering_baseline" })
+        foreach (var op in new[] { "magisk.prepare", "magisk.approve", "magisk.install", "magisk.recover", "magisk.status",
+            "input.tap", "input.text", "app.install", "app.launch", "app.instrumentation", "recipe.replay", "instance.start" })
+            yield return new object[] { phase, op };
+    }
+
     [Theory]
-    [InlineData("magisk.prepare")]
-    [InlineData("magisk.approve")]
-    [InlineData("magisk.install")]
-    [InlineData("magisk.recover")]
-    [InlineData("magisk.status")]
-    [InlineData("input.tap")]
-    [InlineData("app.install")]
-    [InlineData("app.instrumentation")]
-    [InlineData("recipe.replay")]
-    public async Task DispatcherRejectsAgentOnVerifiedLab(string operation)
+    [MemberData(nameof(AgentPhases))]
+    public async Task DispatcherRejectsAgentOnActiveLab(string phase, string operation)
     {
         var paths = new WorkspacePaths(_root);
         var sdk = new SdkLocator(Path.Combine(_root, "missing-sdk"));
@@ -189,30 +190,38 @@ public sealed class MagiskLabTests : IDisposable
         var dispatcher = new EmulatorWorkspace.Supervisor.OperationDispatcher(paths, sdk, _store, manager, journal,
             new AgentService(paths, sdk, manager, agents), new DeviceLibraryService(paths, manager), new RecipeService(paths), () => { });
         var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
-        state["phase"] = "verified";
+        state["phase"] = phase;
         MagiskLabArtifacts.WriteAtomic(_state, state);
         var result = await dispatcher.ExecuteAsync(new RequestEnvelope { Op = operation, Auth = "test-token",
             Args = new JsonObject { ["name"] = "lab" } }, new PeerInfo(1, 1, "test", "test"), new Sink(), default);
         Assert.Equal(ErrorCodes.ForbiddenScope, result.Code);
+        if (operation == "recipe.replay")
+        {
+            // Exercise the internal entry used by nested replay dispatch as well as the outer fence.
+            var dispatch = typeof(EmulatorWorkspace.Supervisor.OperationDispatcher).GetMethod("DispatchAsync",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var nested = (Task<JsonNode?>)dispatch.Invoke(dispatcher, ["input.tap",
+                new JsonObject { ["name"] = "lab" }, new Sink(), CancellationToken.None, agents.GetSession("test")])!;
+            var denied = await Assert.ThrowsAsync<SupervisorOperationException>(() => nested);
+            Assert.Equal(ErrorCodes.ForbiddenScope, denied.Code);
+        }
     }
 
     [Theory]
-    [InlineData("input.tap")]
-    [InlineData("input.text")]
-    [InlineData("app.install")]
-    [InlineData("app.launch")]
-    [InlineData("app.instrumentation")]
-    [InlineData("recipe.replay")]
-    [InlineData("instance.start")]
-    public void VerifiedLabRejectsAgentControl(string operation)
+    [MemberData(nameof(AgentPhases))]
+    public void ActiveLabRejectsAgentControl(string phase, string operation)
     {
         var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
-        state["phase"] = "verified";
+        state["phase"] = phase;
         MagiskLabArtifacts.WriteAtomic(_state, state);
         var error = Assert.Throws<SupervisorOperationException>(() => _service.Guard("lab", operation, agent: true));
         Assert.Equal(ErrorCodes.ForbiddenScope, error.Code);
-        _service.Guard("lab", "observation.screenshot", agent: true);
-        _service.Guard("lab", "input.tap"); // Operator retains control.
+        _service.Guard("lab", "instance.status", agent: true);
+        if (phase == "verified")
+        {
+            _service.Guard("lab", "observation.screenshot", agent: true);
+            _service.Guard("lab", "input.tap"); // Operator retains control.
+        }
         state["phase"] = "recovered";
         MagiskLabArtifacts.WriteAtomic(_state, state);
         _service.Guard("lab", operation, agent: true);
@@ -232,6 +241,36 @@ public sealed class MagiskLabTests : IDisposable
         MagiskLabArtifacts.WriteAtomic(_state, state);
         var error = Assert.Throws<SupervisorOperationException>(() => _service.RequireProvisioningEnrollment("lab", _transaction, directory));
         Assert.Equal(ErrorCodes.InvalidRequest, error.Code);
+    }
+
+    [Fact]
+    public void VerifiedLeaseHashesOpenedBytesAndReleasesOnMismatch()
+    {
+        var path = Path.Combine(_root, "lease.img");
+        File.WriteAllText(path, "expected");
+        var hash = MagiskLabArtifacts.Hash(path);
+        File.WriteAllText(path, "replacement before lease");
+        Assert.Throws<SupervisorOperationException>(() => MagiskLabArtifacts.LeaseVerified(path, hash));
+        using var writable = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+    }
+
+    [Fact]
+    public void VerifiedLeaseIsRewoundAndExcludesWindowsWritesAndReplacement()
+    {
+        var path = Path.Combine(_root, "lease.img");
+        File.WriteAllText(path, "expected");
+        using (var lease = MagiskLabArtifacts.LeaseVerified(path, MagiskLabArtifacts.Hash(path)))
+        {
+            Assert.Equal(0, lease.Position);
+            Assert.Equal((int)'e', lease.ReadByte());
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Throws<IOException>(() => File.Open(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite));
+                Assert.Throws<IOException>(() => File.Move(path, path + ".moved"));
+                Assert.Throws<IOException>(() => File.Delete(path));
+            }
+        }
+        File.Move(path, path + ".moved");
     }
 
     [Theory]

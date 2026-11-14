@@ -285,3 +285,38 @@ denied by Windows. Payload hashes remained unchanged. Compact results and
 source blob IDs: [second review evidence](evidence/magisk-windows-review2-20261114.json).
 Fresh WPF Cancel click-through and fake-ADB cancellation/timeout tests remain
 pending; no release-readiness claim follows from this scoped run.
+
+## Third Magisk review follow-up (2026-11-14)
+
+N1: Install now uses LeaseVerified: open FileShare.Read, hash that same handle,
+rewind it, and retain it through install/rollback. Hash failure disposes the
+handle. Tests reject replacement bytes, verify rewind/disposal, and on Windows
+verify write, rename and delete exclusion. The previous implementation also
+re-hashed patched.img in the pins loop after acquiring the lease; that check
+already preceded every boot. The new helper makes the handle/hash relationship
+explicit rather than depending on that second path-based check.
+
+N2 accepted/documented: later operator starts of an already verified lab still
+hash by path without retaining a lease. They do not request provisioning ADB
+root. Same-user host processes are not isolated by this lab; that remaining
+operator-start TOCTOU is not claimed closed.
+
+N3: expanded real-dispatcher/simulated-session and direct guard tests across
+all 12 active phases. Recipe replay targeting the lab is denied at the outer
+entry; the nested internal dispatch entry is separately exercised with that
+same agent session. This is simulated authorization evidence, not guest replay.
+N4: renamed review2 reviewedCommit to baseCommit. Preserve historical
+magisk_absent exit markers: 0 means the absence-test succeeded, 1 means it
+failed. No historical proof output or source blob ID was changed.
+
+Recommended fake-ADB cancellation/root-timeout/double-failure tests and WPF
+Cancel click-through remain open, as does the boot-completed substring nit.
+Power-loss, source-built AOSP capacity, signing and redistribution remain open.
+The unrelated readiness patch stays excluded. No new hardware run is claimed;
+review2's passing 8/8 applies to its recorded binaries only.
+
+Verification: `dotnet build -c Release --no-restore` passed with 22 existing
+warnings; `dotnet test tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csproj
+-c Release --no-restore` passed 388/388 on Windows. Logs:
+`artifacts/magisk-review3-build.log` and `artifacts/magisk-review3-tests.log`.
+`git diff --check` passed. These are build/unit checks, not a fresh WHPX run.

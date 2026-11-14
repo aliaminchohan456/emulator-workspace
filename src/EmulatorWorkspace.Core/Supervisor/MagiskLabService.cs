@@ -225,9 +225,7 @@ public sealed class MagiskLabService
             throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Interrupted installs must recover stock before retry.");
         var directory = DirectoryFor(state);
         // Windows denies writes and replacement while this handle is held, through boot and provisioning.
-        MagiskLabArtifacts.NoReparse(Path.Combine(directory, "patched.img"));
-        MagiskLabArtifacts.Verify(Path.Combine(directory, "patched.img"), MagiskLabArtifacts.PatchHash);
-        using var patchLease = new FileStream(Path.Combine(directory, "patched.img"), FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var patchLease = MagiskLabArtifacts.LeaseVerified(Path.Combine(directory, "patched.img"), MagiskLabArtifacts.PatchHash);
         foreach (var pin in MagiskLabArtifacts.Pins) MagiskLabArtifacts.Verify(Path.Combine(directory, pin.Key), pin.Value);
         MagiskLabArtifacts.VerifyEnvironment(Path.Combine(directory, "manager.apk"), Path.Combine(directory, "environment"));
         await ValidateSdk(ct);
