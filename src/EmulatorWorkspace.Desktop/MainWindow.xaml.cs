@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ThemeManager.Initialize();
+        Chrome.Initialize();
+        Chrome.Apply(this);
         _viewModel = new MainViewModel(halfCapture);
         DataContext = _viewModel;
 

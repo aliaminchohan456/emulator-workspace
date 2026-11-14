@@ -8,9 +8,38 @@ Owner requested research, detailed design and a handoff roadmap. Read
 Graphite Studio/Porcelain browser prototype, research, tokens, full interaction
 spec and verification are in [the design package](docs/design/premium-workspace/README.md).
 Research/design/prototype are complete; native implementation is pending.
-Next: UX-00 baseline then UX-01 theme/control foundation. Continue UX-02 shell,
-UX-03 states, UX-04 library, UX-05 privileged flows, UX-06 tools, UX-07 finish
-only through the documented gates. No production/runtime edits in this task.
+
+UX-00 (evidence and capability inventory) and UX-01 (theme and control
+foundation) are complete and committed on `codex/magisk-windows-lab`
+(2026-11-14). UX-00 recorded the Release build/test baseline (400/400 tests)
+against handoff commit `1bcae22`, captured the unstyled baseline window
+(`artifacts/ui/ux00-baseline-dark.png`) and mapped every proposed desktop
+command to its live supervisor operation, arguments and state source before any
+UI change. UX-01 rewrote `Themes/Dark.xaml`, `Themes/Light.xaml`,
+`Themes/HighContrast.xaml` and `Themes/Common.xaml` on the design-package token
+set (dynamic resources, Graphite dark / Porcelain light / system HC mappings),
+added complete normal/hover/pressed/disabled/focus states for buttons,
+TextBox, ComboBox (with themed popup), CheckBox, ListBox/ListView, ScrollBar,
+ToolTip, ContextMenu, MenuItem, ProgressBar, DataGrid and GroupBox, replaced
+the literal `--` zoom-out glyph with line-icon geometries plus accessible
+names, and added the native dark title-bar service
+(`Services/Chrome.cs`, `DWMWA_USE_IMMERSIVE_DARK_MODE` with attribute-19
+fallback, system chrome kept under High Contrast) wired into MainWindow,
+CommandPaletteWindow and AgentSessionsWindow. All command bindings, the
+viewport hierarchy and input targeting are unchanged. Verification: Release
+build clean, 400/400 tests, `git diff --check` clean, rendered window evidence
+for dark first launch, light theme, themed popup in both themes (screen
+captures; PrintWindow misses popup HWNDs), dark title-bar restore, keyboard
+focus rings and the 980x620 / 1280x800 / 1440x900 resize matrix at the host's
+125% scaling (`artifacts/ui/ux01-*.png`). Known deferrals: the toolbar still
+wraps and the Logcat drawer still starts open (both are UX-02 shell scope);
+High Contrast and 150%/200% DPI verification need owner-side system changes and
+stay pending. New validation helpers live in `tools/` (capture-window,
+capture-screen, set-window-size, focus-cycle, uia-invoke, uia-combo).
+
+Next: UX-02 shell recomposition, then UX-03 states, UX-04 library, UX-05
+privileged flows, UX-06 tools, UX-07 finish, one runnable slice at a time
+through the documented gates. No production/runtime edits in this task.
 Latest Grok approval of 24cc54d remains merge-only. Journal-write evidence nit
 is optional backlog. Fresh provenance-backed WHPX and existing power-loss,
 AOSP, signing/redistribution gates remain open; readiness patch excluded.

@@ -70,10 +70,18 @@
                     <Button Content="Agents" Style="{StaticResource ToolButton}" Click="OnAgents"
                             AutomationProperties.Name="Agent sessions" />
                     <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
-                    <Button Content="Fit" Style="{StaticResource ToolButton}" Click="OnFit" />
-                    <Button Content="1:1" Style="{StaticResource ToolButton}" Click="OnActualSize" />
-                    <Button Content="+" Style="{StaticResource ToolButton}" Click="OnZoomIn" AutomationProperties.Name="Zoom in" />
-                    <Button Content="--'" Style="{StaticResource ToolButton}" Click="OnZoomOut" AutomationProperties.Name="Zoom out" />
+                    <Button Content="Fit" Style="{StaticResource ToolButton}" Click="OnFit" AutomationProperties.Name="Fit to window" />
+                    <Button Content="1:1" Style="{StaticResource ToolButton}" Click="OnActualSize" AutomationProperties.Name="Actual size" />
+                    <Button Style="{StaticResource IconButton}" Click="OnZoomIn" ToolTip="Zoom in"
+                            AutomationProperties.Name="Zoom in">
+                        <Path Data="{StaticResource IconPlus}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" />
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Click="OnZoomOut" ToolTip="Zoom out"
+                            AutomationProperties.Name="Zoom out">
+                        <Path Data="{StaticResource IconMinus}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" />
+                    </Button>
                     <Button Content="Rotate" Style="{StaticResource ToolButton}" Command="{Binding RotateCommand}" />
                     <Button Content="Pop-out" Style="{StaticResource ToolButton}" Click="OnPopOut" />
                     <Button Content="Fullscreen" Style="{StaticResource ToolButton}" Click="OnFullscreen" />

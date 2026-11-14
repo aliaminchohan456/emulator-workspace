@@ -18,6 +18,9 @@ public partial class CommandPaletteWindow : Window
     public CommandPaletteWindow(ViewModels.MainViewModel viewModel)
     {
         InitializeComponent();
+        Services.ThemeManager.Initialize();
+        Services.Chrome.Initialize();
+        Services.Chrome.Apply(this);
         _viewModel = viewModel;
         _all = viewModel.Palette.ToList();
         Results.ItemsSource = _all;

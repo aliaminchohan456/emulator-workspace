@@ -24,6 +24,9 @@ public partial class AgentSessionsWindow : Window
     public AgentSessionsWindow()
     {
         InitializeComponent();
+        Services.ThemeManager.Initialize();
+        Services.Chrome.Initialize();
+        Services.Chrome.Apply(this);
         SessionsGrid.ItemsSource = _sessions;
         PairingsGrid.ItemsSource = _pairings;
         OperationsGrid.ItemsSource = _operations;

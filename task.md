@@ -7,13 +7,14 @@ Owner requested research, detailed design and a handoff roadmap. Read
 [DEEPSEEK-UI-IMPLEMENTATION-PROMPT.md](DEEPSEEK-UI-IMPLEMENTATION-PROMPT.md).
 Graphite Studio/Porcelain browser prototype, research, tokens, full interaction
 spec and verification are in [the design package](docs/design/premium-workspace/README.md).
-Research/design/prototype are complete; native implementation is pending.
-Next: UX-00 baseline then UX-01 theme/control foundation. Continue UX-02 shell,
-UX-03 states, UX-04 library, UX-05 privileged flows, UX-06 tools, UX-07 finish
-only through the documented gates. No production/runtime edits in this task.
-Latest Grok approval of 24cc54d remains merge-only. Journal-write evidence nit
-is optional backlog. Fresh provenance-backed WHPX and existing power-loss,
-AOSP, signing/redistribution gates remain open; readiness patch excluded.
+UX-00 (baseline and capability inventory) and UX-01 (theme and control
+foundation) are complete and verified on `codex/magisk-windows-lab`; see the
+milestone log. Next: UX-02 shell recomposition, then UX-03 states, UX-04
+library, UX-05 privileged flows, UX-06 tools, UX-07 finish only through the
+documented gates. No production/runtime edits in this task. Latest Grok
+approval of 24cc54d remains merge-only. Journal-write evidence nit is optional
+backlog. Fresh provenance-backed WHPX and existing power-loss, AOSP,
+signing/redistribution gates remain open; readiness patch excluded.
 
 
 All tasks start open. Check off an implementation task after its scoped verification passes. Close each phase only after its [exit gate](plan.md#phases-and-exit-gates) has evidence. Keep the milestone log current when a gate is blocked or verified.
@@ -191,6 +192,8 @@ current failure-path validation. The readiness patch stays separate.
 | Phase 3 simulation probe | Implemented | `wsctl simulation-probe` checks the network profile, routes, power, sensors, camera, microphone, telephony, locale, timezone, display and airplane mode against the running guest and reports the exact reason for every capability the guest does not offer | Record the measured answers in the compatibility matrix |
 | Guest ANR overlay | Diagnosed | A blocking "Quickstep isn't responding" dialog was captured in the Maestro debug artifacts and explains the earlier alternating runs; both harnesses now detect it and restart the guest | Keep the detection in the acceptance path |
 | Snapshot restore recovery | Verified | A snapshot load that does not bring the guest back now triggers a clean boot and reports `recovery=cold_boot` | Test the same path under two-guest load |
+| UX-00 premium-UI baseline | Verified | Handoff commit `1bcae22` clean except the two preserved `CODEX-*.md` notes; Release build 0 errors, 400/400 tests; unstyled baseline window captured in `artifacts/ui/ux00-baseline-dark.png`; every proposed desktop command mapped to its live supervisor operation before any UI change | Keep the inventory current as operations change |
+| UX-01 theme and control foundation | Verified (with deferrals) | `Themes/{Dark,Light,HighContrast,Common}.xaml` rebuilt on the design-package tokens; full control state coverage incl. themed ComboBox popup; minus icon fixed with line icons and accessible names; native dark title bar (`Services/Chrome.cs`, attr 20 with 19 fallback) in MainWindow, palette and agent windows. Release build clean, 400/400 tests, `git diff --check` clean. Rendered evidence `artifacts/ui/ux01-*.png`: dark first launch, light theme, themed popup in both themes, dark title-bar restore, tab-traversal focus rings, 980x620 / 1280x800 / 1440x900 at 125% scaling | Verify High Contrast and 150%/200% DPI with owner consent; Logcat drawer still starts open (UX-02) |
 
 ## Open items and the exact next action
 
@@ -206,6 +209,8 @@ current failure-path validation. The readiness patch stays separate.
 | The release signing identity | No user-owned code-signing certificate was supplied, so the candidate is unsigned. | Supply the certificate to `tools/package-release.ps1 -CertificateThumbprint` and rebuild; the provenance records the signing status either way. |
 | Stock Google Play API 36 and API 35 | Both profiles booted and ran the sample. API 36 restored the named snapshot. API 35 16 KB rolled back the fixture with a cold boot. | Investigate the 16 KB restore path and rerun `tools/play-image-acceptance.ps1` for that package. |
 | 150% and mixed-DPI displays, paths with spaces and non-ASCII names | Only 100% and 125% scaling were exercised, and the workspace roots used plain paths. | Repeat the WPF click-through on a 150% display and run the harnesses with a root path that contains spaces and non-ASCII characters. |
+| Premium-UI High Contrast verification | Changing the Windows High Contrast setting is a host system change that needs owner consent; `Themes/HighContrast.xaml` maps system colors and keeps system chrome, but no rendered evidence exists yet. | Owner enables a High Contrast theme, the desktop is relaunched, and captures are compared against the UX-01 contract before the setting is reverted. |
+| Premium-UI 150%/200% DPI matrix | This host is fixed at 125% scaling, so the remaining design-matrix sizes cannot be measured here. | Owner changes display scaling, the resize matrix (`tools/set-window-size.ps1` at 980x620, 1280x800, 1440x900) is repeated, and coordinate-derived input is re-verified. |
 | Demo and WPF screenshots | Exact 0.1.4 first-run and missing-image screenshots verified in `20261113-084323` and `20261113-084356`. | Record the live WPF click-through after timed host tests. |
 
 ### Continuation from `806251f`
