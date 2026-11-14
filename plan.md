@@ -31,11 +31,38 @@ build clean, 400/400 tests, `git diff --check` clean, rendered window evidence
 for dark first launch, light theme, themed popup in both themes (screen
 captures; PrintWindow misses popup HWNDs), dark title-bar restore, keyboard
 focus rings and the 980x620 / 1280x800 / 1440x900 resize matrix at the host's
-125% scaling (`artifacts/ui/ux01-*.png`). Known deferrals: the toolbar still
-wraps and the Logcat drawer still starts open (both are UX-02 shell scope);
-High Contrast and 150%/200% DPI verification need owner-side system changes and
-stay pending. New validation helpers live in `tools/` (capture-window,
-capture-screen, set-window-size, focus-cycle, uia-invoke, uia-combo).
+125% scaling (`artifacts/ui/ux01-*.png`).
+
+Grok review round (2026-11-14, range `1bcae22..b55a4e1`): no binding, geometry
+or targeting regressions; two Medium findings fixed and re-verified at runtime.
+M1 `ThemeManager.Initialize()` now carries a `_initialized` guard (same pattern
+as `Chrome.Initialize`), so opening the command palette or Agent Sessions no
+longer resets an explicit Light/Dark choice and cannot stack High Contrast
+handlers; verified by toggling Light, opening Ctrl+K and Agent Sessions and
+closing both (`artifacts/ui/ux01r-palette-light.png`,
+`ux01r-agents-light.png`, `ux01r-light-persists.png`). M2 the custom
+`GridViewColumnHeader` template regained its `PART_HeaderGripper` Thumb
+(8 DIP, transparent template, `SizeWE` cursor), restoring drag-resize and
+double-click auto-fit on the log columns; verified by a SendInput drag that
+widened the Time column by ~80 DIP (`artifacts/ui/ux01r-col-resized.png`).
+Also applied from the review: `FocusVisualStyle={x:Null}` on ToolButton,
+PrimaryButton, IconButton, ComboBox and CheckBox so keyboard focus shows one
+rounded ring instead of ring + system dashed rectangle
+(`ux01r-focus-single.png`), hover/focus trigger order corrected in TextBox and
+CheckBox templates, an editable-combo caveat comment added, and a new
+`tools/drag-at.ps1` SendInput helper plus `tools/uia-close.ps1`. Deferred to
+UX-02 with pointers: indeterminate ProgressBar animation (L1), ListViewItem /
+DataGrid focus and disabled states, ScrollBar thumb hover/drag, MenuItem
+pressed state (L3), dedicated InputBorder/ScrollThumb tokens at >=3:1 (L4),
+single-mechanism disabled dimming (Nit 1), light TextTertiary darkening if it
+is ever used as text on tinted surfaces (Nit 2), and a Windows 10 caption
+repaint nudge after theme toggles if observed (Nit 4).
+
+Known deferrals: the toolbar still wraps and the Logcat drawer still starts
+open (both are UX-02 shell scope); High Contrast and 150%/200% DPI verification
+need owner-side system changes and stay pending. New validation helpers live in
+`tools/` (capture-window, capture-screen, set-window-size, focus-cycle,
+drag-at, uia-invoke, uia-combo, uia-close).
 
 Next: UX-02 shell recomposition, then UX-03 states, UX-04 library, UX-05
 privileged flows, UX-06 tools, UX-07 finish, one runnable slice at a time

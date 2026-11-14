@@ -82,6 +82,9 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- The template FocusRing is the one focus indicator; the system
+             dashed FocusVisualStyle would draw a second one on top. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -131,6 +134,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -175,6 +179,7 @@
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -246,11 +251,13 @@
                                       VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
-                        </Trigger>
+                        <!-- Hover is declared first so a focused TextBox keeps
+                             the focus ring border while the pointer is over it. -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource TextTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
@@ -309,6 +316,9 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="MaxDropDownHeight" Value="320" />
+        <!-- Non-editable template: no PART_EditableTextBox, so IsEditable="True"
+             is not supported by this style. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -398,6 +408,7 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -418,13 +429,15 @@
                                 CornerRadius="6" Margin="-3" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
+                        <!-- Hover first: a checked box keeps its accent border
+                             under the pointer, unchecked boxes get the hover. -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource TextTertiary}" />
+                        </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Accent}" />
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}" />
                             <Setter TargetName="Check" Property="Opacity" Value="1" />
-                        </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource TextTertiary}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="FocusRing" Property="Opacity" Value="1" />
@@ -496,12 +509,30 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">
-                    <Border Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}">
-                        <ContentPresenter VerticalAlignment="Center" />
-                    </Border>
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <!-- Named PART_HeaderGripper so WPF re-hooks column
+                             resize and double-click auto-fit to this Thumb.
+                             Its own transparent template hides the default
+                             Thumb chrome while keeping hit-testing. -->
+                        <Thumb x:Name="PART_HeaderGripper"
+                               HorizontalAlignment="Right"
+                               Width="8"
+                               Margin="0,0,0,1"
+                               Background="Transparent"
+                               Cursor="SizeWE">
+                            <Thumb.Template>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border Background="Transparent" />
+                                </ControlTemplate>
+                            </Thumb.Template>
+                        </Thumb>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

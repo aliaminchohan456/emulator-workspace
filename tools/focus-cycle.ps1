@@ -1,9 +1,11 @@
 # Activates a top-level window and sends N Tab keystrokes so keyboard focus
 # traversal can be captured (PrintWindow renders in-window focus rings).
 # Usage: powershell -NoProfile -File tools/focus-cycle.ps1 -Title "Emulator Workspace" -Count 5
+# Or send a raw key sequence instead of Tabs: -Keys "^k" (Ctrl+K), "{ESC}" ...
 param(
     [Parameter(Mandatory = $true)][string]$Title,
-    [Parameter(Mandatory = $true)][int]$Count,
+    [int]$Count = 0,
+    [string]$Keys = "",
     [string]$ProcessName = ""
 )
 
@@ -40,6 +42,13 @@ if ($handle -eq [IntPtr]::Zero) {
 Start-Sleep -Milliseconds 300
 
 $shell = New-Object -ComObject WScript.Shell
+if ($Keys.Length -gt 0) {
+    [void]$shell.SendKeys($Keys)
+    Start-Sleep -Milliseconds 200
+    Write-Output "sent keys '$Keys' to '$Title'"
+    exit 0
+}
+
 for ($i = 0; $i -lt $Count; $i++) {
     [void]$shell.SendKeys("{TAB}")
     Start-Sleep -Milliseconds 120

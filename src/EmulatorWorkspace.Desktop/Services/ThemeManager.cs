@@ -19,14 +19,28 @@ public static class ThemeManager
 {
     private const string ThemesPrefix = "Themes/";
 
+    private static bool _initialized;
+
     public static ThemeMode Mode { get; private set; } = ThemeMode.System;
 
     public static bool IsDark { get; private set; } = true;
 
     public static event Action? Changed;
 
+    /// <summary>
+    /// Applies the system theme and watches for High Contrast changes.
+    /// Idempotent so secondary windows (the Agent Sessions probe path opens
+    /// one without a MainWindow) can call it again without resetting an
+    /// explicit user theme choice or stacking system-state handlers.
+    /// </summary>
     public static void Initialize()
     {
+        if (_initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
         Apply(ThemeMode.System);
         SystemParameters.StaticPropertyChanged += (_, args) =>
         {

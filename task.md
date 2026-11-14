@@ -8,13 +8,15 @@ Owner requested research, detailed design and a handoff roadmap. Read
 Graphite Studio/Porcelain browser prototype, research, tokens, full interaction
 spec and verification are in [the design package](docs/design/premium-workspace/README.md).
 UX-00 (baseline and capability inventory) and UX-01 (theme and control
-foundation) are complete and verified on `codex/magisk-windows-lab`; see the
-milestone log. Next: UX-02 shell recomposition, then UX-03 states, UX-04
-library, UX-05 privileged flows, UX-06 tools, UX-07 finish only through the
-documented gates. No production/runtime edits in this task. Latest Grok
-approval of 24cc54d remains merge-only. Journal-write evidence nit is optional
-backlog. Fresh provenance-backed WHPX and existing power-loss, AOSP,
-signing/redistribution gates remain open; readiness patch excluded.
+foundation) are complete and verified on `codex/magisk-windows-lab`; the Grok
+review round's two Medium findings (ThemeManager.Initialize idempotency, lost
+log column resize) are fixed and re-verified; see the milestone log. Next:
+UX-02 shell recomposition, then UX-03 states, UX-04 library, UX-05 privileged
+flows, UX-06 tools, UX-07 finish only through the documented gates. No
+production/runtime edits in this task. Latest Grok approval of 24cc54d remains
+merge-only. Journal-write evidence nit is optional backlog. Fresh
+provenance-backed WHPX and existing power-loss, AOSP, signing/redistribution
+gates remain open; readiness patch excluded.
 
 
 All tasks start open. Check off an implementation task after its scoped verification passes. Close each phase only after its [exit gate](plan.md#phases-and-exit-gates) has evidence. Keep the milestone log current when a gate is blocked or verified.
@@ -194,6 +196,7 @@ current failure-path validation. The readiness patch stays separate.
 | Snapshot restore recovery | Verified | A snapshot load that does not bring the guest back now triggers a clean boot and reports `recovery=cold_boot` | Test the same path under two-guest load |
 | UX-00 premium-UI baseline | Verified | Handoff commit `1bcae22` clean except the two preserved `CODEX-*.md` notes; Release build 0 errors, 400/400 tests; unstyled baseline window captured in `artifacts/ui/ux00-baseline-dark.png`; every proposed desktop command mapped to its live supervisor operation before any UI change | Keep the inventory current as operations change |
 | UX-01 theme and control foundation | Verified (with deferrals) | `Themes/{Dark,Light,HighContrast,Common}.xaml` rebuilt on the design-package tokens; full control state coverage incl. themed ComboBox popup; minus icon fixed with line icons and accessible names; native dark title bar (`Services/Chrome.cs`, attr 20 with 19 fallback) in MainWindow, palette and agent windows. Release build clean, 400/400 tests, `git diff --check` clean. Rendered evidence `artifacts/ui/ux01-*.png`: dark first launch, light theme, themed popup in both themes, dark title-bar restore, tab-traversal focus rings, 980x620 / 1280x800 / 1440x900 at 125% scaling | Verify High Contrast and 150%/200% DPI with owner consent; Logcat drawer still starts open (UX-02) |
+| UX-01 Grok review round | Verified | Range `1bcae22..b55a4e1`: no binding/geometry/targeting regressions. M1 fixed: `ThemeManager.Initialize()` is guarded by `_initialized`, so the palette and Agent Sessions no longer reset an explicit theme choice or stack HC handlers; runtime proof `artifacts/ui/ux01r-{palette-light,agents-light,light-persists}.png`. M2 fixed: `PART_HeaderGripper` Thumb (transparent template, SizeWE) restored drag-resize/auto-fit; SendInput drag proof `ux01r-col-resized.png`. L2 fixed: `FocusVisualStyle={x:Null}` gives one ring per control (`ux01r-focus-single.png`); TextBox/CheckBox hover-vs-focus trigger order corrected | Fold L1/L3/L4 and Nits 1-4 into UX-02 (below); re-review the fix commit |
 
 ## Open items and the exact next action
 
@@ -211,6 +214,8 @@ current failure-path validation. The readiness patch stays separate.
 | 150% and mixed-DPI displays, paths with spaces and non-ASCII names | Only 100% and 125% scaling were exercised, and the workspace roots used plain paths. | Repeat the WPF click-through on a 150% display and run the harnesses with a root path that contains spaces and non-ASCII characters. |
 | Premium-UI High Contrast verification | Changing the Windows High Contrast setting is a host system change that needs owner consent; `Themes/HighContrast.xaml` maps system colors and keeps system chrome, but no rendered evidence exists yet. | Owner enables a High Contrast theme, the desktop is relaunched, and captures are compared against the UX-01 contract before the setting is reverted. |
 | Premium-UI 150%/200% DPI matrix | This host is fixed at 125% scaling, so the remaining design-matrix sizes cannot be measured here. | Owner changes display scaling, the resize matrix (`tools/set-window-size.ps1` at 980x620, 1280x800, 1440x900) is repeated, and coordinate-derived input is re-verified. |
+| UX-02 template debts from the Grok review | Indeterminate ProgressBar renders as a static full bar (L1); ListViewItem, DataGridRow/Cell focus and disabled states, ScrollBar thumb hover/drag and MenuItem pressed state are missing (L3); control boundaries are 1.5:1-1.8:1 so a dedicated InputBorder/ScrollThumb at >=3:1 is wanted (L4); disabled buttons are dimmed twice via opacity + TextDisabled (Nit 1); light TextTertiary is sub-4.5:1 on tinted surfaces if ever used as text (Nit 2); editable ComboBox is unsupported by the template (documented). | In the UX-02 slice: add the indeterminate trigger/animation to the ProgressBar template, the missing item/row/thumb/menu-item states, the InputBorder and ScrollThumb tokens, pick one disabled mechanism, and re-run the capture set. |
+| Windows 10 caption repaint after theme toggle (Nit 4) | Grok could not verify it on Linux; Windows 11 repaints immediately, Windows 10 sometimes repaints the caption only after the next activation change. | Toggle the theme on a Windows 10 host; if the caption lags, nudge a non-client redraw after `SetWindowAttribute` in `Services/Chrome.cs`. |
 | Demo and WPF screenshots | Exact 0.1.4 first-run and missing-image screenshots verified in `20261113-084323` and `20261113-084356`. | Record the live WPF click-through after timed host tests. |
 
 ### Continuation from `806251f`
