@@ -221,9 +221,12 @@ userdebug image (`artifacts/phase3/rootlab/20261111-222756`, 10 of 10 checks):
 the targeted UID transition 2000 → 0 → 2000, the transport reattachment after
 adbd restarts, and the state refresh after a boot and after a snapshot restore.
 The WPF Root Lab surface and the Magisk profile remain. On Linux the pinned
-Magisk v30.7 APK built and patched a copy of the SDK regression ramdisk. Two
-patched cold boots returned app-level `su` UID 0 and a stock cold boot restored
-the guest marker and removed Magisk. The source-built AOSP image is still
+Magisk v30.7 APK built and patched a copy of the SDK regression ramdisk. The
+first run used the upstream full test environment, which included Shamiko and
+test modules, and proved only shell UID 2000 `su`. A base-only rerun on a fresh
+guest then passed two cold boots with no modules and Zygisk off. Shell UID 2000
+and an app-level probe (UID 10149) both reached UID 0, and a stock cold boot
+restored the guest marker and removed Magisk. The source-built AOSP image is still
 blocked by builder capacity, and Windows WHPX acceptance of the install and
 recovery lifecycle remains open. [Linux evidence](docs/magisk-lab-linux-evidence.md)
 
@@ -269,7 +272,7 @@ Each verified run must record the host architecture and CPU, Windows build, engi
 | First developer profile | Windows 11 26H2 26300.9818, i5-8265U, 31.8 GiB, UHD 620 | Emulator 37.2.12 (16428233); `system-images;android-35;default;x86_64` rev 2 | API 35, x86_64, userdebug | Host GPU verified; swiftshader verified; save 5.7 s, load 5.5 s | `adb root` uid 0 and `adb unroot` uid 2000 verified | Verified (Phase 0 + desktop MVP) |
 | Second developer profile | Same host | Same engine and image, second AVD | API 35, x86_64 | Own ports, token, and data; concurrent boot verified | Same image | Verified concurrently; desktop viewport on this profile |
 | Google Play profile | Windows 11 x64 with WHPX | Official Play API 36 rev 7 and API 35 16 KB rev 5 | API 35/36, x86_64 | Host GPU, APK and PNG on both. API 36 restored. API 35 used cold-boot fallback | Stock user builds, ADB UID 2000 | Measured in the compatibility matrix |
-| Magisk Lab (Linux) | Debian 13 x86_64, 8 threads, 15.6 GiB RAM, KVM | Emulator 37.2.13.0 build 16740729; `system-images;android-35;default;x86_64` rev 2; Magisk v30.7 `e8a58776` | API 35, x86_64, userdebug | Software GPU; cold boot with `-ramdisk`; patched ramdisk hash `d5b47070…` | App-level `su` UID 2000 -> 0 on two cold boots; stock restore passed | Verified on Linux (SDK profile) |
+| Magisk Lab (Linux) | Debian 13 x86_64, 8 threads, 15.6 GiB RAM, KVM | Emulator 37.2.13.0 build 16740729; `system-images;android-35;default;x86_64` rev 2; Magisk v30.7 `e8a58776` | API 35, x86_64, userdebug | Software GPU; cold boot with `-ramdisk`; patched ramdisk hash `d5b47070…` | Base-only (no modules, Zygisk off): shell UID 2000 and app probe UID 10149 -> 0 on two cold boots; stock restore passed | Verified on Linux (SDK profile) |
 | Magisk Lab (Windows) | Windows 11 x64 with WHPX | Emulator 37.2.12.0 build 16428233; same image and Magisk APK | API 35, x86_64 | `-ramdisk` substitution proven in Phase 0 | Supervisor install/recovery and app-level `su` pending | In progress |
 
 Track Windows on ARM, other host OSes, nonstandard GPUs, and ARM-only APKs as separate compatibility entries. Inspect native APK ABIs before deployment and surface incompatibility with the selected guest. Publish simulation and interoperability support per verified configuration.
@@ -311,8 +314,8 @@ removed through the supervisor. Packaging ran concurrently, so a quiet-host
 WPF composition run remains the next presentation measurement. The exact
 commands, raw run paths and current candidate hash are in [task.md](task.md).
 The Magisk experiment has pinned sources and a documented build preflight. A
-Linux builder completed the v30.7 build and SDK-ramdisk patch, proved `su` on
-two cold boots, and restored stock; the AOSP source image is still capacity
+Linux builder completed the v30.7 build and SDK-ramdisk patch, proved base-only
+shell and app-level `su` on two cold boots, and restored stock; the AOSP source image is still capacity
 blocked. [Magisk Lab build inputs](docs/magisk-lab-build.md),
 [Linux evidence](docs/magisk-lab-linux-evidence.md)
 

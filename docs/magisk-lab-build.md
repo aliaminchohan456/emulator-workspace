@@ -65,17 +65,29 @@ on the dedicated lab profile. [Phase 0 boot-input evidence](phase0-evidence.md)
 
 On 2026-11-13 the pinned Magisk v30.7 APK built on Linux and the pinned
 `avd_patch` helper patched a copy of the SDK regression ramdisk. The patched
-ramdisk booted twice with snapshot load/save disabled; both cold boots returned
-`boot_completed=1`, `magisk -V` reported `30700`, and `su -c id` from an
-unprivileged UID 2000 caller returned UID 0 with `context=u:r:magisk:s0`. The
-pinned Magisk test app instrumentation (`MagiskAppTest#testSuRequest`) also
-passed. A subsequent stock ramdisk cold boot kept the guest-data marker,
-removed Magisk, and made `su -c id` fail. The ADB daemon stayed at UID 2000, so
-the ADB-root and Magisk paths remain independent.
+ramdisk booted twice with snapshot load/save disabled. Both cold boots returned
+`boot_completed=1`, `magisk -V` reported `30700`, and `su -c id` from the shell
+(UID 2000) returned UID 0 with `context=u:r:magisk:s0`.
+`MagiskAppTest#testSuRequest` also passed, but it tests the same shell UID
+2000 path. A subsequent stock ramdisk cold boot kept the guest-data marker,
+removed Magisk, and made `su -c id` fail. The ADB daemon stayed at UID 2000.
+
+That first run set up Magisk with upstream `Environment#setupEnvironment`, the
+full CI test environment. It installed Shamiko and the `mount_test`,
+`sepolicy_rule`, `hosts`, `empty_zygisk`, `invalid_zygisk` and `upgrade_test`
+modules, and left Zygisk at its emulator default (on). It is not a base-only
+install. On 2026-11-14 a fresh guest repeated the run with a **base-only**
+setup: the `fix_env` payload only, Zygisk explicitly off, no test APK and no
+modules. Two cold boots passed with an empty module inventory, shell UID 2000
+-> 0, an app-level probe (UID 10149 `untrusted_app` -> UID 0
+`u:r:magisk:s0`), and stock restore. That setup uses adbd root during
+provisioning only. Raw evidence is in
+`artifacts/magisk-lab/linux-20261114-124924-baseonly/`.
 
 The Linux runner used Emulator 37.2.13.0 build 16740729 with KVM and the SDK
 image, not the source-built AOSP image. The Windows agent must repeat the boot
 and `su` checks on Emulator 37.2.12.0 build 16428233 with WHPX and then verify
-the scoped supervisor install and recovery lifecycle. Raw Linux evidence and
+the scoped supervisor install and recovery lifecycle using the base-only
+procedure, not `Environment#setupEnvironment`. Raw Linux evidence and
 hashes are in `artifacts/magisk-lab/linux-20261113-110018/` (gitignored).
 [Linux run details](magisk-lab-linux-evidence.md)
