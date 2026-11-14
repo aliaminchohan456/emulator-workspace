@@ -386,3 +386,14 @@ Remaining optional work: exact boot-completed marker, verified-boot lease on
 later operator starts, replay-loop session-forwarding test, and narrower
 IOException classification. Power-loss, source-built AOSP, signing and
 redistribution remain release gates. Readiness changes remain excluded.
+
+### Provenance limitation clarified after Grok review
+
+The 2026-11-14 cleanup-verification hardware run predates commit e77753f.
+Its selected source blob list omits the changed Core project file. Therefore
+its binary hashes and selected blobs do not prove a full source-tree match
+with that commit. Keep this as historical hardware evidence with partial source
+attribution; do not infer an exact committed-tree build from it.
+For future runs, record the committed tree and clean tracked status before
+building, then check both again and record the resulting payload hashes.
+Record untracked inputs explicitly or build in a clean isolated checkout.

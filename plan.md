@@ -644,3 +644,17 @@ Historical absolute paths in evidence and persisted instance metadata were
 preserved. Before reusing an old root, migrate and validate its paths or restore
 that stopped directory to its original location. No runtime revalidation is
 claimed for relocated roots. This is storage organization only; no code change.
+
+## Grok follow-up on e77753f (2026-11-14)
+
+Grok reported no blockers and independently passed the Linux suite three times.
+Added in-process regression cases for journal failure on writes 2 and 3 (after
+root and immediately before unroot), plus a successful unroot command returning
+UID 0. These supplement the six real-subprocess fake-ADB cases; production
+cleanup code is unchanged. Verification results will be recorded separately.
+
+The earlier hardware evidence lists selected source blobs, not a complete
+build-time tree identity. That limitation cannot be repaired retrospectively.
+A new build will record its committed source tree, pre/post tracked status and
+payload hashes. This new build provenance does not extend the earlier hardware
+or WPF acceptance to new binaries. Existing release gates remain open.

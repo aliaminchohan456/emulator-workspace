@@ -123,5 +123,54 @@ public sealed class ProvisioningAdbRootTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_root, "calls")));
     }
 
+    [Theory]
+    [InlineData(2)] // Root succeeded; persisting its proof fails.
+    [InlineData(3)] // Persisting unroot intent fails.
+    public async Task JournalFailureAfterRootStillUnroots(int failingWrite)
+    {
+        var calls = new List<string>();
+        var writes = 0;
+        var provisioned = false;
+        var error = await Assert.ThrowsAsync<IOException>(() => ProvisioningAdbRoot.Run(
+            () => { }, (root, token) =>
+            {
+                Assert.False(token.IsCancellationRequested);
+                calls.Add(root ? "root" : "unroot");
+                return Task.FromResult(new JsonObject { ["uidAfter"] = root ? "0" : "2000" });
+            }, _ =>
+            {
+                provisioned = true;
+                return Task.FromResult(new JsonObject());
+            }, proof =>
+            {
+                if (++writes == failingWrite) throw new IOException("injected journal failure");
+                Journal(proof);
+            }, default));
+        Assert.Equal("injected journal failure", error.Message);
+        Assert.Equal(new[] { "root", "unroot" }, calls);
+        Assert.Equal(failingWrite == 3, provisioned);
+        Assert.True(_proofs[^1]["unrootAttempted"]!.GetValue<bool>());
+        Assert.Contains("injected journal failure", _proofs[^1][
+            failingWrite == 2 ? "provisioningError" : "unrootError"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task SuccessfulUnrootCommandWithRootUidFailsVerification()
+    {
+        var calls = new List<string>();
+        var error = await Assert.ThrowsAsync<SupervisorOperationException>(() => ProvisioningAdbRoot.Run(
+            () => { }, (root, _) =>
+            {
+                calls.Add(root ? "root" : "unroot");
+                return Task.FromResult(new JsonObject { ["uidAfter"] = "0" });
+            }, _ => Task.FromResult(new JsonObject()), Journal, default));
+        Assert.Equal("Could not restore adbd UID 2000.", error.Message);
+        Assert.Equal(new[] { "root", "unroot" }, calls);
+        var proof = JsonNode.Parse(File.ReadAllText(Path.Combine(_root, "journal.json")))!;
+        Assert.False(proof["adbdUid2000Verified"]!.GetValue<bool>());
+        Assert.Equal("0", proof["unroot"]!["uidAfter"]!.GetValue<string>());
+        Assert.Equal(error.Message, proof["unrootError"]!.GetValue<string>());
+    }
+
     public void Dispose() => Directory.Delete(_root, true);
 }
