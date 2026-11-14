@@ -35,4 +35,11 @@
     <SolidColorBrush x:Key="SelectionBg" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="SelectionBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="FocusRing" Color="{x:Static SystemColors.HighlightColor}" />
+
+    <!-- High contrast input and scrollbar boundaries stay system-drawn: the
+          frame color for the resting state, window text for hover and the
+          highlight color while dragging. -->
+    <SolidColorBrush x:Key="InputBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
+    <SolidColorBrush x:Key="ScrollThumb" Color="{x:Static SystemColors.WindowFrameColor}" />
+    <SolidColorBrush x:Key="ScrollThumbHover" Color="{x:Static SystemColors.WindowTextColor}" />
 </ResourceDictionary>

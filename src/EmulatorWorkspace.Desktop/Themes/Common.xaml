@@ -57,6 +57,19 @@
     <Geometry x:Key="IconMinus">M 3,8 L 13,8</Geometry>
     <Geometry x:Key="IconPlus">M 8,3 L 8,13 M 3,8 L 13,8</Geometry>
     <Geometry x:Key="IconChevronDown">M 3.8,6.2 L 8,10.4 L 12.2,6.2</Geometry>
+    <Geometry x:Key="IconBack">M 10.2,3.8 L 6,8 L 10.2,12.2</Geometry>
+    <Geometry x:Key="IconHome">M 3.2,8.2 L 8,4 L 12.8,8.2 M 4.8,7.2 L 4.8,12.6 L 11.2,12.6 L 11.2,7.2</Geometry>
+    <Geometry x:Key="IconRecents">M 6,6 L 6,3 L 13,3 L 13,10 L 10,10 M 3,6 L 3,13 L 10,13 L 10,10</Geometry>
+    <Geometry x:Key="IconScreenshot">M 3,5.5 L 6,5.5 L 6.8,3.8 L 9.2,3.8 L 10,5.5 L 13,5.5 L 13,12.5 L 3,12.5 Z M 10,9 A 2,2 0 1 1 6,9 A 2,2 0 1 1 10,9</Geometry>
+    <Geometry x:Key="IconInstall">M 8,3 L 8,9.2 M 5.4,6.8 L 8,9.4 L 10.6,6.8 M 3,10.8 L 3,13 L 13,13 L 13,10.8</Geometry>
+    <Geometry x:Key="IconPlay">M 5.8,3.8 L 12,8 L 5.8,12.2 Z</Geometry>
+    <Geometry x:Key="IconRotate">M 12.6,9.3 A 4.6,4.6 0 1 1 10.9,3.9 M 8.7,3.3 L 11.1,3.7 L 10.5,6</Geometry>
+    <Geometry x:Key="IconFit">M 6.2,6.2 L 2.8,2.8 M 5.2,2.6 L 2.6,2.6 L 2.6,5.2 M 9.8,9.8 L 13.2,13.2 M 10.8,13.4 L 13.4,13.4 L 13.4,10.8</Geometry>
+    <Geometry x:Key="IconActualSize">M 4.2,4.2 L 11.8,4.2 L 11.8,11.8 L 4.2,11.8 Z M 8.9,8 A 0.9,0.9 0 1 1 7.1,8 A 0.9,0.9 0 1 1 8.9,8</Geometry>
+    <Geometry x:Key="IconPopOut">M 3,6 L 3,13 L 10,13 L 10,10 M 6.5,9.5 L 13,3 M 9.4,3 L 13,3 L 13,6.6</Geometry>
+    <Geometry x:Key="IconFullscreen">M 6,3 L 3,3 L 3,6 M 10,3 L 13,3 L 13,6 M 3,10 L 3,13 L 6,13 M 13,10 L 13,13 L 10,13</Geometry>
+    <Geometry x:Key="IconFocus">M 3,8 C 4.6,5.6 11.4,5.6 13,8 C 11.4,10.4 4.6,10.4 3,8 Z M 9.6,8 A 1.6,1.6 0 1 1 6.4,8 A 1.6,1.6 0 1 1 9.6,8</Geometry>
+    <Geometry x:Key="IconDetails">M 3,4 L 13,4 L 13,12 L 3,12 Z M 9.2,4 L 9.2,12</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
@@ -82,8 +95,23 @@
         </Setter>
     </Style>
 
+    <!-- Icon glyph: a 16x16 stroke path colored by the host control foreground,
+         so hover/pressed/disabled states restyle the icon for free. -->
+    <Style x:Key="Glyph" TargetType="Path">
+        <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}" />
+        <Setter Property="StrokeThickness" Value="1.5" />
+        <Setter Property="StrokeStartLineCap" Value="Round" />
+        <Setter Property="StrokeEndLineCap" Value="Round" />
+        <Setter Property="StrokeLineJoin" Value="Round" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Stretch" Value="None" />
+    </Style>
+
     <!-- Secondary (surface + border) button: normal/hover/pressed/focus/disabled
-         states, pressed feedback without layout shift. -->
+         states, pressed feedback without layout shift. Disabled uses one
+         mechanism only: the whole control dims via opacity; the text color
+         stays so it is not dimmed twice. -->
     <Style x:Key="ToolButton" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource PanelBg}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
@@ -124,7 +152,6 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -168,7 +195,6 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -208,7 +234,6 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.4" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -229,11 +254,13 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <!-- Text input: visible focus, themed selection, no default white surfaces. -->
+    <!-- Text input: resting border uses the InputBorder token (>=3:1 against
+          the surface), visible focus, themed selection, no default white
+          surfaces. Disabled dims once via opacity. -->
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{DynamicResource PanelBg}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="8,5" />
         <Setter Property="MinHeight" Value="30" />
@@ -314,7 +341,7 @@
     <Style TargetType="ComboBox">
         <Setter Property="Background" Value="{DynamicResource PanelBg}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="10,4" />
         <Setter Property="MinHeight" Value="30" />
@@ -418,7 +445,7 @@
                     <StackPanel Orientation="Horizontal" Background="Transparent">
                         <Border x:Name="Box" Width="16" Height="16" CornerRadius="4"
                                 Background="{DynamicResource PanelBg}"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                BorderBrush="{DynamicResource InputBorder}" BorderThickness="1"
                                 VerticalAlignment="Center">
                             <Path x:Name="Check" Data="M 3,8 L 6.5,11.5 L 12,4"
                                   Stroke="{DynamicResource AccentText}" StrokeThickness="1.75"
@@ -441,8 +468,10 @@
                             <Setter TargetName="Check" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Box" Property="Opacity" Value="0.45" />
+                            <!-- One disabled mechanism: muted text and a muted
+                                 box border; no extra opacity dimming. -->
                             <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -546,10 +575,16 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- The template draws the keyboard-focus border itself; the system
+             dashed FocusVisualStyle would draw a second one on top. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListViewItem">
-                    <Border x:Name="B" Background="Transparent" Padding="0">
+                    <!-- The border is always 1 DIP (transparent while unfocused)
+                         so the keyboard-focus ring never shifts row content. -->
+                    <Border x:Name="B" Background="Transparent" BorderBrush="Transparent"
+                            BorderThickness="1" Padding="0">
                         <GridViewRowPresenter Content="{TemplateBinding Content}"
                                               Columns="{TemplateBinding GridView.ColumnCollection}" />
                     </Border>
@@ -559,6 +594,12 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -580,8 +621,16 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="{DynamicResource BorderBrush}"
+                                            <Border x:Name="T" Background="{DynamicResource ScrollThumb}"
                                                     CornerRadius="3" Margin="2,0" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="T" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="T" Property="Background" Value="{DynamicResource FocusRing}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -612,8 +661,16 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="{DynamicResource BorderBrush}"
+                                                    <Border x:Name="T" Background="{DynamicResource ScrollThumb}"
                                                             CornerRadius="3" Margin="0,2" />
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="T" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="T" Property="Background" Value="{DynamicResource FocusRing}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>
@@ -707,6 +764,9 @@
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource HoverBg}" />
                         </Trigger>
+                        <Trigger Property="MenuItem.IsPressed" Value="True">
+                            <Setter TargetName="B" Property="Background" Value="{DynamicResource PressedBg}" />
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
                         </Trigger>
@@ -729,6 +789,9 @@
         </Setter>
     </Style>
 
+    <!-- Progress: determinate mode sizes PART_Indicator itself; indeterminate
+         mode hides it and runs a clipped marquee block instead (a static full
+         bar was indistinguishable from a completed operation). -->
     <Style TargetType="ProgressBar">
         <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
         <Setter Property="Foreground" Value="{DynamicResource Accent}" />
@@ -736,11 +799,39 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
-                    <Grid>
+                    <Grid ClipToBounds="True">
                         <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="2" />
                         <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}"
                                 CornerRadius="2" HorizontalAlignment="Left" />
+                        <Border x:Name="PART_Marquee" Width="48" Height="4"
+                                Background="{TemplateBinding Foreground}" CornerRadius="2"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Visibility="Collapsed">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="MarqueeTransform" X="-48" />
+                            </Border.RenderTransform>
+                        </Border>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsIndeterminate" Value="True">
+                            <Setter TargetName="PART_Indicator" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="PART_Marquee" Property="Visibility" Value="Visible" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard x:Name="MarqueeStoryboard">
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="MarqueeTransform"
+                                            Storyboard.TargetProperty="X"
+                                            From="-48" To="400" Duration="0:0:1.4"
+                                            RepeatBehavior="Forever" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <StopStoryboard BeginStoryboardName="MarqueeStoryboard" />
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -779,27 +870,45 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource HoverBg}" />
             </Trigger>
+            <!-- Keyboard focus within the row (e.g. arrow keys in the grid)
+                 shows the same hover tint; selection keeps the selection tint. -->
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="Background" Value="{DynamicResource HoverBg}" />
+            </Trigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{DynamicResource SelectionBg}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style TargetType="DataGridCell">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
+        <!-- The border is always 1 DIP (transparent when unfocused) so the
+             focus ring never shifts cell content. -->
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="8,4" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+        <!-- Foreground is inherited from the row on purpose: a disabled row's
+             muted color then reaches its cells instead of being overridden. -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridCell">
-                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
                         <ContentPresenter VerticalAlignment="Center" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource FocusRing}" />
+            </Trigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />

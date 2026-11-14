@@ -17,7 +17,10 @@
 
     <SolidColorBrush x:Key="TextPrimary" Color="#F0F2F4" />
     <SolidColorBrush x:Key="TextSecondary" Color="#A4AFB8" />
-    <SolidColorBrush x:Key="TextTertiary" Color="#8D99A3" />
+    <!-- TextTertiary is brightened one step from the design package value so
+          meta text reaches >=4.5:1 on every tinted surface (ChipBg, SelectionBg,
+          PopupBg), not just on plain panels. -->
+    <SolidColorBrush x:Key="TextTertiary" Color="#99A5B0" />
     <SolidColorBrush x:Key="TextDisabled" Color="#6E7A83" />
 
     <SolidColorBrush x:Key="Accent" Color="#B3D9FA" />
@@ -35,4 +38,12 @@
     <SolidColorBrush x:Key="SelectionBg" Color="#243441" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#3D5266" />
     <SolidColorBrush x:Key="FocusRing" Color="#B3D9FA" />
+
+    <!-- Essential control boundaries (>=3:1 against the surfaces they sit on):
+          InputBorder on PanelBg 3.3:1, ScrollThumb on PanelBg 3.3:1 and on the
+          near-black LogBg 3.9:1; hover is a brighter step, dragging uses the
+          focus/accent brush. -->
+    <SolidColorBrush x:Key="InputBorder" Color="#64717C" />
+    <SolidColorBrush x:Key="ScrollThumb" Color="#64717C" />
+    <SolidColorBrush x:Key="ScrollThumbHover" Color="#7E8A94" />
 </ResourceDictionary>

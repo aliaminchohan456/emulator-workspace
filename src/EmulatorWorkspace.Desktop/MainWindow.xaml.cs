@@ -266,6 +266,98 @@ public partial class MainWindow : Window
         window.ShowDialog();
     }
 
+    /// <summary>
+    /// UX-02 shell: the inspector is collapsible. Collapsing zeroes its column
+    /// and splitter and drops the column minimum, because the 250 DIP floor
+    /// would otherwise keep the panel visible. The width the user last had is
+    /// remembered for the next expand. The viewport column and its geometry
+    /// are untouched.
+    /// </summary>
+    private const int NavColumn = 0;
+    private const int NavSplitterColumn = 1;
+    private const int DetailsSplitterColumn = 3;
+    private const int DetailsColumn = 4;
+    private const int SplitterWidth = 6;
+    private const double NavDefaultWidth = 238;
+    private const double NavMinWidth = 180;
+    private const double DetailsDefaultWidth = 318;
+    private const double DetailsMinWidth = 250;
+
+    private bool _detailsCollapsed;
+    private double _detailsWidth = DetailsDefaultWidth;
+
+    private void OnToggleDetails(object sender, RoutedEventArgs e) => SetDetailsCollapsed(!_detailsCollapsed);
+
+    private void SetDetailsCollapsed(bool collapsed)
+    {
+        _detailsCollapsed = collapsed;
+        var columns = BodyGrid.ColumnDefinitions;
+        if (collapsed)
+        {
+            var current = Math.Max(0, columns[DetailsColumn].Width.Value);
+            if (current > 0)
+            {
+                _detailsWidth = current;
+            }
+
+            columns[DetailsColumn].MinWidth = 0;
+            columns[DetailsColumn].Width = new GridLength(0);
+            columns[DetailsSplitterColumn].Width = new GridLength(0);
+        }
+        else
+        {
+            columns[DetailsColumn].MinWidth = DetailsMinWidth;
+            columns[DetailsColumn].Width = new GridLength(
+                _detailsWidth >= DetailsMinWidth ? _detailsWidth : DetailsDefaultWidth);
+            columns[DetailsSplitterColumn].Width = new GridLength(SplitterWidth);
+        }
+    }
+
+    /// <summary>
+    /// UX-02 shell: the focus view collapses navigation, details and the
+    /// Logcat drawer while keeping device identity, the lifecycle action, the
+    /// tool rail and an obvious exit (this toggle). Pane sizes and the Logcat
+    /// state are restored when it is left.
+    /// </summary>
+    private bool _focusView;
+
+    private void OnToggleFocusView(object sender, RoutedEventArgs e)
+    {
+        var columns = BodyGrid.ColumnDefinitions;
+        if (!_focusView)
+        {
+            _focusView = true;
+            _focusNavWidth = Math.Max(columns[NavColumn].Width.Value, NavMinWidth);
+            _focusDetailsWidth = _detailsCollapsed
+                ? 0
+                : Math.Max(columns[DetailsColumn].Width.Value, DetailsMinWidth);
+            columns[NavColumn].MinWidth = 0;
+            columns[NavColumn].Width = new GridLength(0);
+            columns[NavSplitterColumn].Width = new GridLength(0);
+            SetDetailsCollapsed(true);
+            _focusLogcatWasOpen = _viewModel.IsLogcatOpen;
+            _viewModel.IsLogcatOpen = false;
+        }
+        else
+        {
+            _focusView = false;
+            columns[NavColumn].MinWidth = NavMinWidth;
+            columns[NavColumn].Width = new GridLength(
+                _focusNavWidth >= NavMinWidth ? _focusNavWidth : NavDefaultWidth);
+            columns[NavSplitterColumn].Width = new GridLength(SplitterWidth);
+            if (_focusDetailsWidth >= DetailsMinWidth)
+            {
+                SetDetailsCollapsed(false);
+            }
+
+            _viewModel.IsLogcatOpen = _focusLogcatWasOpen;
+        }
+    }
+
+    private double _focusNavWidth;
+    private double _focusDetailsWidth;
+    private bool _focusLogcatWasOpen;
+
     private void OnFit(object sender, RoutedEventArgs e)
     {
         _viewModel.ZoomMode = "Fit";

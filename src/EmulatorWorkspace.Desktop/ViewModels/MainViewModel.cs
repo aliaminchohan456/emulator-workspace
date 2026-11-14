@@ -410,7 +410,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _ => $"{ZoomFactor * 100:N0}%",
     };
 
-    private bool _isLogcatOpen = true;
+    // UX-02: the Logcat drawer starts collapsed (it is resizable once open and
+    // the stream starts on open; the command bar's Logcat toggle restores it).
+    private bool _isLogcatOpen = false;
 
     public bool IsLogcatOpen
     {

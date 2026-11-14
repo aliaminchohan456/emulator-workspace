@@ -26,6 +26,13 @@
             <Setter Property="Margin" Value="0,0,0,4" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+
+        <!-- Rail button: the 36 DIP icon action laid out vertically on the
+             device tool rail. -->
+        <Style x:Key="RailButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -36,11 +43,14 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Toolbar -->
-        <Border Grid.Row="0" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,0,0,1" Padding="12,8">
+        <!-- Command bar: identity, one lifecycle action and the persistent
+             utilities. Device tools live on the rail at the window's right
+             edge, so this bar never wraps. -->
+        <Border Grid.Row="0" Background="{DynamicResource NavBg}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="10,6">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -54,44 +64,29 @@
                                VerticalAlignment="Center" Margin="12,0,0,0" />
                 </StackPanel>
 
-                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="{Binding PrimaryActionText}" Style="{StaticResource PrimaryButton}"
                             Command="{Binding PrimaryActionCommand}" MinWidth="96"
                             AutomationProperties.Name="Primary device action" />
                     <Button Content="Restart" Style="{StaticResource ToolButton}" Command="{Binding RestartCommand}"
                             AutomationProperties.Name="Restart device" />
-                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
-                    <Button Content="Back" Style="{StaticResource ToolButton}" Command="{Binding BackCommand}" ToolTip="Back" AutomationProperties.Name="Back" />
-                    <Button Content="Home" Style="{StaticResource ToolButton}" Command="{Binding HomeCommand}" ToolTip="Home" AutomationProperties.Name="Home" />
-                    <Button Content="Recents" Style="{StaticResource ToolButton}" Command="{Binding RecentsCommand}" ToolTip="Recents" AutomationProperties.Name="Recents" />
-                    <Button Content="Screenshot" Style="{StaticResource ToolButton}" Command="{Binding ScreenshotCommand}" />
-                    <Button Content="Install APK" Style="{StaticResource ToolButton}" Command="{Binding InstallApkCommand}" />
-                    <Button Content="Launch sample" Style="{StaticResource ToolButton}" Command="{Binding LaunchSampleCommand}" />
-                    <Button Content="Agents" Style="{StaticResource ToolButton}" Click="OnAgents"
-                            AutomationProperties.Name="Agent sessions" />
-                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,2,10,2" />
-                    <Button Content="Fit" Style="{StaticResource ToolButton}" Click="OnFit" AutomationProperties.Name="Fit to window" />
-                    <Button Content="1:1" Style="{StaticResource ToolButton}" Click="OnActualSize" AutomationProperties.Name="Actual size" />
-                    <Button Style="{StaticResource IconButton}" Click="OnZoomIn" ToolTip="Zoom in"
-                            AutomationProperties.Name="Zoom in">
-                        <Path Data="{StaticResource IconPlus}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" />
-                    </Button>
-                    <Button Style="{StaticResource IconButton}" Click="OnZoomOut" ToolTip="Zoom out"
-                            AutomationProperties.Name="Zoom out">
-                        <Path Data="{StaticResource IconMinus}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" />
-                    </Button>
-                    <Button Content="Rotate" Style="{StaticResource ToolButton}" Command="{Binding RotateCommand}" />
-                    <Button Content="Pop-out" Style="{StaticResource ToolButton}" Click="OnPopOut" />
-                    <Button Content="Fullscreen" Style="{StaticResource ToolButton}" Click="OnFullscreen" />
-                </WrapPanel>
+                </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="Logcat" Style="{StaticResource ToolButton}" Command="{Binding ToggleLogcatCommand}"
                             AutomationProperties.Name="Toggle Logcat" />
+                    <Button Style="{StaticResource IconButton}" Click="OnToggleDetails"
+                            ToolTip="Toggle the details panel" AutomationProperties.Name="Toggle details">
+                        <Path Data="{StaticResource IconDetails}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Click="OnToggleFocusView"
+                            ToolTip="Focus view: hide navigation, details and Logcat" AutomationProperties.Name="Focus view">
+                        <Path Data="{StaticResource IconFocus}" Style="{StaticResource Glyph}" />
+                    </Button>
                     <Button Content="Theme" Style="{StaticResource ToolButton}" Command="{Binding ToggleThemeCommand}" />
                     <Button Content="Refresh" Style="{StaticResource ToolButton}" Command="{Binding RefreshCommand}" />
+                    <Button Content="Agents" Style="{StaticResource ToolButton}" Click="OnAgents"
+                            AutomationProperties.Name="Agent sessions" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -104,14 +99,15 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="318" MinWidth="250" />
+                <ColumnDefinition Width="44" />
             </Grid.ColumnDefinitions>
 
             <!-- Device rail -->
             <Border Grid.Column="0" Style="{StaticResource Panel}" Padding="8">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Margin="4,4,4,8">
-                        <TextBlock Text="Devices" Style="{StaticResource H1}" />
-                        <TextBlock Text="Managed instances in this workspace" Style="{StaticResource Caption}"
+                    <StackPanel DockPanel.Dock="Top" Margin="4,2,4,8">
+                        <TextBlock Text="Devices" Style="{StaticResource SectionHeader}" />
+                        <TextBlock Text="Workspace instances" Style="{StaticResource Caption}"
                                    Margin="0,2,0,0" />
                     </StackPanel>
                     <Button DockPanel.Dock="Bottom" Content="Create device" Style="{StaticResource ToolButton}"
@@ -215,6 +211,79 @@
                     </Border>
                 </Grid>
             </Border>
+
+            <!-- Device tool rail: device actions, view tools and Android
+                 navigation, each an icon with tooltip and accessible name.
+                 Commands and handlers are unchanged from the old toolbar. It is
+                 pinned to the window's right edge so the inspector splitter
+                 keeps its original viewport-to-details adjacency. The rounded
+                 surface is a sibling behind the buttons: a rounded Border that
+                 wraps them clips its child subtree, which also swallowed the
+                 keyboard focus ring. -->
+            <Grid Grid.Column="5">
+                <Border Background="{DynamicResource NavBg}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" IsHitTestVisible="False" />
+                <DockPanel LastChildFill="False" Margin="4,5">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical">
+                        <Button Style="{StaticResource RailButton}" Command="{Binding BackCommand}"
+                                ToolTip="Back" AutomationProperties.Name="Back">
+                            <Path Data="{StaticResource IconBack}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Command="{Binding HomeCommand}"
+                                ToolTip="Home" AutomationProperties.Name="Home">
+                            <Path Data="{StaticResource IconHome}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Command="{Binding RecentsCommand}"
+                                ToolTip="Recents" AutomationProperties.Name="Recents">
+                            <Path Data="{StaticResource IconRecents}" Style="{StaticResource Glyph}" />
+                        </Button>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
+                        <Button Style="{StaticResource RailButton}" Command="{Binding ScreenshotCommand}"
+                                ToolTip="Screenshot" AutomationProperties.Name="Screenshot">
+                            <Path Data="{StaticResource IconScreenshot}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Command="{Binding InstallApkCommand}"
+                                ToolTip="Install APK" AutomationProperties.Name="Install APK">
+                            <Path Data="{StaticResource IconInstall}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Command="{Binding LaunchSampleCommand}"
+                                ToolTip="Launch sample" AutomationProperties.Name="Launch sample">
+                            <Path Data="{StaticResource IconPlay}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Command="{Binding RotateCommand}"
+                                ToolTip="Rotate" AutomationProperties.Name="Rotate">
+                            <Path Data="{StaticResource IconRotate}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="6,6,6,8" />
+                        <Button Style="{StaticResource RailButton}" Click="OnFit"
+                                ToolTip="Fit to window (Ctrl+wheel zooms)" AutomationProperties.Name="Fit to window">
+                            <Path Data="{StaticResource IconFit}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Click="OnActualSize"
+                                ToolTip="Actual size (1:1)" AutomationProperties.Name="Actual size">
+                            <Path Data="{StaticResource IconActualSize}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Click="OnZoomIn"
+                                ToolTip="Zoom in" AutomationProperties.Name="Zoom in">
+                            <Path Data="{StaticResource IconPlus}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Click="OnZoomOut"
+                                ToolTip="Zoom out" AutomationProperties.Name="Zoom out">
+                            <Path Data="{StaticResource IconMinus}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="6,6,6,8" />
+                        <Button Style="{StaticResource RailButton}" Click="OnPopOut"
+                                ToolTip="Pop-out viewport" AutomationProperties.Name="Pop-out">
+                            <Path Data="{StaticResource IconPopOut}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource RailButton}" Click="OnFullscreen"
+                                ToolTip="Fullscreen (F11)" AutomationProperties.Name="Fullscreen">
+                            <Path Data="{StaticResource IconFullscreen}" Style="{StaticResource Glyph}" />
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
 
             <GridSplitter Grid.Column="3" Width="6" HorizontalAlignment="Stretch" Background="Transparent" />
 
