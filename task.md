@@ -12,7 +12,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 - [ ] Compare supported hardware and software render modes using the same scene. Capture frame pacing and input traces before selecting the production viewport path.
   Boot-time comparison is recorded (host GPU 43-70 s, swiftshader 66-95 s); 20+ sample pacing and latency traces remain open.
 - [ ] Start the Magisk feasibility probe early. Identify a suitable Linux AOSP builder, pin a source candidate, record provenance and rights, prove stock cold boot, and identify the boot artifacts and verification policy actually consumed by the chosen engine.
-  Boot artifacts and verification policy are proven, and an unsigned repacked `-ramdisk` boots with a guest-visible marker. The Linux builder and Magisk source pin remain.
+  Boot artifacts and verification policy are proven, and an unsigned repacked `-ramdisk` boots with a guest-visible marker. On 2026-11-13 the Linux builder compiled Magisk v30.7 from the pinned commit, patched the SDK regression ramdisk, booted it twice with app-level `su` UID 0, and restored stock. The source-built AOSP image is still blocked by capacity (8 threads, 15.6 GiB RAM, 106 GiB free; requires 64 GB RAM and 400 GB). Windows WHPX acceptance remains open. [Linux evidence](docs/magisk-lab-linux-evidence.md)
 - [x] Save commands, outputs, matrix rows, and blockers. If a suitable WHPX host is unavailable, prepare the runnable validation harness and mark hardware results pending.
 
 ## 1. Developer MVP
@@ -68,11 +68,12 @@ All tasks start open. Check off an implementation task after its scoped verifica
 ## 4. Root Lab
 
 - [ ] Add separate ADB root and Magisk controls and capability badges. Verify targeted `adb root` and `adb unroot` with effective UID after reconnect. Recheck after boots, restores, and updates.
-  The CLI side is implemented and verified: `wsctl adb-root`, `wsctl adb-unroot`, `wsctl adb-root-state` (ops `instance.adbRoot`, `instance.adbRootState`) are scoped to one managed guest by its exact ADB serial, refuse a non-userdebug image with the typed `capability_unavailable` error and re-read the effective user. Run `artifacts/phase3/rootlab/20261111-222756` passed 10 of 10 checks: uid 2000 -> 0 -> 2000, transport reattachment 301 -> 302, state refresh after boot and after a snapshot restore, named snapshot round-trip and cleanup. The WPF Root Lab surface is built: the inspector carries an **ADB root** / **ADB unroot** / **Refresh** group that shows the effective uid, the build type and the transport, and the same actions are in the Ctrl+K command palette. The Magisk actions remain; Magisk needs a Linux builder for the pinned sources (external prerequisite).
+  The CLI side is implemented and verified: `wsctl adb-root`, `wsctl adb-unroot`, `wsctl adb-root-state` (ops `instance.adbRoot`, `instance.adbRootState`) are scoped to one managed guest by its exact ADB serial, refuse a non-userdebug image with the typed `capability_unavailable` error and re-read the effective user. Run `artifacts/phase3/rootlab/20261111-222756` passed 10 of 10 checks: uid 2000 -> 0 -> 2000, transport reattachment 301 -> 302, state refresh after boot and after a snapshot restore, named snapshot round-trip and cleanup. The WPF Root Lab surface is built: the inspector carries an **ADB root** / **ADB unroot** / **Refresh** group that shows the effective uid, the build type and the transport, and the same actions are in the Ctrl+K command palette. The Linux builder now produces the pinned Magisk APK and the patched ramdisk; the Windows Magisk controls and install lifecycle remain open.
 - [ ] Pin AOSP, engine, and Magisk versions and document image provenance and the verified patch flow. Preserve pristine artifacts and patch a per-instance copy of the actual boot inputs.
-  [The build procedure](docs/magisk-lab-build.md) pins the experimental AOSP manifest and Magisk v30.7, records the SDK stock ramdisk hash, and provides the Linux capacity check and exact pinned patch command. The script passes `bash -n` and correctly refuses Windows Git Bash. Source build and patch acceptance remain open.
+  [The build procedure](docs/magisk-lab-build.md) pins the experimental AOSP manifest and Magisk v30.7, records the SDK stock ramdisk hash, and provides the Linux capacity check and exact pinned patch command. On 2026-11-13 the pinned `avd_patch` helper patched a copy of the SDK stock ramdisk; the stock hash stayed `60eb16b9…`, the patched hash is `d5b47070…`, and the APK hash is `d820319e…`. The source AOSP build is still blocked by capacity, so source-built image provenance remains open.
 - [ ] Implement approved Magisk install with durable backup, journaled staging, validated activation, cold boot, and incompatible snapshot fencing. Provide progress and exact compatibility failure reasons.
 - [ ] Verify Android boot, expected Magisk version, and approved guest app or probe `su` with UID 0. Repeat after a second cold boot and verify the original profile still boots.
+  Linux verified on the SDK regression profile: two patched cold boots returned `boot_completed=1`, `magisk -V` 30700, and `su -c id` UID 2000 -> 0; the stock cold boot kept the guest marker, removed Magisk, and rejected `su -c id`. The Windows pinned engine and WHPX repeat remains open.
 - [ ] Recover from the Windows app while Android is unavailable. Test exact stock boot and compatible guest data restoration after interrupted writes, corrupt patches, and boot timeouts. Preserve evidence before allowing retries.
 - [ ] Add opt-in module import and recovery only after base install and restore pass. Expose Zygisk or module toggles only for verified combinations.
 
@@ -108,6 +109,7 @@ All tasks start open. Check off an implementation task after its scoped verifica
 | Phase 0 controller auth | Verified | Loopback-only gRPC, discovery-file token, missing and forged tokens rejected | Keep the vendored protos in lockstep with the engine |
 | Phase 0 snapshots | Verified | Named save 5.7 s, load 5.5 s, exact window restored | Add deletion and fingerprint validation in Phase 3 |
 | Phase 0 Magisk boot input | Verified (substitution) | Repacked ramdisk boots with `ro.bootimage.ws_probe=phase0-harness`; stock restore boots | Provide a Linux builder and pin Magisk |
+| Magisk Linux build and boot | Verified (SDK profile) | `artifacts/magisk-lab/linux-20261113-110018`: Magisk v30.7 APK `d820319e…`; two patched cold boots with `su` UID 2000 -> 0; stock restore with marker | Repeat on Windows 37.2.12.0 build 16428233 / WHPX and verify supervisor install/recovery |
 | Phase 0 agent denial | Verified | Agent frame capture exits 4 and is journaled as denied | Full pairing and grants are Phase 2 |
 | Phase 0 acceptance harness | Verified | `tools/phase0-spike.ps1` run `run-20261110-152217`: 26/26 checks, 0 failures | Run on any new host before claiming support |
 | Phase 1 supervisor | Verified | SQLite schema 1, single owner lock, peer-verified pipe, restart adoption in acceptance run `20261110-172411` | Add cancellation and retention tests in Phase 3 |
@@ -345,11 +347,15 @@ All tasks start open. Check off an implementation task after its scoped verifica
   including the exact candidate installer and both stock Play rows. Active
   runs remain outside finished evidence until their summaries exist. Refresh
   again after each completed verification lane.
-- Magisk still needs the authorized x86_64 Linux builder with 64 GB RAM
-  and 400 GB free. Next command
-  `bash tools/build-magisk-lab-aosp.sh --check /mnt/aosp`. Signed acceptance
-  requires the authorized private key in `Cert:/CurrentUser/My`. The local
-  0.1.1 candidate and its release hash remain preserved.
+- The Linux builder compiled and patched Magisk v30.7 on the SDK regression
+  profile; two patched cold boots returned app-level `su` UID 0 and stock
+  restore passed. The source AOSP image still needs a builder with 64 GB RAM
+  and 400 GB free; this host has 15.6 GiB and 106 GiB free, so both preflight
+  commands exit 2. Next Windows action is to verify
+  `artifacts/magisk-lab/linux-20261113-110018/SHA256SUMS` and repeat the boot
+  and `su` checks on Emulator 37.2.12.0 build 16428233 with WHPX. Signed
+  acceptance requires the authorized private key in `Cert:/CurrentUser/My`.
+  The local 0.1.1 candidate and its release hash remain preserved.
 
 - While the soak runs, APK manifest and ABI reporting was implemented
   behind the existing supervised install operation. `wsctl install
