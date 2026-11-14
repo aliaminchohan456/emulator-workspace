@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../../src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs" Link="Supervisor/OperationDispatcher.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
   </ItemGroup>
 </Project>

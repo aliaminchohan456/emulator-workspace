@@ -484,3 +484,36 @@ Release build and 89 tests pass. Full final-binary hardware transaction `transac
 passed install, two parsed app-root cold boots, journaled unroot, stock
 recovery/app denial and cleanup. Source and payload hashes stayed unchanged;
 results and hashes are committed with the Windows evidence record.
+
+## Second Magisk review (2026-11-14)
+
+- M1: replaced stock shell-denial inference with explicit Magisk absence,
+  retained independent adbd/app proof, and corrected historical evidence.
+- M2: decided active Magisk labs are observation-only for agents, enforced
+  at outer and nested dispatch. Operator/host ADB shell root reach is documented.
+- L1-L6: patch read lease and enrollment rehash; both provisioning/unroot errors
+  retained; approval claim narrowed to Windows session; consent before prepare;
+  desktop deadline 60 minutes; reviewed Git blob IDs added without overwriting
+  historical source-hash provenance. Recovered generations remain single-use.
+- Baseline: 89/89 tests. Release build passes with 22 existing warnings; the
+  expanded suite passed 114/114 and the fresh hardware transaction passed 8/8.
+- New tests exercise actual dispatcher authorization with simulated sessions,
+  verified/recovered guards, exact shell markers, corrupt enrolled patch and
+  restore allowlist/failed-overlay preservation. No guest is launched by tests.
+- Missing fake-ADB cancellation/root-timeout tests and a fresh WPF consent-cancel
+  click-through remain explicit verification gaps; existing finally uses its
+  independent cleanup token. No host feature, signing or release claim changed.
+- Real transaction command: `python tools/magisk-transaction-acceptance.py
+  --root D:/WS-Magisk-Review2-20261114 --allow-provisioning-adb-root --mode normal`.
+  Evidence: `artifacts/magisk-lab/transaction-20261114-150136-508009`.
+
+Verification complete: `transaction-20261114-150136-508009` passed install,
+two app-root cold boots, stock Magisk-absence/app-denial proof and cleanup.
+Stock AOSP `su 0 id` **does succeed** for shell UID 2000 (result UID 0,
+context `u:r:su:s0`); stock is not shell-root denial. A separate Windows
+write-open on the leased patch was rejected. Tested payload hashes stayed
+unchanged. Evidence: `docs/evidence/magisk-windows-review2-20261114.json`.
+Build: `dotnet build -c Release --no-restore`; tests: `dotnet test
+ tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csproj -c Release --no-restore`.
+Build/test logs: `artifacts/magisk-review2-{build,tests}.log`. Python harnesses
+compile and `git diff --check` passes. No merge or publication performed.

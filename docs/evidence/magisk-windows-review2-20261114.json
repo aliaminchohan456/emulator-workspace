@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "reviewedCommit": "4d8d314",
+  "run": "transaction-20261114-150136-508009",
+  "command": "python tools/magisk-transaction-acceptance.py --root D:/WS-Magisk-Review2-20261114 --allow-provisioning-adb-root --mode normal",
+  "unitTests": 114,
+  "build": "Release, 22 pre-existing warnings, no errors",
+  "sourceGitBlobIds": {
+    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "5cfc693f2b6f323b835a2d2349403149401533aa",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "94f9d09b12eb6784fd6b47b909ea2684bede1a22",
+    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "afa64c58473f9afa67198e7e36668ef6a52c4e8f",
+    "src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs": "806a130c337ec7115469cce6508762736082a045",
+    "tests/EmulatorWorkspace.Tests/EmulatorWorkspace.Tests.csproj": "612f06d9761eb492d4c2ce3e6c931f58ec1e4ef3",
+    "tests/EmulatorWorkspace.Tests/MagiskLabTests.cs": "acff672d034cd40fa8bdfdfef3e6b183cab21007",
+    "tools/magisk-baseonly-acceptance.py": "a575ef60e20954cdd98690a4fb5ed98da3c4265c"
+  },
+  "releasePayloadSha256": {
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Cli\\bin\\Release\\net10.0\\wsctl.exe": "1458fd5863083b43fb630f68ceb82552600bf775557c92e15a52e3cc8ad54f3b",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.exe": "d3c824ce8803d9f8abbd9dbdb4864c4a9c2a0a7f3edcc57469465976f6a37499",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.dll": "5e5942de05302448a7b13f032d81d681db1a55f9b4eb60785875bea7d0ca5620",
+    "C:\\Users\\aliam\\OneDrive\\Desktop\\Emulator\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Core.dll": "5bd2506562a697ee4c0806c4306791a468940e02e9065ae5ceffea5931ad68ba"
+  },
+  "patchLease": {
+    "writeOpenDenied": true,
+    "error": "The process cannot access the file 'D:\\WS-Magisk-Review2-20261114\\magisk-lab\\69c9872000bd4e16957752e5cc9906a3\\patched.img' because it is being used by another process."
+  },
+  "limitations": [
+    "New WPF consent Cancel click-through not run.",
+    "Fake-ADB cancellation/root-timeout tests remain pending.",
+    "No power-loss testing, signing or redistribution clearance."
+  ],
+  "summary": {
+    "root": "D:\\WS-Magisk-Review2-20261114",
+    "mode": "normal",
+    "checks": [
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "instance.start-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "journaled-adb-unroot-and-parsed-app-proofs",
+        "passed": true
+      },
+      {
+        "check": "two-supervised-cold-boots",
+        "passed": true
+      },
+      {
+        "check": "magisk.install-approval_required",
+        "passed": true
+      },
+      {
+        "check": "snapshot.load-capability_unavailable",
+        "passed": true
+      },
+      {
+        "check": "stock-recovery-with-app-denial",
+        "passed": true
+      },
+      {
+        "check": "guest-cleanup",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "adbProvisioning": {
+    "rootRequested": true,
+    "unrootAttempted": true,
+    "root": {
+      "name": "transaction-lab",
+      "serial": "emulator-5554",
+      "requested": "root",
+      "buildType": "userdebug",
+      "uidBefore": "2000",
+      "uidAfter": "0",
+      "effectiveRoot": true,
+      "transportId": "97",
+      "output": "",
+      "observedUtc": "2026-11-14T10:04:38.1093605+00:00"
+    },
+    "unroot": {
+      "name": "transaction-lab",
+      "serial": "emulator-5554",
+      "requested": "unroot",
+      "buildType": "userdebug",
+      "uidBefore": "0",
+      "uidAfter": "2000",
+      "effectiveRoot": false,
+      "transportId": "98",
+      "output": "restarting adbd as non root",
+      "observedUtc": "2026-11-14T10:04:43.6417775+00:00"
+    },
+    "adbdUid2000Verified": true
+  },
+  "boots": [
+    {
+      "appProof": {
+        "callerUid": 10149,
+        "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+        "suExit": "0",
+        "rootGranted": true,
+        "verified": true
+      },
+      "inventory": "MODULES\nSETTINGS\nkey=zygisk|value=0\nkey=bootloop|value=0\nZYGOTE\nHOSTS\nEND\n",
+      "shellOutputSha256": "9ee0b9201e98eba6644c119040399fc675c39fe5bf2c26b21144ed5f4674c2d9",
+      "shellMarkers": [
+        "uid=2000(shell) gid=2000(shell) groups=2000(shell),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:shell:s0",
+        "30700",
+        "magisk_exit=0",
+        "magisk_absent=1",
+        "uid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0",
+        "su_exit=0",
+        "shell         2000   468 adbd"
+      ]
+    },
+    {
+      "appProof": {
+        "callerUid": 10149,
+        "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+        "suExit": "0",
+        "rootGranted": true,
+        "verified": true
+      },
+      "inventory": "MODULES\nSETTINGS\nkey=zygisk|value=0\nkey=bootloop|value=0\nZYGOTE\nHOSTS\nEND\n",
+      "shellOutputSha256": "14a60146f70e167ce3cc220c798e1a9d431756757468a9d01f7dd00b9eb8b5a9",
+      "shellMarkers": [
+        "uid=2000(shell) gid=2000(shell) groups=2000(shell),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:shell:s0",
+        "30700",
+        "magisk_exit=0",
+        "magisk_absent=1",
+        "uid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0",
+        "su_exit=0",
+        "shell         2000   472 adbd"
+      ]
+    }
+  ],
+  "recovery": {
+    "phase": "recovered",
+    "adbdUid": "2000",
+    "appProof": {
+      "callerUid": 10149,
+      "callerContext": "u:r:untrusted_app:s0:c149,c256,c512,c768",
+      "suExit": "exception",
+      "rootGranted": false,
+      "verified": true
+    },
+    "magiskAbsent": true,
+    "aospShellSuRoot": true,
+    "shellOutputSha256": "879a86002fd69afef6f6e483f6f6a5fbef19fad6fae54ab510d89f6b5e07af17",
+    "shellMarkers": [
+      "uid=2000(shell) gid=2000(shell) groups=2000(shell),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:shell:s0",
+      "magisk_exit=127",
+      "magisk_absent=0",
+      "uid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:su:s0",
+      "aosp_su_exit=0",
+      "shell         2000   461 adbd"
+    ]
+  },
+  "payloadsUnchangedThroughCompletion": true,
+  "host": {
+    "windows": "11 Pro 26H2 build 26300.9974",
+    "cpu": "Intel i5-8265U",
+    "ramGiB": 31.8,
+    "engine": "37.2.12.0 build 16428233",
+    "acceleration": "WHPX",
+    "image": "system-images;android-35;default;x86_64 revision 2",
+    "gpu": "swiftshader_indirect",
+    "cores": 4,
+    "guestRamMiB": 3072,
+    "snapshotLoadSave": false
+  }
+}

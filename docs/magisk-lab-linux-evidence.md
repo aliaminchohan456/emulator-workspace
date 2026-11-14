@@ -277,3 +277,7 @@ journaled staging, validated atomic activation, incompatible snapshot fencing,
 interrupted staging, corrupt patch, boot-timeout rollback, two cold boots with
 the app-level probe, and compatible guest-data recovery. Linux evidence does
 not cover these checks.
+
+Review correction (2026-11-14): stock `su -c id` rejects AOSP su syntax; it
+does not prove shell root denial. The app probe EACCES is the meaningful
+app-level denial. Keep the historical raw output unchanged.

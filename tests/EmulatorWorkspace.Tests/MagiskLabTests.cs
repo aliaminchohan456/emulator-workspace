@@ -126,4 +126,135 @@ public sealed class MagiskLabTests : IDisposable
         _store.Dispose();
         Directory.Delete(_root, true);
     }
+
+    private sealed class Sink : EmulatorWorkspace.Supervisor.IEventSink
+    {
+        public Task SendEventAsync(EventEnvelope envelope) => Task.CompletedTask;
+        public void TrackSubscription(string id) { }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RestoreDataValidatesAllNamesAndPreservesFailedOverlays(bool invalid)
+    {
+        var directory = Path.Combine(_root, "magisk-lab", _transaction);
+        var backup = Path.Combine(directory, "data-backup");
+        var avd = Path.Combine(_record.AvdHome, _record.AvdName + ".avd");
+        Directory.CreateDirectory(backup);
+        Directory.CreateDirectory(avd);
+        File.WriteAllText(Path.Combine(backup, "userdata-qemu.img"), "baseline");
+        File.WriteAllText(Path.Combine(avd, "userdata-qemu.img"), "failed overlay");
+        File.WriteAllText(Path.Combine(avd, "userdata-qemu.img.failed-existing"), "older evidence");
+        var inventory = new JsonObject { ["userdata-qemu.img"] = MagiskLabArtifacts.Hash(Path.Combine(backup, "userdata-qemu.img")) };
+        if (invalid) inventory["../outside.img"] = "invalid";
+        MagiskLabArtifacts.WriteAtomic(Path.Combine(directory, "data-backup.json"), inventory);
+        var method = typeof(MagiskLabService).GetMethod("RestoreData", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
+        if (invalid)
+        {
+            var error = Assert.Throws<System.Reflection.TargetInvocationException>(() => method.Invoke(_service, ["lab", state]));
+            Assert.IsType<InvalidDataException>(error.InnerException);
+            Assert.Equal("failed overlay", File.ReadAllText(Path.Combine(avd, "userdata-qemu.img")));
+            Assert.Single(Directory.GetFiles(avd, "*.failed-*"));
+        }
+        else
+        {
+            method.Invoke(_service, ["lab", state]);
+            Assert.Equal("baseline", File.ReadAllText(Path.Combine(avd, "userdata-qemu.img")));
+            Assert.Contains(Directory.GetFiles(avd, "*.failed-*").Select(File.ReadAllText), value => value == "failed overlay");
+        }
+        Assert.Equal("older evidence", File.ReadAllText(Path.Combine(avd, "userdata-qemu.img.failed-existing")));
+    }
+
+    [Theory]
+    [InlineData("magisk.prepare")]
+    [InlineData("magisk.approve")]
+    [InlineData("magisk.install")]
+    [InlineData("magisk.recover")]
+    [InlineData("magisk.status")]
+    [InlineData("input.tap")]
+    [InlineData("app.install")]
+    [InlineData("app.instrumentation")]
+    [InlineData("recipe.replay")]
+    public async Task DispatcherRejectsAgentOnVerifiedLab(string operation)
+    {
+        var paths = new WorkspacePaths(_root);
+        var sdk = new SdkLocator(Path.Combine(_root, "missing-sdk"));
+        var manager = new InstanceManager(paths, sdk, _store, new SupervisorEventHub());
+        using var agents = new AgentStore(paths);
+        agents.CreateSession(new AgentSession("test", "test", "lab", string.Join(',', AgentService.AllScopes),
+            AgentStore.Hash("test-token"), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(5), false));
+        using var journal = new Journal(Path.Combine(_root, "test-journal.jsonl"));
+        var dispatcher = new EmulatorWorkspace.Supervisor.OperationDispatcher(paths, sdk, _store, manager, journal,
+            new AgentService(paths, sdk, manager, agents), new DeviceLibraryService(paths, manager), new RecipeService(paths), () => { });
+        var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
+        state["phase"] = "verified";
+        MagiskLabArtifacts.WriteAtomic(_state, state);
+        var result = await dispatcher.ExecuteAsync(new RequestEnvelope { Op = operation, Auth = "test-token",
+            Args = new JsonObject { ["name"] = "lab" } }, new PeerInfo(1, 1, "test", "test"), new Sink(), default);
+        Assert.Equal(ErrorCodes.ForbiddenScope, result.Code);
+    }
+
+    [Theory]
+    [InlineData("input.tap")]
+    [InlineData("input.text")]
+    [InlineData("app.install")]
+    [InlineData("app.launch")]
+    [InlineData("app.instrumentation")]
+    [InlineData("recipe.replay")]
+    [InlineData("instance.start")]
+    public void VerifiedLabRejectsAgentControl(string operation)
+    {
+        var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
+        state["phase"] = "verified";
+        MagiskLabArtifacts.WriteAtomic(_state, state);
+        var error = Assert.Throws<SupervisorOperationException>(() => _service.Guard("lab", operation, agent: true));
+        Assert.Equal(ErrorCodes.ForbiddenScope, error.Code);
+        _service.Guard("lab", "observation.screenshot", agent: true);
+        _service.Guard("lab", "input.tap"); // Operator retains control.
+        state["phase"] = "recovered";
+        MagiskLabArtifacts.WriteAtomic(_state, state);
+        _service.Guard("lab", operation, agent: true);
+    }
+
+    [Fact]
+    public void ProvisioningRehashesEnrolledPatch()
+    {
+        var directory = Path.Combine(_root, "magisk-lab", _transaction);
+        Directory.CreateDirectory(directory);
+        _record.RamdiskPath = Path.Combine(directory, "patched.img");
+        File.WriteAllText(_record.RamdiskPath, "swapped after boot");
+        _store.UpsertInstance(_record);
+        var state = JsonNode.Parse(File.ReadAllText(_state))!.AsObject();
+        state["phase"] = "activating";
+        state["allowProvisioningAdbRoot"] = true;
+        MagiskLabArtifacts.WriteAtomic(_state, state);
+        var error = Assert.Throws<SupervisorOperationException>(() => _service.RequireProvisioningEnrollment("lab", _transaction, directory));
+        Assert.Equal(ErrorCodes.InvalidRequest, error.Code);
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("13")]
+    [InlineData("127")]
+    public void StockProofDoesNotInferDenialFromSuExit(string exit)
+    {
+        var proof = "magisk_exit=127\nmagisk_absent=0\nsu_exit=" + exit + "\n";
+        Assert.True(MagiskGuestAdapter.ValidateShellProof(proof, false));
+        Assert.False(MagiskGuestAdapter.ValidateShellProof(proof.Replace("magisk_absent=0", "magisk_absent=1"), false));
+        Assert.False(MagiskGuestAdapter.ValidateShellProof(proof + "magiskd\n", false));
+        Assert.False(MagiskGuestAdapter.ValidateShellProof(proof.Replace("magisk_exit=127", "magisk_exit=0"), false));
+    }
+
+    [Theory]
+    [InlineData("01")]
+    [InlineData("13")]
+    [InlineData("127")]
+    public void PatchedProofRequiresExactSuccess(string exit)
+    {
+        var proof = "30700\nmagisk_exit=0\nuid=0(root)\nsu_exit=0\n";
+        Assert.True(MagiskGuestAdapter.ValidateShellProof(proof.Replace("\n", "\r\r\n"), true));
+        Assert.False(MagiskGuestAdapter.ValidateShellProof(proof.Replace("su_exit=0", "su_exit=" + exit), true));
+    }
 }

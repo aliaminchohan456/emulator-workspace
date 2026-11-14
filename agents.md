@@ -26,6 +26,11 @@ general product or agent permission. The supervisor must revalidate the exact
 opted-in transaction, instance generation and patched boot before requesting
 root; journal the root/unroot attempts and results; and verify adbd UID 2000
 before any Magisk proof. Interrupted provisioning requires stock recovery.
+Active Magisk labs allow agent observation only; agent app, input, recipe and
+lifecycle mutations are fenced until stock recovery. Operator control remains
+available. The UID 2000 Magisk allow row means a host process with ADB shell
+access can obtain root while the patched lab runs. This is an explicitly
+enrolled local lab, not isolation from other processes of the Windows user.
 Normal ADB-root controls and app-level Magisk proofs remain separate. See
 [Windows lab evidence](docs/magisk-lab-windows-evidence.md).
 

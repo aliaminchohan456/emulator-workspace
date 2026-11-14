@@ -57,8 +57,8 @@ below adds stricter enrollment/probe checks and passes 89 tests.
 
 New source exposes operator-only `magisk.prepare`, `magisk.status`,
 `magisk.approve`, `magisk.install` and `magisk.recover` through the supervisor.
-Approval binds the caller, instance generation, transaction and action, expires
-in ten minutes and is consumed durably. Prepared inputs are privately copied
+Approval binds the operator Windows logon session, instance generation, transaction and action, expires
+in ten minutes and is consumed durably. Prepared inputs are copied into supervisor-managed transaction directories
 and pinned; stock and data backups are preserved. Snapshots are conservatively
 fenced for enrolled lab generations. Windows recovery does not require a
 booted Android guest. A recovery failure keeps the journal and artifacts and
@@ -82,7 +82,7 @@ Failure evidence:
   patch was rejected before guest mutation; restart, recovery and cleanup passed.
 - `transaction-20261114-134330-858968`: patched boot exceeded its approved
   one-second deadline. Automatic stock rollback returned `recovered`, with
-  boot complete, adbd UID 2000 and shell `su` denied. The original harness
+  boot complete and adbd UID 2000. The shell `su -c` failure was a syntax error, not root denial. The original harness
   expected the words "timed out" rather than the actual "readiness within
   1s" message; its failed summary is retained alongside the independent
   `corrected-assertion-review.json` against the saved raw response.
@@ -98,14 +98,14 @@ userdata overlay with invalid bytes. The live WPF Recover stock control
 presented the exact guest/transaction and submitted approval and recovery.
 The first stock attempt failed on the invalid overlay; the supervisor
 preserved failed userdata/encryption overlays, restored all hash-verified
-baseline files, booted stock, proved shell root denial and adbd UID 2000,
+baseline files, booted stock and proved adbd UID 2000,
 then booted stock again with no private ramdisk override. The UI reported
 `Magisk lab: recovered`; normal supervisor deletion and empty-list cleanup
 passed. Raw approval/result UI trees, a screenshot, failed overlays and
 payload hashes are retained in that run. Following Grok review, the actual
 summary.json label was corrected to `stock-recovery-from-compatible-data-backup`,
 with a correction note. After baseline restoration the probe app is absent,
-so this lane proves stock shell denial and baseline data recovery. App denial
+so this lane proves baseline data recovery, not shell root denial. App denial
 on preserved installed data was proved by `transaction-20261114-133402`.
 The final screenshot's pipe error follows the harness's intentional
 supervisor shutdown after successful recovery.
@@ -234,3 +234,54 @@ and the exact ownership/label trace. Automatic stock rollback completed
 with `recoveryAdbUnroot.uidAfter=2000`; guest deletion and supervisor shutdown
 completed. This failed attempt is retained separately. The corrected check permits `system_file` only for the exact
 `/data/adb/magisk` path; it does not relax the parent directory check.
+
+## Second review corrections (2026-11-14)
+
+M1: stock verification now requires no magiskd, a failing/absent `magisk -V`,
+and absence of `/debug_ramdisk/magisk` (including a dangling symlink).
+It independently requires adbd UID 2000 and, when the installed probe survives,
+app-level EACCES. AOSP `su 0 id` is recorded separately; stock userdebug is not
+a promise of shell root denial. Historical JSON retains the old source hashes
+as historical data, adds reviewed commit blob IDs, and retracts shellSuDenied.
+The non-reproducing SupervisorLocator hash is explicitly disclosed.
+
+M2 decision: active labs expose observation only to paired agents. Both outer
+and nested dispatcher guards reject agent mutations, including app launches,
+instrumentation, input, recipe replay and lifecycle control. This also applies
+to already verified journals. Operator control remains available. We chose the
+supervisor fence, so no unverified Magisk auto-response setting is used.
+The permanent shell UID 2000 allow row grants Magisk root to any host process
+that can use ADB shell against this patched lab.
+
+L1: installation holds a FileShare.Read handle on the patch through boot and
+provisioning on Windows; both provisioning enrollment checks also re-hash it.
+Transaction directories are supervisor-managed, not protected from same-user
+processes by a special ACL. Host power-loss durability remains untested:
+WriteAtomic flushes the temporary file but does not fsync the rename/directory.
+L2: the provisioning journal preserves provisioningError alongside unrootError;
+a double failure throws an aggregate containing both original exceptions.
+L3: approval binding is the operator Windows logon session, not client PID;
+the secret single-use token remains required across separate CLI invocations.
+L4: desktop consent precedes prepare, includes exact input paths and temporary
+ADB-root permission. Cancel makes no journal. A recovered generation remains
+single-use; create a fresh disposable instance for another installation.
+L5: desktop install/recovery deadline is 60 minutes, covering the configured
+boot/power-off waits with room for backup and rollback. Disk-copy time has no
+fixed upper bound; the journal remains authoritative after any timeout.
+
+The payload hash comparison now checks the exact regular-file set. Shell output
+normalization removes all CR characters. `/data/local/tmp/ws-magisk-env` and
+`/data/adb/magisk` are intentionally retained as evidence; the latter is inert
+on stock. No cleanup of unrelated guest files is attempted.
+
+Verification: Release build passed with 22 existing warnings; 114/114 tests
+passed (including real dispatcher code with simulated sessions). Fresh WHPX
+transaction `transaction-20261114-150136-508009` passed 8/8, including both
+app-root cold boots, stock app denial and cleanup. Stock shell `su 0 id`
+returned UID 0 with `u:r:su:s0`, confirming the review's inference; meanwhile
+`magisk -V` returned 127, `/debug_ramdisk/magisk` was absent, no magiskd ran,
+and adbd remained UID 2000. A concurrent write-open on the leased patch was
+denied by Windows. Payload hashes remained unchanged. Compact results and
+source blob IDs: [second review evidence](evidence/magisk-windows-review2-20261114.json).
+Fresh WPF Cancel click-through and fake-ADB cancellation/timeout tests remain
+pending; no release-readiness claim follows from this scoped run.

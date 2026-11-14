@@ -1774,6 +1774,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (apk is null) return;
         var probe = Pick("Select the lab app root probe APK", "Android package (*.apk)|*.apk");
         if (probe is null) return;
+        if (MessageBox.Show($"Install the base-only Magisk lab on {device.Name}?\n\n" +
+            "This permits temporary ADB root for provisioning, then returns adbd to UID 2000. " +
+            "While patched, host ADB shell can obtain Magisk root. Agents have observation access only. " +
+            "Zygisk stays off; no modules are installed. Stock and guest-data backups are preserved. " +
+            "Two cold boots verify app root. Snapshots are fenced for this generation.\n\n" +
+            $"Ramdisk: {patch}\nManager: {apk}\nProbe: {probe}", "Approve Magisk lab installation",
+            MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         await RunBusyAsync("Checking Magisk lab inputs...", async () =>
         {
             var prepared = await RequestAsync("magisk.prepare", new JsonObject
@@ -1782,12 +1789,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ["probe"] = probe, ["allowProvisioningAdbRoot"] = true,
             }, TimeSpan.FromMinutes(3));
             MagiskState = "Magisk lab: prepared";
-            if (MessageBox.Show($"Install the verified base-only Magisk lab on {device.Name}?\n\n" +
-                "This temporarily enables ADB root for provisioning, then returns it to UID 2000. " +
-                "Zygisk stays off and no modules are installed. Stock and guest-data backups are preserved. " +
-                "Two cold boots verify app root. Snapshots are fenced for this lab generation.\n\n" +
-                "Transaction: " + prepared["transaction"], "Approve Magisk lab installation",
-                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
             await ApprovedMagiskAction(device.Name, prepared, "install");
         });
     }
@@ -1818,7 +1819,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             ["name"] = name, ["transaction"] = state["transaction"]!.DeepClone(),
             ["approval"] = approval["approval"]!.DeepClone(),
-        }, TimeSpan.FromMinutes(15));
+        }, TimeSpan.FromMinutes(60));
         MagiskState = "Magisk lab: " + result["phase"];
         StatusMessage = MagiskState;
         await RefreshDevicesAsync();

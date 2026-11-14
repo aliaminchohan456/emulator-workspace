@@ -41,7 +41,7 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
         var result = await Run(name, ["shell", command.Replace("\r\n", "\n")], ct);
         if (result.ExitCode != 0)
             throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Lab command failed: " + result.Combined[..Math.Min(2000, result.Combined.Length)]);
-        return result.StandardOutput.Replace("\r\n", "\n");
+        return result.StandardOutput.Replace("\r", "");
     }
 
     public async Task PowerOff(string name, CancellationToken ct)
@@ -82,6 +82,7 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
         requireEnrollment();
         rootEvidence["rootRequested"] = true;
         journal(rootEvidence); // Persist intent before restarting adbd.
+        Exception? provisioningError = null;
         try
         {
             var before = await manager.SetAdbRootAsync(name, true, ct);
@@ -127,13 +128,21 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
                 find . -type f | sort | xargs sha256sum
                 sync
                 """, ct);
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(directory, "environment"), "*", SearchOption.AllDirectories))
-            {
-                var relative = Path.GetRelativePath(Path.Combine(directory, "environment"), file).Replace('\\', '/');
-                if (!output.Contains(MagiskLabArtifacts.Hash(file) + "  ./" + relative, StringComparison.Ordinal))
-                    throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Provisioned payload hash mismatch.");
-            }
+            var expectedHashes = Directory.EnumerateFiles(Path.Combine(directory, "environment"), "*", SearchOption.AllDirectories)
+                .Select(file => MagiskLabArtifacts.Hash(file) + "  ./" +
+                    Path.GetRelativePath(Path.Combine(directory, "environment"), file).Replace('\\', '/'))
+                .Order(StringComparer.Ordinal).ToArray();
+            var actualHashes = output.Split('\n').Where(line => Regex.IsMatch(line, @"\A[0-9a-f]{64}  \./"))
+                .Order(StringComparer.Ordinal).ToArray();
+            if (!expectedHashes.SequenceEqual(actualHashes))
+                throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Provisioned payload inventory or hash mismatch.");
             provisioning["payloadHashes"] = output;
+        }
+        catch (Exception ex)
+        {
+            provisioningError = ex;
+            rootEvidence["provisioningError"] = ex.Message;
+            throw;
         }
         finally
         {
@@ -155,6 +164,8 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
             {
                 rootEvidence["unrootError"] = ex.Message;
                 journal(rootEvidence);
+                if (provisioningError is not null)
+                    throw new AggregateException("Provisioning and unroot both failed.", provisioningError, ex);
                 throw;
             }
         }
@@ -164,13 +175,14 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
     public async Task<JsonObject> Verify(string name, int? uid, bool patched, CancellationToken ct)
     {
         var text = await Shell(name,
-            "id; getprop sys.boot_completed; magisk -V; su -c id; echo su_exit=$?; ps -A -o USER,UID,PID,NAME", ct);
+            "id; getprop sys.boot_completed; magisk -V; echo magisk_exit=$?; " +
+            "test ! -e /debug_ramdisk/magisk && test ! -L /debug_ramdisk/magisk; echo magisk_absent=$?; " +
+            (patched ? "su -c id; echo su_exit=$?; " : "su 0 id; echo aosp_su_exit=$?; ") +
+            "ps -A -o USER,UID,PID,NAME", ct);
         if (!text.StartsWith("uid=2000(shell)", StringComparison.Ordinal) ||
             !Regex.IsMatch(text, @"shell\s+2000\s+\d+\s+adbd") || !text.Contains("\n1\n"))
             throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Boot or independent adbd UID check failed.");
-        var rootOk = patched
-            ? text.Contains("\n30700\n") && text.Contains("uid=0(root)") && text.Contains("su_exit=0")
-            : !text.Contains("magiskd") && text.Contains("su_exit=1");
+        var rootOk = ValidateShellProof(text, patched);
         if (!rootOk) throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Magisk shell proof failed.");
         var probe = uid.HasValue ? await manager.InstrumentationAsync(name, MagiskLabArtifacts.ProbePackage,
             MagiskLabArtifacts.ProbePackage + "/.SuProbe", ct) : null;
@@ -188,5 +200,17 @@ public sealed class MagiskGuestAdapter(InstanceManager manager, SdkLocator sdk, 
                 throw new SupervisorOperationException(ErrorCodes.AdbFailure, "Base-only inventory or Zygisk-off proof failed.");
         }
         return new JsonObject { ["shell"] = text, ["app"] = probe, ["appProof"] = appProof, ["inventory"] = inventory, ["verified"] = true };
+    }
+
+    public static bool ValidateShellProof(string text, bool patched)
+    {
+        var lines = text.Replace("\r", "").Split('\n');
+        bool Exact(string value) => lines.Count(line => line == value) == 1;
+        return patched
+            ? Exact("30700") && Exact("magisk_exit=0") && Exact("su_exit=0") &&
+              lines.Any(line => line.StartsWith("uid=0(root)", StringComparison.Ordinal))
+            : !text.Contains("magiskd", StringComparison.Ordinal) && Exact("magisk_absent=0") &&
+              lines.Count(line => Regex.IsMatch(line, @"\Amagisk_exit=([1-9][0-9]*)\z")) == 1 &&
+              !lines.Contains("magisk_exit=0");
     }
 }

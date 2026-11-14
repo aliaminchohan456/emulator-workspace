@@ -176,7 +176,7 @@ public sealed class OperationDispatcher
                     session = _agents.EnsureActive(session);
                     AuthorizeAgent(session, request.Op, request.Args);
                 }
-                if (target is not null) _magisk.Guard(target, request.Op, request.Args);
+                if (target is not null) _magisk.Guard(target, request.Op, request.Args, session is not null);
                 if (request.Op.StartsWith("magisk.", StringComparison.Ordinal))
                 {
                     var labArgs = request.Args ?? new JsonObject();
@@ -1148,7 +1148,7 @@ public sealed class OperationDispatcher
         // Recipe steps dispatch internally under the outer instance lease.
         // Reapply the lab fence so a nested snapshot cannot bypass it.
         var guardedName = session?.Instance ?? name;
-        if (guardedName.Length > 0) _magisk.Guard(guardedName, op, args);
+        if (guardedName.Length > 0) _magisk.Guard(guardedName, op, args, session is not null);
 
         switch (op)
         {

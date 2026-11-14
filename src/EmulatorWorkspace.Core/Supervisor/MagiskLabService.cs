@@ -86,10 +86,15 @@ public sealed class MagiskLabService
         Directory.CreateDirectory(directory); // A crash may precede the staging directory creation.
         File.Move(path, Path.Combine(directory, "retired-state.json"));
     }
-    public void Guard(string name, string operation, JsonObject? args = null)
+    public void Guard(string name, string operation, JsonObject? args = null, bool agent = false)
     {
         if (!File.Exists(StatePath(name))) return;
         var state = Read(name)!;
+        if (agent && state["phase"]?.GetValue<string>() != "recovered" &&
+            !(operation.StartsWith("observation.", StringComparison.Ordinal) ||
+              operation is "instance.status" or "instance.adbIdentity" or "logs.read" or "event.poll" or "artifact.read"))
+            throw new SupervisorOperationException(ErrorCodes.ForbiddenScope,
+                "Active Magisk labs permit agent observation only. Recover stock before agent control.");
         if (operation.StartsWith("magisk.", StringComparison.Ordinal)) return;
         if (operation.StartsWith("snapshot.", StringComparison.Ordinal))
             throw new SupervisorOperationException(ErrorCodes.CapabilityUnavailable,
@@ -219,6 +224,10 @@ public sealed class MagiskLabService
         if (state["phase"]?.GetValue<string>() != "prepared")
             throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "Interrupted installs must recover stock before retry.");
         var directory = DirectoryFor(state);
+        // Windows denies writes and replacement while this handle is held, through boot and provisioning.
+        MagiskLabArtifacts.NoReparse(Path.Combine(directory, "patched.img"));
+        MagiskLabArtifacts.Verify(Path.Combine(directory, "patched.img"), MagiskLabArtifacts.PatchHash);
+        using var patchLease = new FileStream(Path.Combine(directory, "patched.img"), FileMode.Open, FileAccess.Read, FileShare.Read);
         foreach (var pin in MagiskLabArtifacts.Pins) MagiskLabArtifacts.Verify(Path.Combine(directory, pin.Key), pin.Value);
         MagiskLabArtifacts.VerifyEnvironment(Path.Combine(directory, "manager.apk"), Path.Combine(directory, "environment"));
         await ValidateSdk(ct);
@@ -272,6 +281,7 @@ public sealed class MagiskLabService
             !string.Equals(_manager.Get(name).RamdiskPath, Path.Combine(directory, "patched.img"), StringComparison.OrdinalIgnoreCase))
             throw new SupervisorOperationException(ErrorCodes.ApprovalRequired,
                 "Temporary provisioning ADB root requires the opted-in, activating lab transaction and its exact patched guest generation.");
+        MagiskLabArtifacts.Verify(Path.Combine(directory, "patched.img"), MagiskLabArtifacts.PatchHash);
     }
 
     private void BackupData(string name, string directory)

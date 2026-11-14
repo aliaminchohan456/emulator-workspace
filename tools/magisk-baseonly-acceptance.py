@@ -125,15 +125,17 @@ def main():
                     'runner': package+'/.SuProbe'}, label+'-app-probe')
         text = result['output']
         check(label+'-app-uid', f'caller_uid={uid}' in text and 'caller_context=u:r:untrusted_app:' in text)
-        check(label+'-app-root', ('su_exit=0' in text and 'uid=0(root)' in text and 'context=u:r:magisk:s0' in text)
-              if patched else ('su_exit=exception' in text and 'error=13' in text))
+        check(label+'-app-root', (re.search(r'^(?:INSTRUMENTATION_RESULT: )?su_exit=0$', text.replace('\r', ''), re.M)
+              and 'uid=0(root)' in text and 'context=u:r:magisk:s0' in text)
+              if patched else (re.search(r'^(?:INSTRUMENTATION_RESULT: )?su_exit=exception$', text.replace('\r', ''), re.M)
+              and 'error=13' in text))
 
     def evidence(label):
         result = shell(label+'-shell', 'id; magisk -V; su -c id; echo su_exit=$?; '
                        'ps -A -o USER,UID,PID,NAME; cat /data/local/tmp/ws-magisk-marker')
         text = result.stdout
         check(label+'-shell-root', text.startswith('uid=2000(shell)') and '\n30700\n' in text
-              and 'uid=0(root)' in text and 'su_exit=0' in text)
+              and 'uid=0(root)' in text and 'su_exit=0' in text.replace('\r', '').splitlines())
         check(label+'-adbd-unrooted', re.search(r'shell\s+2000\s+\d+\s+adbd', text))
         check(label+'-marker', 'ws-magisk-windows-baseonly-v1' in text)
         inventory = '''su -c 'echo MODULES; find /data/adb/modules /data/adb/modules_update /data/adb/post-fs-data.d /data/adb/service.d -mindepth 1 2>/dev/null; echo SETTINGS; magisk --sqlite "SELECT * FROM settings"; echo POLICIES; magisk --sqlite "SELECT * FROM policies"; echo ZYGOTE; for p in $(pidof zygote64); do grep -i zygisk /proc/$p/maps; done; echo HOSTS; grep " /system/etc/hosts " /proc/mounts; echo END' '''
@@ -205,9 +207,12 @@ sync
             probe(label, True, uid)
             poweroff(label)
         boot('stock-restore', old/'stock-ramdisk.img')
-        text = shell('stock-proof', 'id; su -c id; echo su_exit=$?; '
-                     'ps -A -o USER,UID,PID,NAME; command -v magisk; cat /data/local/tmp/ws-magisk-marker').stdout
-        check('stock-no-magisk', 'magiskd' not in text and 'su_exit=1' in text)
+        text = shell('stock-proof', 'id; magisk -V; echo magisk_exit=$?; '
+                     'test ! -e /debug_ramdisk/magisk && test ! -L /debug_ramdisk/magisk; echo magisk_absent=$?; '
+                     'su 0 id; echo aosp_su_exit=$?; '
+                     'ps -A -o USER,UID,PID,NAME; cat /data/local/tmp/ws-magisk-marker').stdout.replace('\r', '')
+        check('stock-no-magisk', 'magiskd' not in text and 'magisk_absent=0' in text.splitlines()
+              and re.search(r'^magisk_exit=[1-9][0-9]*$', text, re.M))
         check('stock-marker', 'ws-magisk-windows-baseonly-v1' in text)
         check('stock-adbd-shell', re.search(r'shell\s+2000\s+\d+\s+adbd', text))
         probe('stock', False, uid)

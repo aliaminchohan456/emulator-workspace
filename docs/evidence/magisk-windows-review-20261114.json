@@ -50,16 +50,6 @@
     "EmulatorWorkspace.Core.dll": "3be84449838941e7689efb80c765ee288ca6bfbb3a8fe76175caccb29a83eb62"
   },
   "payloadsUnchangedThroughCompletion": true,
-  "sourceManifest": {
-    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "48f21f7323b61989ad0744d4d35b3bf29ae9934c6f48cd1604fc819b2a7b8831",
-    "src/EmulatorWorkspace.Core/Engine/MagiskProbeEvidence.cs": "c12565ed05ff9744a0da00f40e65a6ea27473f83084df2ed1f77a1b42c315a1a",
-    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "e26a38a491e71f721065ae08e3307aed6f19f996086c295487eea996b99e6126",
-    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabArtifacts.cs": "de32a7542597ca7d423f414b80e9b439fd9999e40adbbd0606b064c8c945822f",
-    "src/EmulatorWorkspace.Core/Supervisor/SupervisorLocator.cs": "c12a195759512a64e52c1586829f2546e57300d1cf336ff146e41c85fc66b658",
-    "src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs": "7eecfd1cb20ddc3982d4faba801917979c30e454f8ca3b35be605af6d43f3f8a",
-    "src/EmulatorWorkspace.Desktop/MainWindow.xaml": "ffee5dabf796ee655a0d5a39068b8a1b5b1df5d2b119a9be75119c242ac86982",
-    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "07fb0dc48eff027df5b78a05d3da1fad6237afa268af59e609948e4f2b56acde"
-  },
   "host": {
     "windows": "11 Pro 26H2 build 26300.9974",
     "cpu": "Intel i5-8265U",
@@ -169,7 +159,7 @@
       "rootGranted": false,
       "verified": true
     },
-    "shellSuDenied": true
+    "stockShellCorrection": "su -c id rejected unsupported syntax; shell root denial was not proved. App-level EACCES and adbd UID 2000 remain valid. Full Magisk-absence predicate requires a new run."
   },
   "concurrentStatusRead": {
     "passed": true,
@@ -229,12 +219,34 @@
         }
       ],
       "passed": true,
-      "labelCorrection": "Corrected after Grok review: restored baseline has no probe app; this lane verifies baseline recovery and stock shell denial."
+      "labelCorrection": "Baseline recovery and adbd UID 2000 verified; no probe app after data restoration. Historical su -c failure does not prove shell root denial."
     }
   },
   "limitations": [
     "Raw bundles and binaries remain local/gitignored.",
     "Host power-loss testing not performed.",
     "Source-built AOSP capacity, signing and redistribution remain open."
-  ]
+  ],
+  "sourceManifestHistoricalWorkingTreeSha256": {
+    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "48f21f7323b61989ad0744d4d35b3bf29ae9934c6f48cd1604fc819b2a7b8831",
+    "src/EmulatorWorkspace.Core/Engine/MagiskProbeEvidence.cs": "c12565ed05ff9744a0da00f40e65a6ea27473f83084df2ed1f77a1b42c315a1a",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "e26a38a491e71f721065ae08e3307aed6f19f996086c295487eea996b99e6126",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabArtifacts.cs": "de32a7542597ca7d423f414b80e9b439fd9999e40adbbd0606b064c8c945822f",
+    "src/EmulatorWorkspace.Core/Supervisor/SupervisorLocator.cs": "c12a195759512a64e52c1586829f2546e57300d1cf336ff146e41c85fc66b658",
+    "src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs": "7eecfd1cb20ddc3982d4faba801917979c30e454f8ca3b35be605af6d43f3f8a",
+    "src/EmulatorWorkspace.Desktop/MainWindow.xaml": "ffee5dabf796ee655a0d5a39068b8a1b5b1df5d2b119a9be75119c242ac86982",
+    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "07fb0dc48eff027df5b78a05d3da1fad6237afa268af59e609948e4f2b56acde"
+  },
+  "sourceCommit": "4d8d314",
+  "sourceGitBlobIds": {
+    "src/EmulatorWorkspace.Core/Engine/MagiskGuestAdapter.cs": "1d0034feb8f69bc33f0d80e59fa0692e33b4ee2a",
+    "src/EmulatorWorkspace.Core/Engine/MagiskProbeEvidence.cs": "d203f61f58e6c1e07c84e54baa9bff34e7879976",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabService.cs": "5318d08b0d832c3b07bdf3f9fa187b8e42ddde6a",
+    "src/EmulatorWorkspace.Core/Supervisor/MagiskLabArtifacts.cs": "46d7fdf76833b7b56a55533a759a6ba4a2506877",
+    "src/EmulatorWorkspace.Core/Supervisor/SupervisorLocator.cs": "80c1a6875a8f8859e02cd57b7b93537f630dfe72",
+    "src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs": "9af6d0a6c09cd30f6640a8c7c41faf078ce8cff6",
+    "src/EmulatorWorkspace.Desktop/MainWindow.xaml": "34f20b1c3198655cef565013faf0293611cf10d0",
+    "src/EmulatorWorkspace.Desktop/ViewModels/MainViewModel.cs": "787a8818746b2b07104cd9555801ba188deb4e95"
+  },
+  "sourceProvenanceCorrection": "Working-tree hashes are historical and SupervisorLocator.cs does not reproduce. Git blob IDs identify reviewed source, not a new claim of historical binary reproducibility."
 }
