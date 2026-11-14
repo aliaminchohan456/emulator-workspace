@@ -632,3 +632,15 @@ The private archive and deletion manifests are under
 Cleanup complete: 92 roots removed; 17 loose files archived. D: free space
 measured 448.91 GiB at completion. Private archive README and
 completed.json record scope and retained data. All 92 targets were verified absent.
+
+## D: storage consolidation (2026-11-14)
+
+Moved all 40 owner-listed retained folders under `D:\Emulator-Lab` using
+same-volume directory renames. Verified destinations and old-path absence;
+no running processes referenced the source roots. Nested SDK junctions remain
+intact. `D:\Emulator-Lab\relocation.json` maps all old/new paths. The cleanup
+archive is now `D:\Emulator-Lab\Emulator-Cleanup-Archive-20261114`.
+Historical absolute paths in evidence and persisted instance metadata were
+preserved. Before reusing an old root, migrate and validate its paths or restore
+that stopped directory to its original location. No runtime revalidation is
+claimed for relocated roots. This is storage organization only; no code change.
