@@ -1,0 +1,52 @@
+{
+  "commit": "81e98d2df41fe2aa3fa74fbff51035631912ea3c",
+  "tree": "0792e7c24d60a04b95ba5e4d08c466b76c32c825",
+  "statusBefore": [],
+  "startedUtc": "2026-11-14T12:00:50.7995915Z",
+  "sdk": "10.0.302",
+  "statusAfter": [],
+  "treeAfter": "0792e7c24d60a04b95ba5e4d08c466b76c32c825",
+  "payloads": [
+    {
+      "sha256": "39EFC895E066A1906713891EAB4EA8F7E8007438BD6DDC96BAD50328961AFC5A",
+      "path": "D:\\Emulator-Lab\\Review-build-20261114\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Contracts.dll"
+    },
+    {
+      "sha256": "1FF0C4A9C6CBB3C22FEBE60C6203A43C384885AC119D409736D7906CB04A7DE9",
+      "path": "D:\\Emulator-Lab\\Review-build-20261114\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Controller.dll"
+    },
+    {
+      "sha256": "9D91B29026657099CB1ECEEB69FE1E6F906B4009CCC1A1C92FB83BB0F30B3DCF",
+      "path": "D:\\Emulator-Lab\\Review-build-20261114\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Core.dll"
+    },
+    {
+      "sha256": "448034002F0B8C0B5D1EEF4F9D69DE28F8C50EA19B6C51B2ADCB0A7EC09BFD7B",
+      "path": "D:\\Emulator-Lab\\Review-build-20261114\\src\\EmulatorWorkspace.Supervisor\\bin\\Release\\net10.0-windows\\EmulatorWorkspace.Supervisor.dll"
+    }
+  ],
+  "completedUtc": "2026-11-14T12:02:47.6539618Z",
+  "verification": {
+    "windows": {
+      "passed": 400,
+      "skipped": 0,
+      "failed": 0
+    },
+    "focusedCleanupTests": 9,
+    "buildWarnings": 22,
+    "buildErrors": 0,
+    "linux": {
+      "sdk": "10.0.404",
+      "passed": 398,
+      "skipped": 2,
+      "failed": 0,
+      "buildWarnings": 22,
+      "buildErrors": 0,
+      "sourceCommit": "81e98d2df41fe2aa3fa74fbff51035631912ea3c",
+      "sourceTree": "0792e7c24d60a04b95ba5e4d08c466b76c32c825",
+      "statusBefore": [],
+      "statusAfter": []
+    }
+  },
+  "scope": "Fresh isolated Windows build and unit tests only. No new hardware or WPF acceptance.",
+  "historicalEvidenceLimitation": "The earlier e77753f hardware run has selected blob identities only, not complete build-time tree provenance."
+}

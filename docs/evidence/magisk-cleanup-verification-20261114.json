@@ -114,5 +114,6 @@
       }
     ],
     "passed": true
-  }
+  },
+  "sourceAttributionLimit": "Selected blob identities only; no complete source-tree/status record was captured at build time. The Core project file was omitted. This run does not establish that the payloads were built from the complete e77753f tree."
 }

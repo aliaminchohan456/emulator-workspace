@@ -658,3 +658,15 @@ build-time tree identity. That limitation cannot be repaired retrospectively.
 A new build will record its committed source tree, pre/post tracked status and
 payload hashes. This new build provenance does not extend the earlier hardware
 or WPF acceptance to new binaries. Existing release gates remain open.
+
+
+Verification completed: focused cleanup tests 9/9; clean isolated Windows
+Release build/test 400 passed, zero skipped; separate Linux checkout .NET
+10.0.404 build/test 398 passed, two Windows-only skips. Both builds had 22
+existing warnings and zero errors. Source commit: 81e98d2; full tree:
+0792e7c24d60a04b95ba5e4d08c466b76c32c825. Both checkouts had empty porcelain
+status before and after verification. No new hardware/WPF claim.
+See [build provenance](docs/build-provenance.md) and
+[evidence](docs/evidence/magisk-review-build-20261114.json).
+Logs: artifacts/grok-clean-{build,tests}.log and
+artifacts/grok-linux-{build,tests}.log. Production code is unchanged.
