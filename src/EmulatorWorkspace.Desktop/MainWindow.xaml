@@ -313,7 +313,7 @@
         <!-- igr-feedback-ux05 item 1: the telemetry pill is a RAISED pill (10 DIP
              radius, 1 px stroke-soft edge) rather than a flat field, and it holds
              only what the frame stream measures. The CPU segment is gone at every
-             width: the supervisor reports no sample, and "CPU —" behind a flat
+             width: the supervisor reports no sample, and "CPU �?"" behind a flat
              underline read like an empty input. -->
         <Style x:Key="TelemetryPillButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
@@ -558,6 +558,47 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <!-- UX-07 fix pass: a read-only value is a neutral raised chip, not bare
+             text, so "Full"/"Off" reads as a fact the drawer reports rather than
+             as a control the operator can change. The chip sits on a PanelAlt
+             card, so ChipBg is one step raised instead of the same colour. -->
+        <Style x:Key="SettingsReadOnlyChip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- The ok-soft companion chip the acceleration row prints when the
+             engine probe passed. -->
+        <Style x:Key="SettingsOkChip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- A doctor value: mono, one line, middle ellipsis (the converter keeps
+             both ends of a long path or package id), full text in the tooltip. -->
+        <Style x:Key="SettingsDoctorValue" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="LineHeight" Value="16" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        </Style>
+
         <!-- Segmented tabs inside the drawer. One WindowBg surface holds the tab
              headers, which are 6 DIP pills inside 3 DIP of padding (outer 8 =
              inner 5 + padding, close enough that the corners read concentric);
@@ -674,24 +715,9 @@
         </Style>
 
         <!-- A shortcut key in Cascadia Mono: the design sheet's key chip. The chip
-             sits on a PanelAlt card, so its surface is ChipBg, not PanelAlt. -->
-        <Style x:Key="KeyChip" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
-            <Setter Property="Padding" Value="6,2" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-        </Style>
-
-        <Style x:Key="KeyChipText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="LineHeight" Value="16" />
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
-        </Style>
+             sits on a PanelAlt card, so its surface is ChipBg, not PanelAlt.
+             UX-07 moved this pair to Themes/Common.xaml so the command palette
+             prints the same chip; the key and its look are unchanged. -->
 
         <!-- A path in the drawer: mono, one line, middle ellipsis (the converter
              keeps the leaf folder) and the full string in the tooltip. No
@@ -1203,7 +1229,7 @@
                     <!-- Decorative device frame: a rounded bezel drawn AROUND the
                          live frame (10 DIP bezel, soft shadow). igr-feedback-ux05
                          item 8: the outer radius is the screen radius plus the
-                         bezel padding — the guest frame is square, so 0 + 10 = 10
+                         bezel padding �?" the guest frame is square, so 0 + 10 = 10
                          and the corners are concentric with the frame they wrap.
                          It is a sibling behind ViewportScroll, sized from the
                          viewport canvas in code, so it never clips or covers a
@@ -1388,7 +1414,7 @@
                          accepted and warn when it is refused, a 1.2 s opacity
                          pulse (static under reduced motion) and the exact target
                          guest in words. igr-feedback-ux05 item 7: the dashed edge
-                         is inset 6 DIP with a 4 DIP radius — the card is r10, so
+                         is inset 6 DIP with a 4 DIP radius �?" the card is r10, so
                          4 + 6 keeps the corners concentric. -->
                     <Border x:Name="DropVeil" Margin="0" CornerRadius="0" IsHitTestVisible="False"
                             Panel.ZIndex="30"
@@ -2009,8 +2035,8 @@
                                                 </Border>
                                             </StackPanel>
                                         </Grid>
-                                        <!-- igr-feedback-ux05 item 6: one text3 line —
-                                             "UID · not reported", or the real uid —
+                                        <!-- igr-feedback-ux05 item 6: one text3 line �?"
+                                             "UID · not reported", or the real uid �?"
                                              instead of a 24 DIP em-dash badge. The
                                              daemon's detail sentence is the tooltip. -->
                                         <TextBlock Text="{Binding AdbUidLine}" Style="{StaticResource Caption}"
@@ -2083,12 +2109,12 @@
                                              their outlines: install is err-soft, recovery
                                              is warn. Same commands, same consent. -->
                                         <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Install Magisk lab…" Style="{StaticResource DangerButton}"
+                                            <Button Content="Install Magisk lab�?�" Style="{StaticResource DangerButton}"
                                                     Height="32" Padding="10,0"
                                                     Command="{Binding MagiskInstallCommand}" Margin="0,0,6,4"
                                                     ToolTip="Patch this guest's boot image with a verified Magisk build (asks for consent)"
                                                     AutomationProperties.Name="Install Magisk lab" />
-                                            <Button Content="Recover stock…" Style="{StaticResource WarnButton}"
+                                            <Button Content="Recover stock�?�" Style="{StaticResource WarnButton}"
                                                     Height="32" Padding="10,0"
                                                     Command="{Binding MagiskRecoverCommand}" Margin="0,0,0,4"
                                                     ToolTip="Restore the stock boot image from the verified recovery point (asks for consent)"
@@ -2347,7 +2373,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <!-- Specular edges of the floating surface: 1 DIP along
@@ -2404,7 +2429,7 @@
                                                 <StackPanel VerticalAlignment="Center" Margin="0,10,12,10">
                                                     <TextBlock Text="Theme" Style="{StaticResource SettingsRowLabel}" />
                                                     <TextBlock Style="{StaticResource SettingsRowDescription}"
-                                                               Text="Dark and Light apply immediately. Session only: this build stores no preference, so the next launch follows Windows again." />
+                                                               Text="Applies now · resets on next launch" />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal"
                                                             VerticalAlignment="Center">
@@ -2449,8 +2474,25 @@
                                             </Grid>
                                         </Border>
 
-                                        <TextBlock Text="WINDOWS" Style="{StaticResource RowSection}"
-                                                   Margin="2,18,0,6" />
+                                        <!-- UX-07 fix pass: the eyebrow is SYSTEM,
+                                             with the origin on the right and the
+                                             explanation in an info tooltip, so the
+                                             card ends on its two rows. -->
+                                        <Grid Margin="2,18,0,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="SYSTEM" Style="{StaticResource RowSection}"
+                                                           VerticalAlignment="Center" />
+                                                <Path Data="{StaticResource IconInfo}" Width="12" Height="12"
+                                                      Stretch="Uniform" Stroke="{DynamicResource TextTertiary}"
+                                                      StrokeThickness="1.5" StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round" VerticalAlignment="Center"
+                                                      Margin="6,0,0,0"
+                                                      ToolTip="Both are Windows policies the app honours and never overrides. High contrast is not a third theme: while it is on, the system palette replaces the selected theme." />
+                                            </StackPanel>
+                                            <TextBlock Text="Managed by Windows" FontSize="11"
+                                                       Foreground="{DynamicResource TextTertiary}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
                                         <Border Style="{StaticResource SettingsCard}">
                                             <StackPanel>
                                                 <Grid MinHeight="56" Margin="16,0">
@@ -2464,8 +2506,11 @@
                                                         <TextBlock Style="{StaticResource SettingsRowDescription}"
                                                                    Text="Reduced motion drops every drawer, hover and pulse animation." />
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="1" Text="{Binding MotionState}"
-                                                               Style="{StaticResource SettingsRowValue}" />
+                                                    <Border Grid.Column="1" Style="{StaticResource SettingsReadOnlyChip}">
+                                                        <TextBlock Text="{Binding MotionState}" FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextSecondary}" />
+                                                    </Border>
                                                 </Grid>
                                                 <Border Style="{StaticResource SettingsDivider}" />
                                                 <Grid MinHeight="56" Margin="16,0">
@@ -2479,16 +2524,14 @@
                                                         <TextBlock Style="{StaticResource SettingsRowDescription}"
                                                                    Text="Wins over the theme with system colours." />
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="1" Text="{Binding HighContrastState}"
-                                                               Style="{StaticResource SettingsRowValue}" />
+                                                    <Border Grid.Column="1" Style="{StaticResource SettingsReadOnlyChip}">
+                                                        <TextBlock Text="{Binding HighContrastState}" FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextSecondary}" />
+                                                    </Border>
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
-
-                                        <TextBlock Style="{StaticResource Caption}" FontSize="12"
-                                                   Foreground="{DynamicResource TextTertiary}"
-                                                   TextWrapping="Wrap" Margin="2,12,0,0"
-                                                   Text="Both are Windows policies the app honours and never overrides. High contrast is not a third theme: while it is on, the system palette replaces the selected theme." />
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>
@@ -2707,7 +2750,7 @@
                                                     </StackPanel>
                                                     <Button Grid.Column="1" Content="Copy diagnostics"
                                                             Style="{StaticResource PrimaryButton}"
-                                                            Height="32" Padding="12,0" Margin="0"
+                                                            Height="32" Padding="12,0" MinWidth="136" Margin="0"
                                                             Command="{Binding CopyDiagnosticsCommand}"
                                                             ToolTip="Copy the supervisor's redacted diagnostics summary"
                                                             AutomationProperties.Name="Copy diagnostics" />
@@ -2725,7 +2768,7 @@
                                                                    Text="Writes the retained lines to the workspace log folder." />
                                                     </StackPanel>
                                                     <Button Grid.Column="1" Content="Export logcat"
-                                                            Style="{StaticResource GhostButton}" Margin="0"
+                                                            Style="{StaticResource GhostButton}" MinWidth="136" Margin="0"
                                                             Command="{Binding ExportLogCommand}"
                                                             ToolTip="Write the retained Logcat lines to the workspace log folder"
                                                             AutomationProperties.Name="Export logcat" />
@@ -2733,16 +2776,104 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <TextBlock Text="DOCTOR" Style="{StaticResource RowSection}"
-                                                   Margin="2,18,0,6" />
-                                        <Border Style="{StaticResource SettingsCard}" Padding="14,12">
-                                            <!-- No inner scroll: the tab's own
-                                                 ScrollViewer is the only one, so
-                                                 the whole report is readable and
-                                                 there is one scrollbar, not two. -->
-                                            <TextBlock Text="{Binding DoctorText}"
-                                                       Style="{StaticResource Mono}" FontSize="11"
-                                                       LineHeight="16" TextWrapping="Wrap" />
+                                        <!-- UX-07 fix pass: Inspector-style
+                                             label/value rows. Every value is a
+                                             real field of the supervisor's
+                                             report, mono, one line, middle
+                                             ellipsis, full text in the tooltip;
+                                             the copy action on the right hands
+                                             over the raw report. -->
+                                        <Grid Margin="2,18,0,6">
+                                            <TextBlock Text="DOCTOR" Style="{StaticResource RowSection}"
+                                                       VerticalAlignment="Center" />
+                                            <Button HorizontalAlignment="Right" Style="{StaticResource SettingsIconButton}"
+                                                    Width="28" Height="28" Margin="0"
+                                                    Click="OnCopyDoctor"
+                                                    ToolTip="Copy the raw doctor report"
+                                                    AutomationProperties.Name="Copy doctor report">
+                                                <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                                            </Button>
+                                        </Grid>
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="SDK" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorSdk, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorSdk}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Emulator" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorEmulator, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorEmulator}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Image" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorImage, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorImageTooltip}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="ADB" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorAdb, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorAdb}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Acceleration" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorAcceleration, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorAccelerationTooltip}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                    <Border Grid.Column="2" Style="{StaticResource SettingsOkChip}"
+                                                            Visibility="{Binding DoctorAccelerationReady, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="Ready" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource Success}" />
+                                                    </Border>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="32" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="GPU" Style="{StaticResource RowLabel}" />
+                                                    <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                               Text="{Binding DoctorGpu, Converter={StaticResource MiddleEllipsis}, ConverterParameter=44}"
+                                                               ToolTip="{Binding DoctorGpuTooltip}"
+                                                               Style="{StaticResource SettingsDoctorValue}" />
+                                                </Grid>
+                                            </StackPanel>
                                         </Border>
 
                                         <TextBlock Text="PATHS" Style="{StaticResource RowSection}"
@@ -2909,17 +3040,6 @@
                                 </ScrollViewer>
                             </TabItem>
                         </TabControl>
-
-                        <Border Grid.Row="2" BorderBrush="{DynamicResource BorderSubtle}"
-                                BorderThickness="0,1,0,0" Padding="24,11">
-                            <!-- No Apply/OK footer: every control applies at once and
-                                 confirms on its own row. This line only states that
-                                 model and the two ways out. -->
-                            <TextBlock Text="Changes apply immediately. Esc or a click outside closes this drawer."
-                                       Style="{StaticResource Caption}"
-                                       Foreground="{DynamicResource TextTertiary}"
-                                       TextWrapping="Wrap" VerticalAlignment="Center" />
-                        </Border>
                     </Grid>
                 </Border>
             </Grid>

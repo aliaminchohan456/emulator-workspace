@@ -149,21 +149,73 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         LogView = CollectionViewSource.GetDefaultView(LogEntries);
         LogView.Filter = FilterLog;
 
-        Palette.Add(new PaletteEntryViewModel("Create device", "Create a new managed guest", CreateDeviceCommand));
-        Palette.Add(new PaletteEntryViewModel("Device library", "Browse, search and manage the device library", OpenLibraryCommand));
-        Palette.Add(new PaletteEntryViewModel("Start device", "Start the selected guest", StartCommand));
-        Palette.Add(new PaletteEntryViewModel("Stop device", "Stop the selected guest", StopCommand));
-        Palette.Add(new PaletteEntryViewModel("Restart device", "Restart the selected guest", RestartCommand));
-        Palette.Add(new PaletteEntryViewModel("Cold boot", "Cold boot the selected guest", ColdBootCommand));
-        Palette.Add(new PaletteEntryViewModel("Install APK", "Install an APK on the selected guest", InstallApkCommand));
-        Palette.Add(new PaletteEntryViewModel("Build APK set", "Convert an Android App Bundle using test signing", BuildApkSetCommand));
-        Palette.Add(new PaletteEntryViewModel("Launch sample", "Launch the sample application", LaunchSampleCommand));
-        Palette.Add(new PaletteEntryViewModel("Screenshot", "Capture a PNG of the selected guest", ScreenshotCommand));
-        Palette.Add(new PaletteEntryViewModel("Toggle Logcat", "Show or hide the Logcat drawer", ToggleLogcatCommand));
-        Palette.Add(new PaletteEntryViewModel("ADB root", "Run the guest ADB daemon as root", AdbRootCommand));
-        Palette.Add(new PaletteEntryViewModel("ADB unroot", "Return the guest ADB daemon to the shell user", AdbUnrootCommand));
-        Palette.Add(new PaletteEntryViewModel("Refresh ADB state", "Re-read the ADB daemon identity", RefreshAdbStateCommand));
-        Palette.Add(new PaletteEntryViewModel("Export diagnostics", "Write the diagnostic bundle", CopyDiagnosticsCommand));
+        // UX-07: the same fifteen commands, now carrying the section header and
+        // the line icon the palette prints. The reason delegate is only read when
+        // the command's own predicate says it cannot run, so it explains a
+        // disabled row in the operator's words instead of dimming it silently.
+        Palette.Add(new PaletteEntryViewModel(
+            "Create device", "Create a new managed guest", CreateDeviceCommand,
+            PaletteGroups.Device, "IconPlus",
+            () => HasBlockingIssue ? "Setup needs attention" : "Busy"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Device library", "Browse, search and manage the device library", OpenLibraryCommand,
+            PaletteGroups.Device, "IconDevice"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Start device", "Start the selected guest", StartCommand,
+            PaletteGroups.Device, "IconPlay",
+            PaletteDisabledReason));
+        Palette.Add(new PaletteEntryViewModel(
+            "Stop device", "Stop the selected guest", StopCommand,
+            PaletteGroups.Device, "IconStop",
+            () => SelectedDevice is null ? "No device selected"
+                : IsBusy ? "Busy"
+                : "Not running"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Restart device", "Restart the selected guest", RestartCommand,
+            PaletteGroups.Device, "IconRestart",
+            PaletteDisabledReason));
+        Palette.Add(new PaletteEntryViewModel(
+            "Cold boot", "Cold boot the selected guest", ColdBootCommand,
+            PaletteGroups.Device, "IconBolt",
+            PaletteDisabledReason));
+        Palette.Add(new PaletteEntryViewModel(
+            "Install APK", "Install an APK on the selected guest", InstallApkCommand,
+            PaletteGroups.AppsAndCapture, "IconPackage",
+            () => SelectedDevice is null ? "No device selected"
+                : IsBusy ? "Busy"
+                : "Guest not running"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Build APK set", "Convert an Android App Bundle using test signing", BuildApkSetCommand,
+            PaletteGroups.AppsAndCapture, "IconStack",
+            () => IsConnected ? "Busy" : "Supervisor not connected"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Launch sample", "Launch the sample application", LaunchSampleCommand,
+            PaletteGroups.AppsAndCapture, "IconLaunch",
+            () => SelectedDevice is null ? "No device selected"
+                : IsBusy ? "Busy"
+                : "Guest not running"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Screenshot", "Capture a PNG of the selected guest", ScreenshotCommand,
+            PaletteGroups.AppsAndCapture, "IconScreenshot",
+            () => SelectedDevice is null ? "No device selected" : "Guest not running"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Toggle Logcat", "Show or hide the Logcat drawer", ToggleLogcatCommand,
+            PaletteGroups.Diagnostics, "IconLogs"));
+        Palette.Add(new PaletteEntryViewModel(
+            "Refresh ADB state", "Re-read the ADB daemon identity", RefreshAdbStateCommand,
+            PaletteGroups.Diagnostics, "IconRefresh",
+            PaletteDisabledReason));
+        Palette.Add(new PaletteEntryViewModel(
+            "Export diagnostics", "Write the diagnostic bundle", CopyDiagnosticsCommand,
+            PaletteGroups.Diagnostics, "IconDownload"));
+        Palette.Add(new PaletteEntryViewModel(
+            "ADB root", "Run the guest ADB daemon as root", AdbRootCommand,
+            PaletteGroups.Privileged, "IconKey",
+            PaletteDisabledReason));
+        Palette.Add(new PaletteEntryViewModel(
+            "ADB unroot", "Return the guest ADB daemon to the shell user", AdbUnrootCommand,
+            PaletteGroups.Privileged, "IconUndo",
+            PaletteDisabledReason));
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
         _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
@@ -1065,6 +1117,90 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         private set => SetProperty(ref _doctorText, value);
     }
 
+    // UX-07 fix pass: the Settings doctor block reads the report as Inspector
+    // label/value rows instead of a wrapped mono paragraph. Each value is a real
+    // field of the supervisor's doctor report; the tooltip keeps the raw text.
+    private string _doctorSdk = "";
+
+    public string DoctorSdk
+    {
+        get => _doctorSdk;
+        private set => SetProperty(ref _doctorSdk, value);
+    }
+
+    private string _doctorEmulator = "";
+
+    public string DoctorEmulator
+    {
+        get => _doctorEmulator;
+        private set => SetProperty(ref _doctorEmulator, value);
+    }
+
+    private string _doctorImage = "";
+
+    public string DoctorImage
+    {
+        get => _doctorImage;
+        private set => SetProperty(ref _doctorImage, value);
+    }
+
+    private string _doctorImageTooltip = "";
+
+    public string DoctorImageTooltip
+    {
+        get => _doctorImageTooltip;
+        private set => SetProperty(ref _doctorImageTooltip, value);
+    }
+
+    private string _doctorAdb = "";
+
+    public string DoctorAdb
+    {
+        get => _doctorAdb;
+        private set => SetProperty(ref _doctorAdb, value);
+    }
+
+    private string _doctorAcceleration = "";
+
+    public string DoctorAcceleration
+    {
+        get => _doctorAcceleration;
+        private set => SetProperty(ref _doctorAcceleration, value);
+    }
+
+    private string _doctorAccelerationTooltip = "";
+
+    public string DoctorAccelerationTooltip
+    {
+        get => _doctorAccelerationTooltip;
+        private set => SetProperty(ref _doctorAccelerationTooltip, value);
+    }
+
+    private bool _doctorAccelerationReady;
+
+    /// <summary>True only when the engine probe proved WHPX is installed and usable.</summary>
+    public bool DoctorAccelerationReady
+    {
+        get => _doctorAccelerationReady;
+        private set => SetProperty(ref _doctorAccelerationReady, value);
+    }
+
+    private string _doctorGpu = "";
+
+    public string DoctorGpu
+    {
+        get => _doctorGpu;
+        private set => SetProperty(ref _doctorGpu, value);
+    }
+
+    private string _doctorGpuTooltip = "";
+
+    public string DoctorGpuTooltip
+    {
+        get => _doctorGpuTooltip;
+        private set => SetProperty(ref _doctorGpuTooltip, value);
+    }
+
     private BitmapSource? _frame;
 
     public BitmapSource? Frame
@@ -1428,6 +1564,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// Re-raises the derived settings facts. The drawer calls this when it opens,
     /// because motion and high contrast can change while the window is running.
     /// </summary>
+    /// <summary>
+    /// The one reason a device command is refused before the guest is even
+    /// consulted: nothing selected, or a supervised operation owns the channel.
+    /// The palette prints it as the row's reason chip only when the command's own
+    /// CanExecute is already false.
+    /// </summary>
+    private string PaletteDisabledReason() =>
+        SelectedDevice is null ? "No device selected" : "Busy";
+
     public void RefreshSettingsFacts()
     {
         OnPropertyChanged(nameof(IsDarkTheme));
@@ -1524,7 +1669,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SetupSummary = "The local supervisor did not answer. Start it for this workspace root, then choose Refresh.";
                 SetupIssues.Add("Supervisor not reachable: " + ex.Message);
                 SetupIssues.Add("The pinned image, emulator and SDK licences are not changed by this failure.");
-                DoctorText = "No supervisor report available. The pinned image and emulator are never substituted automatically.";
+                SetDoctorUnavailable("No supervisor report available. The pinned image and emulator are never substituted automatically.");
             }
             else
             {
@@ -1532,7 +1677,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SetupIssues.Add("Android SDK incomplete or missing: " + ex.Message);
                 SetupIssues.Add("Install cmdline-tools, platform-tools, emulator 37.2.12, and system-images;android-35;default;x86_64 revision 2 from the official SDK Manager.");
                 SetupIssues.Add("Accept the SDK licenses, set ANDROID_HOME to that SDK, then restart the workspace supervisor.");
-                DoctorText = "No SDK report available. The pinned image and emulator are never substituted automatically.";
+                SetDoctorUnavailable("No SDK report available. The pinned image and emulator are never substituted automatically.");
             }
         }
         finally
@@ -1594,16 +1739,59 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         HasBlockingIssue = SetupIssues.Count > 0;
         var systemImageBytes = pinnedImage?["systemImageBytes"]?.GetValue<long>();
         var systemImageSize = systemImageBytes is long bytes ? $" ({bytes / 1073741824d:N2} GiB system.img)" : "";
+        var imageRevision = pinnedImage?["revision"]?.ToString() ?? "missing";
+        var adbVersion = sdk["adbVersion"]?.ToString() ?? "";
+        var gpuName = gpu["name"]?.ToString() ?? "";
+        var gpuDriver = gpu["driverVersion"]?.ToString() ?? "";
+
+        // UX-07 fix pass: the same readings the Inspector prints, mapped from the
+        // raw probe and the real package id. The Workspace line is gone: PATHS in
+        // this drawer already shows the root, and the doctor block is about the
+        // toolchain.
+        var accelerationLabel = DoctorSummary.Acceleration(
+            acceleration, doctor["whpxUsable"]?.GetValue<bool>() == true);
+        DoctorSdk = sdk["root"]?.ToString() ?? "";
+        DoctorEmulator = $"{emulatorVersion ?? "not reported"} build {emulatorBuild ?? "unknown"}";
+        // The friendly name plus its pinned revision fits the row; the package
+        // id and the system.img size stay in the tooltip and the copied report.
+        DoctorImage = DoctorSummary.Image(pinned, imageRevision, null);
+        DoctorImageTooltip = $"{pinned} rev {imageRevision}{systemImageSize}";
+        DoctorAdb = adbVersion;
+        DoctorAcceleration = accelerationLabel.Label;
+        DoctorAccelerationTooltip = acceleration;
+        DoctorAccelerationReady = accelerationLabel.Ready;
+        DoctorGpu = DoctorSummary.Gpu(gpuName, gpuDriver);
+        DoctorGpuTooltip = $"GPU {gpuName} driver {gpuDriver}".Trim();
+
         DoctorText = string.Join(Environment.NewLine, new[]
         {
-            $"SDK: {sdk["root"]}",
-            $"Emulator: {emulatorVersion} build {emulatorBuild ?? "unknown"}",
-            $"Image: {pinned} rev {pinnedImage?["revision"] ?? "missing"}{systemImageSize}",
-            $"ADB: {sdk["adbVersion"]}",
-            $"Acceleration: {acceleration}",
-            $"GPU: {gpu["name"]} driver {gpu["driverVersion"]}",
-            $"Workspace: {doctor["workspaceRoot"]} ({freeGiB:N1} GiB free)",
+            $"SDK: {DoctorSdk}",
+            $"Emulator: {DoctorEmulator}",
+            $"Image: {DoctorImage}",
+            $"ADB: {DoctorAdb}",
+            $"Acceleration: {DoctorAcceleration}",
+            $"GPU: {DoctorGpu}",
         });
+    }
+
+    /// <summary>
+    /// The doctor block can only report what the supervisor returned. When there
+    /// is no report every row says so, and the raw text carries the reason the
+    /// copy button hands over.
+    /// </summary>
+    private void SetDoctorUnavailable(string message)
+    {
+        DoctorSdk = "Not reported";
+        DoctorEmulator = "Not reported";
+        DoctorImage = "Not reported";
+        DoctorImageTooltip = message;
+        DoctorAdb = "Not reported";
+        DoctorAcceleration = "Not reported";
+        DoctorAccelerationTooltip = message;
+        DoctorAccelerationReady = false;
+        DoctorGpu = "Not reported";
+        DoctorGpuTooltip = message;
+        DoctorText = message;
     }
 
     private async Task RefreshDevicesAsync()
@@ -2146,9 +2334,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (IsFrameStale)
         {
-            // UX-03: a stalled frame must not accept coordinates. The mapping is
-            // unchanged; only the freshness gate is new.
-            StatusMessage = "Input paused: " + StaleFrameTitle + ". " + StaleFrameDetail;
+            // UX-03: a stalled frame must not accept coordinates. UX-07 fix pass:
+            // the status bar carries no sentence here - the stale chip beside the
+            // stage already says frames are paused, and a second long line was
+            // the noisiest text in the shell.
             return;
         }
 
@@ -2177,7 +2366,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (IsFrameStale)
         {
-            StatusMessage = "Input paused: " + StaleFrameTitle + ". " + StaleFrameDetail;
+            // UX-07 fix pass: as with a tap, the stale chip is the feedback.
             return;
         }
 
@@ -3375,6 +3564,29 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
+    /// UX-07 fix pass: copies the raw doctor report exactly as the supervisor's
+    /// fields were assembled for the card (redacted by the supervisor, no local
+    /// values added), the same text the row tooltips name.
+    /// </summary>
+    public void CopyDoctorReport()
+    {
+        if (string.IsNullOrWhiteSpace(DoctorText))
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(DoctorText);
+            StatusMessage = "Doctor report copied to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not copy the doctor report: " + ex.Message;
+        }
+    }
+
+    /// <summary>
     /// UX-06: opens a folder in Explorer. The folder exists by the time it is
     /// shown (the workspace root, and the capture/log folders are created on
     /// demand), so this never invents a location.
@@ -3769,56 +3981,8 @@ public sealed class DeviceItemViewModel : ObservableObject
         get
         {
             var package = (ImagePackage ?? "").Trim();
-            if (package.Length == 0)
-            {
-                return "—";
-            }
-
-            var parsed = DeviceLibraryViewModel.ParseImage(package);
-            var label = parsed.Tag.Length > 0
-                ? DeviceLibraryViewModel.TagLabel(parsed.Tag)
-                : RawImageTag(package);
-
-            var parts = new List<string>(3);
-            if (parsed.Api > 0)
-            {
-                parts.Add(DeviceLibraryViewModel.AndroidVersion(parsed.Api));
-            }
-
-            if (label.Length > 0)
-            {
-                parts.Add(label);
-            }
-
-            if (parsed.Abi.Length > 0)
-            {
-                parts.Add(parsed.Abi);
-            }
-
-            return parts.Count == 0 ? package : string.Join(" · ", parts);
+            return package.Length == 0 ? "—" : ImageNaming.Describe(package);
         }
-    }
-
-    /// <summary>
-    /// The tag segment of "system-images;android-35;google_apis_go;x86_64" when
-    /// the parser does not name it: the segment that is not the root prefix, not
-    /// the android-NN level and not an ABI.
-    /// </summary>
-    private static string RawImageTag(string package)
-    {
-        foreach (var part in package.Split(';', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (part.Equals("system-images", StringComparison.OrdinalIgnoreCase)
-                || part.StartsWith("android-", StringComparison.OrdinalIgnoreCase)
-                || part is "x86_64" or "x86" or "arm64-v8a" or "armeabi-v7a" or "riscv64")
-            {
-                continue;
-            }
-
-            return part;
-        }
-
-        return "";
     }
 
     public int ConsolePort { get; init; }
@@ -4026,18 +4190,72 @@ public sealed class DeviceItemViewModel : ObservableObject
 /// <summary>One command palette entry.</summary>
 public sealed class PaletteEntryViewModel
 {
-    public PaletteEntryViewModel(string label, string hint, System.Windows.Input.ICommand command)
+    private readonly Func<string>? _reason;
+
+    /// <param name="label">The command name the operator reads.</param>
+    /// <param name="hint">The one-line description under the name.</param>
+    /// <param name="command">The same command the toolbar and the rail submit.</param>
+    /// <param name="group">The palette section header (see <see cref="PaletteGroups"/>).</param>
+    /// <param name="iconKey">
+    /// Resource key of the 16-grid line icon the row prints. A key that does not
+    /// resolve draws nothing rather than a placeholder glyph.
+    /// </param>
+    /// <param name="reason">
+    /// UX-07: why the command cannot run, in the operator's words ("Already
+    /// running", "No device selected"). Read only while the command's own
+    /// predicate is false, so an enabled row never claims a limitation.
+    /// </param>
+    public PaletteEntryViewModel(
+        string label,
+        string hint,
+        System.Windows.Input.ICommand command,
+        string group,
+        string iconKey,
+        Func<string>? reason = null)
     {
         Label = label;
         Hint = hint;
         Command = command;
+        Group = group;
+        IconKey = iconKey;
+        _reason = reason;
     }
 
     public string Label { get; }
 
     public string Hint { get; }
 
+    public string Group { get; }
+
+    public string IconKey { get; }
+
     public System.Windows.Input.ICommand Command { get; }
+
+    /// <summary>The reason chip for a disabled row; empty while the row can run.</summary>
+    public string Reason { get; private set; } = "";
+
+    /// <summary>The command's own predicate, re-read when the palette filters.</summary>
+    public bool CanRun { get; private set; } = true;
+
+    /// <summary>
+    /// Characters the fuzzy query matched in the title and the subtitle, so the
+    /// row can paint them in the accent colour. Empty with no query.
+    /// </summary>
+    public IReadOnlyList<int> LabelHits { get; internal set; } = Array.Empty<int>();
+
+    /// <inheritdoc cref="LabelHits" />
+    public IReadOnlyList<int> HintHits { get; internal set; } = Array.Empty<int>();
+
+    /// <summary>
+    /// Re-reads the command's predicate and, when it is false, the reason. The
+    /// palette calls this every time it rebuilds its list, so an open palette
+    /// never shows a stale enabled state or a stale reason.
+    /// </summary>
+    public void Refresh()
+    {
+        CanRun = Command.CanExecute(null);
+        Reason = CanRun ? "" : _reason?.Invoke() ?? "";
+    }
 
     public void Invoke()
     {

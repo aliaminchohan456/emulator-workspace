@@ -12,6 +12,12 @@
 
   <ItemGroup>
     <Compile Include="../../src/EmulatorWorkspace.Supervisor/OperationDispatcher.cs" Link="Supervisor/OperationDispatcher.cs" />
+    <!-- UX-07: the command palette's grouping, fuzzy ranking and the Settings
+         doctor readings are pure logic, so the tests compile those source files
+         instead of referencing the WPF desktop assembly. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/PaletteQuery.cs" Link="Desktop/PaletteQuery.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/DoctorSummary.cs" Link="Desktop/DoctorSummary.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ImageNaming.cs" Link="Desktop/ImageNaming.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

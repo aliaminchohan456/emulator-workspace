@@ -39,6 +39,9 @@
           the reviewer's spec is base black at 30 % for the light theme. The
           UX-04 library drawers keep ScrimBg. -->
     <SolidColorBrush x:Key="SettingsScrimBg" Color="#4D000000" />
+    <!-- UX-07 fix pass: the palette's own 40 % dim. It is specified separately
+          from the drawer scrim and applies to every theme. -->
+    <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
     <!-- UX-04b: a white specular line is invisible on a white surface, so the
           light theme keeps the same vertical top-edge gradient in ink (top 14 %
           fading to 3 % at the bottom). -->

@@ -1879,60 +1879,11 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         _ => $"{bytes / (1024d * 1024 * 1024):N2} GB",
     };
 
-    internal static string AndroidVersion(int api) => api switch
-    {
-        35 => "Android 15",
-        34 => "Android 14",
-        33 => "Android 13",
-        32 => "Android 12L",
-        31 => "Android 12",
-        30 => "Android 11",
-        29 => "Android 10",
-        28 => "Android 9",
-        > 0 => $"API {api}",
-        _ => "Android version not reported",
-    };
+    internal static string AndroidVersion(int api) => ImageNaming.AndroidVersion(api);
 
-    internal static (int Api, string Abi, string Tag) ParseImage(string? package)
-    {
-        if (string.IsNullOrWhiteSpace(package))
-        {
-            return (0, "", "");
-        }
+    internal static (int Api, string Abi, string Tag) ParseImage(string? package) => ImageNaming.ParseImage(package);
 
-        var parts = package.Split(';', StringSplitOptions.RemoveEmptyEntries);
-        var api = 0;
-        var abi = "";
-        var tag = "";
-        foreach (var part in parts)
-        {
-            if (part.StartsWith("android-", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(part["android-".Length..], out var parsed))
-            {
-                api = parsed;
-            }
-            else if (part is "default" or "google_apis" or "google_apis_playstore" or "aosp_atd" or "google_atd")
-            {
-                tag = part;
-            }
-            else if (part is "x86_64" or "x86" or "arm64-v8a" or "armeabi-v7a" or "riscv64")
-            {
-                abi = part;
-            }
-        }
-
-        return (api, abi, tag);
-    }
-
-    internal static string TagLabel(string tag) => tag switch
-    {
-        "default" => "AOSP",
-        "google_apis" => "Google APIs",
-        "google_apis_playstore" => "Play Store",
-        "aosp_atd" => "AOSP ATD",
-        "google_atd" => "Google ATD",
-        _ => tag.Length > 0 ? tag : "image",
-    };
+    internal static string TagLabel(string tag) => ImageNaming.TagLabel(tag);
 
     public async ValueTask DisposeAsync()
     {

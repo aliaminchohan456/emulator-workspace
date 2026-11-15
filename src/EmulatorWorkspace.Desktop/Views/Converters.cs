@@ -256,6 +256,30 @@ public sealed class CountToVisibilityConverter : IValueConverter
 }
 
 /// <summary>
+/// UX-07: the command palette stores the resource key of its row icon
+/// ("IconStop") instead of a brush or a geometry, so the same entry list can be
+/// filtered and tested without WPF. This resolves that key against the
+/// application resources; a key that no longer exists draws nothing, which is
+/// visible in a screenshot rather than silently replaced by a stand-in glyph.
+/// </summary>
+public sealed class IconKeyToGeometryConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var key = value?.ToString();
+        if (string.IsNullOrEmpty(key))
+        {
+            return Geometry.Empty;
+        }
+
+        return Application.Current?.TryFindResource(key) as Geometry ?? Geometry.Empty;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
 /// UX-06: a long filesystem path keeps its beginning and its tail with an
 /// ellipsis in the middle, because the last folder is the part a reader needs.
 /// The full string always stays in the row's tooltip. The limit is a character

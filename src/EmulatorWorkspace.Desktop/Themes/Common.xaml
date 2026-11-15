@@ -139,6 +139,18 @@
          top edge, so it reads at 16 DIP without a second line. -->
     <Geometry x:Key="IconCopy">M 5.6,5.6 L 12.4,5.6 L 12.4,12.4 L 5.6,12.4 Z M 5.6,10.4 L 3.6,10.4 L 3.6,3.6 L 10.4,3.6 L 10.4,5.6</Geometry>
     <Geometry x:Key="IconFolder">M 2.8,4.8 L 6.3,4.8 L 7.6,6.2 L 13.2,6.2 L 13.2,12.2 L 2.8,12.2 Z</Geometry>
+    <!-- UX-07 command-palette glyphs. The set above already covered most of the
+         fifteen palette commands; these six fill the gaps (a stop square, a cold
+         boot bolt, an APK package, a download, a key and an undo arrow) and one
+         launch arrow, all on the same 16 grid with the same 1.5 stroke so the
+         result rows keep one icon language. -->
+    <Geometry x:Key="IconStop">M 4.4,4.4 L 11.6,4.4 L 11.6,11.6 L 4.4,11.6 Z</Geometry>
+    <Geometry x:Key="IconBolt">M 9.2,2.4 L 4.4,8.8 L 7.4,8.8 L 6.8,13.6 L 11.6,7.2 L 8.6,7.2 Z</Geometry>
+    <Geometry x:Key="IconPackage">M 8,2.6 L 13.2,5.4 L 13.2,10.6 L 8,13.4 L 2.8,10.6 L 2.8,5.4 Z M 2.8,5.4 L 8,8.2 L 13.2,5.4 M 8,8.2 L 8,13.4</Geometry>
+    <Geometry x:Key="IconDownload">M 8,2.6 L 8,9.4 M 5.2,6.8 L 8,9.6 L 10.8,6.8 M 3,11.2 L 3,13.2 L 13,13.2 L 13,11.2</Geometry>
+    <Geometry x:Key="IconKey">M 6.2,6.2 A 2.4,2.4 0 1 1 6.19,6.2 Z M 7.9,7.9 L 12.8,12.8 M 10.4,10.4 L 11.7,9.1 M 11.6,11.6 L 12.9,10.3</Geometry>
+    <Geometry x:Key="IconUndo">M 4.4,5.2 L 2.4,7.2 L 4.4,9.2 M 2.6,7.2 L 9,7.2 A 3.3,3.3 0 0 1 9,13.8 L 7.2,13.8</Geometry>
+    <Geometry x:Key="IconLaunch">M 8,2.8 L 8,9.4 M 5.4,5.4 L 8,2.8 L 10.6,5.4 M 3.2,9.4 L 3.2,13.2 L 12.8,13.2 L 12.8,9.4</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
@@ -438,6 +450,27 @@
         <Setter Property="Margin" Value="0,0,6,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Fill" Value="{DynamicResource TextTertiary}" />
+    </Style>
+
+    <!-- UX-07: the key chip moved here from MainWindow.xaml so the command
+         palette prints the same mono key as the Settings drawer's Shortcuts
+         rows. Nothing about it changed; it is shared, not duplicated. -->
+    <Style x:Key="KeyChip" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="KeyChipText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
     </Style>
 
     <!-- Floating surfaces carry the depth: a wide ambient shadow, a tight key

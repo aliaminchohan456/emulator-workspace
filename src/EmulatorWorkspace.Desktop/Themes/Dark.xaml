@@ -37,6 +37,10 @@
           original ScrimBg; the settings drawer is the only surface the reviewer
           specified at 50 / 30 instead of a single 50 % value. -->
     <SolidColorBrush x:Key="SettingsScrimBg" Color="#80000000" />
+    <!-- UX-07 fix pass: the command palette dims the studio at 40 % (its own
+          spec), one step lighter than the drawer so a 640 DIP panel keeps the
+          studio readable behind it. -->
+    <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
     <!-- UX-04b: the 1px specular edge of a floating surface is a VERTICAL
           gradient (top edge .14 white fading to .03 at the bottom), so the
           highlight runs along the top edge and dies out down the panel. It is

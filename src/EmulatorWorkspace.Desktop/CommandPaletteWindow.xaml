@@ -3,44 +3,394 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:EmulatorWorkspace.Desktop.Views"
         Title="Command palette"
-        Width="560" Height="420"
-        WindowStartupLocation="CenterOwner"
+        Width="660" Height="600"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        WindowStartupLocation="Manual"
         ShowInTaskbar="False"
-        Background="{DynamicResource WindowBg}">
-    <!-- UX-04b: the palette is a floating surface — 12 radius, specular edge and
-         the two-layer shadow — and it arrives over 220 ms on the dialog curve
-         (CommandPaletteWindow.xaml.cs, reduced motion aware). -->
-    <Grid Margin="18">
-        <views:FloatingSurface x:Name="PaletteCard" Style="{StaticResource FloatingDialog}"
-                               Padding="16" RenderTransformOrigin="0.5,0.4">
-            <views:FloatingSurface.RenderTransform>
-                <TranslateTransform x:Name="PaletteRise" Y="0" />
-            </views:FloatingSurface.RenderTransform>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+        FontFamily="{StaticResource UiFont}"
+        FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True">
 
-                <TextBox x:Name="Filter" Grid.Row="0" Margin="0,0,0,10"
-                         AutomationProperties.Name="Command palette filter"
-                         ToolTip="Type a command name and press Enter." />
+    <!-- UX-07: the palette is a scrim plus one floating panel, drawn inside a
+         borderless window that is sized to the owner's client area so the dim
+         lands on the studio exactly like every other overlay (mockup 04). The
+         panel itself is the shared FloatingSurface: 12 radius, the two-layer
+         float shadow and the specular top edge, unchanged from UX-04b. -->
+    <Window.Resources>
+        <views:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <views:TextToVisibilityConverter x:Key="TextToVis" />
+        <views:TextToVisibilityConverter x:Key="InverseTextToVis" Invert="True" />
+        <views:StateToSoftBrushConverter x:Key="StateSoft" />
+        <views:StateToBrushConverter x:Key="StateBrush" />
+        <views:IconKeyToGeometryConverter x:Key="PaletteIcon" />
 
-                <ListBox x:Name="Results" Grid.Row="1" AutomationProperties.Name="Command palette results">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="2,4">
-                                <TextBlock Text="{Binding Label}" FontSize="14" />
-                                <TextBlock Text="{Binding Hint}" Style="{StaticResource Caption}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+        <!-- The search field is a bare 15 DIP line, not a boxed input: the row it
+             sits in is already the field's frame, so a second border would double
+             the chrome the mockup does not have. -->
+        <Style x:Key="PaletteFilterBox" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBg}" />
+            <Setter Property="SelectionTextBrush" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"
+                                      Focusable="False" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <TextBlock Grid.Row="2" Style="{StaticResource Caption}" Margin="0,10,0,0"
-                           Text="Enter runs the selected command, Escape closes the palette." />
+        <Style x:Key="PalettePlaceholder" TargetType="TextBlock">
+            <Setter Property="Text" Value="Type a command…" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Visibility"
+                    Value="{Binding Text, ElementName=Filter, Converter={StaticResource InverseTextToVis}}" />
+        </Style>
+
+        <!-- 12 DIP context and footer copy: one step below the 13 DIP rows, in
+             text3, so the list is the only thing at body weight. -->
+        <Style x:Key="PaletteMeta" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <!-- The reason chip a disabled row carries ("Already running"). It is a
+             neutral chip, not a shortcut: this build has no per-command chord to
+             print, and inventing one would break the palette's promise that a
+             printed key actually works. -->
+        <Style x:Key="PaletteReason" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="Margin" Value="12,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- One result row: 44 DIP, 8 radius, the accent-soft selection on
+             SelectionBg, a 2 DIP leading accent bar and a 2 DIP accent ring that
+             only appears when the list itself has keyboard focus (never from a
+             mouse hover). A disabled row stays visible and selectable: it keeps
+             its place in the list, prints its reason chip and refuses to run, so
+             nothing silently disappears from under the operator. -->
+        <Style x:Key="PaletteRowItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <!-- The template draws its own ring; the system dashed rectangle
+                 would draw a second one on top of it. -->
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Fill" Background="Transparent" CornerRadius="8" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource HoverBg}" Opacity="0"
+                                    CornerRadius="8" IsHitTestVisible="False" />
+                            <Border x:Name="Bar" Width="2" Margin="0,7" HorizontalAlignment="Left"
+                                    CornerRadius="1" Opacity="0"
+                                    Background="{DynamicResource Accent}" IsHitTestVisible="False" />
+                            <Border x:Name="Ring" BorderThickness="2" CornerRadius="8" Opacity="0"
+                                    BorderBrush="{DynamicResource FocusRing}" IsHitTestVisible="False" />
+                            <ContentPresenter />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SelectionBg}" />
+                                <Setter TargetName="Bar" Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Ring" Property="Opacity" Value="1" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The row content. Every default lives in an inline style so the
+             template's data triggers can restyle the tile on selection, on a
+             privileged command and on a disabled command without fighting a
+             local value. The title and the description are HighlightTextBlocks:
+             the characters the fuzzy query matched are painted in the accent. -->
+        <DataTemplate x:Key="PaletteRow">
+            <Grid Height="44" Margin="10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border x:Name="Tile" Width="28" Height="28" CornerRadius="6"
+                        VerticalAlignment="Center">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+                        </Style>
+                    </Border.Style>
+                    <Path x:Name="TileGlyph" HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Data="{Binding IconKey, Converter={StaticResource PaletteIcon}}">
+                        <Path.Style>
+                            <Style TargetType="Path" BasedOn="{StaticResource Glyph}">
+                                <Setter Property="Stroke" Value="{DynamicResource TextSecondary}" />
+                            </Style>
+                        </Path.Style>
+                    </Path>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <views:HighlightTextBlock x:Name="RowLabel"
+                                              TextValue="{Binding Label}"
+                                              HighlightIndexes="{Binding LabelHits}"
+                                              AutomationProperties.Name="{Binding Label}"
+                                              FontSize="13" FontWeight="SemiBold"
+                                              LineHeight="17" LineStackingStrategy="BlockLineHeight"
+                                              TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
+                        <views:HighlightTextBlock.Style>
+                            <Style TargetType="views:HighlightTextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Style>
+                        </views:HighlightTextBlock.Style>
+                    </views:HighlightTextBlock>
+                    <views:HighlightTextBlock x:Name="RowHint"
+                                              TextValue="{Binding Hint}"
+                                              HighlightIndexes="{Binding HintHits}"
+                                              FontSize="12" Margin="0,1,0,0"
+                                              LineHeight="16" LineStackingStrategy="BlockLineHeight"
+                                              Foreground="{DynamicResource TextTertiary}"
+                                              TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                              Visibility="{Binding Hint, Converter={StaticResource TextToVis}}" />
+                </StackPanel>
+
+                <Border Grid.Column="2" Style="{StaticResource PaletteReason}"
+                        Visibility="{Binding Reason, Converter={StaticResource TextToVis}}">
+                    <TextBlock Text="{Binding Reason}" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextTertiary}" />
+                </Border>
             </Grid>
-        </views:FloatingSurface>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Accent}" />
+                    <Setter TargetName="TileGlyph" Property="Stroke" Value="{DynamicResource AccentText}" />
+                </DataTrigger>
+                <!-- A command whose predicate is false keeps its row, in text3,
+                     with the reason chip that explains it. -->
+                <DataTrigger Binding="{Binding CanRun}" Value="False">
+                    <Setter TargetName="RowLabel" Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                    <Setter TargetName="RowHint" Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource PanelAlt}" />
+                    <Setter TargetName="TileGlyph" Property="Stroke" Value="{DynamicResource TextTertiary}" />
+                </DataTrigger>
+                <!-- Privileged rows stay in the amber family even while selected
+                     or disabled, the design sheet's "amber means privileged" rule. -->
+                <DataTrigger Binding="{Binding Group}" Value="ROOT LAB · PRIVILEGED">
+                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource WarningBg}" />
+                    <Setter TargetName="TileGlyph" Property="Stroke" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <!-- The dim: the palette's own 40 % scrim. Clicking it closes the
+             palette, exactly like the drawer. -->
+        <Border x:Name="ScrimLayer" Background="{DynamicResource PaletteScrimBg}"
+                Opacity="0" MouseLeftButtonDown="OnScrimClick"
+                AutomationProperties.Name="Command palette scrim" />
+
+        <!-- 640 DIP wide, 96 DIP below the title bar, centred horizontally. The
+             window itself is sized to the owner's client area, so this margin is
+             measured from the studio's top edge. -->
+        <Grid Margin="0,96,0,24" VerticalAlignment="Top" HorizontalAlignment="Center">
+            <views:FloatingSurface x:Name="PaletteCard" Style="{StaticResource FloatingDialog}"
+                                   Width="640" Padding="0" Opacity="0"
+                                   VerticalAlignment="Top"
+                                   Background="{DynamicResource PanelBg}"
+                                   RenderTransformOrigin="0.5,0.35">
+                <views:FloatingSurface.RenderTransform>
+                    <ScaleTransform x:Name="PaletteScale" ScaleX="0.98" ScaleY="0.98" />
+                </views:FloatingSurface.RenderTransform>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 52 DIP search row: leading 16 DIP search glyph, the 15 DIP
+                         field, and the mono Esc keycap the mockup puts in the same
+                         band. -->
+                    <Border Grid.Row="0" Height="52" Padding="16,0"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource IconSearch}" Width="16" Height="16"
+                                  Stretch="None" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round" VerticalAlignment="Center"
+                                  Stroke="{DynamicResource TextTertiary}" />
+
+                            <Grid Grid.Column="1" Margin="12,0,12,0">
+                                <TextBlock Style="{StaticResource PalettePlaceholder}" />
+                                <TextBox x:Name="Filter" Style="{StaticResource PaletteFilterBox}"
+                                         AutomationProperties.Name="Command palette filter" />
+                            </Grid>
+
+                            <Border Grid.Column="2" Style="{StaticResource KeyChip}">
+                                <TextBlock Text="Esc" Style="{StaticResource KeyChipText}" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- 32 DIP context row: the guest this palette would act on,
+                         with the supervisor's own state word. Hidden entirely when
+                         no device is selected (the mockup has no empty variant). -->
+                    <Border Grid.Row="1" Height="32" Padding="16,0"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1"
+                            Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconDevice}" Width="12" Height="12"
+                                  Stretch="Uniform" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round" VerticalAlignment="Center"
+                                  Stroke="{DynamicResource TextTertiary}" />
+                            <TextBlock Text="Selected device ·" Style="{StaticResource PaletteMeta}"
+                                       Margin="6,0,0,0" />
+                            <TextBlock Margin="4,0,0,0" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       MaxWidth="320"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Text="{Binding SelectedDevice.Name}" />
+                            <Border Style="{StaticResource StatePill}" Margin="6,0,0,0"
+                                    Background="{Binding SelectedDevice.State, Converter={StaticResource StateSoft}, ConverterParameter=chip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Style="{StaticResource StatePillDot}"
+                                             Fill="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                                    <TextBlock Text="{Binding SelectedDevice.State}"
+                                               Style="{StaticResource StatePillText}"
+                                               Foreground="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Results. Grouped with no query, one flat ranked list while
+                         querying; capped at 420 DIP with the themed overlay
+                         scrollbar once there are more rows than that. -->
+                    <ListBox x:Name="Results" Grid.Row="2"
+                             AutomationProperties.Name="Command palette results"
+                             ItemContainerStyle="{StaticResource PaletteRowItem}"
+                             ItemTemplate="{StaticResource PaletteRow}"
+                             Padding="4" MaxHeight="420"
+                             SelectionMode="Single" IsTextSearchEnabled="False"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.CanContentScroll="True">
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" Margin="10,10,10,4"
+                                                   FontSize="11" FontWeight="SemiBold" TextWrapping="NoWrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Name}" Value="ROOT LAB · PRIVILEGED">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
+                    </ListBox>
+
+                    <!-- Calm empty state: one glyph and one line naming the query,
+                         no action, because the field itself is the way back. -->
+                    <StackPanel x:Name="PaletteEmpty" Grid.Row="2" Visibility="Collapsed"
+                                Margin="0,36" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Path Data="{StaticResource IconSearch}" Width="20" Height="20"
+                              Stretch="Uniform" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" HorizontalAlignment="Center"
+                              Stroke="{DynamicResource TextTertiary}" Opacity="0.7" />
+                        <TextBlock x:Name="PaletteEmptyText" Margin="0,10,0,0" FontSize="12"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextTertiary}"
+                                   Text="No commands match" />
+                    </StackPanel>
+
+                    <!-- 36 DIP footer: the three keys that really work up here, and
+                         the one honest sentence about where the commands come from. -->
+                    <Border Grid.Row="3" Height="36" Padding="16,0"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Style="{StaticResource KeyChip}">
+                                    <TextBlock Text="↑" Style="{StaticResource KeyChipText}" />
+                                </Border>
+                                <Border Style="{StaticResource KeyChip}" Margin="3,0,0,0">
+                                    <TextBlock Text="↓" Style="{StaticResource KeyChipText}" />
+                                </Border>
+                                <TextBlock Text="navigate" Style="{StaticResource PaletteMeta}" Margin="6,0,16,0" />
+                                <Border Style="{StaticResource KeyChip}">
+                                    <TextBlock Text="Enter" Style="{StaticResource KeyChipText}" />
+                                </Border>
+                                <TextBlock Text="run" Style="{StaticResource PaletteMeta}" Margin="6,0,16,0" />
+                                <Border Style="{StaticResource KeyChip}">
+                                    <TextBlock Text="Esc" Style="{StaticResource KeyChipText}" />
+                                </Border>
+                                <TextBlock Text="close" Style="{StaticResource PaletteMeta}" Margin="6,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="Same command source as the toolbar"
+                                       FontSize="11" Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center" Margin="16,0,0,0" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </views:FloatingSurface>
+        </Grid>
     </Grid>
 </Window>

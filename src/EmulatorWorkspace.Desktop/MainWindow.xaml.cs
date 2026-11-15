@@ -939,6 +939,12 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// UX-07 fix pass: the doctor card's 28 DIP copy action hands over the raw
+    /// report exactly as the rows were built from the supervisor's fields.
+    /// </summary>
+    private void OnCopyDoctor(object sender, RoutedEventArgs e) => _viewModel.CopyDoctorReport();
+
     // ---- UX-04 device library ---------------------------------------------
 
     private DeviceLibraryWindow? _library;
@@ -1092,10 +1098,34 @@ public partial class MainWindow : Window
     /// <summary>Rail: Search opens the same command palette as Ctrl+K.</summary>
     private void OnOpenPalette(object sender, RoutedEventArgs e) => OpenPalette();
 
+    /// <summary>
+    /// True while the palette's modal loop is running. WPF disables the owner of
+    /// a ShowDialog window, but a second Ctrl+K (or a rail click delivered
+    /// through UI Automation) can still arrive before that takes effect, and two
+    /// palettes over one studio is never intended. The flag makes the second
+    /// request a no-op; the palette itself closes on Esc, Enter or a scrim click.
+    /// </summary>
+    private bool _paletteOpen;
+
     private void OpenPalette()
     {
-        var palette = new CommandPaletteWindow(_viewModel) { Owner = this };
-        palette.ShowDialog();
+        if (_paletteOpen)
+        {
+            return;
+        }
+
+        _paletteOpen = true;
+        try
+        {
+            // UX-07 fix pass: the palette hands focus back to whatever opened it.
+            var invoker = Keyboard.FocusedElement;
+            var palette = new CommandPaletteWindow(_viewModel, invoker) { Owner = this };
+            palette.ShowDialog();
+        }
+        finally
+        {
+            _paletteOpen = false;
+        }
     }
 
     /// <summary>
