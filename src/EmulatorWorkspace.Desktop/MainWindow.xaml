@@ -16,7 +16,6 @@
         <views:NullToVisibilityConverter x:Key="NotNullToVis" Invert="True" />
         <views:InverseBoolConverter x:Key="InverseBool" />
         <views:StateToBrushConverter x:Key="StateBrush" />
-        <views:SeverityToBrushConverter x:Key="SeverityBrush" />
         <!-- UX-03: stage tone and boot-step colour mapping; both always pair the
              brush with a printed word. -->
         <views:StageToneToBrushConverter x:Key="ToneBrush" />
@@ -490,8 +489,395 @@
             </Setter>
         </Style>
 
+        <!-- UX-08 Logcat drawer. The dock is a bottom drawer on the panel surface,
+             so it keeps the 1 DIP specular top edge the other floating surfaces
+             carry; everything inside it reuses a shared token or control style and
+             only the log-specific geometry is new. -->
+
+        <!-- One filter field: raised surface, 1 px input edge, a leading line icon
+             and a mono placeholder, because every value typed here is matched
+             against the guest's own mono log text. -->
+        <Style x:Key="LogField" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- A level chip is a toggle: a colour dot plus the level's word. On, it
+             is raised (panel surface) with a 1 px stroke; off, it drops the fill
+             and the label falls to text3, with the dot dimmed so the level stays
+             identifiable. The same chip serves the dock and the page. -->
+        <Style x:Key="LogLevelChip" TargetType="ToggleButton">
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Body" CornerRadius="6"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="1" />
+                            <ContentPresenter x:Name="Chip" Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="Body" Property="Background" Value="Transparent" />
+                                <Setter TargetName="Body" Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Body" Property="Background" Value="{DynamicResource ChipBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Body" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The dot inside a level chip: the level's own colour when the chip is
+             on, faded to 40 % when it is off (never a different colour, so the
+             legend stays learnable). -->
+        <Style x:Key="LogLevelDot" TargetType="Border">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource TextSecondary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="False">
+                    <Setter Property="Opacity" Value="0.4" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- A 30 DIP ghost icon action inside the 36 DIP toolbar. Same hover layer,
+             press layer, 1.07 glyph scale over the accent-soft radial and 2 px
+             accent focus ring as every other icon button; only the size is local. -->
+        <Style x:Key="LogIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+        </Style>
+
+        <!-- Pause is a toggle, so it is a ToggleButton and needs its own template;
+             it is the same geometry as LogIconButton plus a checked state (accent
+             glyph on an accent-soft surface) so the paused stream is visible
+             without reading the icon. -->
+        <Style x:Key="LogToggleIconButton" TargetType="ToggleButton">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <Setter Property="views:RailHover.IsEnabled" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid Background="Transparent">
+                            <Ellipse x:Name="PART_Glow" Width="30" Height="30" Opacity="0"
+                                     Fill="{DynamicResource HoverGlow}" IsHitTestVisible="False" />
+                            <Border x:Name="B" Background="{TemplateBinding Background}"
+                                    CornerRadius="{StaticResource RadiusControl}" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource ChipBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <Border x:Name="PART_Press" Background="{DynamicResource PressedBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <ContentPresenter x:Name="PART_Glyph" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <ContentPresenter.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                </ContentPresenter.RenderTransform>
+                            </ContentPresenter>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentSoftBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- One log row: 24 DIP, no margin, hover on the row surface, selection in
+             the shared selection tint and a 1 DIP accent edge while it holds
+             keyboard focus. The row template supplies the content. -->
+        <Style x:Key="LogRowItem" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid>
+                            <Border x:Name="B" Background="Transparent" BorderBrush="Transparent"
+                                    BorderThickness="1" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource HoverBg}"
+                                    Opacity="0" IsHitTestVisible="False" />
+                            <ContentPresenter />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The table's column names: 11 DIP, text3, aligned to the row columns by
+             the same fixed widths. The page prints them in caps; the dock keeps
+             the same word in sentence case. -->
+        <Style x:Key="LogHeaderCell" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- The level badge is a 14 DIP square: neutral for V/D (text3/text2), the
+             soft tint for I/W/E with the letter in the level's own colour. Every
+             colour is a DynamicResource chosen by a DataTrigger, so a live theme
+             switch repaints it (a converter would hand back the brush it resolved
+             before the swap). -->
+        <Style x:Key="LogLevelGlyph" TargetType="Border">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="I">
+                    <Setter Property="Background" Value="{DynamicResource AccentSoftBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="W">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="E">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="F">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="A">
+                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LogLevelGlyphText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="V">
+                    <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="I">
+                    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="W">
+                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="E">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="F">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="A">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The page's message text: text1 at rest, warn/err when the line is one,
+             so a loud line is loud by its own words rather than a row fill. -->
+        <Style x:Key="LogMessageText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="W">
+                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="E">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="F">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="A">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The full page's card: a 12 radius surface on the viewport colour, one
+             1 px stroke-soft edge, sticky header inside. -->
+        <Style x:Key="LogPageCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource LogBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusDialog}" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+
+        <!-- One 28 DIP page row: no zebra, a 1 px stroke-soft divider, hover raises
+             the fill and selection uses the shared accent-soft selection tint. -->
+        <Style x:Key="LogPageRowItem" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid>
+                            <Border x:Name="B" Background="Transparent" BorderBrush="Transparent"
+                                    BorderThickness="1" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource PanelAlt}"
+                                    Opacity="0" IsHitTestVisible="False" />
+                            <Border Height="1" VerticalAlignment="Bottom"
+                                    Background="{DynamicResource BorderSubtle}" />
+                            <ContentPresenter />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The stream state chip's tone ("ok" / "warning" / "info") to the soft
+             tint and the dot, again through DynamicResource so the light theme and
+             High Contrast repaint it live. -->
+        <Style x:Key="LogStateChip" TargetType="Border" BasedOn="{StaticResource StatePill}">
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LogState.Tone}" Value="ok">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LogState.Tone}" Value="warning">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LogStateDot" TargetType="Ellipse" BasedOn="{StaticResource StatePillDot}">
+            <Setter Property="Fill" Value="{DynamicResource TextTertiary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LogState.Tone}" Value="ok">
+                    <Setter Property="Fill" Value="{DynamicResource Success}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LogState.Tone}" Value="warning">
+                    <Setter Property="Fill" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The page's stream chip: ok-soft "Live", warn-soft "Paused", neutral
+             otherwise. The dot pulses only while the stream is live and only when
+             Windows reports animations are enabled. -->
+        <Style x:Key="LogPageStateChip" TargetType="Border" BasedOn="{StaticResource StatePill}">
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LogPageState.Tone}" Value="ok">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LogPageState.Tone}" Value="warning">
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LogPageStateDot" TargetType="Ellipse" BasedOn="{StaticResource StatePillDot}">
+            <Setter Property="Fill" Value="{DynamicResource TextTertiary}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LogPageState.Tone}" Value="ok">
+                    <Setter Property="Fill" Value="{DynamicResource Success}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LogPageState.Tone}" Value="warning">
+                    <Setter Property="Fill" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding LogPageState.Tone}" Value="ok" />
+                        <Condition Binding="{Binding MotionEnabled}" Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="LogLivePulse">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1" To="0.35" Duration="0:0:0.9">
+                                    <DoubleAnimation.EasingFunction>
+                                        <SineEase EasingMode="EaseInOut" />
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                    <MultiDataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="LogLivePulse" />
+                    </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The page's paused chip: warn-soft, a dot and the real buffered count. -->
+        <Style x:Key="LogPausedChip" TargetType="Border" BasedOn="{StaticResource StatePill}">
+            <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
         <!-- UX-06 settings slide-over (polish addendum item 8). It reuses the
-             UX-04 Create/Clone drawer language: the same 460 DIP panel, the same
              two-layer floating shadow (wide ambient behind, tight key on the
              surface), the same 12 radius on the leading corners and the same
              specular edge, now also run down the left edge so the panel separates
@@ -838,10 +1224,10 @@
                         </Border>
                     </Grid>
 
-                    <Button Style="{StaticResource NavRailItem}" Command="{Binding ToggleLogcatCommand}"
-                            Tag="{Binding IsLogcatOpen}"
-                            ToolTip="Logcat: the bottom drawer"
-                            AutomationProperties.Name="Logcat drawer">
+                    <Button Style="{StaticResource NavRailItem}" Command="{Binding OpenLogcatPageCommand}"
+                            Tag="{Binding LogcatRailActive}"
+                            ToolTip="Logcat: the full log view (the dock stays on the tab bar)"
+                            AutomationProperties.Name="Logcat page">
                         <Path Data="{StaticResource IconLogs}" Style="{StaticResource Glyph}" />
                     </Button>
 
@@ -945,7 +1331,7 @@
                                 Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse Style="{StaticResource IdentityPillDot}" />
-                                <TextBlock Text="{Binding SelectedDevice.State}"
+                                <TextBlock Text="{Binding SelectedDevice.StateLabel}"
                                            Style="{StaticResource IdentityPillText}" />
                             </StackPanel>
                         </Border>
@@ -2129,39 +2515,65 @@
             </Border>
         </Grid>
 
-        <!-- Drawer tab bar: always visible, one real destination (Logcat), the
-             live retained-line count in tabular mono plus warning/error counts
-             only when they exist, and the expand toggle. There is no Activity
-             tab because the app has no real activity/event feed to show; the
-             tab bar would have to invent one. The Logcat toggle moved here from
-             the command bar in UX-04b. -->
-        <Border Grid.Row="3" Grid.Column="1" Background="{DynamicResource NavBg}"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-            <Grid Margin="8,3">
+        <!-- Drawer tab bar: 36 DIP, one real destination (Logcat), the live counts
+             with warnings and errors in their own colours (only when above zero),
+             the pop-out that opens the full Logcat page and the expand toggle.
+             There is no Activity tab because the app has no real activity feed to
+             show. The bar hides while the Logcat page is open, because the page is
+             the same stream in its own surface. -->
+        <Border Grid.Row="3" Grid.Column="1" Height="36"
+                Background="{DynamicResource NavBg}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                Visibility="{Binding IsStudioVisible, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="8,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Button Style="{StaticResource DrawerTab}" Command="{Binding ToggleLogcatCommand}"
-                        Tag="{Binding IsLogcatOpen}"
+                        Tag="{Binding IsLogcatOpen}" Height="28" Padding="8,0"
                         ToolTip="Logcat: the guest log stream"
                         AutomationProperties.Name="Toggle Logcat">
                     <TextBlock Text="Logcat" />
                 </Button>
-                <!-- Fix pass item 7: the mono count appears only when there are
-                     real lines; an empty drawer says 'No lines yet' in text3. -->
-                <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
-                           Style="{StaticResource MonoNumeric}" TextAlignment="Left" MinWidth="0"
-                           FontSize="11" Foreground="{DynamicResource TextTertiary}"
-                           Text="{Binding LogCountText}"
-                           Visibility="{Binding HasLogEntries, Converter={StaticResource BoolToVis}}"
-                           AutomationProperties.LiveSetting="Polite" />
+                <!-- The count line, segmented so the warn/err words carry their
+                     tokens; an empty drawer says 'No lines yet' in text3. -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasLogEntries, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.LiveSetting="Polite">
+                    <TextBlock Text="{Binding LogLineCountText}" Style="{StaticResource MonoNumeric}"
+                               FontSize="11" Foreground="{DynamicResource TextTertiary}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="·" Style="{StaticResource MonoNumeric}" FontSize="11" Margin="6,0"
+                               Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                               Visibility="{Binding HasLogWarnings, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding LogWarnCountText}" Style="{StaticResource MonoNumeric}"
+                               FontSize="11" Foreground="{DynamicResource Warning}"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding HasLogWarnings, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="·" Style="{StaticResource MonoNumeric}" FontSize="11" Margin="6,0"
+                               Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                               Visibility="{Binding HasLogErrors, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding LogErrorCountText}" Style="{StaticResource MonoNumeric}"
+                               FontSize="11" Foreground="{DynamicResource Danger}"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding HasLogErrors, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
                 <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
                            Style="{StaticResource Caption}" FontSize="12"
                            Foreground="{DynamicResource TextTertiary}" Text="No lines yet"
                            Visibility="{Binding HasLogEntries, Converter={StaticResource InverseBoolToVis}}" />
-                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="24"
+
+                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28"
+                        Margin="0,0,2,0" Command="{Binding OpenLogcatPageCommand}"
+                        ToolTip="Open the full Logcat page"
+                        AutomationProperties.Name="Open the full Logcat page">
+                    <Path Data="{StaticResource IconPopOut}" Style="{StaticResource Glyph}" Width="13" Height="13" />
+                </Button>
+                <Button Grid.Column="3" Style="{StaticResource IconButton}" Width="28" Height="28"
                         Margin="0" Command="{Binding ToggleLogcatCommand}"
                         ToolTip="Expand or collapse the drawer"
                         AutomationProperties.Name="Expand or collapse the Logcat drawer">
@@ -2174,61 +2586,771 @@
             </Grid>
         </Border>
 
-        <!-- Drawer body. Its height is animated in code-behind (220 ms, the
-             drawer curve) instead of snapping through a GridLength binding. -->
+        <!-- Drawer body (UX-08). Its height is animated in code-behind (220 ms,
+             the drawer curve) instead of snapping through a GridLength binding.
+             The body is the mockup's dock: a 36 DIP toolbar (two filter fields,
+             the five level chips, the stream state chip, the ghost actions), an
+             err-soft band that appears only when the subscription is refused, then
+             the table - a sticky header row over 26 DIP mono rows, each level shown
+             as a tinted glyph and warnings/errors marked by a 2 DIP leading bar. -->
         <Border x:Name="LogcatHost" Grid.Row="4" Grid.Column="1" Height="0" ClipToBounds="True"
                 Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0" Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}"
                 AutomationProperties.Name="Logcat drawer">
-            <DockPanel Margin="8">
-                <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+            <Grid>
+                <!-- The dock is a floating surface, so it carries the same 1 DIP
+                     specular highlight as the settings drawer and the palette. -->
+                <Border Height="1" VerticalAlignment="Top" IsHitTestVisible="False"
+                        Background="{DynamicResource SpecularEdge}" />
+
+                <Grid Margin="10,6,10,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar: exactly 36 DIP, one row. -->
+                    <Grid Grid.Row="0" Height="36">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="150" MaxWidth="220" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource LogField}" Height="28"
+                                VerticalAlignment="Center">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="26" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Grid.Column="0" Data="{StaticResource IconSearch}"
+                                      Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Width="13" Height="13" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Search message or tag"
+                                           Style="{StaticResource Mono}" FontSize="12"
+                                           Foreground="{DynamicResource TextTertiary}"
+                                           VerticalAlignment="Center" IsHitTestVisible="False"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding LogSearch, Converter={StaticResource InverseTextToVis}}" />
+                                <TextBox x:Name="LogSearchField" Grid.Column="1"
+                                         Text="{Binding LogSearch, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" BorderThickness="0" Padding="0"
+                                         MinHeight="0" VerticalContentAlignment="Center"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                         ToolTip="Search the message and the tag (Ctrl+F)"
+                                         AutomationProperties.Name="Search logcat" />
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource LogField}" Width="120" Height="28"
+                                Margin="6,0,0,0" VerticalAlignment="Center">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Grid.Column="0" Data="{StaticResource IconFilter}"
+                                      Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Width="13" Height="13" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Filter by tag"
+                                           Style="{StaticResource Mono}" FontSize="12"
+                                           Foreground="{DynamicResource TextTertiary}"
+                                           VerticalAlignment="Center" IsHitTestVisible="False"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding LogTag, Converter={StaticResource InverseTextToVis}}" />
+                                <TextBox x:Name="LogTagField" Grid.Column="1"
+                                         Text="{Binding LogTag, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" BorderThickness="0" Padding="0"
+                                         MinHeight="0" VerticalContentAlignment="Center"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                         ToolTip="Filter by tag name"
+                                         AutomationProperties.Name="Filter logcat by tag" />
+                            </Grid>
+                        </Border>
+
+                        <!-- The five level chips: the letter carries the level's own
+                             colour on its ~12 % tint, the word names it. All five are
+                             on by default, which is the same set of lines the drawer
+                             showed before the chips existed. -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
+                                    Margin="10,0,0,0">
+                            <Border Width="1" Height="18" Background="{DynamicResource BorderSubtle}"
+                                    Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <ToggleButton Style="{StaticResource LogLevelChip}"
+                                          IsChecked="{Binding LogShowVerbose}"
+                                          ToolTip="Show verbose (V) lines"
+                                          AutomationProperties.Name="Verbose lines">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource LogLevelDot}"
+                                            Background="{DynamicResource TextTertiary}" />
+                                    <TextBlock Text="Verbose" FontSize="11" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource LogLevelChip}"
+                                          IsChecked="{Binding LogShowDebug}"
+                                          ToolTip="Show debug (D) lines"
+                                          AutomationProperties.Name="Debug lines">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource LogLevelDot}"
+                                            Background="{DynamicResource TextSecondary}" />
+                                    <TextBlock Text="Debug" FontSize="11" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource LogLevelChip}"
+                                          IsChecked="{Binding LogShowInfo}"
+                                          ToolTip="Show info (I) lines"
+                                          AutomationProperties.Name="Info lines">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource LogLevelDot}"
+                                            Background="{DynamicResource Accent}" />
+                                    <TextBlock Text="Info" FontSize="11" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource LogLevelChip}"
+                                          IsChecked="{Binding LogShowWarn}"
+                                          ToolTip="Show warning (W) lines"
+                                          AutomationProperties.Name="Warning lines">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource LogLevelDot}"
+                                            Background="{DynamicResource Warning}" />
+                                    <TextBlock Text="Warn" FontSize="11" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource LogLevelChip}"
+                                          IsChecked="{Binding LogShowError}"
+                                          ToolTip="Show error (E) lines"
+                                          AutomationProperties.Name="Error lines">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource LogLevelDot}"
+                                            Background="{DynamicResource Danger}" />
+                                    <TextBlock Text="Error" FontSize="11" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </ToggleButton>
+                        </StackPanel>
+
+                        <!-- The stream's real state, never a "live" claim: following,
+                             paused, not attached, or no guest running. -->
+                        <Border Grid.Column="4" Style="{StaticResource LogStateChip}" Margin="8,0,0,0"
+                                ToolTip="{Binding LogState.Tooltip}"
+                                AutomationProperties.Name="Log stream state"
+                                AutomationProperties.HelpText="{Binding LogState.Tooltip}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Style="{StaticResource LogStateDot}" />
+                                <TextBlock Text="{Binding LogState.Text}" Style="{StaticResource StatePillText}"
+                                           Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="5" Width="1" Height="18" Background="{DynamicResource BorderSubtle}"
+                                Margin="10,0,10,0" VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
+                            <ToggleButton x:Name="LogPauseButton" Style="{StaticResource LogToggleIconButton}"
+                                          IsChecked="{Binding LogPaused}"
+                                          ToolTip="Pause the stream (Ctrl+P)"
+                                          AutomationProperties.Name="Pause the log stream">
+                                <Grid>
+                                    <Path Data="{StaticResource IconPause}" Style="{StaticResource Glyph}"
+                                          Visibility="{Binding LogPaused, Converter={StaticResource InverseBoolToVis}}" />
+                                    <Path Data="{StaticResource IconPlay}" Style="{StaticResource Glyph}"
+                                          Visibility="{Binding LogPaused, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+                            </ToggleButton>
+                            <Button Style="{StaticResource LogIconButton}" Command="{Binding ClearLogCommand}"
+                                    ToolTip="Clear the retained lines (Ctrl+Shift+K)"
+                                    AutomationProperties.Name="Clear the log">
+                                <Path Data="{StaticResource IconTrash}" Style="{StaticResource Glyph}" />
+                            </Button>
+                            <Button Style="{StaticResource LogIconButton}" Command="{Binding CopyLogCommand}"
+                                    ToolTip="Copy the lines the filter shows (Ctrl+Shift+C)"
+                                    AutomationProperties.Name="Copy the log">
+                                <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                            </Button>
+                            <Button Style="{StaticResource LogIconButton}" Command="{Binding ExportLogCommand}"
+                                    ToolTip="Write the retained lines to the workspace log folder (Ctrl+E)"
+                                    AutomationProperties.Name="Export the log">
+                                <Path Data="{StaticResource IconDownload}" Style="{StaticResource Glyph}" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- err-soft band: the subscription was refused. One sentence in
+                         the supervisor's own words plus the Retry that re-attaches it. -->
+                    <Border Grid.Row="1" Margin="0,6,0,0" Padding="10,5"
+                            Background="{DynamicResource DangerBg}"
+                            BorderBrush="{DynamicResource DangerBorder}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            Visibility="{Binding HasLogcatError, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="Log stream error">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Retry" Style="{StaticResource ToolButton}"
+                                    Height="26" MinHeight="26" Padding="10,0" Margin="10,0,0,0" FontSize="12"
+                                    VerticalAlignment="Center" Command="{Binding RetryLogcatCommand}"
+                                    ToolTip="Attach the log subscription again"
+                                    AutomationProperties.Name="Retry the log stream" />
+                            <Path DockPanel.Dock="Left" Data="{StaticResource IconWarning}" Width="14" Height="14"
+                                  Stretch="Uniform" Stroke="{DynamicResource Danger}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding LogcatErrorText}" Style="{StaticResource Caption}" FontSize="12"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding LogcatErrorText}" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- The table: sticky header, then the rows on the viewport-coloured
+                         log surface, both inside one 1 px stroke-soft edge. Rows are
+                         20 DIP mono 12; warnings and errors tint their own message. -->
+                    <Border Grid.Row="2" Margin="0,6,0,0" Background="{DynamicResource LogBg}"
+                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                            CornerRadius="6" ClipToBounds="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Height="24" Margin="10,0,10,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="86" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="132" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Time" Style="{StaticResource LogHeaderCell}" />
+                                <TextBlock Grid.Column="1" Text="Lvl" Style="{StaticResource LogHeaderCell}" />
+                                <TextBlock Grid.Column="2" Text="Tag" Style="{StaticResource LogHeaderCell}" />
+                                <TextBlock Grid.Column="3" Text="Message" Style="{StaticResource LogHeaderCell}" />
+                            </Grid>
+                            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                                    Background="{DynamicResource BorderSubtle}" />
+
+                            <ListBox x:Name="LogDockList" Grid.Row="1" ItemsSource="{Binding LogView}"
+                                     Background="Transparent" BorderThickness="0"
+                                     ItemContainerStyle="{StaticResource LogRowItem}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel"
+                                     AutomationProperties.Name="Logcat entries">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Height="20" Margin="10,0,10,0"
+                                              AutomationProperties.Name="{Binding AccessibleLine}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="86" />
+                                                <ColumnDefinition Width="30" />
+                                                <ColumnDefinition Width="132" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource Mono}"
+                                                       FontSize="12" Foreground="{DynamicResource TextTertiary}"
+                                                       VerticalAlignment="Center" />
+                                            <Border Grid.Column="1" Style="{StaticResource LogLevelGlyph}">
+                                                <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
+                                            </Border>
+                                            <TextBlock Grid.Column="2" Text="{Binding Tag}" Style="{StaticResource Mono}"
+                                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                       Margin="0,0,8,0" />
+                                            <TextBlock Grid.Column="3" Text="{Binding Message}"
+                                                       Style="{StaticResource LogMessageText}"
+                                                       ToolTip="{Binding Message}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Auto-scroll follows the tail while the operator is at
+                                 the bottom. Scrolling up stops it and this pill
+                                 counts what arrived since, until it is clicked. -->
+                            <Button x:Name="LogJumpPill" Grid.Row="1" HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom" Margin="0,0,16,10"
+                                    Padding="10,4" Height="26" MinHeight="26" FontSize="11"
+                                    Style="{StaticResource GhostButton}"
+                                    Background="{DynamicResource PanelAlt}"
+                                    Content="Jump to latest"
+                                    Click="OnJumpToLatest"
+                                    Visibility="Collapsed"
+                                    ToolTip="Scroll the dock back to the newest line"
+                                    AutomationProperties.Name="Jump to the latest log lines" />
+
+                            <!-- Calm empty state: icon, one line, one sentence and at most
+                                 one action, each backed by a command the app really has. -->
+                            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        MaxWidth="430" Margin="16,0"
+                                        Visibility="{Binding ShowLogEmpty, Converter={StaticResource BoolToVis}}">
+                                <Path Data="{StaticResource IconLogs}" Width="20" Height="20" Stretch="Uniform"
+                                      Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding LogEmpty.Title}" Style="{StaticResource Body}"
+                                           FontSize="13" Foreground="{DynamicResource TextSecondary}"
+                                           HorizontalAlignment="Center" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding LogEmpty.Detail}" Style="{StaticResource Caption}"
+                                           FontSize="12" Foreground="{DynamicResource TextTertiary}"
+                                           TextAlignment="Center" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                    <Button Content="Clear filters" Style="{StaticResource ToolButton}"
+                                            Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                            Command="{Binding ClearLogFiltersCommand}"
+                                            Visibility="{Binding LogEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=filters}"
+                                            AutomationProperties.Name="Clear the Logcat filters" />
+                                    <Button Content="Retry" Style="{StaticResource ToolButton}"
+                                            Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                            Command="{Binding RetryLogcatCommand}"
+                                            Visibility="{Binding LogEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=retry}"
+                                            AutomationProperties.Name="Retry the log stream" />
+                                    <Button Content="Start the guest" Style="{StaticResource ToolButton}"
+                                            Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                            Command="{Binding StartCommand}"
+                                            Visibility="{Binding LogEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=start}"
+                                            AutomationProperties.Name="Start the guest for the log stream" />
+                                    <Button Content="Resume" Style="{StaticResource ToolButton}"
+                                            Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="0"
+                                            Command="{Binding ResumeLogCommand}"
+                                            Visibility="{Binding LogEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=resume}"
+                                            AutomationProperties.Name="Resume the log stream" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- The dock's resize grip: a 4 DIP strip with a centred 24 x 3 handle,
+             sitting on the gap above the tab bar. Dragging it sets the dock height
+             between 120 DIP and half the window; the height is remembered for the
+             session only. It is present only while the dock is open. -->
+        <Border x:Name="LogcatSplitter" Grid.Row="2" Grid.Column="1"
+                Height="4" VerticalAlignment="Bottom" Margin="8,0,8,0" Background="Transparent"
+                Cursor="SizeNS" Panel.ZIndex="6"
+                MouseLeftButtonDown="OnLogcatSplitterDown"
+                MouseMove="OnLogcatSplitterMove"
+                MouseLeftButtonUp="OnLogcatSplitterUp"
+                LostMouseCapture="OnLogcatSplitterLostCapture"
+                Visibility="{Binding IsLogcatOpen, Converter={StaticResource BoolToVis}}"
+                ToolTip="Drag to resize the Logcat dock"
+                AutomationProperties.Name="Resize the Logcat dock">
+            <Border Width="24" Height="3" CornerRadius="1.5" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Background="{DynamicResource BorderBrush}" />
+        </Border>
+
+        <!-- UX-08 full Logcat page (shot 07). It is the same retained line set and
+             the same subscription as the dock, shown with a page header, a filter
+             row and a 28 DIP table. It adds no backend: no PID column (the
+             supervisor's event has none), no activity feed and no sample row. -->
+        <Grid x:Name="LogcatPage" Grid.Row="2" Grid.Column="1"
+              Background="{DynamicResource WindowBg}"
+              Visibility="{Binding IsLogcatPage, Converter={StaticResource BoolToVis}}"
+              AutomationProperties.Name="Logcat page">
+            <Grid Margin="20,14,20,14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Header: back to Studio, the DIAGNOSTICS eyebrow, the title and
+                     the live-stream sentence, then the page's actions. -->
+                <Grid Grid.Row="0" Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" MinWidth="0" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Style="{StaticResource IconButton}" Width="32" Height="32"
+                            Margin="0,2,10,0" VerticalAlignment="Top"
+                            Command="{Binding CloseLogcatPageCommand}"
+                            ToolTip="Back to Studio"
+                            AutomationProperties.Name="Back to Studio">
+                        <Path Data="{StaticResource IconBack}" Style="{StaticResource Glyph}" />
+                    </Button>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="DIAGNOSTICS" FontFamily="{StaticResource UiFont}"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiary}" />
+                        <TextBlock Text="Logcat" FontFamily="{StaticResource UiFont}"
+                                   FontSize="24" FontWeight="SemiBold" LineHeight="32"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,2,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <TextBlock Text="Live stream from" Style="{StaticResource Caption}"
+                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding LogSerial}" Style="{StaticResource Mono}"
+                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                       VerticalAlignment="Center" Margin="5,0,0,0"
+                                       ToolTip="{Binding LogSerial}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource LogPausedChip}" Margin="0,0,8,0"
+                                Visibility="{Binding ShowLogPausedChip, Converter={StaticResource BoolToVis}}"
+                                ToolTip="Lines the guest writes while paused are held and flushed on resume"
+                                AutomationProperties.Name="Paused log stream">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="6" Height="6" Margin="0,0,6,0"
+                                         VerticalAlignment="Center" Fill="{DynamicResource Warning}" />
+                                <TextBlock Text="{Binding LogPausedText}" Style="{StaticResource StatePillText}"
+                                           Foreground="{DynamicResource Warning}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Button Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                Command="{Binding ToggleLogPauseCommand}"
+                                ToolTip="Pause or resume the stream (Ctrl+P)"
+                                AutomationProperties.Name="Pause or resume the log stream">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconPause}" Style="{StaticResource Glyph}"
+                                      Width="13" Height="13" Margin="0,0,6,0"
+                                      Visibility="{Binding LogPaused, Converter={StaticResource InverseBoolToVis}}" />
+                                <Path Data="{StaticResource IconPlay}" Style="{StaticResource Glyph}"
+                                      Width="13" Height="13" Margin="0,0,6,0"
+                                      Visibility="{Binding LogPaused, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Pause" FontSize="13" VerticalAlignment="Center"
+                                           Visibility="{Binding LogPaused, Converter={StaticResource InverseBoolToVis}}" />
+                                <TextBlock Text="Resume" FontSize="13" VerticalAlignment="Center"
+                                           Visibility="{Binding LogPaused, Converter={StaticResource BoolToVis}}" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                Command="{Binding CopyLogCommand}"
+                                ToolTip="Copy the lines the filter shows (Ctrl+C copies the selection)"
+                                AutomationProperties.Name="Copy the log">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}"
+                                      Width="13" Height="13" Margin="0,0,6,0" />
+                                <TextBlock Text="Copy" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                                Command="{Binding ClearLogCommand}"
+                                ToolTip="Clear the retained lines (Ctrl+Shift+K)"
+                                AutomationProperties.Name="Clear the log">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconTrash}" Style="{StaticResource Glyph}"
+                                      Width="13" Height="13" Margin="0,0,6,0" />
+                                <TextBlock Text="Clear" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- The page's single accent primary: the one action that
+                             leaves the app with a file. -->
+                        <Button Style="{StaticResource PrimaryButton}" Height="32" MinHeight="32"
+                                Margin="0" Padding="12,0"
+                                Command="{Binding ExportLogCommand}"
+                                ToolTip="Write the retained lines to the workspace log folder (Ctrl+E)"
+                                AutomationProperties.Name="Export the log">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconDownload}" Width="13" Height="13"
+                                      Stretch="Uniform" Stroke="{DynamicResource AccentText}" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="Export" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- The same err-soft band, sentence and Retry as the dock. -->
+                <Border Grid.Row="1" Margin="0,0,0,12" Padding="10,6"
+                        Background="{DynamicResource DangerBg}"
+                        BorderBrush="{DynamicResource DangerBorder}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusControl}"
+                        Visibility="{Binding HasLogcatError, Converter={StaticResource BoolToVis}}"
+                        AutomationProperties.Name="Log stream error">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Retry" Style="{StaticResource GhostButton}"
+                                Height="26" MinHeight="26" Padding="10,0" Margin="10,0,0,0" FontSize="12"
+                                VerticalAlignment="Center" Command="{Binding RetryLogcatCommand}"
+                                ToolTip="Attach the log subscription again"
+                                AutomationProperties.Name="Retry the log stream" />
+                        <Path DockPanel.Dock="Left" Data="{StaticResource IconWarning}" Width="14" Height="14"
+                              Stretch="Uniform" Stroke="{DynamicResource Danger}" StrokeThickness="1.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding LogcatErrorText}" Style="{StaticResource Caption}" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding LogcatErrorText}" />
+                    </DockPanel>
+                </Border>
+
+                <!-- Filter row: 240 DIP search, the tag field, five level chips and
+                     the stream chip on the right. -->
+                <Grid Grid.Row="2" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBox Width="220" Text="{Binding LogSearch, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Search message or tag" AutomationProperties.Name="Search logcat" />
-                        <TextBox Width="130" Margin="6,0,0,0" Text="{Binding LogTag, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Filter by tag" AutomationProperties.Name="Filter logcat by tag" />
-                        <ComboBox Width="76" Margin="6,0,0,0" ItemsSource="{Binding LogLevels}"
-                                  SelectedItem="{Binding LogLevel}" AutomationProperties.Name="Minimum log level" />
-                        <CheckBox Content="Pause" Margin="10,0,0,0" IsChecked="{Binding LogPaused}"
-                                  VerticalAlignment="Center" />
+
+                    <Border Grid.Column="0" Style="{StaticResource LogField}" Width="240" Height="32"
+                            VerticalAlignment="Center">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconSearch}"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Search message or tag"
+                                       Style="{StaticResource Mono}" FontSize="12"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center" IsHitTestVisible="False"
+                                       TextTrimming="CharacterEllipsis"
+                                       Visibility="{Binding LogSearch, Converter={StaticResource InverseTextToVis}}" />
+                            <TextBox x:Name="LogPageSearchField" Grid.Column="1"
+                                     Text="{Binding LogSearch, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0" Padding="0"
+                                     MinHeight="0" VerticalContentAlignment="Center"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                     ToolTip="Search the message and the tag (Ctrl+F)"
+                                     AutomationProperties.Name="Search logcat page" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource LogField}" Width="180" Height="32"
+                            Margin="8,0,0,0" VerticalAlignment="Center">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconFilter}"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Width="13" Height="13" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Filter by tag"
+                                       Style="{StaticResource Mono}" FontSize="12"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center" IsHitTestVisible="False"
+                                       TextTrimming="CharacterEllipsis"
+                                       Visibility="{Binding LogTag, Converter={StaticResource InverseTextToVis}}" />
+                            <TextBox x:Name="LogPageTagField" Grid.Column="1"
+                                     Text="{Binding LogTag, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0" Padding="0"
+                                     MinHeight="0" VerticalContentAlignment="Center"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                     ToolTip="Filter by tag name"
+                                     AutomationProperties.Name="Filter logcat page by tag" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
+                                Margin="16,0,0,0">
+                        <ToggleButton Style="{StaticResource LogLevelChip}"
+                                      IsChecked="{Binding LogShowVerbose}"
+                                      ToolTip="Show verbose (V) lines" AutomationProperties.Name="Verbose lines">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource LogLevelDot}" Background="{DynamicResource TextTertiary}" />
+                                <TextBlock Text="Verbose" FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Style="{StaticResource LogLevelChip}"
+                                      IsChecked="{Binding LogShowDebug}"
+                                      ToolTip="Show debug (D) lines" AutomationProperties.Name="Debug lines">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource LogLevelDot}" Background="{DynamicResource TextSecondary}" />
+                                <TextBlock Text="Debug" FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Style="{StaticResource LogLevelChip}"
+                                      IsChecked="{Binding LogShowInfo}"
+                                      ToolTip="Show info (I) lines" AutomationProperties.Name="Info lines">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource LogLevelDot}" Background="{DynamicResource Accent}" />
+                                <TextBlock Text="Info" FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Style="{StaticResource LogLevelChip}"
+                                      IsChecked="{Binding LogShowWarn}"
+                                      ToolTip="Show warning (W) lines" AutomationProperties.Name="Warning lines">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource LogLevelDot}" Background="{DynamicResource Warning}" />
+                                <TextBlock Text="Warn" FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Style="{StaticResource LogLevelChip}"
+                                      IsChecked="{Binding LogShowError}"
+                                      ToolTip="Show error (E) lines" AutomationProperties.Name="Error lines">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource LogLevelDot}" Background="{DynamicResource Danger}" />
+                                <TextBlock Text="Error" FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </ToggleButton>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <Button Content="Clear" Style="{StaticResource ToolButton}" Command="{Binding ClearLogCommand}" />
-                        <Button Content="Export" Style="{StaticResource ToolButton}" Command="{Binding ExportLogCommand}" />
-                    </StackPanel>
+
+                    <Border Grid.Column="4" Style="{StaticResource LogPageStateChip}"
+                            ToolTip="{Binding LogPageState.Tooltip}"
+                            AutomationProperties.Name="Log stream state"
+                            AutomationProperties.HelpText="{Binding LogPageState.Tooltip}">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Style="{StaticResource LogPageStateDot}" />
+                            <TextBlock Text="{Binding LogPageState.Text}" Style="{StaticResource StatePillText}"
+                                       Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+                    </Border>
                 </Grid>
-                <ListView ItemsSource="{Binding LogView}" Background="{DynamicResource LogBg}"
-                          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          AutomationProperties.Name="Logcat entries">
-                    <ListView.View>
-                        <!-- AllowsColumnReorder=False: the themed
-                             GridViewColumnHeader template has no
-                             PART_FloatingHeaderCanvas, so a drag-reorder would
-                             show a blank floating ghost header. -->
-                        <GridView AllowsColumnReorder="False">
-                            <GridViewColumn Header="Time" Width="90" DisplayMemberBinding="{Binding Time}" />
-                            <GridViewColumn Header="Lvl" Width="36">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Level}" FontFamily="{StaticResource MonoFont}"
-                                                   Foreground="{Binding Level, Converter={StaticResource SeverityBrush}}" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Tag" Width="150" DisplayMemberBinding="{Binding Tag}" />
-                            <GridViewColumn Header="Message" Width="620" DisplayMemberBinding="{Binding Message}" />
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-            </DockPanel>
-        </Border>
+
+                <!-- Table: one 12 radius card, a sticky 32 DIP header in 11 DIP caps,
+                     then 28 DIP rows with hairline dividers and no zebra. -->
+                <Border Grid.Row="3" Style="{StaticResource LogPageCard}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Height="32" Margin="14,0,14,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="TIME" Style="{StaticResource LogHeaderCell}" />
+                            <TextBlock Grid.Column="1" Text="LVL" Style="{StaticResource LogHeaderCell}" />
+                            <TextBlock Grid.Column="2" Text="TAG" Style="{StaticResource LogHeaderCell}" />
+                            <TextBlock Grid.Column="3" Text="MESSAGE" Style="{StaticResource LogHeaderCell}" />
+                        </Grid>
+                        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                                Background="{DynamicResource BorderSubtle}" />
+
+                        <ListBox x:Name="LogPageList" Grid.Row="1" ItemsSource="{Binding LogView}"
+                                 Background="Transparent" BorderThickness="0"
+                                 ItemContainerStyle="{StaticResource LogPageRowItem}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 VirtualizingPanel.ScrollUnit="Pixel"
+                                 SelectionMode="Extended"
+                                 AutomationProperties.Name="Logcat page entries">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Copy selected lines" InputGestureText="Ctrl+C"
+                                              Click="OnCopySelectedLog" />
+                                    <MenuItem Header="Copy all filtered lines"
+                                              Command="{Binding CopyLogCommand}" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="28" Margin="14,0,14,0"
+                                          AutomationProperties.Name="{Binding AccessibleLine}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource Mono}"
+                                                   FontSize="12" Foreground="{DynamicResource TextTertiary}"
+                                                   VerticalAlignment="Center" />
+                                        <Border Grid.Column="1" Style="{StaticResource LogLevelGlyph}">
+                                            <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
+                                        </Border>
+                                        <views:HighlightTextBlock Grid.Column="2" TextValue="{Binding Tag}"
+                                                                  HighlightIndexes="{Binding TagHighlightIndexes}"
+                                                                  MarkMatches="True"
+                                                                  Style="{StaticResource Mono}" FontSize="12"
+                                                                  Foreground="{DynamicResource TextSecondary}"
+                                                                  VerticalAlignment="Center"
+                                                                  TextTrimming="CharacterEllipsis"
+                                                                  Margin="0,0,12,0" ToolTip="{Binding Tag}" />
+                                        <!-- Search hits are painted by the palette's own
+                                             HighlightTextBlock, so the page and the
+                                             palette mark a match the same way. The
+                                             offsets are computed with the same
+                                             case-insensitive comparison as the filter. -->
+                                        <views:HighlightTextBlock Grid.Column="3"
+                                                                  Style="{StaticResource LogMessageText}"
+                                                                  TextValue="{Binding Message}"
+                                                                  HighlightIndexes="{Binding HighlightIndexes}"
+                                                                  MarkMatches="True"
+                                                                  ToolTip="{Binding Message}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <!-- The page's calm empty state: the two states the brief
+                             names, plus the guest/subscription cases that can be
+                             fixed from here. -->
+                        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    MaxWidth="440" Margin="16,0"
+                                    Visibility="{Binding ShowLogPageEmpty, Converter={StaticResource BoolToVis}}">
+                            <Path Data="{StaticResource IconLogs}" Width="22" Height="22" Stretch="Uniform"
+                                  Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding LogPageEmpty.Title}" Style="{StaticResource Body}"
+                                       FontSize="13" Foreground="{DynamicResource TextSecondary}"
+                                       HorizontalAlignment="Center" TextAlignment="Center"
+                                       TextWrapping="Wrap" Margin="0,8,0,0" />
+                            <TextBlock Text="{Binding LogPageEmpty.Detail}" Style="{StaticResource Caption}"
+                                       FontSize="12" Foreground="{DynamicResource TextTertiary}"
+                                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                                <Button Content="Clear filters" Style="{StaticResource GhostButton}"
+                                        Height="28" MinHeight="28" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                        Command="{Binding ClearLogFiltersCommand}"
+                                        Visibility="{Binding LogPageEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=filters}"
+                                        AutomationProperties.Name="Clear the Logcat filters" />
+                                <Button Content="Retry" Style="{StaticResource GhostButton}"
+                                        Height="28" MinHeight="28" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                        Command="{Binding RetryLogcatCommand}"
+                                        Visibility="{Binding LogPageEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=retry}"
+                                        AutomationProperties.Name="Retry the log stream" />
+                                <Button Content="Start the guest" Style="{StaticResource GhostButton}"
+                                        Height="28" MinHeight="28" Padding="10,0" FontSize="12" Margin="0,0,6,0"
+                                        Command="{Binding StartCommand}"
+                                        Visibility="{Binding LogPageEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=start}"
+                                        AutomationProperties.Name="Start the guest for the log stream" />
+                                <Button Content="Resume" Style="{StaticResource GhostButton}"
+                                        Height="28" MinHeight="28" Padding="10,0" FontSize="12" Margin="0"
+                                        Command="{Binding ResumeLogCommand}"
+                                        Visibility="{Binding LogPageEmpty.Action, Converter={StaticResource StringVis}, ConverterParameter=resume}"
+                                        AutomationProperties.Name="Resume the log stream" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
 
         <!-- Status bar (UX-05, MEDIUM 9; fix pass item 8): REAL segments only.
              ADB serial, FPS from the capture stream, GPU mode and the supervisor
@@ -3032,10 +4154,6 @@
                                                 </StackPanel>
                                             </StackPanel>
                                         </Border>
-                                        <TextBlock Style="{StaticResource Caption}" FontSize="12"
-                                                   Foreground="{DynamicResource TextTertiary}"
-                                                   TextWrapping="Wrap" Margin="2,12,0,0"
-                                                   Text="Version and commit come from the application assembly. This build has no update checker and no external links." />
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>

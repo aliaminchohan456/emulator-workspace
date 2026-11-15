@@ -29,6 +29,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly DispatcherTimer _toastTimer;
     private readonly DispatcherTimer _clockTimer;
     private readonly ConcurrentQueue<LogEntryViewModel> _logInbox = new();
+    // UX-08: lines that arrive while the stream is paused. They are held here,
+    // counted for the page's "Paused · N buffered" chip, and flushed on resume, so
+    // a pause never silently discards what the guest wrote.
+    private readonly ConcurrentQueue<LogEntryViewModel> _logPausedBuffer = new();
+    private int _logBufferedCount;
+    private int _logBufferedNotified;
     private readonly List<double> _frameIntervals = new();
     private readonly List<double> _inputLatencies = new();
     // UX-05: a 24-sample ring buffer of the REAL frame rate for the telemetry
@@ -124,6 +130,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ToggleLogcatCommand = new RelayCommand(() => IsLogcatOpen = !IsLogcatOpen);
         ClearLogCommand = new RelayCommand(ClearLog);
         ExportLogCommand = new AsyncRelayCommand(ExportLogAsync);
+        // UX-08: the drawer's own actions. Copy writes the lines the filter
+        // currently shows; Retry re-attaches only the log subscription (the
+        // window-wide Retry re-reads the whole workspace); Clear filters restores
+        // the default view; Resume releases the pause.
+        CopyLogCommand = new RelayCommand(CopyLog);
+        RetryLogcatCommand = new AsyncRelayCommand(RetryLogcatAsync);
+        ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
+        ResumeLogCommand = new RelayCommand(ResumeLog);
+        OpenLogcatPageCommand = new RelayCommand(OpenLogcatPage);
+        CloseLogcatPageCommand = new RelayCommand(CloseLogcatPage);
+        ToggleLogPauseCommand = new RelayCommand(() => LogPaused = !LogPaused);
         CopyDiagnosticsCommand = new AsyncRelayCommand(CopyDiagnosticsAsync);
         ToggleThemeCommand = new RelayCommand(ToggleTheme);
         AdbRootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(true), () => SelectedDevice is not null && !IsBusy);
@@ -218,7 +235,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             PaletteDisabledReason));
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
-        _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
+        _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
         _logTimer.Start();
         _toastTimer = new DispatcherTimer(TimeSpan.FromSeconds(6), DispatcherPriority.Background, (_, _) =>
         {
@@ -281,6 +298,27 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ClearLogCommand { get; }
 
     public AsyncRelayCommand ExportLogCommand { get; }
+
+    /// <summary>UX-08: copies the Logcat lines the filter currently shows.</summary>
+    public RelayCommand CopyLogCommand { get; }
+
+    /// <summary>UX-08: re-attaches the log subscription after a refusal.</summary>
+    public AsyncRelayCommand RetryLogcatCommand { get; }
+
+    /// <summary>UX-08: clears the search, the tag and the five level chips.</summary>
+    public RelayCommand ClearLogFiltersCommand { get; }
+
+    /// <summary>UX-08: releases the pause from the drawer's empty state.</summary>
+    public RelayCommand ResumeLogCommand { get; }
+
+    /// <summary>UX-08: opens the full Logcat page from the dock's pop-out.</summary>
+    public RelayCommand OpenLogcatPageCommand { get; }
+
+    /// <summary>UX-08: leaves the Logcat page and shows the Studio again.</summary>
+    public RelayCommand CloseLogcatPageCommand { get; }
+
+    /// <summary>UX-08: the page's Pause/Resume button, the same flag as Ctrl+P.</summary>
+    public RelayCommand ToggleLogPauseCommand { get; }
 
     public AsyncRelayCommand CopyDiagnosticsCommand { get; }
 
@@ -618,34 +656,32 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// <summary>
     /// "1,284 lines · 3 warnings · 1 error": the mono line beside the dock tab.
     /// Warnings and errors appear only when they exist, and the whole string is
-    /// empty for an empty drawer, which shows "No lines yet" instead.
+    /// empty for an empty drawer, which shows "No lines yet" instead. UX-08 moved
+    /// the formatting into <see cref="LogcatPresentation.CountText"/> so the
+    /// drawer, the tab bar and the tests read one implementation.
     /// </summary>
-    public string LogCountText
-    {
-        get
-        {
-            var total = LogEntries.Count;
-            if (total == 0)
-            {
-                return "";
-            }
+    public string LogCountText => LogcatPresentation.CountText(LogEntries.Count, LogWarningCount, LogErrorCount);
 
-            var text = $"{total.ToString("N0", CultureInfo.InvariantCulture)} lines";
-            var warnings = LogWarningCount;
-            if (warnings > 0)
-            {
-                text += $" · {warnings.ToString(CultureInfo.InvariantCulture)} {(warnings == 1 ? "warning" : "warnings")}";
-            }
+    /// <summary>The dock header's three coloured segments; each is hidden at zero.</summary>
+    public string LogLineCountText => LogcatPresentation.LineCount(LogEntries.Count);
 
-            var errors = LogErrorCount;
-            if (errors > 0)
-            {
-                text += $" · {errors.ToString(CultureInfo.InvariantCulture)} {(errors == 1 ? "error" : "errors")}";
-            }
+    public string LogWarnCountText => LogcatPresentation.WarningCount(LogWarningCount);
 
-            return text;
-        }
-    }
+    public string LogErrorCountText => LogcatPresentation.ErrorCount(LogErrorCount);
+
+    public bool HasLogWarnings => LogWarningCount > 0;
+
+    public bool HasLogErrors => LogErrorCount > 0;
+
+    /// <summary>
+    /// The page's "Paused · N buffered" chip. The count is the real number of
+    /// lines the stream held back while paused, not a sample.
+    /// </summary>
+    public string LogPausedText => LogcatPresentation.PausedBuffered(LogBufferedCount);
+
+    public int LogBufferedCount => Volatile.Read(ref _logBufferedCount);
+
+    public bool ShowLogPausedChip => LogPaused;
 
     private void NotifyLogCounts()
     {
@@ -653,6 +689,289 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(LogWarningCount));
         OnPropertyChanged(nameof(LogErrorCount));
         OnPropertyChanged(nameof(LogCountText));
+        OnPropertyChanged(nameof(LogLineCountText));
+        OnPropertyChanged(nameof(LogWarnCountText));
+        OnPropertyChanged(nameof(LogErrorCountText));
+        OnPropertyChanged(nameof(HasLogWarnings));
+        OnPropertyChanged(nameof(HasLogErrors));
+        // UX-08: the drawer's empty state and its state chip read the same facts.
+        NotifyLogFilterState();
+    }
+
+    private void NotifyLogBuffered()
+    {
+        OnPropertyChanged(nameof(LogBufferedCount));
+        OnPropertyChanged(nameof(LogPausedText));
+        OnPropertyChanged(nameof(ShowLogPausedChip));
+    }
+
+    // ---- UX-08 Logcat drawer: derived presentation -------------------------
+    //
+    // Everything below is derived from state the app already has: the retained
+    // lines, the five level chips, and the three stream facts (the guest is
+    // running, a subscription exists, the stream is paused). Nothing here polls,
+    // calls the supervisor or invents a line.
+
+    private LogEmptyState _logEmpty = LogcatPresentation.Empty(false, 0, false, false, false, false);
+
+    private LogStreamState _logState = LogcatPresentation.Stream(false, false, false, null);
+
+    private LogEmptyState _logPageEmpty = LogcatPresentation.PageEmpty(false, 0, false, false, false, false, null);
+
+    private LogStreamState _logPageState = LogcatPresentation.PageStream(false, false, false, null);
+
+    /// <summary>The drawer's empty state: title, one sentence and at most one action.</summary>
+    public LogEmptyState LogEmpty => _logEmpty;
+
+    /// <summary>The "Following / Paused / No guest" chip in the drawer's toolbar.</summary>
+    public LogStreamState LogState => _logState;
+
+    /// <summary>The full page's empty state, with the serial it is waiting for.</summary>
+    public LogEmptyState LogPageEmpty => _logPageEmpty;
+
+    /// <summary>The full page's "Live / Paused / Not attached / No guest" chip.</summary>
+    public LogStreamState LogPageState => _logPageState;
+
+    public bool ShowLogEmpty => LogView.IsEmpty;
+
+    public bool ShowLogPageEmpty => LogView.IsEmpty;
+
+    /// <summary>
+    /// The serial the page's subtitle names. It is the supervisor's ADB serial,
+    /// not the display name, because that is the value the stream is attached to.
+    /// </summary>
+    public string LogSerial => SelectedDevice is { } device
+        ? string.IsNullOrWhiteSpace(device.Serial) ? device.Name : device.Serial
+        : "no guest selected";
+
+    /// <summary>The Logcat page's subtitle: "Live stream from emulator-5554".</summary>
+    public string LogPageSubtitle => "Live stream from " + LogSerial;
+
+    /// <summary>A subscription is attached to the selected guest right now.</summary>
+    public bool HasLogStream => Volatile.Read(ref _logcatSubscription) is not null;
+
+    public bool IsGuestRunning => SelectedDevice?.IsRunning == true;
+
+    /// <summary>
+    /// Recomputes the two derived presentations and raises them. Called whenever
+    /// a filter, the pause flag, the line set or the subscription changes; the
+    /// cost is one pass over the retained lines (bounded at 2500).
+    /// </summary>
+    private void NotifyLogFilterState()
+    {
+        var visible = LogView.IsEmpty ? 0 : LogView.Cast<object>().Count();
+
+        _logEmpty = LogcatPresentation.Empty(
+            HasLogEntries,
+            visible,
+            IsGuestRunning,
+            HasLogStream,
+            LogPaused,
+            HasLogcatError);
+
+        _logState = LogcatPresentation.Stream(
+            IsGuestRunning,
+            HasLogStream,
+            LogPaused,
+            SelectedDevice?.Name);
+
+        var logSerial = SelectedDevice?.Serial is { Length: > 0 } serial ? serial : SelectedDevice?.Name;
+
+        _logPageEmpty = LogcatPresentation.PageEmpty(
+            HasLogEntries,
+            visible,
+            IsGuestRunning,
+            HasLogStream,
+            LogPaused,
+            HasLogcatError,
+            logSerial);
+
+        _logPageState = LogcatPresentation.PageStream(
+            IsGuestRunning,
+            HasLogStream,
+            LogPaused,
+            logSerial);
+
+        OnPropertyChanged(nameof(LogEmpty));
+        OnPropertyChanged(nameof(LogState));
+        OnPropertyChanged(nameof(LogPageEmpty));
+        OnPropertyChanged(nameof(LogPageState));
+        OnPropertyChanged(nameof(ShowLogEmpty));
+        OnPropertyChanged(nameof(ShowLogPageEmpty));
+        OnPropertyChanged(nameof(HasLogStream));
+        OnPropertyChanged(nameof(IsGuestRunning));
+        OnPropertyChanged(nameof(LogSerial));
+        OnPropertyChanged(nameof(LogPageSubtitle));
+    }
+
+    private string _logcatError = "";
+
+    /// <summary>
+    /// UX-08: a failed logcat subscription reports inside the drawer, next to the
+    /// Retry that fixes it, instead of only in the window-wide error bar. The
+    /// message is the supervisor's own text.
+    /// </summary>
+    public string LogcatErrorText => _logcatError;
+
+    public bool HasLogcatError => _logcatError.Length > 0;
+
+    private void SetLogcatError(string message)
+    {
+        if (string.Equals(_logcatError, message, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _logcatError = message;
+        OnPropertyChanged(nameof(LogcatErrorText));
+        OnPropertyChanged(nameof(HasLogcatError));
+        NotifyLogFilterState();
+    }
+
+    private void ClearLogFilters()
+    {
+        LogSearch = "";
+        LogTag = "";
+        LogShowVerbose = true;
+        LogShowDebug = true;
+        LogShowInfo = true;
+        LogShowWarn = true;
+        LogShowError = true;
+        LogView.Refresh();
+        foreach (var entry in LogEntries)
+        {
+            entry.ApplyHighlight("");
+        }
+
+        NotifyLogFilterState();
+    }
+
+    private void CopyLog()
+    {
+        CopyLogLines(LogView.Cast<LogEntryViewModel>().ToList());
+    }
+
+    /// <summary>
+    /// UX-08 page: Ctrl+C and the context menu copy the rows the operator selected.
+    /// The formatting is the same one the Copy button uses, so a pasted line is
+    /// always the guest's raw record when the supervisor supplied one.
+    /// </summary>
+    public void CopyLogSelection(IEnumerable<LogEntryViewModel> selected)
+    {
+        var lines = selected.ToList();
+        if (lines.Count == 0)
+        {
+            // No selection: the page's Copy means the same as the dock's Copy.
+            CopyLog();
+            return;
+        }
+
+        CopyLogLines(lines);
+    }
+
+    private void CopyLogLines(IReadOnlyCollection<LogEntryViewModel> lines)
+    {
+        try
+        {
+            if (lines.Count == 0)
+            {
+                StatusMessage = "Nothing to copy: the Logcat view has no lines.";
+                return;
+            }
+
+            var text = string.Join(
+                Environment.NewLine,
+                lines.Select(entry => entry.Raw.Length > 0
+                    ? entry.Raw
+                    : $"{entry.Time} {entry.Level} {entry.Tag}: {entry.Message}"));
+            Clipboard.SetText(text);
+            StatusMessage = "Copied " + lines.Count.ToString(CultureInfo.InvariantCulture)
+                + (lines.Count == 1 ? " Logcat line" : " Logcat lines") + " to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex, "logcat.copy", SelectedDevice?.Name);
+        }
+    }
+
+    private async Task RetryLogcatAsync()
+    {
+        SetLogcatError("");
+        await EnsureLogcatAsync().ConfigureAwait(true);
+        NotifyLogFilterState();
+    }
+
+    private void ResumeLog()
+    {
+        LogPaused = false;
+    }
+
+    // ---- UX-08 Logcat page --------------------------------------------------
+    //
+    // The page is the same retained line set and the same subscription as the
+    // dock, shown full-window. Opening it closes the dock without detaching the
+    // stream; leaving it detaches only when the dock is closed too. There is no
+    // second log source, no sample row and no capability the dock does not have.
+
+    private bool _isLogcatPage;
+
+    public bool IsLogcatPage
+    {
+        get => _isLogcatPage;
+        set
+        {
+            if (SetProperty(ref _isLogcatPage, value))
+            {
+                OnPropertyChanged(nameof(IsStudioVisible));
+                OnPropertyChanged(nameof(LogcatRailActive));
+                UpdateLogcatAttachment();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    /// <summary>The Studio exercises are shown whenever the page is not.</summary>
+    public bool IsStudioVisible => !IsLogcatPage;
+
+    /// <summary>The rail's Logcat destination is active for the dock or the page.</summary>
+    public bool LogcatRailActive => IsLogcatOpen || IsLogcatPage;
+
+    private void OpenLogcatPage()
+    {
+        // Page first, then close the dock: the attachment decision below then sees
+        // one open log surface and never unsubscribes between the two.
+        IsLogcatPage = true;
+        if (IsLogcatOpen)
+        {
+            IsLogcatOpen = false;
+        }
+
+        _ = EnsureLogcatAsync();
+    }
+
+    private void CloseLogcatPage()
+    {
+        IsLogcatPage = false;
+        if (!IsLogcatOpen)
+        {
+            _ = StopLogcatAsync();
+        }
+    }
+
+    /// <summary>
+    /// Attach while either Logcat surface is visible; detach only when both are
+    /// closed. Every other caller keeps the old one-surface behaviour.
+    /// </summary>
+    private void UpdateLogcatAttachment()
+    {
+        if (IsLogcatOpen || IsLogcatPage)
+        {
+            _ = EnsureLogcatAsync();
+        }
+        else
+        {
+            _ = StopLogcatAsync();
+        }
     }
 
     public string StatusGpu => string.IsNullOrWhiteSpace(GpuMode) ? "—" : GpuMode;
@@ -975,6 +1294,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 // UX-05: the stage chips, the status bar metrics and the
                 // telemetry pill all name the selected guest.
                 NotifyLiveSurfaces();
+                // UX-08: the Logcat drawer's stream chip and empty state name the
+                // same guest.
+                NotifyLogFilterState();
                 RaiseCommandStates();
                 _ = OnDeviceSelectedAsync(value);
             }
@@ -1380,14 +1702,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _isLogcatOpen, value))
             {
-                if (value)
-                {
-                    _ = EnsureLogcatAsync();
-                }
-                else
-                {
-                    _ = StopLogcatAsync();
-                }
+                OnPropertyChanged(nameof(LogcatRailActive));
+                UpdateLogcatAttachment();
+                NotifyLogFilterState();
             }
         }
     }
@@ -1402,6 +1719,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _logSearch, value))
             {
                 LogView.Refresh();
+                foreach (var entry in LogEntries)
+                {
+                    entry.ApplyHighlight(value);
+                }
+
+                NotifyLogFilterState();
             }
         }
     }
@@ -1416,32 +1739,138 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _logTag, value))
             {
                 LogView.Refresh();
+                NotifyLogFilterState();
             }
         }
     }
 
-    private string _logLevel = "All";
+    // UX-08: the level filter is the five chips the mockup shows - V, D, I, W and
+    // E, each an independent toggle, all on by default. That is exactly the set of
+    // lines the drawer showed before the chips existed, and it removes the old
+    // single "minimum level" combo whose selected chip would have implied that a
+    // warning filter also hid errors. Filtering happens in one place,
+    // LogcatPresentation.LogLevelFilter.Allows, so a fatal or assert line still
+    // reads as an error and an unknown level is never silently hidden.
+    private bool _logShowVerbose = true;
 
-    public string LogLevel
+    public bool LogShowVerbose
     {
-        get => _logLevel;
+        get => _logShowVerbose;
         set
         {
-            if (SetProperty(ref _logLevel, value))
+            if (SetProperty(ref _logShowVerbose, value))
             {
                 LogView.Refresh();
+                NotifyLogFilterState();
             }
         }
     }
 
-    public string[] LogLevels { get; } = { "All", "V", "D", "I", "W", "E" };
+    private bool _logShowDebug = true;
+
+    public bool LogShowDebug
+    {
+        get => _logShowDebug;
+        set
+        {
+            if (SetProperty(ref _logShowDebug, value))
+            {
+                LogView.Refresh();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    private bool _logShowInfo = true;
+
+    public bool LogShowInfo
+    {
+        get => _logShowInfo;
+        set
+        {
+            if (SetProperty(ref _logShowInfo, value))
+            {
+                LogView.Refresh();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    private bool _logShowWarn = true;
+
+    public bool LogShowWarn
+    {
+        get => _logShowWarn;
+        set
+        {
+            if (SetProperty(ref _logShowWarn, value))
+            {
+                LogView.Refresh();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    private bool _logShowError = true;
+
+    public bool LogShowError
+    {
+        get => _logShowError;
+        set
+        {
+            if (SetProperty(ref _logShowError, value))
+            {
+                LogView.Refresh();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    /// <summary>The five chips as one filter; recomputed, never stored twice.</summary>
+    public LogLevelFilter LogFilter =>
+        LogcatPresentation.Filter(LogShowVerbose, LogShowDebug, LogShowInfo, LogShowWarn, LogShowError);
 
     private bool _logPaused;
 
     public bool LogPaused
     {
         get => _logPaused;
-        set => SetProperty(ref _logPaused, value);
+        set
+        {
+            if (SetProperty(ref _logPaused, value))
+            {
+                if (!value)
+                {
+                    FlushPausedLog();
+                }
+
+                // The state chip and the empty state both name the pause, so they
+                // are re-raised with it.
+                NotifyLogBuffered();
+                NotifyLogFilterState();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Releases the lines held during a pause into the normal drain path. They
+    /// keep their arrival order and count against the same 2,500-line retention.
+    /// </summary>
+    private void FlushPausedLog()
+    {
+        var moved = 0;
+        while (_logPausedBuffer.TryDequeue(out var entry))
+        {
+            _logInbox.Enqueue(entry);
+            moved++;
+        }
+
+        Volatile.Write(ref _logBufferedCount, 0);
+        if (moved > 0)
+        {
+            StatusMessage = moved.ToString(CultureInfo.InvariantCulture)
+                + (moved == 1 ? " Logcat line resumed" : " Logcat lines resumed") + ".";
+        }
     }
 
     private string _screenshotPath = "";
@@ -1551,6 +1980,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// <summary>Windows' animation-effects policy, which every animation honours.</summary>
     public string MotionState => SystemParameters.ClientAreaAnimation ? "Full" : "Reduced (Windows)";
 
+    /// <summary>
+    /// Real Windows motion preference, so the page's live dot pulses only when
+    /// animations are enabled. It is a read, never a setting of our own.
+    /// </summary>
+    public bool MotionEnabled => SystemParameters.ClientAreaAnimation;
+
     /// <summary>Windows' high-contrast policy, which always wins over the theme.</summary>
     public string HighContrastState => SystemParameters.HighContrast ? "On" : "Off";
 
@@ -1653,6 +2088,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (IsSupervisorFailure(ex) && _connection is { } dead)
             {
                 _connection = null;
+                // UX-08: no pipe, no log stream; the drawer's chip must not keep
+                // claiming it is following.
+                if (Volatile.Read(ref _logcatSubscription) is not null)
+                {
+                    Volatile.Write(ref _logcatSubscription, null);
+                    NotifyLogFilterState();
+                }
+
                 _ = dead.DisposeAsync();
             }
 
@@ -2591,6 +3034,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         LogEntries.Clear();
         _logInbox.Clear();
+        _logPausedBuffer.Clear();
+        Volatile.Write(ref _logBufferedCount, 0);
+        NotifyLogBuffered();
         NotifyLogCounts();
     }
 
@@ -2691,6 +3137,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (_logcatSubscription is not null || SelectedDevice is null || !SelectedDevice.IsRunning)
         {
+            NotifyLogFilterState();
             return;
         }
 
@@ -2701,10 +3148,27 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 new JsonObject { ["name"] = SelectedDevice.Name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
             Volatile.Write(ref _logcatSubscription, data["subscription"]!.GetValue<string>());
+            // UX-08: a successful attach clears the drawer's own error band.
+            SetLogcatError("");
         }
         catch (Exception ex)
         {
-            ShowError(ex, "logcat.subscribe", SelectedDevice?.Name);
+            // UX-08: a refused subscription now reports inside the drawer, beside
+            // the Retry that re-attaches it. The window-wide bar is left for the
+            // operations it can retry itself (it re-reads the whole workspace), and
+            // the status bar stays free of a sentence that would outlive the
+            // drawer's own band. A cancellation is the app's own lifecycle (the
+            // drawer was closed, the guest changed), not a refusal, so it leaves
+            // the band empty and lets the chip and the empty state say "not
+            // attached" without claiming something failed.
+            if (ex is not OperationCanceledException)
+            {
+                SetLogcatError(ex.Message);
+            }
+        }
+        finally
+        {
+            NotifyLogFilterState();
         }
     }
 
@@ -2712,6 +3176,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (_logcatSubscription is null)
         {
+            NotifyLogFilterState();
             return;
         }
 
@@ -2726,6 +3191,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception)
         {
+        }
+        finally
+        {
+            NotifyLogFilterState();
         }
     }
 
@@ -2755,9 +3224,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             case EventNames.Logcat:
                 if (envelope.Subscription == Volatile.Read(ref _logcatSubscription)
-                    && envelope.Data is JsonObject entry && !LogPaused)
+                    && envelope.Data is JsonObject entry)
                 {
-                    _logInbox.Enqueue(LogEntryViewModel.From(entry));
+                    if (LogPaused)
+                    {
+                        // Hold the line instead of dropping it; resume flushes it.
+                        _logPausedBuffer.Enqueue(LogEntryViewModel.From(entry));
+                        while (_logPausedBuffer.Count > 2500 && _logPausedBuffer.TryDequeue(out _))
+                        {
+                        }
+
+                        Volatile.Write(ref _logBufferedCount, _logPausedBuffer.Count);
+                    }
+                    else
+                    {
+                        _logInbox.Enqueue(LogEntryViewModel.From(entry));
+                    }
                 }
 
                 break;
@@ -2985,6 +3467,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var added = 0;
         while (added < 300 && _logInbox.TryDequeue(out var entry))
         {
+            entry.ApplyHighlight(_logSearch);
             LogEntries.Add(entry);
             added++;
         }
@@ -3002,6 +3485,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             NotifyLogCounts();
         }
+
+        // The paused buffer is filled on the pipe thread; its chip is refreshed
+        // here, on the UI thread, only when the number actually moved.
+        var buffered = Volatile.Read(ref _logBufferedCount);
+        if (buffered != _logBufferedNotified)
+        {
+            _logBufferedNotified = buffered;
+            NotifyLogBuffered();
+        }
     }
 
     private bool FilterLog(object item)
@@ -3011,15 +3503,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return false;
         }
 
-        if (LogLevel != "All")
+        // UX-08: one rule, in LogcatPresentation, for the five level chips.
+        if (!LogFilter.Allows(entry.Level))
         {
-            var order = "VDIWEA";
-            var min = order.IndexOf(LogLevel[0]);
-            var current = entry.Level.Length > 0 ? order.IndexOf(entry.Level[0]) : 0;
-            if (min >= 0 && (current < min || current < 0))
-            {
-                return false;
-            }
+            return false;
         }
 
         if (!string.IsNullOrWhiteSpace(LogTag)
@@ -3839,6 +4326,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var dead = _connection;
             _connection = null;
             IsConnected = false;
+            // UX-08: a dead pipe also ends the log subscription, so the drawer
+            // stops saying "Following" when nothing is streaming any more.
+            if (Volatile.Read(ref _logcatSubscription) is not null)
+            {
+                Volatile.Write(ref _logcatSubscription, null);
+                NotifyLogFilterState();
+            }
+
             if (dead is not null)
             {
                 _ = dead.DisposeAsync();
@@ -4006,7 +4501,13 @@ public sealed class DeviceItemViewModel : ObservableObject
         }
     }
 
-    public string StateLabel => State;
+    /// <summary>
+    /// UX-07 nit 1: the user-facing state word. The supervisor's "Defined" record
+    /// state is internal vocabulary, so every surface prints the neutral "Stopped"
+    /// instead; the enum name stays on <see cref="State"/> for the logic and the
+    /// converters.
+    /// </summary>
+    public string StateLabel => State == "Defined" ? "Stopped" : State;
 
     public bool IsRunning => State is "Running" or "Starting";
 
@@ -4266,8 +4767,11 @@ public sealed class PaletteEntryViewModel
     }
 }
 
-public sealed class LogEntryViewModel
+public sealed class LogEntryViewModel : INotifyPropertyChanged
 {
+    private IReadOnlyList<int> _highlightIndexes = Array.Empty<int>();
+    private IReadOnlyList<int> _tagHighlightIndexes = Array.Empty<int>();
+
     public required string Time { get; init; }
 
     public required string Level { get; init; }
@@ -4277,6 +4781,54 @@ public sealed class LogEntryViewModel
     public required string Message { get; init; }
 
     public required string Raw { get; init; }
+
+    /// <summary>
+    /// UX-08 page: the characters of <see cref="Message"/> the search matches.
+    /// Recomputed when the query or the line changes, so the page's
+    /// HighlightTextBlock paints exactly what the filter kept.
+    /// </summary>
+    public IReadOnlyList<int> HighlightIndexes
+    {
+        get => _highlightIndexes;
+        private set
+        {
+            if (!_highlightIndexes.SequenceEqual(value))
+            {
+                _highlightIndexes = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HighlightIndexes)));
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>The same offsets inside <see cref="Tag"/>, for the page's tag cell.</summary>
+    public IReadOnlyList<int> TagHighlightIndexes
+    {
+        get => _tagHighlightIndexes;
+        private set
+        {
+            if (!_tagHighlightIndexes.SequenceEqual(value))
+            {
+                _tagHighlightIndexes = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TagHighlightIndexes)));
+            }
+        }
+    }
+
+    public void ApplyHighlight(string? query)
+    {
+        HighlightIndexes = LogcatPresentation.IndexesOf(Message, query);
+        TagHighlightIndexes = LogcatPresentation.IndexesOf(Tag, query);
+    }
+
+    /// <summary>
+    /// The row's accessible name: the same three facts a sighted operator reads,
+    /// so a screen reader announces the line instead of the view-model type name.
+    /// </summary>
+    public string AccessibleLine => string.IsNullOrEmpty(Tag)
+        ? $"{Time} {Level} {Message}"
+        : $"{Time} {Level} {Tag}: {Message}";
 
     public static LogEntryViewModel From(JsonObject node)
     {

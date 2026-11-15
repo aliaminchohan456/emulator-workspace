@@ -18,6 +18,9 @@
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/PaletteQuery.cs" Link="Desktop/PaletteQuery.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/DoctorSummary.cs" Link="Desktop/DoctorSummary.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ImageNaming.cs" Link="Desktop/ImageNaming.cs" />
+    <!-- UX-08: the Logcat drawer's count line, level filter, stream chip and empty
+         state are pure rules, so the tests compile that source file too. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/LogcatPresentation.cs" Link="Desktop/LogcatPresentation.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

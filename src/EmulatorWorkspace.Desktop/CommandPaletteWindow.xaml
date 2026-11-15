@@ -113,7 +113,12 @@
                             <Border x:Name="Fill" Background="Transparent" CornerRadius="8" />
                             <Border x:Name="PART_Hover" Background="{DynamicResource HoverBg}" Opacity="0"
                                     CornerRadius="8" IsHitTestVisible="False" />
-                            <Border x:Name="Bar" Width="2" Margin="0,7" HorizontalAlignment="Left"
+                            <!-- The selection bar keeps the rail's current-view
+                                 indicator geometry exactly (2 x 18 DIP, accent,
+                                 radius 1, vertically centred), so "selected" reads
+                                 the same in both places. -->
+                            <Border x:Name="Bar" Width="2" Height="18" VerticalAlignment="Center"
+                                    HorizontalAlignment="Left"
                                     CornerRadius="1" Opacity="0"
                                     Background="{DynamicResource Accent}" IsHitTestVisible="False" />
                             <Border x:Name="Ring" BorderThickness="2" CornerRadius="8" Opacity="0"
@@ -300,7 +305,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse Style="{StaticResource StatePillDot}"
                                              Fill="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
-                                    <TextBlock Text="{Binding SelectedDevice.State}"
+                                    <TextBlock Text="{Binding SelectedDevice.StateLabel}"
                                                Style="{StaticResource StatePillText}"
                                                Foreground="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
                                 </StackPanel>

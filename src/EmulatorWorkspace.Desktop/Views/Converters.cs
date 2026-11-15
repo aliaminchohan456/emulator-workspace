@@ -214,6 +214,14 @@ public sealed class StepStateToBrushConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>
+/// A log level letter to the brush a chip or a marker needs. UX-08 kept this
+/// converter out of the Logcat drawer on purpose: a converter hands back the brush
+/// it resolved at conversion time, so a live theme switch would leave the old
+/// theme's colour behind. The drawer's level glyph and stream chip use
+/// DataTriggers over DynamicResource brushes instead; the converter stays for any
+/// surface that is rebuilt on a theme change.
+/// </summary>
 public sealed class SeverityToBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

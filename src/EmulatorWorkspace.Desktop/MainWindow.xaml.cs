@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,6 +19,21 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private Point? _dragStart;
     private (string? Subscription, int GuestWidth, int GuestHeight, double Width, double Height) _dragViewport;
+
+    // UX-08 dock sizing: 180 DIP by default, dragged between 120 and half the
+    // window, remembered for this session only (the field dies with the window).
+    private const double LogcatMinHeight = 120;
+    private const double LogcatDefaultHeight = 180;
+    private double _logcatHeight = LogcatDefaultHeight;
+    private bool _logcatDragging;
+    private double _logcatDragStartY;
+    private double _logcatDragStartHeight;
+
+    // UX-08 tail following: the dock follows the newest line while it is pinned
+    // to the bottom; scrolling up unpins it and counts what arrived since.
+    private bool _logDockPinned = true;
+    private int _logNewSinceScroll;
+    private ScrollViewer? _logDockScroll;
 
     /// <summary>
     /// UX-05: SystemParameters.ClientAreaAnimation, exposed as a dependency
@@ -108,6 +124,9 @@ public partial class MainWindow : Window
         };
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.OpenLibraryRequested += OnOpenLibraryRequested;
+        _viewModel.LogEntries.CollectionChanged += OnLogEntriesChanged;
+        LogDockList.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(OnLogDockScrollChanged));
+        LogDockList.Loaded += (_, _) => _logDockScroll = FindDescendant<ScrollViewer>(LogDockList);
     }
 
     private void OnOpenLibraryRequested() => OpenDeviceLibrary();
@@ -225,6 +244,12 @@ public partial class MainWindow : Window
         else if (args.PropertyName == nameof(MainViewModel.IsLogcatOpen))
         {
             AnimateLogcatDrawer();
+            if (!_viewModel.IsLogcatOpen)
+            {
+                _logDockPinned = true;
+                _logNewSinceScroll = 0;
+                UpdateJumpPill();
+            }
         }
         else if (args.PropertyName == nameof(MainViewModel.DropVisible))
         {
@@ -397,6 +422,19 @@ public partial class MainWindow : Window
         if (IsSettingsOpen)
         {
             UpdateSettingsDrawerWidth();
+        }
+
+        // UX-08: the dock may never take more than half the window, so a resize
+        // clamps the operator's session height down to the new ceiling.
+        if (_viewModel.IsLogcatOpen)
+        {
+            var clamped = ClampLogcatHeight(LogcatHost.Height > 0 ? LogcatHost.Height : _logcatHeight);
+            _logcatHeight = clamped;
+            if (!_logcatDragging)
+            {
+                LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, null);
+                LogcatHost.Height = clamped;
+            }
         }
     }
 
@@ -608,15 +646,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// UX-04b: the dock expands over 220 ms on cubic-bezier(0.22,1,0.36,1) and
-    /// the caret turns to point down. With reduced motion the drawer is simply
-    /// there; collapsing is immediate in both cases because the tab bar, not the
-    /// drawer, is the persistent surface.
+    /// UX-04b: the dock expands over 220 ms on cubic-bezier(0.22,1,0.36,1) and the
+    /// caret turns to point down. With reduced motion the drawer is simply there;
+    /// collapsing is immediate in both cases because the tab bar, not the drawer,
+    /// is the persistent surface. UX-08 sizes it to the operator's session height
+    /// (180 DIP by default, 120 minimum, half the window at most).
     /// </summary>
     private void AnimateLogcatDrawer()
     {
-        const double openHeight = 230;
         var open = _viewModel.IsLogcatOpen;
+        var openHeight = ClampLogcatHeight(_logcatHeight);
 
         LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, null);
         DrawerChevron.Angle = open ? 180 : 0;
@@ -624,6 +663,11 @@ public partial class MainWindow : Window
         if (!open || !SystemParameters.ClientAreaAnimation)
         {
             LogcatHost.Height = open ? openHeight : 0;
+            if (open)
+            {
+                PinDockToLatest();
+            }
+
             return;
         }
 
@@ -635,6 +679,174 @@ public partial class MainWindow : Window
             KeyTime.FromTimeSpan(duration),
             new KeySpline(0.22, 1, 0.36, 1)));
         LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, timeline);
+        PinDockToLatest();
+    }
+
+    /// <summary>
+    /// A freshly opened dock starts at the newest line, and the tail follows from
+    /// there, so the retained offset from a previous look never reappears.
+    /// </summary>
+    private void PinDockToLatest()
+    {
+        _logDockPinned = true;
+        _logNewSinceScroll = 0;
+        UpdateJumpPill();
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            (_logDockScroll ??= FindDescendant<ScrollViewer>(LogDockList))?.ScrollToEnd();
+        });
+    }
+
+    /// <summary>Half the window, but never below the 120 DIP minimum.</summary>
+    private double MaxLogcatHeight => Math.Max(LogcatMinHeight, RootGrid.ActualHeight * 0.5);
+
+    private double ClampLogcatHeight(double height) => Math.Clamp(height, LogcatMinHeight, MaxLogcatHeight);
+
+    private void OnLogcatSplitterDown(object sender, MouseButtonEventArgs e)
+    {
+        _logcatDragging = true;
+        _logcatDragStartY = e.GetPosition(this).Y;
+        _logcatDragStartHeight = LogcatHost.ActualHeight > 0 ? LogcatHost.ActualHeight : _logcatHeight;
+        LogcatSplitter.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnLogcatSplitterMove(object sender, MouseEventArgs e)
+    {
+        if (!_logcatDragging)
+        {
+            return;
+        }
+
+        // Dragging up grows the dock: the splitter sits above it.
+        var delta = _logcatDragStartY - e.GetPosition(this).Y;
+        var height = ClampLogcatHeight(_logcatDragStartHeight + delta);
+        LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, null);
+        LogcatHost.Height = height;
+        _logcatHeight = height;
+        e.Handled = true;
+    }
+
+    private void OnLogcatSplitterUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_logcatDragging)
+        {
+            return;
+        }
+
+        _logcatDragging = false;
+        LogcatSplitter.ReleaseMouseCapture();
+        e.Handled = true;
+    }
+
+    private void OnLogcatSplitterLostCapture(object sender, MouseEventArgs e) => _logcatDragging = false;
+
+    private void OnLogEntriesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (!_viewModel.IsLogcatOpen)
+        {
+            return;
+        }
+
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            _logNewSinceScroll = 0;
+            UpdateJumpPill();
+            return;
+        }
+
+        var added = e.NewItems?.Count ?? 0;
+        if (_logDockPinned)
+        {
+            // Follow the tail after the container exists for the new item. ScrollToEnd
+            // (not ScrollIntoView) pins the offset to the true bottom, so the last
+            // rows fill the viewport instead of sitting at its top.
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                if (_logDockPinned)
+                {
+                    (_logDockScroll ??= FindDescendant<ScrollViewer>(LogDockList))?.ScrollToEnd();
+                }
+            });
+        }
+        else if (added > 0)
+        {
+            _logNewSinceScroll += added;
+            UpdateJumpPill();
+        }
+    }
+
+    private void OnLogDockScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.ExtentHeightChange != 0 && e.VerticalChange == 0)
+        {
+            // Content grew, not the operator: a pinned dock is about to scroll.
+            return;
+        }
+
+        var scroll = e.OriginalSource as ScrollViewer ?? _logDockScroll;
+        if (scroll is null)
+        {
+            return;
+        }
+
+        var atBottom = scroll.VerticalOffset >= scroll.ScrollableHeight - 2;
+        if (atBottom)
+        {
+            _logDockPinned = true;
+            _logNewSinceScroll = 0;
+        }
+        else if (e.VerticalChange < 0 || _logDockPinned)
+        {
+            _logDockPinned = false;
+        }
+
+        UpdateJumpPill();
+    }
+
+    private void UpdateJumpPill()
+    {
+        if (LogJumpPill is null)
+        {
+            return;
+        }
+
+        if (_logDockPinned || _logNewSinceScroll <= 0)
+        {
+            LogJumpPill.Visibility = Visibility.Collapsed;
+            LogJumpPill.Content = "Jump to latest";
+            return;
+        }
+
+        LogJumpPill.Content = "Jump to latest · " + _logNewSinceScroll + " new";
+        LogJumpPill.Visibility = Visibility.Visible;
+    }
+
+    private void OnJumpToLatest(object sender, RoutedEventArgs e)
+    {
+        _logDockPinned = true;
+        _logNewSinceScroll = 0;
+        UpdateJumpPill();
+        (_logDockScroll ??= FindDescendant<ScrollViewer>(LogDockList))?.ScrollToEnd();
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FindDescendant<T>(child) is { } nested)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     // ---- UX-06 settings slide-over -----------------------------------------
@@ -1430,6 +1642,82 @@ public partial class MainWindow : Window
             OpenPalette();
             e.Handled = true;
         }
+        // UX-08: the Logcat chords. They are scoped to a Logcat surface being
+        // visible (the dock or the full page), and each one runs exactly the
+        // command its button runs, so the tooltip's chord and the button can
+        // never disagree.
+        else if (LogcatVisible && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.F)
+        {
+            var field = _viewModel.IsLogcatPage ? LogPageSearchField : LogSearchField;
+            field.Focus();
+            field.SelectAll();
+            e.Handled = true;
+        }
+        else if (LogcatVisible && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.P)
+        {
+            _viewModel.LogPaused = !_viewModel.LogPaused;
+            e.Handled = true;
+        }
+        else if (LogcatVisible
+                 && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift)
+                 && e.Key == Key.K)
+        {
+            if (_viewModel.ClearLogCommand.CanExecute(null))
+            {
+                _viewModel.ClearLogCommand.Execute(null);
+            }
+
+            e.Handled = true;
+        }
+        else if (LogcatVisible && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.C)
+        {
+            // The page copies the selected rows; the dock has no selection-driven
+            // copy, so it keeps copying what the filter shows.
+            if (_viewModel.IsLogcatPage && LogPageList.SelectedItems.Count > 0)
+            {
+                _viewModel.CopyLogSelection(LogPageList.SelectedItems.Cast<LogEntryViewModel>());
+            }
+            else if (_viewModel.CopyLogCommand.CanExecute(null))
+            {
+                _viewModel.CopyLogCommand.Execute(null);
+            }
+
+            e.Handled = true;
+        }
+        else if (LogcatVisible
+                 && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift)
+                 && e.Key == Key.C)
+        {
+            if (_viewModel.CopyLogCommand.CanExecute(null))
+            {
+                _viewModel.CopyLogCommand.Execute(null);
+            }
+
+            e.Handled = true;
+        }
+        else if (LogcatVisible && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.E)
+        {
+            if (_viewModel.ExportLogCommand.CanExecute(null))
+            {
+                _viewModel.ExportLogCommand.Execute(null);
+            }
+
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>A Logcat surface is on screen: the dock, the page, or both.</summary>
+    private bool LogcatVisible => _viewModel.IsLogcatOpen || _viewModel.IsLogcatPage;
+
+    private void OnCopySelectedLog(object sender, RoutedEventArgs e)
+    {
+        if (LogPageList.SelectedItems.Count == 0)
+        {
+            _viewModel.CopyLogCommand.Execute(null);
+            return;
+        }
+
+        _viewModel.CopyLogSelection(LogPageList.SelectedItems.Cast<LogEntryViewModel>());
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)

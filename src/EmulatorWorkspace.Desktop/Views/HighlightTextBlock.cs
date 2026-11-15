@@ -32,6 +32,18 @@ public sealed class HighlightTextBlock : TextBlock
         typeof(HighlightTextBlock),
         new PropertyMetadata(null, OnContentChanged));
 
+    /// <summary>
+    /// UX-08: paints the matched runs on the accent-soft surface as well as in the
+    /// accent colour. The Logcat page needs that step because the Graphite accent
+    /// sits very close to text1 in luminance; the palette keeps its plain accent
+    /// runs (the default), so its look is unchanged.
+    /// </summary>
+    public static readonly DependencyProperty MarkMatchesProperty = DependencyProperty.Register(
+        nameof(MarkMatches),
+        typeof(bool),
+        typeof(HighlightTextBlock),
+        new PropertyMetadata(false, OnContentChanged));
+
     /// <summary>The text to render. Named to avoid hiding TextBlock.Text.</summary>
     public string TextValue
     {
@@ -44,6 +56,13 @@ public sealed class HighlightTextBlock : TextBlock
     {
         get => (IEnumerable<int>?)GetValue(HighlightIndexesProperty);
         set => SetValue(HighlightIndexesProperty, value);
+    }
+
+    /// <summary>Also paint the matched runs on the accent-soft surface.</summary>
+    public bool MarkMatches
+    {
+        get => (bool)GetValue(MarkMatchesProperty);
+        set => SetValue(MarkMatchesProperty, value);
     }
 
     private static void OnContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
@@ -90,6 +109,10 @@ public sealed class HighlightTextBlock : TextBlock
                     // DynamicResource so a live theme switch repaints the accent
                     // the way every other accent surface does.
                     run.SetResourceReference(TextElement.ForegroundProperty, "Accent");
+                    if (MarkMatches)
+                    {
+                        run.SetResourceReference(TextElement.BackgroundProperty, "AccentSoftTint");
+                    }
                 }
 
                 Inlines.Add(run);

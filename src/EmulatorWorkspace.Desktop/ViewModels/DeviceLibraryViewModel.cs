@@ -2033,7 +2033,7 @@ public sealed class LibraryCard : ObservableObject
         "starting" => "Starting",
         "stopping" => "Stopping",
         "failed" => "Failed",
-        _ => State == "Defined" ? "Not started" : State,
+        _ => State is "Defined" or "Stopped" ? "Stopped" : State,
     };
 
     public string StateTooltip
@@ -2047,8 +2047,8 @@ public sealed class LibraryCard : ObservableObject
                 null => "engine liveness not reported",
             };
             return _lastErrorText.Length > 0
-                ? $"Supervisor state: {State} · {engine} · last error: {_lastErrorText}"
-                : $"Supervisor state: {State} · {engine}";
+                ? $"Supervisor state: {DisplayState} · {engine} · last error: {_lastErrorText}"
+                : $"Supervisor state: {DisplayState} · {engine}";
         }
     }
 

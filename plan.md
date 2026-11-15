@@ -71,6 +71,56 @@ Latest Grok approval of 24cc54d remains merge-only. Journal-write evidence nit
 is optional backlog. Fresh provenance-backed WHPX and existing power-loss,
 AOSP, signing/redistribution gates remain open; readiness patch excluded.
 
+UX-08 Logcat drawer (2026-11-15, uncommitted working tree on
+`codex/magisk-windows-lab`, base HEAD `9ee8355`): the dock is restyled to the
+Graphite mockup (`shots/07-logcat.png`, `shots/02b-studio-logcat-drawer.png`).
+The 36 DIP toolbar carries two filter fields (leading line icon, mono
+placeholder), five independent level chips (V/D/I/W/E letter in the level colour
+on its ~12 % tint), the stream state chip (Following / Paused / Not attached /
+No guest) and four 30 DIP ghost icon actions (pause, clear, copy, export) with
+real chords (Ctrl+P, Ctrl+Shift+K, Ctrl+Shift+C, Ctrl+E; Ctrl+F focuses the
+search field). The table is a sticky 24 DIP header over 26 DIP Cascadia Mono 12
+rows: tabular timestamp in text3, the level glyph as a tinted 16 DIP chip, tag in
+text2, message in text1, warnings and errors marked by a 2 DIP leading bar, row
+hover through the shared 120 ms fade, selection in the shared selection tint with
+a 1 DIP accent focus edge. The dock keeps the 1 DIP specular top edge and its
+220 ms cubic-bezier(0.22,1,0.36,1) expand (instant under reduced motion) at a new
+256 DIP height that fits exactly seven rows. An err-soft band with Retry appears
+only when the subscription is refused, and the calm empty state (icon, one line,
+one sentence, at most one real action) covers no guest, no subscription, paused,
+filtered-out and waiting-for-the-first-line. Level filtering moved into
+`ViewModels/LogcatPresentation.cs` (pure, 21 tests); the level chips replaced the
+single "minimum level" ComboBox because a minimum-level chip would have implied
+that a Warn filter hides errors. No new theme key (every colour is an existing
+Graphite token), no palette change, no viewport/geometry/engine/Magisk change.
+Build 0 errors / 22 warnings, 443/443 tests, `git diff --check` clean; evidence in
+`artifacts/ui/ux08-*.png`.
+
+UX-08 fix pass (2026-11-15, same uncommitted tree): every item in
+`igr-feedback-ux08.md` is folded in. The dock header is now 36 DIP with the
+Logcat tab, a segmented "N lines · N warnings · N errors" summary (warn/err in
+their tokens, each hidden at zero) and the pop-out that opens the new full
+Logcat page, next to the collapse chevron. The dock is 180 DIP by default,
+resized by a 4 DIP splitter with a 24 x 3 grip between 120 DIP and half the
+window, remembered for the session only; rows are 20 DIP with 14 DIP level
+badges (V text3, D text2, I/W/E soft tints) and warn/err message tints; the tail
+follows while pinned and a "Jump to latest · N new" pill appears after the
+operator scrolls up; appends batch at 100 ms on the existing 2,500-line ring
+buffer, virtualized in Recycling + pixel scroll. The page (rail Logcat, dock
+pop-out, Back to Studio) has the DIAGNOSTICS/Logcat header with the real serial,
+a Paused · N buffered chip backed by a real paused buffer that flushes on
+resume, Pause/Resume + ghost Copy/Clear + one accent Export, the 240 DIP search,
+tag field, five dot chips (raised + stroke on, text3 off) and the Live/Paused
+state chip with a reduced-motion-aware pulse. Its 12 radius table has a 32 DIP
+caps header, 120/40/180/* columns (no PID: the supervisor sends none), 28 DIP
+rows with stroke-soft dividers, hover/selected states, Ctrl+C or the context
+menu copying selected lines, palette `HighlightTextBlock` matches, and the two
+named empty states. UX-07 nits: the user-facing "Defined" label is "Stopped"
+everywhere (header chip, palette context row, library card and tooltip), the
+About footnote is gone, and the palette's selected-row bar now uses the rail's
+exact 2 x 18 geometry. Validation and the per-item status are in
+`ux08fix-report.md`; evidence in `artifacts/ui/ux08fix-*.png`.
+
 
 ## Goal and baseline
 

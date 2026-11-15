@@ -151,6 +151,11 @@
     <Geometry x:Key="IconKey">M 6.2,6.2 A 2.4,2.4 0 1 1 6.19,6.2 Z M 7.9,7.9 L 12.8,12.8 M 10.4,10.4 L 11.7,9.1 M 11.6,11.6 L 12.9,10.3</Geometry>
     <Geometry x:Key="IconUndo">M 4.4,5.2 L 2.4,7.2 L 4.4,9.2 M 2.6,7.2 L 9,7.2 A 3.3,3.3 0 0 1 9,13.8 L 7.2,13.8</Geometry>
     <Geometry x:Key="IconLaunch">M 8,2.8 L 8,9.4 M 5.4,5.4 L 8,2.8 L 10.6,5.4 M 3.2,9.4 L 3.2,13.2 L 12.8,13.2 L 12.8,9.4</Geometry>
+    <!-- UX-08 logcat glyphs: pause (two bars, so it cannot be confused with the
+         play triangle) and the funnel the mockup's "Filter by tag" field leads
+         with. Same 16 grid and 1.5 stroke as every other glyph. -->
+    <Geometry x:Key="IconPause">M 5.8,3.8 L 5.8,12.2 M 10.2,3.8 L 10.2,12.2</Geometry>
+    <Geometry x:Key="IconFilter">M 2.8,4 L 13.2,4 L 9.2,8.6 L 9.2,12.8 L 6.8,11.4 L 6.8,8.6 Z</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
