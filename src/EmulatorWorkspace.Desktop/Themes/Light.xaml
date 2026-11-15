@@ -7,12 +7,26 @@
     <SolidColorBrush x:Key="WindowBg" Color="#F6F7F8" />
     <SolidColorBrush x:Key="NavBg" Color="#EEF0F2" />
     <SolidColorBrush x:Key="PanelBg" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="PanelAlt" Color="#E4E9ED" />
-    <SolidColorBrush x:Key="ChipBg" Color="#EDF1F4" />
+    <!-- UX-10: raised is the design sheet's #EEF1F4. It was #E4E9ED, which read
+         as a grey slab inside the white settings cards, the inspector's target
+         card and the palette's icon tiles. -->
+    <SolidColorBrush x:Key="PanelAlt" Color="#EEF1F4" />
+    <!-- UX-10: the neutral chip is #E9EDF0 - between the sheet's #F3F4F5 (chips
+         on white) and the raised surface, so one chip reads on both. -->
+    <SolidColorBrush x:Key="ChipBg" Color="#E9EDF0" />
     <SolidColorBrush x:Key="PressedBg" Color="#DFE5EA" />
     <SolidColorBrush x:Key="HoverBg" Color="#F0F3F5" />
     <SolidColorBrush x:Key="PopupBg" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="BorderBrush" Color="#B8C2CB" />
+    <!-- UX-10: the status bar is the navigation surface (#EEF0F2), the quiet
+         strip the light mockup draws, instead of a second white band. -->
+    <SolidColorBrush x:Key="StatusBarBg" Color="#EEF0F2" />
+    <!-- UX-10 (igr-feedback-ux10 Logcat light): the log table's sticky header sits
+         on the navigation surface, not on the log surface. -->
+    <SolidColorBrush x:Key="LogHeaderBg" Color="#EEF0F2" />
+    <!-- UX-10: stroke is the design sheet's #CDD5DC. It was #B8C2CB, two steps
+         darker, so every chip, field and group edge in the light theme read as a
+         border instead of the sheet's hairline. -->
+    <SolidColorBrush x:Key="BorderBrush" Color="#CDD5DC" />
     <!-- UX-04b fix pass (B3): stroke-soft darkened one step (#DDE2E7 ->
           #D6DDE3) so the inspector's IDENTITY/RESOURCES/SESSION rules and the
           viewport card edge read on white the way 02/17 do. Still a hairline,
@@ -31,49 +45,67 @@
     <SolidColorBrush x:Key="AccentHover" Color="#1D5078" />
     <SolidColorBrush x:Key="AccentPressed" Color="#18445F" />
     <SolidColorBrush x:Key="AccentText" Color="#FFFFFF" />
-    <!-- Accent-soft = accent at 10% over the light base (#E1E8ED). -->
-    <SolidColorBrush x:Key="AccentSoftBg" Color="#E1E8ED" />
+    <!-- Accent-soft is the sheet's active-tile / selection tint (#DCEAF4). The
+         old #E1E8ED was accent at 10 % over the base, which read as grey next to
+         the sheet's clear blue tile. -->
+    <SolidColorBrush x:Key="AccentSoftBg" Color="#DCEAF4" />
+    <!-- UX-10: the muted accent a disabled primary keeps instead of turning into
+         a ghost, as the design sheet draws it (accent at 40 % over the base). -->
+    <SolidColorBrush x:Key="AccentDisabled" Color="#9CB6C9" />
+    <SolidColorBrush x:Key="AccentDisabledText" Color="#FFFFFF" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
     <!-- UX-06: the light settings slide-over dims the studio at 30 %, not 50 %.
           On a near-white studio the same scrim weight reads twice as heavy, and
           the reviewer's spec is base black at 30 % for the light theme. The
           UX-04 library drawers keep ScrimBg. -->
     <SolidColorBrush x:Key="SettingsScrimBg" Color="#4D000000" />
-    <!-- UX-07 fix pass: the palette's own 40 % dim. It is specified separately
-          from the drawer scrim and applies to every theme. -->
-    <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
-    <!-- UX-04b: a white specular line is invisible on a white surface, so the
-          light theme keeps the same vertical top-edge gradient in ink (top 14 %
-          fading to 3 % at the bottom). -->
-    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#24000000" Offset="0" />
-        <GradientStop Color="#08000000" Offset="1" />
-    </LinearGradientBrush>
+    <!-- UX-10: dialogs dim the app at 40 % (igr-feedback-ux10), the consent
+         surface included. It is its own token so the settings drawer keeps its
+         30 % light dim and the palette keeps its own weight. -->
+    <SolidColorBrush x:Key="DialogScrimBg" Color="#66000000" />
+    <!-- UX-07 fix pass: the palette's own dim. UX-10 brings it to the reviewer's
+         30 % in the light theme. -->
+    <SolidColorBrush x:Key="PaletteScrimBg" Color="#4D000000" />
+    <!-- UX-10 (igr-feedback-ux10 elevation): the specular highlight is OFF in the
+          light theme - a white line on white is invisible and the ink version read
+          as a shadow. Floating surfaces carry the same #CDD5DC stroke the sheet
+          uses for every other edge. -->
+    <SolidColorBrush x:Key="SpecularEdge" Color="#CDD5DC" />
     <!-- Accent-soft radial behind a hovered rail/toolbar icon. -->
     <RadialGradientBrush x:Key="HoverGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
         <GradientStop Color="#24235E89" Offset="0" />
         <GradientStop Color="#00235E89" Offset="1" />
     </RadialGradientBrush>
-    <!-- Two-layer floating shadow, light-theme equivalent: softer and tinted
-          with the deep slate of the text colour instead of pure black. -->
-    <DropShadowEffect x:Key="FloatingShadowAmbient" BlurRadius="25" ShadowDepth="10"
-                      Direction="270" Opacity="0.22" Color="#101820" />
-    <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
-                      Direction="270" Opacity="0.18" Color="#101820" />
+    <!-- UX-10 (igr-feedback-ux10 elevation): the light sheet's two-layer shadow is
+         a very soft slate tint - #1C2933 at 8 % (blur 16, y6) and 6 % (blur 2, y1)
+         - not the near-black halo the dark theme needs. -->
+    <DropShadowEffect x:Key="FloatingShadowAmbient" BlurRadius="16" ShadowDepth="6"
+                      Direction="270" Opacity="0.08" Color="#1C2933" />
+    <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="2" ShadowDepth="1"
+                      Direction="270" Opacity="0.06" Color="#1C2933" />
     <SolidColorBrush x:Key="Danger" Color="#A52C36" />
-    <!-- UX-04: err-soft is error at 12% over the light base (#ECDFE1); the
-          border is the same error at 35%. Error text on the band measures
-          5.4:1. -->
-    <SolidColorBrush x:Key="DangerBg" Color="#ECDFE1" />
+    <!-- UX-04: err-soft is error at 12% over the light base; UX-10 lifts it to
+          the design sheet's #F8EEEF so the consent acknowledgement callout and
+          the err band read as a soft rose instead of a pink slab. The border is
+          the same error at 35%; error text on the band measures 6.1:1. -->
+    <SolidColorBrush x:Key="DangerBg" Color="#F8EEEF" />
+    <!-- UX-10: the label on a solid error primary (the consent confirm), as the
+         design sheet draws it: white on the light red, the deep red-brown on the
+         dark salmon. -->
+    <SolidColorBrush x:Key="OnDanger" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DangerBorder" Color="#59A52C36" />
     <SolidColorBrush x:Key="Success" Color="#216443" />
-    <SolidColorBrush x:Key="SuccessBg" Color="#E2EFE8" />
+    <!-- UX-10: soft state tints follow the design sheet (ok #E8EFEC, warn
+         #F8EFE3, err #F8EEEF). The previous values were 12 % of each tone over
+         the base, which sat a step darker than the sheet and made the err-soft
+         acknowledgement callout read as a pink slab. -->
+    <SolidColorBrush x:Key="SuccessBg" Color="#E8EFEC" />
     <!-- UX-04b fix pass: 1px tone edges for ok/warn chips, at the same 35 %
          alpha as DangerBorder, so the Running chip reads as a chip on the
          viewport-coloured card media (item 12). -->
     <SolidColorBrush x:Key="SuccessBorder" Color="#59216443" />
     <SolidColorBrush x:Key="Warning" Color="#845716" />
-    <SolidColorBrush x:Key="WarningBg" Color="#F5EEDF" />
+    <SolidColorBrush x:Key="WarningBg" Color="#F8EFE3" />
     <SolidColorBrush x:Key="WarningBorder" Color="#59845716" />
     <SolidColorBrush x:Key="LogBg" Color="#E0E5E9" />
     <SolidColorBrush x:Key="ViewportBg" Color="#E0E5E9" />
@@ -147,38 +179,23 @@
           below the banding threshold on #E0E5E9. The dark stage is unchanged. -->
     <RadialGradientBrush x:Key="StageGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5"
                          RadiusX="0.6" RadiusY="0.72">
-        <GradientStop Color="#0B235E89" Offset="0" />
+        <GradientStop Color="#0A235E89" Offset="0" />
         <GradientStop Color="#08235E89" Offset="0.3" />
         <GradientStop Color="#05235E89" Offset="0.55" />
         <GradientStop Color="#02235E89" Offset="0.8" />
         <GradientStop Color="#00235E89" Offset="1" />
     </RadialGradientBrush>
     <SolidColorBrush x:Key="StageGlowOk" Color="#00000000" />
-    <DrawingBrush x:Key="StageNoise" TileMode="Tile" Stretch="None"
-                  Viewport="0,0,8,8" ViewportUnits="Absolute"
-                  Viewbox="0,0,8,8" ViewboxUnits="Absolute">
-        <DrawingBrush.Drawing>
-            <DrawingGroup>
-                <GeometryDrawing Brush="#06000000" Geometry="M0,0 L1,0 L1,1 L0,1 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M3,0 L4,0 L4,1 L3,1 Z" />
-                <GeometryDrawing Brush="#07000000" Geometry="M6,1 L7,1 L7,2 L6,2 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M1,2 L2,2 L2,3 L1,3 Z" />
-                <GeometryDrawing Brush="#05000000" Geometry="M4,2 L5,2 L5,3 L4,3 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M7,4 L8,4 L8,5 L7,5 Z" />
-                <GeometryDrawing Brush="#07000000" Geometry="M0,4 L1,4 L1,5 L0,5 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M2,5 L3,5 L3,6 L2,6 Z" />
-                <GeometryDrawing Brush="#05000000" Geometry="M5,6 L6,6 L6,7 L5,7 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M3,7 L4,7 L4,8 L3,8 Z" />
-                <GeometryDrawing Brush="#06000000" Geometry="M6,7 L7,7 L7,8 L6,8 Z" />
-            </DrawingGroup>
-        </DrawingBrush.Drawing>
-    </DrawingBrush>
+    <!-- UX-10 (igr-feedback-ux10 stage): the light stage carries no noise tile -
+         the five-stop glow is already smooth on #E0E5E9 and the dither read as a
+         faint grey film. The key still resolves. -->
+    <SolidColorBrush x:Key="StageNoise" Color="#00000000" />
     <!-- igr-feedback-ux05 item 7: the veil is 92 % here too, so the ghost phone
           and the pill do not read through a light dropzone. -->
     <SolidColorBrush x:Key="DropVeilBg" Color="#EBFFFFFF" />
     <!-- The bezel stays a dark device body on the light stage, like the drawn
-          devices in the library cards. -->
-    <SolidColorBrush x:Key="DeviceFrameBg" Color="#171C20" />
+          devices in the library cards. UX-10 uses the sheet's deep slate. -->
+    <SolidColorBrush x:Key="DeviceFrameBg" Color="#1C2933" />
     <DropShadowEffect x:Key="DeviceFrameShadow" BlurRadius="22" ShadowDepth="6"
                       Direction="270" Opacity="0.2" Color="#101820" />
 

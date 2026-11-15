@@ -158,6 +158,27 @@ public partial class ConsentDialogWindow : Window
 
     private void OnCancel(object sender, RoutedEventArgs e) => CloseAnimated();
 
+    /// <summary>
+    /// Copies one artifact's full SHA-256 (igr-feedback-ux10 item 8). A clipboard
+    /// failure is not a consent decision, so it never blocks the dialog.
+    /// </summary>
+    private void OnCopyArtifactHash(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string hash } || hash.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            System.Windows.Clipboard.SetText(hash);
+        }
+        catch (Exception)
+        {
+            // Clipboard contention is cosmetic here.
+        }
+    }
+
     private void OnConfirm(object sender, RoutedEventArgs e)
     {
         if (!ConfirmButton.IsEnabled || _closing)

@@ -13,6 +13,11 @@
     <SolidColorBrush x:Key="PressedBg" Color="{x:Static SystemColors.ControlDarkColor}" />
     <SolidColorBrush x:Key="HoverBg" Color="{x:Static SystemColors.ControlLightColor}" />
     <SolidColorBrush x:Key="PopupBg" Color="{x:Static SystemColors.WindowColor}" />
+    <!-- UX-10: high contrast keeps the window surface for the status bar; it is
+         separated by the system frame colour, not by a tint. -->
+    <SolidColorBrush x:Key="StatusBarBg" Color="{x:Static SystemColors.WindowColor}" />
+    <!-- UX-10: high contrast keeps the header on the window surface. -->
+    <SolidColorBrush x:Key="LogHeaderBg" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="BorderBrush" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="BorderSubtle" Color="{x:Static SystemColors.WindowFrameColor}" />
 
@@ -25,6 +30,11 @@
     <SolidColorBrush x:Key="AccentHover" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="AccentPressed" Color="{x:Static SystemColors.ControlDarkColor}" />
     <SolidColorBrush x:Key="AccentText" Color="{x:Static SystemColors.HighlightTextColor}" />
+    <!-- UX-10: the disabled primary keeps a solid surface (never a ghost) and a
+         muted label, so "disabled" is carried by the surface plus the tooltip
+         reason; high contrast uses the system control and grey text. -->
+    <SolidColorBrush x:Key="AccentDisabled" Color="{x:Static SystemColors.ControlColor}" />
+    <SolidColorBrush x:Key="AccentDisabledText" Color="{x:Static SystemColors.GrayTextColor}" />
     <!-- High contrast keeps the system palette: soft tints collapse to the
           control surface and the accent-soft item keeps its border and weight,
           so selection is never colour-only. -->
@@ -35,6 +45,8 @@
     <SolidColorBrush x:Key="SettingsScrimBg" Color="#80000000" />
     <!-- UX-07 fix pass: the command palette dims at 40 % in every theme. -->
     <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
+    <!-- UX-10: dialogs keep one 50 % system dim in high contrast. -->
+    <SolidColorBrush x:Key="DialogScrimBg" Color="#80000000" />
     <!-- UX-04b: the specular edge keeps the system window text colour, in a
           vertical top-to-bottom gradient like the other themes. -->
     <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
@@ -55,6 +67,9 @@
     <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
                       Direction="270" Opacity="0.4" Color="#000000" />
     <SolidColorBrush x:Key="Danger" Color="{x:Static SystemColors.WindowTextColor}" />
+    <!-- UX-10: a solid error primary keeps the system highlight text on the
+         system window text fill. -->
+    <SolidColorBrush x:Key="OnDanger" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="DangerBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="DangerBorder" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="Success" Color="{x:Static SystemColors.WindowTextColor}" />

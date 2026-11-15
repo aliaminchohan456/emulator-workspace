@@ -13,6 +13,13 @@
     <SolidColorBrush x:Key="PressedBg" Color="#262B2F" />
     <SolidColorBrush x:Key="HoverBg" Color="#24282C" />
     <SolidColorBrush x:Key="PopupBg" Color="#23272B" />
+    <!-- UX-10: the status bar keeps the dark PanelBg it always had; the token
+         exists so the light theme can use the navigation strip without a second
+         dark value. -->
+    <SolidColorBrush x:Key="StatusBarBg" Color="#1B1E21" />
+    <!-- UX-10: the log table header keeps its transparent surface in the dark
+         theme; the light theme paints the navigation strip there. -->
+    <SolidColorBrush x:Key="LogHeaderBg" Color="Transparent" />
     <SolidColorBrush x:Key="BorderBrush" Color="#353C42" />
     <SolidColorBrush x:Key="BorderSubtle" Color="#282D31" />
 
@@ -28,6 +35,11 @@
     <SolidColorBrush x:Key="AccentHover" Color="#C4E2FB" />
     <SolidColorBrush x:Key="AccentPressed" Color="#9CC8EF" />
     <SolidColorBrush x:Key="AccentText" Color="#142A3B" />
+    <!-- UX-10: the muted accent a disabled primary keeps (accent at 40 % over
+         the panel) instead of turning into a ghost, as the dark design sheet
+         draws its Disabled state. -->
+    <SolidColorBrush x:Key="AccentDisabled" Color="#556675" />
+    <SolidColorBrush x:Key="AccentDisabledText" Color="#142A3B" />
     <!-- Accent-soft = accent at 10% over the navigation surface (#252A30); used
           by the active navigation item and the neutral "info" chip. -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="#252A30" />
@@ -41,6 +53,9 @@
           spec), one step lighter than the drawer so a 640 DIP panel keeps the
           studio readable behind it. -->
     <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
+    <!-- UX-10: dialogs dim at 40 % in the light theme; the dark consent keeps the
+         50 % the UX-09 review asked for. -->
+    <SolidColorBrush x:Key="DialogScrimBg" Color="#80000000" />
     <!-- UX-04b: the 1px specular edge of a floating surface is a VERTICAL
           gradient (top edge .14 white fading to .03 at the bottom), so the
           highlight runs along the top edge and dies out down the panel. It is
@@ -61,6 +76,9 @@
     <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
                       Direction="270" Opacity="0.4" Color="#000000" />
     <SolidColorBrush x:Key="Danger" Color="#FFA6A6" />
+    <!-- UX-10: the label on a solid error primary (the consent confirm): the deep
+         red-brown the dark sheet pairs with its salmon fill. -->
+    <SolidColorBrush x:Key="OnDanger" Color="#3B1215" />
     <!-- UX-04: err-soft is error at 12% over the base surface (not a solid
           maroon): #2E2526 = #111315 + 12% #FFA6A6. DangerBorder is the same
           error colour at 35% so the band keeps a visible 1px edge without a

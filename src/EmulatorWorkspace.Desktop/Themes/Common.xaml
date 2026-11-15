@@ -250,9 +250,10 @@
     </Style>
 
     <!-- Primary action: strong accent fill, one per local decision. A primary
-         that cannot run turns into a ghost (transparent surface, 1 px stroke,
-         muted label, 40 % opacity) so a disabled commit never reads as an
-         available one; the call site explains why in its tooltip. -->
+         that cannot run keeps a muted accent surface (accent at 40 % over the
+         panel) with its on-accent label, exactly as the design sheet draws the
+         Disabled state; it never becomes an invisible ghost on a white panel. The
+         call site explains why in its tooltip. -->
     <Style x:Key="PrimaryButton" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource Accent}" />
         <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
@@ -288,10 +289,9 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="B" Property="Background" Value="Transparent" />
-                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
-                            <Setter Property="Opacity" Value="0.4" />
+                            <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentDisabled}" />
+                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource AccentDisabled}" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentDisabledText}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -301,10 +301,13 @@
 
     <!-- UX-04: caution and destructive ghost actions. Same geometry as the
          secondary button; only the text and border carry the tone, and the
-         words in the label always name the consequence. -->
+         words in the label always name the consequence. UX-10: the privileged
+         action carries the warn-soft fill both design sheets draw (the outline
+         alone vanished into the light panel). -->
     <Style x:Key="WarnButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
         <Setter Property="Foreground" Value="{DynamicResource Warning}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Warning}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+        <Setter Property="Background" Value="{DynamicResource WarningBg}" />
     </Style>
 
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
@@ -455,6 +458,92 @@
         <Setter Property="Margin" Value="0,0,6,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Fill" Value="{DynamicResource TextTertiary}" />
+    </Style>
+
+    <!-- UX-10: tone chips driven by the element's own Tag. The converters that did
+         this job resolved a brush ONCE, so a live theme switch left a dark-theme
+         chip on a light surface (the Magisk lab chip stayed #23272B in the light
+         theme). A tag-driven style keeps every brush a DynamicResource, so the chip
+         repaints with the theme like the rest of the window. Tags are the tone
+         words ("ok"/"warning"/"error") and the supervisor's state words. -->
+    <Style x:Key="ToneTagPill" TargetType="Border" BasedOn="{StaticResource StatePill}">
+        <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Running">
+                <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Starting">
+                <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Stopping">
+                <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Failed">
+                <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ToneTagText" TargetType="TextBlock" BasedOn="{StaticResource StatePillText}">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                <Setter Property="Foreground" Value="{DynamicResource Success}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Running">
+                <Setter Property="Foreground" Value="{DynamicResource Success}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Starting">
+                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Stopping">
+                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Failed">
+                <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ToneTagDot" TargetType="Ellipse" BasedOn="{StaticResource StatePillDot}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                <Setter Property="Fill" Value="{DynamicResource Success}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Running">
+                <Setter Property="Fill" Value="{DynamicResource Success}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                <Setter Property="Fill" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Starting">
+                <Setter Property="Fill" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Stopping">
+                <Setter Property="Fill" Value="{DynamicResource Warning}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                <Setter Property="Fill" Value="{DynamicResource Danger}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Failed">
+                <Setter Property="Fill" Value="{DynamicResource Danger}" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <!-- UX-07: the key chip moved here from MainWindow.xaml so the command

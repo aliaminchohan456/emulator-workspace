@@ -4335,8 +4335,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return dialog.ShowDialog() == true;
     }
 
-    /// <summary>"emulator-5554 · x86_64 · system-images;android-35;default;x86_64".</summary>
-    private static string GuestMetaText(DeviceItemViewModel device) =>
+    /// <summary>
+    /// igr-feedback-ux10 item 6: "emulator-5554 · Android 15 · AOSP · x86_64" -
+    /// the reading name of the real image (the same table the inspector uses),
+    /// never the raw package id. The full raw value stays in the tooltip.
+    /// </summary>
+    private static string GuestMetaText(DeviceItemViewModel device)
+    {
+        var image = ImageNaming.Describe(device.ImagePackage);
+        return string.Join(" · ", new[] { device.Serial, image.Length > 0 ? image : device.Abi }
+            .Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+
+    /// <summary>The tooltip: the same target with the raw package the supervisor stores.</summary>
+    private static string GuestMetaTooltip(DeviceItemViewModel device) =>
         string.Join(" · ", new[] { device.Serial, device.Abi, device.ImagePackage }
             .Where(part => !string.IsNullOrWhiteSpace(part)));
 
@@ -4351,7 +4363,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         TileTone = "err",
         GuestName = device.Name,
         GuestMeta = GuestMetaText(device),
-        GuestMetaTooltip = device.ImageDisplay,
+        GuestMetaTooltip = GuestMetaTooltip(device),
         StateLabel = device.StateLabel,
         StateTone = GuestStateTone(device),
         Artifacts = artifacts,
@@ -4375,7 +4387,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         TileTone = "warn",
         GuestName = device.Name,
         GuestMeta = GuestMetaText(device),
-        GuestMetaTooltip = device.ImageDisplay,
+        GuestMetaTooltip = GuestMetaTooltip(device),
         StateLabel = device.StateLabel,
         StateTone = GuestStateTone(device),
         Consequences = new[]
@@ -4396,7 +4408,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         TileTone = "accent",
         GuestName = device.Name,
         GuestMeta = GuestMetaText(device),
-        GuestMetaTooltip = device.ImageDisplay,
+        GuestMetaTooltip = GuestMetaTooltip(device),
         StateLabel = device.StateLabel,
         StateTone = GuestStateTone(device),
         Consequences = new[]

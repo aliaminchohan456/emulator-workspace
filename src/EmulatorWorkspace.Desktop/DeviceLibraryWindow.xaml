@@ -975,7 +975,7 @@
             </Grid>
 
             <!-- Status bar -->
-            <Border Grid.Row="4" Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BorderBrush}"
+            <Border Grid.Row="4" Background="{DynamicResource StatusBarBg}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,1,0,0" Padding="24,6">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -1122,12 +1122,48 @@
                                            Margin="0,0,0,2" />
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Acceleration" Style="{StaticResource DrawerRowLabel}" />
-                                <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueChip}"
-                                        Background="{Binding CreateWhpxChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=bg}"
-                                        BorderBrush="{Binding CreateWhpxChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=border}"
+                                <Border Grid.Row="2" Grid.Column="1"
+                                        Tag="{Binding CreateWhpxChipTone}"
                                         ToolTip="{Binding CreateWhpxText}">
-                                    <TextBlock Text="{Binding CreateWhpxChip}" Style="{StaticResource ValueChipText}"
-                                               Foreground="{Binding CreateWhpxChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}" />
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource ValueChip}">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                                                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                                                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                                                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding CreateWhpxChip}"
+                                               Tag="{Binding CreateWhpxChipTone}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource ValueChipText}">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Success}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Border>
                             </Grid>
                         </Border>
@@ -1162,12 +1198,48 @@
                                            Margin="0,0,0,2" />
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Verdict" Style="{StaticResource DrawerRowLabel}" />
-                                <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource ValueChip}"
-                                        Background="{Binding CreateDiskChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=bg}"
-                                        BorderBrush="{Binding CreateDiskChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=border}"
+                                <Border Grid.Row="3" Grid.Column="1"
+                                        Tag="{Binding CreateDiskChipTone}"
                                         ToolTip="{Binding CreateDiskVerdict}">
-                                    <TextBlock Text="{Binding CreateDiskChip}" Style="{StaticResource ValueChipText}"
-                                               Foreground="{Binding CreateDiskChipTone, Converter={StaticResource ToneBrush}, ConverterParameter=fg}" />
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource ValueChip}">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                                                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                                                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                                                    <Setter Property="Background" Value="{DynamicResource DangerBg}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding CreateDiskChip}"
+                                               Tag="{Binding CreateDiskChipTone}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource ValueChipText}">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="ok">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Success}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="warning">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="error">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Border>
                             </Grid>
                         </Border>

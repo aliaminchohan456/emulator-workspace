@@ -335,10 +335,13 @@
                         <Border Width="28" Height="28" CornerRadius="6" VerticalAlignment="Center"
                                 Background="{DynamicResource PanelAlt}"
                                 BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
-                            <Path Data="{StaticResource IconKey}" Style="{StaticResource Glyph}"
-                                  Width="14" Height="14" />
+                            <Path Data="{StaticResource IconKey}" Width="14" Height="14"
+                                  Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Stretch="None" />
                         </Border>
                         <TextBlock Grid.Column="1" Text="Pairing request" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center" Margin="10,0,0,0" />
                     </Grid>
 
@@ -347,7 +350,54 @@
                                Margin="0,8,0,0"
                                Text="A local client asks to drive a lab guest. Select its request, then approve it against a stopped template." />
 
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                    <!-- The request list sits directly under the description and
+                         caps at three 44 DIP rows with its own scroll, so the
+                         Client/Template/Scopes detail follows it without the dead
+                         gap the reviewer saw. With no request it is a slim info
+                         line instead of an empty box. -->
+                    <Grid DockPanel.Dock="Top" Margin="0,10,0,0">
+                        <ListBox x:Name="PairingsGrid"
+                                 ItemContainerStyle="{StaticResource PairingRowItem}"
+                                 SelectionMode="Single" MaxHeight="132"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="Agent pairing requests">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="44" AutomationProperties.Name="{Binding AccessibleName}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center" Margin="6,0,6,0">
+                                            <TextBlock Text="{Binding Client}" Style="{StaticResource RowText}"
+                                                       FontSize="12" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Pairing}" Style="{StaticResource RowMono}"
+                                                       FontSize="10" Foreground="{DynamicResource TextTertiary}"
+                                                       Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Border Grid.Column="1" Style="{StaticResource ToneChip}"
+                                                VerticalAlignment="Center" Margin="0,0,4,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Style="{StaticResource ToneDot}" />
+                                                <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource ToneChipText}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Border VerticalAlignment="Top" Margin="0,2,0,0" Padding="8,6"
+                                Background="{DynamicResource PanelAlt}"
+                                BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusInnerCard}"
+                                Visibility="{Binding Items.Count, ElementName=PairingsGrid, Converter={StaticResource InverseCountVis}}">
+                            <TextBlock Style="{StaticResource Caption}" FontSize="11"
+                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"
+                                       Text="No pairing requests · agents connect from the CLI" />
+                        </Border>
+                    </Grid>
+                    <StackPanel DockPanel.Dock="Top" Margin="0,10,0,0">
                         <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,0,0,10" />
 
                         <Grid Margin="0,0,0,6">
@@ -393,7 +443,7 @@
 
                         <TextBlock Text="Scopes" Style="{StaticResource FieldLabel}" Margin="0,8,0,4" />
                         <TextBox x:Name="ScopesBox" FontFamily="{StaticResource MonoFont}" FontSize="11"
-                                 Padding="7,4" MinHeight="44" Height="44" TextWrapping="Wrap"
+                                 Padding="7,4" MinHeight="64" Height="64" TextWrapping="Wrap"
                                  AcceptsReturn="False" VerticalScrollBarVisibility="Disabled"
                                  VerticalContentAlignment="Center"
                                  ToolTip="Comma-separated scopes granted to the paired client."
@@ -422,64 +472,21 @@
                                    Margin="0,8,0,0"
                                    Text="Approval clones the stopped template and grants exactly these scopes." />
                     </StackPanel>
-
-                    <!-- The request list fills whatever height is left between the
-                         description and the approval form. With no request it is a
-                         slim info line instead of an empty box. -->
-                    <Grid Margin="0,10,0,0">
-                        <ListBox x:Name="PairingsGrid"
-                                 ItemContainerStyle="{StaticResource PairingRowItem}"
-                                 SelectionMode="Single" MinHeight="88"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 AutomationProperties.Name="Agent pairing requests">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Height="44" AutomationProperties.Name="{Binding AccessibleName}">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel VerticalAlignment="Center" Margin="6,0,6,0">
-                                            <TextBlock Text="{Binding Client}" Style="{StaticResource RowText}"
-                                                       FontSize="12" FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding Pairing}" Style="{StaticResource RowMono}"
-                                                       FontSize="10" Foreground="{DynamicResource TextTertiary}"
-                                                       Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                        <Border Grid.Column="1" Style="{StaticResource ToneChip}"
-                                                VerticalAlignment="Center" Margin="0,0,4,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Ellipse Style="{StaticResource ToneDot}" />
-                                                <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource ToneChipText}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Border VerticalAlignment="Top" Margin="0,2,0,0" Padding="8,6"
-                                Background="{DynamicResource PanelAlt}"
-                                BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusInnerCard}"
-                                Visibility="{Binding Items.Count, ElementName=PairingsGrid, Converter={StaticResource InverseCountVis}}">
-                            <TextBlock Style="{StaticResource Caption}" FontSize="11"
-                                       Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"
-                                       Text="No pairing requests · agents connect from the CLI" />
-                        </Border>
-                    </Grid>
                 </DockPanel>
             </Border>
 
             <Grid x:Name="TableStack" Grid.Row="0" Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1.15*" MinHeight="210" />
+                    <!-- igr-feedback-ux10 item 5: the paired-sessions card sizes to
+                         its content (three 34 DIP rows + header), keeps a floor for
+                         the empty state, and Recent operations takes the rest. -->
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="12" />
                     <RowDefinition Height="*" MinHeight="170" />
                 </Grid.RowDefinitions>
 
                 <!-- Paired sessions: one card, a 30 DIP column header, 34 DIP rows. -->
-                <Border Grid.Row="0" Style="{StaticResource Panel}">
+                <Border Grid.Row="0" Style="{StaticResource Panel}" MinHeight="150">
                     <DockPanel>
                         <Grid DockPanel.Dock="Top" Height="42" Margin="14,0,10,0">
                             <Grid.ColumnDefinitions>
@@ -488,16 +495,9 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Paired sessions" Style="{StaticResource CardTitle}"
                                        VerticalAlignment="Center" />
-                            <Button x:Name="RevokeButton" Grid.Column="1" Style="{StaticResource CardGhostAction}"
-                                    Click="OnRevoke"
-                                    ToolTip="Revoke the selected session"
-                                    AutomationProperties.Name="Revoke selected agent session">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Data="{StaticResource IconTrash}" Style="{StaticResource Glyph}"
-                                          Width="12" Height="12" Margin="0,0,6,0" />
-                                    <TextBlock Text="Revoke" FontSize="12" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
+                            <!-- The header Revoke is gone (igr-feedback-ux10 item 4):
+                                 it duplicated the per-row action and could point at
+                                 nothing. Every row carries its own Revoke. -->
                         </Grid>
 
                         <Border DockPanel.Dock="Top" Height="30" Padding="14,0"
@@ -524,7 +524,7 @@
                         <Grid>
                             <ListBox x:Name="SessionsGrid"
                                      ItemContainerStyle="{StaticResource AgentRowItem}"
-                                     SelectionMode="Single"
+                                     SelectionMode="Single" MaxHeight="260"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                                      AutomationProperties.Name="Paired agent sessions">
                                 <ListBox.ItemTemplate>

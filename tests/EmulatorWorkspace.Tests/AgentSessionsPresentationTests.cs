@@ -171,11 +171,27 @@ public class AgentSessionsPresentationTests
     }
 
     [Theory]
-    [InlineData("denied", "forbidden_scope", "Denied · forbidden_scope")]
-    [InlineData("failed", "invalid_request", "Failed · invalid_request")]
+    [InlineData("denied", "forbidden_scope", "Denied · Scope not allowed")]
+    [InlineData("failed", "invalid_request", "Failed · Invalid request")]
     [InlineData("completed", "ok", "OK")]
     [InlineData("completed", "", "OK")]
     [InlineData("started", null, "Running")]
-    public void OutcomeChipText_PrintsTheWordAndTheReason(string outcome, string? code, string expected) =>
+    [InlineData("failed", "quota_exceeded", "Failed · Quota exceeded")]
+    public void OutcomeChipText_PrintsTheWordAndTheReasonInWords(string outcome, string? code, string expected) =>
         Assert.Equal(expected, AgentSessionsPresentation.OutcomeChipText(outcome, code));
+
+    [Theory]
+    [InlineData("forbidden_scope", "Scope not allowed")]
+    [InlineData("scope_denied", "Scope not allowed")]
+    [InlineData("invalid_request", "Invalid request")]
+    [InlineData("not_authorized", "Not authorized")]
+    [InlineData("approval_required", "Approval required")]
+    [InlineData("timed_out", "Timed out")]
+    [InlineData("ok", "")]
+    [InlineData("", "")]
+    [InlineData(null, "")]
+    [InlineData("brand_new_code", "Brand new code")]
+    [InlineData("hyphen-code", "Hyphen code")]
+    public void CodeLabel_MapsTheSupervisorCodeToWords(string? code, string expected) =>
+        Assert.Equal(expected, AgentSessionsPresentation.CodeLabel(code));
 }

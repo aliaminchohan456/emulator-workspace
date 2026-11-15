@@ -36,7 +36,7 @@ public partial class AgentSessionsWindow : Window
         SessionsGrid.ItemsSource = _sessions;
         PairingsGrid.ItemsSource = _pairings;
         OperationsGrid.ItemsSource = _operations;
-        ScopesBox.Text = string.Join(',', AgentService.AllScopes);
+        ScopesBox.Text = string.Join(", ", AgentService.AllScopes);
         // One ticker for every live value on the surface (expiry countdowns and
         // the Expiring chip); it only runs while the window is open.
         _countdown = new DispatcherTimer(DispatcherPriority.Background)
@@ -255,7 +255,12 @@ public partial class AgentSessionsWindow : Window
             return;
         }
 
-        var scopes = ScopesBox.Text.Trim();
+        // The field displays the grant as ", "-separated words so WPF wraps at a
+        // comma instead of mid-scope; the supervisor gets the canonical
+        // comma-only grant.
+        var scopes = string.Join(
+            ',',
+            ScopesBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         if (scopes.Length == 0)
         {
             MessageBox.Show(this, "Enter at least one scope.", "Agent sessions",

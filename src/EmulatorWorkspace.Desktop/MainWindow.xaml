@@ -1670,7 +1670,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,10,0"
-                                         Fill="{Binding StageTone, Converter={StaticResource ToneBrush}}" />
+                                         Style="{StaticResource ToneTagDot}" Tag="{Binding StageTone}" />
                                 <TextBlock Text="{Binding StageTitle}" Style="{StaticResource PageText}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -2351,9 +2351,58 @@
                     <TabItem Header="Diagnostics">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="0,2,0,0">
+                                <!-- igr-feedback-ux10 item 10: the Diagnostics tab no
+                                     longer prints the raw doctor dump. It shows the
+                                     three rows an operator actually reads here - the
+                                     image, the acceleration and the GPU - in the same
+                                     label/value shape as Settings > Diagnostics; the
+                                     full report stays behind Copy. -->
                                 <TextBlock Text="DOCTOR" Style="{StaticResource RowSection}" />
-                                <TextBlock Text="{Binding DoctorText}" Style="{StaticResource Mono}" TextWrapping="Wrap"
-                                           FontSize="11" Margin="0,6,0,8" />
+                                <Border Style="{StaticResource InnerCard}" Padding="10,2" Margin="0,6,0,8">
+                                    <StackPanel>
+                                        <Grid MinHeight="28">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Image" Style="{StaticResource RowLabel}" />
+                                            <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                       Text="{Binding DoctorImage, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                       ToolTip="{Binding DoctorImageTooltip}"
+                                                       Style="{StaticResource SettingsDoctorValue}" />
+                                        </Grid>
+                                        <Border Style="{StaticResource SettingsDivider}" />
+                                        <Grid MinHeight="28">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Acceleration" Style="{StaticResource RowLabel}" />
+                                            <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                       Text="{Binding DoctorAcceleration, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                       ToolTip="{Binding DoctorAccelerationTooltip}"
+                                                       Style="{StaticResource SettingsDoctorValue}" />
+                                            <Border Grid.Column="2" Style="{StaticResource SettingsOkChip}"
+                                                    Visibility="{Binding DoctorAccelerationReady, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="Ready" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Success}" />
+                                            </Border>
+                                        </Grid>
+                                        <Border Style="{StaticResource SettingsDivider}" />
+                                        <Grid MinHeight="28">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="GPU" Style="{StaticResource RowLabel}" />
+                                            <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                       Text="{Binding DoctorGpu, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                       ToolTip="{Binding DoctorGpuTooltip}"
+                                                       Style="{StaticResource SettingsDoctorValue}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Copy" Style="{StaticResource ToolButton}"
                                             Command="{Binding CopyDiagnosticsCommand}"
@@ -2423,11 +2472,15 @@
                                                         AutomationProperties.Name="Refresh ADB daemon state">
                                                     <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                                                 </Button>
-                                                <Border Style="{StaticResource StatePill}"
-                                                        Background="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=bg}">
-                                                    <TextBlock Text="{Binding AdbDaemonChip}"
-                                                               Style="{StaticResource StatePillText}"
-                                                               Foreground="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}" />
+                                                <Border Style="{StaticResource ToneTagPill}"
+                                                        Tag="{Binding AdbDaemonChipTone}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse Style="{StaticResource ToneTagDot}"
+                                                                 Tag="{Binding AdbDaemonChipTone}" />
+                                                        <TextBlock Text="{Binding AdbDaemonChip}"
+                                                                   Style="{StaticResource ToneTagText}"
+                                                                   Tag="{Binding AdbDaemonChipTone}" />
+                                                    </StackPanel>
                                                 </Border>
                                             </StackPanel>
                                         </Grid>
@@ -2473,14 +2526,14 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="Magisk lab" Style="{StaticResource SectionHeader}"
                                                        FontSize="13" VerticalAlignment="Center" />
-                                            <Border Grid.Column="1" Style="{StaticResource StatePill}"
-                                                    Background="{Binding LabDotTone, Converter={StaticResource ToneRoles}, ConverterParameter=bg}">
+                                            <Border Grid.Column="1" Style="{StaticResource ToneTagPill}"
+                                                    Tag="{Binding LabDotTone}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Ellipse Style="{StaticResource StatePillDot}"
-                                                             Fill="{Binding LabDotTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}" />
+                                                    <Ellipse Style="{StaticResource ToneTagDot}"
+                                                             Tag="{Binding LabDotTone}" />
                                                     <TextBlock Text="{Binding MagiskLabValue}"
-                                                               Style="{StaticResource StatePillText}"
-                                                               Foreground="{Binding LabDotTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}" />
+                                                               Style="{StaticResource ToneTagText}"
+                                                               Tag="{Binding LabDotTone}" />
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
@@ -3105,6 +3158,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
+                        <Border Grid.Row="0" Background="{DynamicResource LogHeaderBg}" />
                         <Grid Grid.Row="0" Height="32" Margin="14,0,14,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="120" />
@@ -3231,7 +3285,7 @@
              report is not rendered at all. The uid appears only when a real value
              is already known, and that costs no supervisor call. The workspace
              path stays a tooltip, never on screen. -->
-        <Border Grid.Row="5" Grid.Column="1" Background="{DynamicResource PanelBg}"
+        <Border Grid.Row="5" Grid.Column="1" Background="{DynamicResource StatusBarBg}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12,4">
             <Grid>
                 <Grid.ColumnDefinitions>

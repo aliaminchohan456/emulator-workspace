@@ -300,14 +300,14 @@
                                        MaxWidth="320"
                                        Foreground="{DynamicResource TextSecondary}"
                                        Text="{Binding SelectedDevice.Name}" />
-                            <Border Style="{StaticResource StatePill}" Margin="6,0,0,0"
-                                    Background="{Binding SelectedDevice.State, Converter={StaticResource StateSoft}, ConverterParameter=chip}">
+                            <Border Style="{StaticResource ToneTagPill}" Margin="6,0,0,0"
+                                    Tag="{Binding SelectedDevice.State}">
                                 <StackPanel Orientation="Horizontal">
-                                    <Ellipse Style="{StaticResource StatePillDot}"
-                                             Fill="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                                    <Ellipse Style="{StaticResource ToneTagDot}"
+                                             Tag="{Binding SelectedDevice.State}" />
                                     <TextBlock Text="{Binding SelectedDevice.StateLabel}"
-                                               Style="{StaticResource StatePillText}"
-                                               Foreground="{Binding SelectedDevice.State, Converter={StaticResource StateBrush}}" />
+                                               Style="{StaticResource ToneTagText}"
+                                               Tag="{Binding SelectedDevice.State}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

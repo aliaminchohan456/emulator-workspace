@@ -179,13 +179,54 @@ public static class AgentSessionsPresentation
 
     /// <summary>
     /// The outcome chip's whole text: the word, and the supervisor's own result
-    /// code when it is not the success code ("Denied · forbidden_scope").
+    /// code in the operator's words ("Denied · Scope not allowed"). The raw code
+    /// stays in the row's tooltip; an unmapped code is humanised rather than
+    /// printed as snake_case.
     /// </summary>
     public static string OutcomeChipText(string? outcome, string? code)
     {
         var label = OutcomeLabel(outcome);
-        var reason = (code ?? "").Trim();
-        return reason.Length == 0 || reason == "ok" ? label : $"{label} · {reason}";
+        var reason = CodeLabel(code);
+        return reason.Length == 0 ? label : $"{label} · {reason}";
+    }
+
+    /// <summary>
+    /// A supervisor result code as plain words. The store's codes are stable
+    /// enums, not prose: "forbidden_scope" reads "Scope not allowed",
+    /// "invalid_request" reads "Invalid request", and anything unmapped is
+    /// humanised (underscores to spaces, first letter capitalised) so a new code
+    /// never shows as raw snake_case in the UI.
+    /// </summary>
+    public static string CodeLabel(string? code) => Normalize(code) switch
+    {
+        "" or "ok" => "",
+        "forbidden_scope" or "scope_not_allowed" or "scope_denied" => "Scope not allowed",
+        "invalid_request" => "Invalid request",
+        "invalid_argument" => "Invalid argument",
+        "not_found" => "Not found",
+        "not_authorized" or "unauthorized" or "forbidden" => "Not authorized",
+        "approval_required" => "Approval required",
+        "expired" => "Expired",
+        "revoked" => "Revoked",
+        "conflict" => "Conflict",
+        "busy" => "Busy",
+        "timeout" or "timed_out" => "Timed out",
+        "unavailable" => "Unavailable",
+        "unsupported" => "Not supported",
+        "cancelled" or "canceled" => "Cancelled",
+        var other => Humanize(other),
+    };
+
+    /// <summary>"snake_case_word" -> "Snake case word" for a code with no mapping.</summary>
+    private static string Humanize(string value)
+    {
+        var words = value.Replace('-', '_').Split('_', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0)
+        {
+            return Capitalize(value);
+        }
+
+        return Capitalize(string.Join(' ', words));
     }
 
     /// <summary>

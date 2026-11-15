@@ -161,6 +161,66 @@ the page is open, and every message keeps its full text in a tooltip. Build 0
 errors / 22 warnings, 514/514 tests, `git diff --check` clean; evidence in
 `artifacts/ui/ux09-*.png`.
 
+UX-10 Light theme parity (2026-11-15, same uncommitted tree, base HEAD `e41c277`
+= UX-09): the same Graphite structure in the light theme, tuned to the light
+system sheet (`shots/09-light-theme-studio.png`, `10-light-theme-devices.png`,
+`17-design-system-light.png`) with light token values only - no Dark palette
+change, no indigo retheme. `Themes/Light.xaml` moves stroke to the sheet's
+`#CDD5DC` (was `#B8C2CB`, which made every field, chip and group edge read as a
+border), raised to `#EEF1F4` (was `#E4E9ED`, a grey slab inside the white
+settings cards and the inspector's target card), the neutral chip to `#E9EDF0`,
+accent-soft and selection to the sheet's active-tile blue `#DCEAF4` (was the
+grey `#E1E8ED`), and the soft state tints to `#E8EFEC` / `#F8EFE3` / `#F8EEEF`
+(the err-soft acknowledgement callout no longer reads as a pink slab). Elevation
+follows the sheet too: the floating shadow is `#1C2933` at 8 % (blur 16, y6) and
+6 % (blur 2, y1), the specular edge is off in favour of the 1 px stroke, the
+stage glow is ~4 % with no noise tile, and the device bezel is `#1C2933`. New
+tokens resolve in all three dictionaries: `StatusBarBg` (dark keeps `PanelBg`;
+light uses the navigation `#EEF0F2` strip), `LogHeaderBg` (the log table header
+on that same strip in light, transparent in dark), `DialogScrimBg` (light 40 %,
+dark 50 %), `OnDanger` (the label on a solid error primary) and
+`AccentDisabled` / `AccentDisabledText`, so a disabled primary keeps the sheet's
+muted accent fill with its on-accent label instead of turning into an invisible
+ghost on white (dark resolves to `#556675` + `#142A3B`, exactly what sheet 15
+draws; High Contrast uses the system control surface and grey text).
+`WarnButton` gains the warn-soft fill both sheets give the privileged action and
+`DangerPrimaryButton` (the consent confirm) is a solid error fill that falls back
+to err-soft at 50 % while its gates are unmet. No Dark token value changed - only
+the new keys, at their existing colours - so dark renders as at `e41c277` apart
+from the palette scrim, which the reviewer set to 30 %.
+
+`igr-feedback-ux10.md` (21:40, newer than the prompt) is folded in whole. Its
+UX-09 nits: the pairing card's dead gap is gone (the request list sits directly
+under the description, caps at three 44 DIP rows with its own scroll, and the
+Client/Template/Scopes detail follows it; the title and key glyph are text1);
+the scopes field now separates with ", " so WPF wraps at commas instead of
+mid-scope and all eight scopes fit; supervisor result codes are mapped to words
+("forbidden_scope" -> "Scope not allowed") with the raw code kept in the row
+tooltip, via a tested `CodeLabel`; the duplicate header Revoke is gone; the
+paired-sessions card sizes to its content with a floor for the empty state and
+Recent operations takes the rest; the consent target line prints the readable
+image name ("Android 15 · AOSP · x86_64") with the raw package in the tooltip;
+the consent confirm has the sheet's ready and disabled states; every artifact row
+gains a small copy action (full digest already in its tooltip); the consent is
+owned by the window and dims the app at 40 %; and the Inspector's Diagnostics tab
+prints three label/value doctor rows - image, acceleration with its Ready chip,
+GPU - instead of the raw dump, with Copy still handing over the whole report.
+Its light-parity list drove the token work above; two items are recorded as
+deviations in the UX-10 report (the media state tint the mockup itself does not
+show, and text3 kept at `#55636E` because `#62727F` measures 4.3:1 on raised).
+The pass also fixed a real live-switch defect it exposed: the tone chips resolved
+their brushes through converters ONCE, so a dark-theme chip stayed dark on a
+light surface after toggling (the Magisk lab chip was `#23272B` on white). They
+now use tag-driven styles whose brushes are all DynamicResource. Verified on a
+disposable root with a real API 35 guest: Studio, Device Manager, Logcat,
+Settings drawer, command palette, Agent Sessions and both consent variants in
+both themes, plus hover, keyboard focus, the disabled primary, the Create drawer
+and the consent ready/disabled pair in light; every light text pair measures
+>= 5.2:1, inputs 3.6:1 and the focus ring 6.9:1. Build 0 errors / 22 warnings,
+526/526 tests, `git diff --check` clean. Theme persistence and Follow Windows
+remain deferred: they need a preference store, which this slice does not add.
+Evidence in `artifacts/ui/ux10-*.png`.
+
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.
