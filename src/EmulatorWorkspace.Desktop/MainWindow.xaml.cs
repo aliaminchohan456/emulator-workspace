@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Text.Json.Nodes;
 using EmulatorWorkspace.Desktop.Services;
@@ -152,6 +153,40 @@ public partial class MainWindow : Window
         {
             UpdateViewportSize();
         }
+        else if (args.PropertyName == nameof(MainViewModel.IsLogcatOpen))
+        {
+            AnimateLogcatDrawer();
+        }
+    }
+
+    /// <summary>
+    /// UX-04b: the dock expands over 220 ms on cubic-bezier(0.22,1,0.36,1) and
+    /// the caret turns to point down. With reduced motion the drawer is simply
+    /// there; collapsing is immediate in both cases because the tab bar, not the
+    /// drawer, is the persistent surface.
+    /// </summary>
+    private void AnimateLogcatDrawer()
+    {
+        const double openHeight = 230;
+        var open = _viewModel.IsLogcatOpen;
+
+        LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, null);
+        DrawerChevron.Angle = open ? 180 : 0;
+
+        if (!open || !SystemParameters.ClientAreaAnimation)
+        {
+            LogcatHost.Height = open ? openHeight : 0;
+            return;
+        }
+
+        LogcatHost.Height = 0;
+        var duration = TimeSpan.FromMilliseconds(220);
+        var timeline = new DoubleAnimationUsingKeyFrames { Duration = new Duration(duration) };
+        timeline.KeyFrames.Add(new SplineDoubleKeyFrame(
+            openHeight,
+            KeyTime.FromTimeSpan(duration),
+            new KeySpline(0.22, 1, 0.36, 1)));
+        LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, timeline);
     }
 
     // ---- UX-04 device library ---------------------------------------------
@@ -298,6 +333,30 @@ public partial class MainWindow : Window
         window.ShowDialog();
     }
 
+    /// <summary>Rail: Search opens the same command palette as Ctrl+K.</summary>
+    private void OnOpenPalette(object sender, RoutedEventArgs e) => OpenPalette();
+
+    private void OpenPalette()
+    {
+        var palette = new CommandPaletteWindow(_viewModel) { Owner = this };
+        palette.ShowDialog();
+    }
+
+    /// <summary>
+    /// Rail: Root Lab is the lab section of the inspector's Diagnostics tab, so
+    /// the item selects that tab instead of pretending to be a separate view.
+    /// </summary>
+    private void OnRootLab(object sender, RoutedEventArgs e)
+    {
+        SetDetailsCollapsed(false);
+        var diagnostics = InspectorTabs.Items.OfType<TabItem>().FirstOrDefault(
+            tab => string.Equals(tab.Header as string, "Diagnostics", StringComparison.Ordinal));
+        if (diagnostics is not null)
+        {
+            InspectorTabs.SelectedItem = diagnostics;
+        }
+    }
+
     /// <summary>
     /// UX-02 shell: the inspector is collapsible. Collapsing zeroes its column
     /// and splitter and drops the column minimum, because the 250 DIP floor
@@ -305,13 +364,9 @@ public partial class MainWindow : Window
     /// remembered for the next expand. The viewport column and its geometry
     /// are untouched.
     /// </summary>
-    private const int NavColumn = 0;
-    private const int NavSplitterColumn = 1;
     private const int DetailsSplitterColumn = 3;
     private const int DetailsColumn = 4;
     private const int SplitterWidth = 6;
-    private const double NavDefaultWidth = 238;
-    private const double NavMinWidth = 180;
     private const double DetailsDefaultWidth = 318;
     private const double DetailsMinWidth = 250;
 
@@ -359,13 +414,10 @@ public partial class MainWindow : Window
         if (!_focusView)
         {
             _focusView = true;
-            _focusNavWidth = Math.Max(columns[NavColumn].Width.Value, NavMinWidth);
+            NavRail.Visibility = Visibility.Collapsed;
             _focusDetailsWidth = _detailsCollapsed
                 ? 0
                 : Math.Max(columns[DetailsColumn].Width.Value, DetailsMinWidth);
-            columns[NavColumn].MinWidth = 0;
-            columns[NavColumn].Width = new GridLength(0);
-            columns[NavSplitterColumn].Width = new GridLength(0);
             SetDetailsCollapsed(true);
             _focusLogcatWasOpen = _viewModel.IsLogcatOpen;
             _viewModel.IsLogcatOpen = false;
@@ -373,10 +425,7 @@ public partial class MainWindow : Window
         else
         {
             _focusView = false;
-            columns[NavColumn].MinWidth = NavMinWidth;
-            columns[NavColumn].Width = new GridLength(
-                _focusNavWidth >= NavMinWidth ? _focusNavWidth : NavDefaultWidth);
-            columns[NavSplitterColumn].Width = new GridLength(SplitterWidth);
+            NavRail.Visibility = Visibility.Visible;
             if (_focusDetailsWidth >= DetailsMinWidth)
             {
                 SetDetailsCollapsed(false);
@@ -386,7 +435,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private double _focusNavWidth;
     private double _focusDetailsWidth;
     private bool _focusLogcatWasOpen;
 
@@ -586,8 +634,7 @@ public partial class MainWindow : Window
         }
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
         {
-            var palette = new CommandPaletteWindow(_viewModel) { Owner = this };
-            palette.ShowDialog();
+            OpenPalette();
             e.Handled = true;
         }
     }

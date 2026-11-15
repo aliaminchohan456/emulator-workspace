@@ -14,6 +14,7 @@ param(
 
 Add-Type -TypeDefinition @"
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 
 public static class WinSize {
@@ -21,8 +22,27 @@ public static class WinSize {
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string title);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hwnd, int x, int y, int width, int height, bool repaint);
+    [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc cb, IntPtr l);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowTextW(IntPtr h, StringBuilder s, int n);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    public delegate bool EnumProc(IntPtr h, IntPtr l);
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; }
+
+    // A second window of the same process (for example the device library) is
+    // not MainWindowHandle, so match the exact caption across its windows.
+    public static IntPtr FindByTitle(uint pid, string title) {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((h, l) => {
+            uint owner; GetWindowThreadProcessId(h, out owner);
+            if (owner != pid) { return true; }
+            var sb = new StringBuilder(512);
+            GetWindowTextW(h, sb, 512);
+            if (sb.ToString() == title) { found = h; return false; }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
 }
 "@
 
@@ -35,7 +55,10 @@ if ($ProcessName.Length -gt 0) {
         Where-Object { $_.MainWindowHandle -ne 0 } |
         Sort-Object StartTime -Descending |
         Select-Object -First 1
-    if ($proc) { $handle = $proc.MainWindowHandle }
+    if ($proc) {
+        $handle = [WinSize]::FindByTitle([uint32]$proc.Id, $Title)
+        if ($handle -eq [IntPtr]::Zero -and $proc.MainWindowTitle -eq $Title) { $handle = $proc.MainWindowHandle }
+    }
 }
 if ($handle -eq [IntPtr]::Zero) {
     $handle = [WinSize]::FindWindowW($null, $Title)

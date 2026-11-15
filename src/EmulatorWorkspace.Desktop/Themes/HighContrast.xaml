@@ -29,23 +29,74 @@
           so selection is never colour-only. -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
-    <!-- UX-04 fix pass: the drawer's top-edge specular is the system window
-          text colour in high contrast, so the edge is always visible. -->
-    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="1,0">
+    <!-- UX-04b: the specular edge keeps the system window text colour, in a
+          vertical top-to-bottom gradient like the other themes. -->
+    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{x:Static SystemColors.WindowTextColor}" Offset="0" />
         <GradientStop Color="{x:Static SystemColors.WindowTextColor}" Offset="1" />
     </LinearGradientBrush>
+    <!-- High contrast does not tint: the hover glow stays fully transparent and
+          the icon still scales, so hover is carried by the scale and the focus
+          ring rather than by a colour wash. -->
+    <RadialGradientBrush x:Key="HoverGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="1" />
+    </RadialGradientBrush>
+    <!-- High contrast keeps one crisp shadow so a floating surface separates
+          from the page without relying on colour. -->
+    <DropShadowEffect x:Key="FloatingShadowAmbient" BlurRadius="25" ShadowDepth="10"
+                      Direction="270" Opacity="0.65" Color="#000000" />
+    <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
+                      Direction="270" Opacity="0.4" Color="#000000" />
     <SolidColorBrush x:Key="Danger" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="DangerBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="DangerBorder" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="Success" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="SuccessBg" Color="{x:Static SystemColors.ControlColor}" />
+    <SolidColorBrush x:Key="SuccessBorder" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="Warning" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="WarningBg" Color="{x:Static SystemColors.ControlColor}" />
+    <SolidColorBrush x:Key="WarningBorder" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="LogBg" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="ViewportBg" Color="{x:Static SystemColors.WindowColor}" />
+    <SolidColorBrush x:Key="CardStroke" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="DeviceBodyBg" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="DeviceBodyBorder" Color="{x:Static SystemColors.WindowTextColor}" />
+    <!-- High contrast does not tint by state: the drawn screen uses the system
+          highlight so it stays visible inside the window-text device body, and
+          the glow behind it stays transparent like HoverGlow. -->
+    <LinearGradientBrush x:Key="CardScreenRunning" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="0" />
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenStopped" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="0" />
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenAttention" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="0" />
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenIdle" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="0" />
+        <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="1" />
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowRunning" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowStopped" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowAttention" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowIdle" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="1" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="SelectionBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="FocusRing" Color="{x:Static SystemColors.HighlightColor}" />

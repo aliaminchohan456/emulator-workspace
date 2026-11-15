@@ -467,7 +467,79 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public bool HasToastPath => _toastPath is { Length: > 0 };
     private string _magiskState = "Magisk lab: not checked";
-    public string MagiskState { get => _magiskState; private set => SetProperty(ref _magiskState, value); }
+    public string MagiskState
+    {
+        get => _magiskState;
+        private set
+        {
+            if (SetProperty(ref _magiskState, value))
+            {
+                OnPropertyChanged(nameof(LabDotTone));
+                OnPropertyChanged(nameof(MagiskLabValue));
+                OnPropertyChanged(nameof(MagiskLabTooltip));
+            }
+        }
+    }
+
+    /// <summary>
+    /// UX-04b fix pass (B2): the Session row prints the lab state as a short
+    /// human value ("Not configured", no repeated label) and keeps the
+    /// supervisor's own sentence in the tooltip. Mapping only — every word comes
+    /// from <see cref="MagiskState"/>.
+    /// </summary>
+    public string MagiskLabValue
+    {
+        get
+        {
+            var text = (MagiskState ?? "").Trim();
+            const string prefix = "Magisk lab:";
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                text = text[prefix.Length..].Trim();
+            }
+
+            if (text.Length == 0)
+            {
+                return "—";
+            }
+
+            if (text.Contains("recovery required", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Stock recovery required";
+            }
+
+            text = text.Replace('_', ' ');
+            return char.ToUpperInvariant(text[0]) + text[1..];
+        }
+    }
+
+    public string MagiskLabTooltip => MagiskState;
+
+    /// <summary>
+    /// UX-04b: the rail's Root Lab dot is painted only from a lab state the
+    /// supervisor actually reported — ok when the lab is prepared, warn when
+    /// stock recovery is due, nothing while the state is unchecked or absent.
+    /// </summary>
+    public string LabDotTone
+    {
+        get
+        {
+            var text = MagiskState ?? "";
+            if (text.Contains("recovery required", StringComparison.OrdinalIgnoreCase)
+                || text.Contains("recovery due", StringComparison.OrdinalIgnoreCase))
+            {
+                return "warn";
+            }
+
+            if (text.Contains("prepared", StringComparison.OrdinalIgnoreCase)
+                || text.Contains("installed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "ok";
+            }
+
+            return "";
+        }
+    }
 
     /// <summary>Effective ADB daemon user of the selected guest ("n/a" when unknown).</summary>
     public string AdbUid { get; private set; } = "n/a";
@@ -482,6 +554,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string AdbRootState => AdbRootCapable
         ? $"adb daemon uid {AdbUid} (build {AdbBuildType}, transport {AdbTransportId})"
         : $"adb daemon uid {AdbUid} - this image cannot run adbd as root (build {AdbBuildType})";
+
+    /// <summary>
+    /// UX-04b fix pass (B2): the Session row prints "uid 2000" or an em dash when
+    /// the daemon UID was not reported; the full sentence (build, transport, root
+    /// capability) is the tooltip.
+    /// </summary>
+    public string AdbUidValue => AdbUid is "" or "n/a" ? "—" : $"uid {AdbUid}";
+
+    public string AdbUidTooltip => AdbUid is "" or "n/a"
+        ? "The ADB daemon UID was not reported for the selected guest."
+        : AdbRootState;
 
     private DeviceItemViewModel? _selectedDevice;
 
@@ -673,6 +756,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ? "no frame"
         : $"{FrameWidth}x{FrameHeight}  -  {FramesPerSecond:N1} fps  -  {_droppedFrames} dropped";
 
+    // UX-04b: the inspector's RESOURCES rows need the same live numbers as one
+    // value each (tabular mono, fixed width). They are raised on the same 250 ms
+    // cadence as FrameInfo, so nothing here runs its own timer and no value is
+    // shown before the supervisor has delivered a frame.
+    public string GuestDisplayText => GuestWidth > 0 && GuestHeight > 0
+        ? $"{GuestWidth} × {GuestHeight}"
+        : "not reported";
+
+    public string DeliveredFrameText => Frame is null
+        ? "not reported"
+        : $"{FrameWidth} × {FrameHeight}";
+
+    public string FrameRateText => Frame is null
+        ? "not reported"
+        : $"{FramesPerSecond:N1} fps";
+
+    public string DroppedFramesText => Frame is null
+        ? "not reported"
+        : _droppedFrames.ToString("N0");
+
     private double _lastInputLatency = double.NaN;
 
     public string InputLatencyText => double.IsNaN(_lastInputLatency)
@@ -701,6 +804,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return $"boot {boot.GetValue<double>():N1}s  -  interactive {interactive.GetValue<double>():N1}s";
         }
     }
+
+    /// <summary>
+    /// UX-04b fix pass (B2): the Boot row is a single tabular number (time to
+    /// interactive, the figure the supervisor itself reports), or an em dash when
+    /// this session has no readiness measurement. <see cref="ReadinessText"/> is
+    /// the explanation behind the tooltip.
+    /// </summary>
+    public string BootValueText
+    {
+        get
+        {
+            var interactive = SelectedDevice?.Readiness?["launchedToInteractiveSeconds"];
+            return interactive is null ? "—" : $"{interactive.GetValue<double>():N1} s";
+        }
+    }
+
+    public string BootTooltip => ReadinessText;
 
     public string ZoomMode
     {
@@ -1069,6 +1189,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(BootValueText));
+            OnPropertyChanged(nameof(BootTooltip));
             OnPropertyChanged(nameof(PrimaryActionText));
 
             if (device.IsRunning)
@@ -1125,6 +1247,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             UpdateStage();
             OnPropertyChanged(nameof(PrimaryActionText));
             OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(BootValueText));
+            OnPropertyChanged(nameof(BootTooltip));
             OnPropertyChanged(nameof(AbiApiText));
             if (device.State == "Running" && _frameSubscription is null)
             {
@@ -1230,6 +1354,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 _launchedUtc = TryReadUtc(readiness["launchedUtc"]) ?? _launchedUtc;
                 OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(BootValueText));
+            OnPropertyChanged(nameof(BootTooltip));
             }
 
             var status = await RequestAsync(
@@ -2103,6 +2229,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             _lastFrameInfoUpdated = received;
             OnPropertyChanged(nameof(FrameInfo));
+            OnPropertyChanged(nameof(GuestDisplayText));
+            OnPropertyChanged(nameof(DeliveredFrameText));
+            OnPropertyChanged(nameof(FrameRateText));
+            OnPropertyChanged(nameof(DroppedFramesText));
         }
 
         if (_pendingInput is { } pending)
@@ -2759,6 +2889,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _labRecoveryDetail = "";
         }
         OnPropertyChanged(nameof(AdbUid));
+        OnPropertyChanged(nameof(AdbUidValue));
+        OnPropertyChanged(nameof(AdbUidTooltip));
         OnPropertyChanged(nameof(AdbRootCapable));
         OnPropertyChanged(nameof(AdbBuildType));
         OnPropertyChanged(nameof(AdbTransportId));
@@ -3091,7 +3223,14 @@ public sealed class DeviceItemViewModel : ObservableObject
     public string Abi
     {
         get => _abi;
-        private set => SetProperty(ref _abi, value);
+        private set
+        {
+            if (SetProperty(ref _abi, value))
+            {
+                OnPropertyChanged(nameof(Subtitle));
+                OnPropertyChanged(nameof(AbiApi));
+            }
+        }
     }
 
     private string _sdkLevel = "";
@@ -3099,7 +3238,61 @@ public sealed class DeviceItemViewModel : ObservableObject
     public string SdkLevel
     {
         get => _sdkLevel;
-        private set => SetProperty(ref _sdkLevel, value);
+        private set
+        {
+            if (SetProperty(ref _sdkLevel, value))
+            {
+                OnPropertyChanged(nameof(Subtitle));
+                OnPropertyChanged(nameof(AbiApi));
+            }
+        }
+    }
+
+    /// <summary>
+    /// UX-04b: "x86_64 · 35" for the inspector's ABI / API row. Built from the
+    /// reported fields and notified whenever a status tick fills them, so the row
+    /// never shows a stale pair or a bare separator.
+    /// </summary>
+    public string AbiApi
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Abi))
+            {
+                return string.IsNullOrWhiteSpace(SdkLevel) ? "" : SdkLevel;
+            }
+
+            return string.IsNullOrWhiteSpace(SdkLevel) ? Abi : $"{Abi} · {SdkLevel}";
+        }
+    }
+
+    /// <summary>
+    /// UX-04b: the identity line under the device name — "API 35 · x86_64 ·
+    /// emulator-5554" — built only from fields the supervisor reported. Empty
+    /// parts are dropped rather than printed as blanks or placeholders.
+    /// </summary>
+    public string Subtitle
+    {
+        get
+        {
+            var parts = new List<string>(3);
+            if (!string.IsNullOrWhiteSpace(SdkLevel))
+            {
+                parts.Add($"API {SdkLevel}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Abi))
+            {
+                parts.Add(Abi);
+            }
+
+            if (!string.IsNullOrWhiteSpace(Serial))
+            {
+                parts.Add(Serial);
+            }
+
+            return string.Join(" · ", parts);
+        }
     }
 
     private string _lastError = "";

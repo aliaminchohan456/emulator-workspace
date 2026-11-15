@@ -100,6 +100,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
         SortOptions.Add("Name");
         SortOptions.Add("State");
+        SortOptions.Add("RAM");
         SortOptions.Add("API level");
 
         RefreshCommand = new AsyncRelayCommand(() => RefreshAsync(loadProfiles: true), () => !IsBusy);
@@ -302,9 +303,10 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
-    /// Header count next to search and sort: the unfiltered total, or
-    /// "shown of total" while a search narrows the grid. Both numbers come from
-    /// the supervisor's instance.list, never from a literal.
+    /// Header count, printed inline after the page title as a mono text3 suffix
+    /// ("Devices  3", item 5): the unfiltered total, or "shown of total" while a
+    /// search narrows the grid. Both numbers come from the supervisor's
+    /// instance.list, never from a literal.
     /// </summary>
     public string CardCountText
     {
@@ -312,12 +314,9 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         {
             var total = _cards.Count;
             var shown = Tiles.Count(tile => !tile.IsPlaceholder);
-            if (shown == total)
-            {
-                return total == 1 ? "1 device" : $"{total} devices";
-            }
-
-            return $"{shown} of {total}";
+            return shown == total
+                ? total.ToString(CultureInfo.InvariantCulture)
+                : $"{shown} of {total}";
         }
     }
 
@@ -432,8 +431,34 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     public string CreateWhpxTone
     {
         get => _createWhpxTone;
-        private set => SetProperty(ref _createWhpxTone, value);
+        private set
+        {
+            if (SetProperty(ref _createWhpxTone, value))
+            {
+                OnPropertyChanged(nameof(CreateWhpxChip));
+                OnPropertyChanged(nameof(CreateWhpxChipTone));
+            }
+        }
     }
+
+    /// <summary>
+    /// Item 7: the acceleration row is a short chip ("WHPX ready") whose tone
+    /// comes from the same readiness the raw sentence reports; the raw sentence
+    /// stays in the tooltip, so nothing is lost and nothing is invented.
+    /// </summary>
+    public string CreateWhpxChip => CreateWhpxTone switch
+    {
+        "ok" => "WHPX ready",
+        "error" => "WHPX unavailable",
+        _ => "Not reported",
+    };
+
+    public string CreateWhpxChipTone => CreateWhpxTone switch
+    {
+        "ok" => "ok",
+        "error" => "error",
+        _ => "warning",
+    };
 
     public string CreateDiskReserveText
     {
@@ -450,8 +475,33 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     public string CreateDiskTone
     {
         get => _createDiskTone;
-        private set => SetProperty(ref _createDiskTone, value);
+        private set
+        {
+            if (SetProperty(ref _createDiskTone, value))
+            {
+                OnPropertyChanged(nameof(CreateDiskChip));
+                OnPropertyChanged(nameof(CreateDiskChipTone));
+            }
+        }
     }
+
+    /// <summary>
+    /// Item 7: the disk verdict is a chip too ("Enough space"); the supervisor's
+    /// own wording stays in the tooltip so the two never disagree.
+    /// </summary>
+    public string CreateDiskChip => CreateDiskTone switch
+    {
+        "ok" => "Enough space",
+        "error" => "Not enough space",
+        _ => "Not checked",
+    };
+
+    public string CreateDiskChipTone => CreateDiskTone switch
+    {
+        "ok" => "ok",
+        "error" => "error",
+        _ => "warning",
+    };
 
     public string CreateDiskVerdict
     {
@@ -467,7 +517,15 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     public string CreateProfileText => "pixel_6 (the supervisor default profile)";
 
-    public string CreateNote =>
+    /// <summary>
+    /// Item 8: one plain sentence in the drawer. The technical detail (which
+    /// operation accepts which field) lives in <see cref="CreateNoteDetail"/> and
+    /// is shown only from the info glyph's tooltip, so the form is not a wall of
+    /// API prose.
+    /// </summary>
+    public string CreateNote => "Resolution, RAM and cores come from the device profile.";
+
+    public string CreateNoteDetail =>
         "instance.create accepts a name, the pinned image, a device profile, the GPU mode and headless mode. "
         + "The resolution, RAM and core count in instance.presets cannot be applied by that operation, so they are "
         + "not offered as controls here; the AVD is built from the device profile.";
@@ -1527,6 +1585,16 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                     .ThenBy(card => card.Name, StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 break;
+            case "RAM":
+                // Configured RAM comes from instance.profileExport; a device whose
+                // profile was not reported sorts last instead of pretending to be
+                // the smallest.
+                filtered = filtered
+                    .OrderByDescending(card => card.RamMb > 0)
+                    .ThenByDescending(card => card.RamMb)
+                    .ThenBy(card => card.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                break;
             case "API level":
                 filtered = filtered
                     .OrderByDescending(card => card.ApiLevel)
@@ -2026,6 +2094,12 @@ public sealed class LibraryCard : ObservableObject
     }
 
     public string NameTooltip => $"{Name}\n{ImagePackage}\nprofile {DeviceProfile} · {Serial}";
+
+    /// <summary>
+    /// Item 3: the card's Stop affordance is an icon, so its tooltip and its
+    /// accessible name both have to say which guest it stops.
+    /// </summary>
+    public string StopTooltip => $"Stop {Name}";
 
     public string ChipTooltip => _profileLoaded
         ? $"{_width}×{_height} @ {_cores} cores · data partition {_dataPartition} · from instance.profileExport"

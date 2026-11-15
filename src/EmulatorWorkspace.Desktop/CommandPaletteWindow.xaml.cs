@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace EmulatorWorkspace.Desktop;
 
@@ -27,7 +28,37 @@ public partial class CommandPaletteWindow : Window
         Filter.TextChanged += (_, _) => Apply();
         Filter.KeyDown += OnFilterKeyDown;
         Results.MouseDoubleClick += (_, _) => RunSelected();
-        Loaded += (_, _) => Filter.Focus();
+        Loaded += (_, _) =>
+        {
+            Filter.Focus();
+            AnimateOpen();
+        };
+    }
+
+    /// <summary>
+    /// UX-04b: the palette rises 8 DIP and fades in over 220 ms on
+    /// cubic-bezier(0.22,1,0.36,1). With Windows reduced motion on it is simply
+    /// there, at its final position, with no storyboard.
+    /// </summary>
+    private void AnimateOpen()
+    {
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            PaletteCard.Opacity = 1;
+            PaletteRise.Y = 0;
+            return;
+        }
+
+        var duration = new Duration(TimeSpan.FromMilliseconds(220));
+        var spline = new KeySpline(0.22, 1, 0.36, 1);
+
+        var fade = new DoubleAnimationUsingKeyFrames { Duration = duration };
+        fade.KeyFrames.Add(new SplineDoubleKeyFrame(1, KeyTime.FromTimeSpan(duration.TimeSpan), spline));
+        PaletteCard.BeginAnimation(OpacityProperty, fade);
+
+        var rise = new DoubleAnimationUsingKeyFrames { Duration = duration };
+        rise.KeyFrames.Add(new SplineDoubleKeyFrame(0, KeyTime.FromTimeSpan(duration.TimeSpan), spline));
+        PaletteRise.BeginAnimation(TranslateTransform.YProperty, rise);
     }
 
     private void Apply()

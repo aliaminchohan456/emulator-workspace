@@ -12,7 +12,11 @@
     <SolidColorBrush x:Key="HoverBg" Color="#F0F3F5" />
     <SolidColorBrush x:Key="PopupBg" Color="#FFFFFF" />
     <SolidColorBrush x:Key="BorderBrush" Color="#B8C2CB" />
-    <SolidColorBrush x:Key="BorderSubtle" Color="#DDE2E7" />
+    <!-- UX-04b fix pass (B3): stroke-soft darkened one step (#DDE2E7 ->
+          #D6DDE3) so the inspector's IDENTITY/RESOURCES/SESSION rules and the
+          viewport card edge read on white the way 02/17 do. Still a hairline,
+          never a border. -->
+    <SolidColorBrush x:Key="BorderSubtle" Color="#D6DDE3" />
 
     <SolidColorBrush x:Key="TextPrimary" Color="#1C2933" />
     <SolidColorBrush x:Key="TextSecondary" Color="#52616E" />
@@ -29,13 +33,24 @@
     <!-- Accent-soft = accent at 10% over the light base (#E1E8ED). -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="#E1E8ED" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
-    <!-- UX-04 fix pass: a white specular line is invisible on a white drawer,
-          so the light theme uses a 6% ink hairline instead (still a top-edge
-          highlight, never a full border). -->
-    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#0F000000" Offset="0" />
-        <GradientStop Color="#03000000" Offset="1" />
+    <!-- UX-04b: a white specular line is invisible on a white surface, so the
+          light theme keeps the same vertical top-edge gradient in ink (top 14 %
+          fading to 3 % at the bottom). -->
+    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#24000000" Offset="0" />
+        <GradientStop Color="#08000000" Offset="1" />
     </LinearGradientBrush>
+    <!-- Accent-soft radial behind a hovered rail/toolbar icon. -->
+    <RadialGradientBrush x:Key="HoverGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#24235E89" Offset="0" />
+        <GradientStop Color="#00235E89" Offset="1" />
+    </RadialGradientBrush>
+    <!-- Two-layer floating shadow, light-theme equivalent: softer and tinted
+          with the deep slate of the text colour instead of pure black. -->
+    <DropShadowEffect x:Key="FloatingShadowAmbient" BlurRadius="25" ShadowDepth="10"
+                      Direction="270" Opacity="0.22" Color="#101820" />
+    <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
+                      Direction="270" Opacity="0.18" Color="#101820" />
     <SolidColorBrush x:Key="Danger" Color="#A52C36" />
     <!-- UX-04: err-soft is error at 12% over the light base (#ECDFE1); the
           border is the same error at 35%. Error text on the band measures
@@ -44,14 +59,60 @@
     <SolidColorBrush x:Key="DangerBorder" Color="#59A52C36" />
     <SolidColorBrush x:Key="Success" Color="#216443" />
     <SolidColorBrush x:Key="SuccessBg" Color="#E2EFE8" />
+    <!-- UX-04b fix pass: 1px tone edges for ok/warn chips, at the same 35 %
+         alpha as DangerBorder, so the Running chip reads as a chip on the
+         viewport-coloured card media (item 12). -->
+    <SolidColorBrush x:Key="SuccessBorder" Color="#59216443" />
     <SolidColorBrush x:Key="Warning" Color="#845716" />
     <SolidColorBrush x:Key="WarningBg" Color="#F5EEDF" />
+    <SolidColorBrush x:Key="WarningBorder" Color="#59845716" />
     <SolidColorBrush x:Key="LogBg" Color="#E0E5E9" />
     <SolidColorBrush x:Key="ViewportBg" Color="#E0E5E9" />
+    <!-- UX-04b fix pass: the light card edge from the design sheet; BorderBrush
+          alone was too close to a white panel to read as a card. -->
+    <SolidColorBrush x:Key="CardStroke" Color="#CDD5DC" />
     <!-- UX-04: the drawn device silhouette stays a dark object on a light
           surface, as in the light mockup. -->
     <SolidColorBrush x:Key="DeviceBodyBg" Color="#171C20" />
     <SolidColorBrush x:Key="DeviceBodyBorder" Color="#2B3238" />
+    <!-- UX-04b fix pass: screen gradient (45 % -> 35 %) and the glow behind the
+          device. The drawn screen uses the theme's BRIGHT state tints (the ones
+          the dark theme paints with) because the silhouette body is dark in both
+          themes: 45 % of #216443 over a near-black body would read as black. Text
+          tokens are untouched. The glow is the same hue at 20 % here, which is
+          the perceptual weight 12 % of the bright tint has on the dark stage. -->
+    <LinearGradientBrush x:Key="CardScreenRunning" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#738ED8AF" Offset="0" />
+        <GradientStop Color="#598ED8AF" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenStopped" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#73B3D9FA" Offset="0" />
+        <GradientStop Color="#59B3D9FA" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenAttention" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#73EFC58A" Offset="0" />
+        <GradientStop Color="#59EFC58A" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenIdle" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#7399A5B0" Offset="0" />
+        <GradientStop Color="#5999A5B0" Offset="1" />
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowRunning" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#33216443" Offset="0" />
+        <GradientStop Color="#00216443" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowStopped" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#33235E89" Offset="0" />
+        <GradientStop Color="#00235E89" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowAttention" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#33845716" Offset="0" />
+        <GradientStop Color="#00845716" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowIdle" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#3355636E" Offset="0" />
+        <GradientStop Color="#0055636E" Offset="1" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="#DCEAF4" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#9DC1D9" />
     <SolidColorBrush x:Key="FocusRing" Color="#235E89" />

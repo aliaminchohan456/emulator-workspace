@@ -31,12 +31,25 @@
           by the active navigation item and the neutral "info" chip. -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="#252A30" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
-    <!-- UX-04 fix pass: the 1px specular top edge of a floating drawer. White
-          at 12% fading to 2%, as the polish addendum asks. -->
-    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#1FFFFFFF" Offset="0" />
-        <GradientStop Color="#05FFFFFF" Offset="1" />
+    <!-- UX-04b: the 1px specular edge of a floating surface is a VERTICAL
+          gradient (top edge .14 white fading to .03 at the bottom), so the
+          highlight runs along the top edge and dies out down the panel. It is
+          used both as a 1px border brush and as a 1px top-edge line. -->
+    <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#24FFFFFF" Offset="0" />
+        <GradientStop Color="#08FFFFFF" Offset="1" />
     </LinearGradientBrush>
+    <!-- Accent-soft radial behind a hovered rail/toolbar icon. -->
+    <RadialGradientBrush x:Key="HoverGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#26B3D9FA" Offset="0" />
+        <GradientStop Color="#00B3D9FA" Offset="1" />
+    </RadialGradientBrush>
+    <!-- Two-layer floating shadow: a wide ambient halo plus a tight key shadow.
+          CSS 0 20 50 / 0 4 16 maps to ShadowDepth 10 / 2 and BlurRadius 25 / 8. -->
+    <DropShadowEffect x:Key="FloatingShadowAmbient" BlurRadius="25" ShadowDepth="10"
+                      Direction="270" Opacity="0.65" Color="#000000" />
+    <DropShadowEffect x:Key="FloatingShadowKey" BlurRadius="8" ShadowDepth="2"
+                      Direction="270" Opacity="0.4" Color="#000000" />
     <SolidColorBrush x:Key="Danger" Color="#FFA6A6" />
     <!-- UX-04: err-soft is error at 12% over the base surface (not a solid
           maroon): #2E2526 = #111315 + 12% #FFA6A6. DangerBorder is the same
@@ -46,14 +59,59 @@
     <SolidColorBrush x:Key="DangerBorder" Color="#59FFA6A6" />
     <SolidColorBrush x:Key="Success" Color="#8ED8AF" />
     <SolidColorBrush x:Key="SuccessBg" Color="#1E2E26" />
+    <!-- UX-04b fix pass: 1px tone edges for ok/warn chips so a soft chip keeps a
+         readable shape on the viewport-coloured card media (item 12). Alphas
+         match DangerBorder (35%). -->
+    <SolidColorBrush x:Key="SuccessBorder" Color="#598ED8AF" />
     <SolidColorBrush x:Key="Warning" Color="#EFC58A" />
     <SolidColorBrush x:Key="WarningBg" Color="#33291C" />
+    <SolidColorBrush x:Key="WarningBorder" Color="#59EFC58A" />
     <SolidColorBrush x:Key="LogBg" Color="#0C0E10" />
     <SolidColorBrush x:Key="ViewportBg" Color="#0C0E10" />
+    <!-- UX-04b fix pass: a card keeps a visible stroke in every theme (#CDD5DC
+          in the light sheet); dark uses the existing panel stroke value. -->
+    <SolidColorBrush x:Key="CardStroke" Color="#353C42" />
     <!-- UX-04: the library card silhouette is a drawn device, dark in every
           theme like the mockup, so it never impersonates a captured frame. -->
     <SolidColorBrush x:Key="DeviceBodyBg" Color="#0B0D0F" />
     <SolidColorBrush x:Key="DeviceBodyBorder" Color="#3A4249" />
+    <!-- UX-04b fix pass: the drawn screen is a soft vertical gradient of the
+          state tint between 45 % and 35 %, and the glow behind the device is the
+          same tint at 12 % fading out. Both live in the theme dictionaries so a
+          live theme switch repaints the cards (the state brushes themselves are
+          DynamicResource, never frozen colours in the window). -->
+    <LinearGradientBrush x:Key="CardScreenRunning" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#738ED8AF" Offset="0" />
+        <GradientStop Color="#598ED8AF" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenStopped" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#73B3D9FA" Offset="0" />
+        <GradientStop Color="#59B3D9FA" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenAttention" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#73EFC58A" Offset="0" />
+        <GradientStop Color="#59EFC58A" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardScreenIdle" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#7399A5B0" Offset="0" />
+        <GradientStop Color="#5999A5B0" Offset="1" />
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowRunning" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#1F8ED8AF" Offset="0" />
+        <GradientStop Color="#008ED8AF" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowStopped" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#1FB3D9FA" Offset="0" />
+        <GradientStop Color="#00B3D9FA" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowAttention" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#1FEFC58A" Offset="0" />
+        <GradientStop Color="#00EFC58A" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CardGlowIdle" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#1F99A5B0" Offset="0" />
+        <GradientStop Color="#0099A5B0" Offset="1" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="#243441" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#3D5266" />
     <SolidColorBrush x:Key="FocusRing" Color="#B3D9FA" />

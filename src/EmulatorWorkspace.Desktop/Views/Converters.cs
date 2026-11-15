@@ -120,13 +120,13 @@ public sealed class ToneToBrushConverter : IValueConverter
         var key = (tone, role) switch
         {
             ("warning", "bg") => "WarningBg",
-            ("warning", "border") => "Warning",
+            ("warning", "border") => "WarningBorder",
             ("warning", _) => "Warning",
             ("error", "bg") => "DangerBg",
             ("error", "border") => "DangerBorder",
             ("error", _) => "Danger",
             ("ok", "bg") => "SuccessBg",
-            ("ok", "border") => "Success",
+            ("ok", "border") => "SuccessBorder",
             ("ok", _) => "Success",
             (_, "bg") => "PanelAlt",
             (_, "border") => "BorderBrush",
@@ -227,6 +227,28 @@ public sealed class SeverityToBrushConverter : IValueConverter
         };
 
         return Application.Current.TryFindResource(key) as Brush ?? Brushes.Gray;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// UX-04b: a count badge is shown only when there is something to count, so the
+/// rail never carries a "0" bubble.
+/// </summary>
+public sealed class CountToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var count = value switch
+        {
+            int number => number,
+            System.Collections.ICollection collection => collection.Count,
+            _ => 0,
+        };
+
+        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

@@ -30,6 +30,9 @@ public partial class DeviceLibraryWindow : Window
     /// <summary>Element that had focus when a drawer opened; focused again on close.</summary>
     private IInputElement? _drawerFocusReturn;
 
+    /// <summary>Guards a superseded close animation from collapsing a reopened drawer.</summary>
+    private int _drawerEpoch;
+
     public DeviceLibraryWindow()
     {
         InitializeComponent();
@@ -142,22 +145,22 @@ public partial class DeviceLibraryWindow : Window
         {
             if (_viewModel.IsCreateOpen)
             {
-                OpenDrawer(CreateDrawerSlide, CreateScrim, CreateNameBox);
+                OpenDrawer(CreateDrawerHost, CreateDrawerSlide, CreateScrim, CreateNameBox);
             }
             else
             {
-                CloseDrawer(CreateDrawerSlide, CreateScrim);
+                CloseDrawer(CreateDrawerHost, CreateDrawerSlide, CreateScrim, CreateDrawerShell.Width);
             }
         }
         else if (args.PropertyName == nameof(DeviceLibraryViewModel.IsCloneOpen))
         {
             if (_viewModel.IsCloneOpen)
             {
-                OpenDrawer(CloneDrawerSlide, CloneScrim, CloneNameBox);
+                OpenDrawer(CloneDrawerHost, CloneDrawerSlide, CloneScrim, CloneNameBox);
             }
             else
             {
-                CloseDrawer(CloneDrawerSlide, CloneScrim);
+                CloseDrawer(CloneDrawerHost, CloneDrawerSlide, CloneScrim, CloneDrawerShell.Width);
             }
         }
     }
@@ -179,14 +182,17 @@ public partial class DeviceLibraryWindow : Window
     /// the caret in the name field. With Windows reduced motion on, the drawer
     /// appears in place and no storyboard is created.
     /// </summary>
-    private void OpenDrawer(TranslateTransform slide, Border scrim, FrameworkElement initialFocus)
+    private void OpenDrawer(FrameworkElement host, TranslateTransform slide, Border scrim,
+        FrameworkElement initialFocus)
     {
         _drawerFocusReturn = Keyboard.FocusedElement;
         SetPageInert(true);
         UpdateDrawerWidth();
 
+        _drawerEpoch++;
         slide.BeginAnimation(TranslateTransform.XProperty, null);
         scrim.BeginAnimation(OpacityProperty, null);
+        host.Visibility = Visibility.Visible;
 
         if (SystemParameters.ClientAreaAnimation)
         {
@@ -205,18 +211,53 @@ public partial class DeviceLibraryWindow : Window
     }
 
     /// <summary>
-    /// Reset the drawer transform for the next open, hand the page back and
-    /// return focus to the control that invoked the drawer.
+    /// Slide the drawer out over the same 220 ms curve, then collapse the host and
+    /// hand the page back with focus on the control that invoked the drawer. Under
+    /// reduced motion the drawer is collapsed on the frame the command runs. The
+    /// epoch guard stops a slow, superseded close from collapsing a drawer the
+    /// operator has already reopened.
     /// </summary>
-    private void CloseDrawer(TranslateTransform slide, Border scrim)
+    private void CloseDrawer(FrameworkElement host, TranslateTransform slide, Border scrim, double width)
     {
+        var epoch = ++_drawerEpoch;
+
+        // Read the values the open animation is currently showing, then make them
+        // the base value. Clearing the animation first would snap the panel back
+        // to the width it started the open from and end the close on frame one.
+        var fromX = slide.X;
+        var fromOpacity = scrim.Opacity;
         slide.BeginAnimation(TranslateTransform.XProperty, null);
         scrim.BeginAnimation(OpacityProperty, null);
-        slide.X = 0;
-        scrim.Opacity = 1;
+        slide.X = fromX;
+        scrim.Opacity = fromOpacity;
 
-        SetPageInert(_viewModel.IsCreateOpen || _viewModel.IsCloneOpen);
-        RestoreDrawerFocus();
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            Finish();
+            return;
+        }
+
+        var exit = DrawerTimeline(Math.Max(320, width));
+        exit.Completed += (_, _) =>
+        {
+            if (epoch == _drawerEpoch)
+            {
+                Finish();
+            }
+        };
+        slide.BeginAnimation(TranslateTransform.XProperty, exit);
+        scrim.BeginAnimation(OpacityProperty, DrawerTimeline(0));
+
+        void Finish()
+        {
+            slide.BeginAnimation(TranslateTransform.XProperty, null);
+            scrim.BeginAnimation(OpacityProperty, null);
+            slide.X = 0;
+            scrim.Opacity = 1;
+            host.Visibility = Visibility.Collapsed;
+            SetPageInert(_viewModel.IsCreateOpen || _viewModel.IsCloneOpen);
+            RestoreDrawerFocus();
+        }
     }
 
     private static DoubleAnimationUsingKeyFrames DrawerTimeline(double to)
@@ -298,6 +339,34 @@ public partial class DeviceLibraryWindow : Window
         menu.PlacementTarget = button;
         menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
         menu.IsOpen = true;
+    }
+
+    /// <summary>
+    /// UX-04b fix pass (item 6): the sort control is a 32 DIP ghost button that
+    /// opens the shared context-menu style, instead of a native ComboBox. The
+    /// menu is the button's own ContextMenu, so a click and Shift+F10 open the
+    /// same list; each item sets the same <c>SortKey</c> the ComboBox bound to,
+    /// so the filter/sort path is untouched.
+    /// </summary>
+    private void OnSortMenu(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button)
+        {
+            return;
+        }
+
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
+
+    /// <summary>Applies the sort key the operator picked (real orders only).</summary>
+    private void OnSortPicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { Tag: string key } && key.Length > 0)
+        {
+            _viewModel.SortKey = key;
+        }
     }
 
     /// <summary>Escape closes the topmost overlay without touching the guest.</summary>

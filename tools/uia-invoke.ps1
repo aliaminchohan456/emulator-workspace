@@ -1,17 +1,25 @@
-# Invokes a UIA-named button in a top-level window (by exact title).
+# Invokes a UIA-named button in a top-level window (by exact title, or by
+# window handle for a window UIA does not list as a desktop child).
 # Usage: powershell -NoProfile -File tools/uia-invoke.ps1 -Title "Emulator Workspace" -Name "Theme"
 param(
-    [Parameter(Mandatory = $true)][string]$Title,
-    [Parameter(Mandatory = $true)][string]$Name
+    [Parameter(Mandatory = $false)][string]$Title = "",
+    [Parameter(Mandatory = $true)][string]$Name,
+    [long]$Handle = 0
 )
 
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 
-$root = [System.Windows.Automation.AutomationElement]::RootElement
-$condition = New-Object System.Windows.Automation.PropertyCondition(
-    [System.Windows.Automation.AutomationElement]::NameProperty, $Title)
-$window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+$window = $null
+if ($Handle -ne 0) {
+    $window = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$Handle)
+}
+if (-not $window) {
+    $root = [System.Windows.Automation.AutomationElement]::RootElement
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty, $Title)
+    $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+}
 if (-not $window) {
     Write-Error "Window '$Title' not found."
     exit 1
@@ -39,5 +47,13 @@ if ($element.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pat
     exit 0
 }
 
-Write-Error "Element '$Name' supports no invoke/toggle pattern."
+# Tab items and radio-style destinations expose SelectionItemPattern.
+$select = $null
+if ($element.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$select)) {
+    $select.Select()
+    Write-Output "selected '$Name'"
+    exit 0
+}
+
+Write-Error "Element '$Name' supports no invoke/toggle/select pattern."
 exit 1
