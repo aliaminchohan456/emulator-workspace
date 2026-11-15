@@ -93,44 +93,30 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- UX-04b fix pass (item 1): the media strip behind the drawn device is
-             the viewport colour plus a 12 % radial glow of the state tint; the
-             screen itself is a soft vertical gradient of the same tint between
-             45 % and 35 %. Both are DataTriggers on theme brushes, so a live
-             theme switch repaints instead of leaving a frozen tint behind. -->
+        <!-- UX-04b fix pass (item 1), igr-feedback-ux11 answer 1: the media strip
+             behind the drawn device carries the state's soft tint taken straight
+             from the tokens - ok-soft for Running, warn-soft for a guest that needs
+             recovery or is moving, and the raised neutral for Stopped/Defined. The
+             strip IS the tint, so the old one-off radial glow is gone: a token at
+             16 % would read as a hard-edged disc, and the soft token already gives
+             the wash the mockup draws. A live theme switch repaints it. -->
         <Style x:Key="CardMediaStage" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ViewportBg}" />
-        </Style>
-
-        <Style x:Key="CardGlow" TargetType="Ellipse">
-            <Setter Property="Width" Value="196" />
-            <Setter Property="Height" Value="164" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="IsHitTestVisible" Value="False" />
-            <Setter Property="Fill" Value="{DynamicResource CardGlowIdle}" />
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding StateKey}" Value="running">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowRunning}" />
+                    <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateKey}" Value="starting">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowAttention}" />
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateKey}" Value="stopping">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowAttention}" />
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateKey}" Value="failed">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowAttention}" />
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateKey}" Value="dead">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowAttention}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StateKey}" Value="stopped">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowStopped}" />
-                </DataTrigger>
-                <!-- "Not started" (a Defined record) is the neutral tint. -->
-                <DataTrigger Binding="{Binding State}" Value="Defined">
-                    <Setter Property="Fill" Value="{DynamicResource CardGlowIdle}" />
+                    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -408,7 +394,7 @@
                 <StackPanel DockPanel.Dock="Bottom">
                     <Button Style="{StaticResource RailItem}" Command="{Binding RefreshCommand}"
                             views:RailHover.IsEnabled="True"
-                            ToolTip="Reload instances, profiles and readiness"
+                            ToolTip="Refresh"
                             AutomationProperties.Name="Refresh the device library">
                         <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                     </Button>
@@ -416,11 +402,11 @@
                 <StackPanel DockPanel.Dock="Top">
                     <Button Style="{StaticResource RailItem}" Command="{Binding OpenStudioCommand}"
                             views:RailHover.IsEnabled="True"
-                            ToolTip="Studio: the running guest view"
+                            ToolTip="Studio"
                             AutomationProperties.Name="Studio">
                         <Path Data="{StaticResource IconMonitor}" Style="{StaticResource Glyph}" />
                     </Button>
-                    <Grid Width="44" Height="40" Margin="6,0,0,0" ToolTip="Devices: the managed instance library"
+                    <Grid Width="44" Height="40" Margin="6,0,0,0" ToolTip="Devices"
                           AutomationProperties.Name="Devices (current view)">
                         <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
                         <Border Width="2" Height="18" HorizontalAlignment="Left"
@@ -448,14 +434,20 @@
             </Grid.RowDefinitions>
 
             <!-- Header: eyebrow, page title, one sentence; then search, sort and
-                 the single accent action of the page. -->
+                 the single accent action of the page. UX-11: at 1024 DIP the
+                 actions drop to their own row under the title (shot 13), instead
+                 of squeezing the sentence between the search field and the edge. -->
             <Grid Grid.Row="0" Margin="24,20,24,14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
+                <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Bottom">
                     <!-- Fix pass: the LIBRARY eyebrow carries the design sheet's
                          tracking. The text stays 'LIBRARY' for a screen reader
                          (Caps.Tracking keeps the original as the accessible name). -->
@@ -469,12 +461,45 @@
                                    VerticalAlignment="Bottom" Margin="10,0,0,4"
                                    ToolTip="Managed devices the supervisor reports; while a search narrows the grid it reads shown of total" />
                     </StackPanel>
+                    <!-- Widths: the wide layout keeps the original 520 DIP measure;
+                         the narrow layout widens it so the sentence stays on one
+                         line under the title, as shot 13 draws it. -->
                     <TextBlock Text="Managed instances in this workspace. Each runs isolated, with its own ports and data."
-                               Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"
-                               HorizontalAlignment="Left" MaxWidth="520" />
+                               Margin="0,2,0,0" TextWrapping="Wrap"
+                               HorizontalAlignment="Left">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                <Setter Property="MaxWidth" Value="520" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                 Value="True">
+                                        <Setter Property="MaxWidth" Value="760" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <!-- UX-11: in the narrow layout this whole row reflows under
+                         the description, left-aligned like shot 13. Same controls,
+                         same commands, same accessible names. -->
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Grid.Row" Value="0" />
+                            <Setter Property="Grid.Column" Value="1" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Value="True">
+                                    <Setter Property="Grid.Row" Value="1" />
+                                    <Setter Property="Grid.Column" Value="0" />
+                                    <Setter Property="HorizontalAlignment" Value="Left" />
+                                    <Setter Property="Margin" Value="0,12,0,0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
                     <Border Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource InputBorder}"
                             BorderThickness="1" CornerRadius="6" Height="32" Width="268" Margin="0,0,8,0">
                         <Grid>
@@ -543,8 +568,21 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Summary: four counters, every one of them from supervisor data. -->
-            <UniformGrid Grid.Row="1" Columns="4" Margin="18,0,18,6">
+            <!-- Summary: four counters, every one of them from supervisor data.
+                 igr-feedback-ux11: at 1024 the four go 2x2 so each count keeps its
+                 label on one line instead of four 210 DIP columns. -->
+            <UniformGrid Grid.Row="1" Margin="18,0,18,6">
+                <UniformGrid.Style>
+                    <Style TargetType="UniformGrid">
+                        <Setter Property="Columns" Value="4" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="True">
+                                <Setter Property="Columns" Value="2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </UniformGrid.Style>
                 <Border Style="{StaticResource Card}" Margin="6" Padding="14,12" MinHeight="80">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
@@ -569,12 +607,14 @@
                             <TextBlock Text="Running" Style="{StaticResource Caption}"
                                        Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBlock Text="{Binding RunningCountText}" Style="{StaticResource StatValue}" />
-                            <TextBlock Text="{Binding RunningOfText}" Style="{StaticResource Caption}"
-                                       Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
-                                       Margin="8,0,0,0" />
-                        </StackPanel>
+                        <TextBlock Margin="0,4,0,0" Style="{StaticResource StatValue}">
+                            <!-- igr-feedback-ux11 new nit 4: the count and its
+                                 "of N" share one baseline, so the pair never sits
+                                 on two different lines. -->
+                            <Run Text="{Binding RunningCountText, Mode=OneWay}" /><Run Text="  " /><Run
+                                Text="{Binding RunningOfText, Mode=OneWay}" FontSize="12" FontWeight="Normal"
+                                Foreground="{DynamicResource TextTertiary}" />
+                        </TextBlock>
                     </StackPanel>
                 </Border>
 
@@ -605,10 +645,38 @@
                             <TextBlock Text="Needs attention" Style="{StaticResource Caption}"
                                        Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Text="{Binding AttentionCountText}" Style="{StaticResource StatValue}"
-                                   Margin="0,4,0,0" />
-                        <TextBlock Text="{Binding AttentionText}" Style="{StaticResource Caption}"
-                                   Foreground="{DynamicResource TextTertiary}" />
+                        <TextBlock Text="{Binding AttentionCountText}" Margin="0,4,0,0">
+                            <!-- igr-feedback-ux11 new nit 4: the count is warn only
+                                 when there is something to attend to; a real 0 is
+                                 text, never a permanent warning. -->
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource StatValue}">
+                                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AttentionCountText}" Value="0">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                                    <Setter Property="Text" Value="{Binding AttentionText}" />
+                                    <Style.Triggers>
+                                        <!-- igr-feedback-ux11 new nit 4: a zero count
+                                             reads "none" instead of a live-sounding
+                                             caption, and only a positive count is
+                                             ever a warning. -->
+                                        <DataTrigger Binding="{Binding AttentionCountText}" Value="0">
+                                            <Setter Property="Text" Value="none" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -667,8 +735,25 @@
                                 <!-- Polish item 10: hovering one card dims every
                                      sibling (including the dashed tile) to 82 %
                                      over 120 ms; the hovered card stays at 100 %. -->
-                                <Grid Width="280" Margin="0,0,16,16"
+                                <!-- igr-feedback-ux11: two columns at 1024, three at
+                                     wide sizes. The width comes from the window's
+                                     TileWidth (half the grid measure), so the cards
+                                     stay whole numbers and never spill a third column
+                                     into a 2-column row. -->
+                                <Grid Margin="0,0,16,16"
                                       views:CardHoverFocus.IsEnabled="True">
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Width" Value="280" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             Value="True">
+                                                    <Setter Property="Width"
+                                                            Value="{Binding TileWidth, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
                                     <!-- Item 2: a keyboard-focused card gets an
                                          accent-soft halo behind it and a 1px accent
                                          border on the frame; hover keeps the
@@ -712,14 +797,13 @@
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
-                                            <!-- Media (item 1): the viewport colour plus a
-                                                 12 % radial glow of the state tint centred
-                                                 behind a drawn device whose screen carries
-                                                 the same tint as a soft vertical gradient.
-                                                 It is a drawing, never a captured frame. -->
+                                            <!-- Media (item 1): the state's soft tint as
+                                                 the strip itself, behind a drawn device
+                                                 whose screen carries the same state as a
+                                                 soft vertical gradient. It is a drawing,
+                                                 never a captured frame. -->
                                             <Grid Grid.Row="0">
                                                 <Border CornerRadius="9,9,0,0" Style="{StaticResource CardMediaStage}" />
-                                                <Ellipse Style="{StaticResource CardGlow}" />
 
                                                 <Grid Width="62" Height="118" HorizontalAlignment="Center"
                                                       VerticalAlignment="Center">
@@ -995,9 +1079,20 @@
                             </Style>
                         </Ellipse.Style>
                     </Ellipse>
+                    <!-- igr-feedback-ux11 new nit 3: the count sentence is gone;
+                         the paragraph is the transient message channel only (start,
+                         stop, delete, copy) and the bar carries a real "Instances N"
+                         segment on the right. -->
                     <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Style="{StaticResource Caption}"
                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" />
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Instances" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"
+                                   Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding InstanceCountText}" Style="{StaticResource Mono}"
+                                   FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                   VerticalAlignment="Center" Margin="0,0,14,0"
+                                   ToolTip="Managed devices the supervisor reports" />
                         <TextBlock Text="{Binding ConnectionText}" Style="{StaticResource Caption}"
                                    Foreground="{DynamicResource TextTertiary}" Margin="0,0,14,0" />
                         <!-- Item 11: the temp workspace path never reaches the bar;

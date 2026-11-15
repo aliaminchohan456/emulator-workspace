@@ -37,6 +37,7 @@ public partial class AgentSessionsWindow : Window
         PairingsGrid.ItemsSource = _pairings;
         OperationsGrid.ItemsSource = _operations;
         ScopesBox.Text = string.Join(", ", AgentService.AllScopes);
+        TakeoverButton.IsEnabled = false;
         // One ticker for every live value on the surface (expiry countdowns and
         // the Expiring chip); it only runs while the window is open.
         _countdown = new DispatcherTimer(DispatcherPriority.Background)
@@ -176,6 +177,10 @@ public partial class AgentSessionsWindow : Window
                     Bool(node, "revoked") ? "revoked" : Bool(node, "expired") ? "expired" : "active",
                     now));
             }
+
+            // igr-feedback-ux11: Take over is meaningless with no session; it is
+            // disabled rather than removed so its reason stays in the tooltip.
+            TakeoverButton.IsEnabled = _sessions.Count > 0;
 
             _pairings.Clear();
             foreach (var node in pairings.OfType<JsonObject>())

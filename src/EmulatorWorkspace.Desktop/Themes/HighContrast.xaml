@@ -47,6 +47,9 @@
     <SolidColorBrush x:Key="PaletteScrimBg" Color="#66000000" />
     <!-- UX-10: dialogs keep one 50 % system dim in high contrast. -->
     <SolidColorBrush x:Key="DialogScrimBg" Color="#80000000" />
+    <!-- UX-11: the inspector overlay keeps one 30 % dim in high contrast too; the
+         panel itself is separated by the system frame colour. -->
+    <SolidColorBrush x:Key="InspectorScrimBg" Color="#4D000000" />
     <!-- UX-04b: the specular edge keeps the system window text colour, in a
           vertical top-to-bottom gradient like the other themes. -->
     <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
@@ -102,22 +105,6 @@
         <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="0" />
         <GradientStop Color="{x:Static SystemColors.HighlightColor}" Offset="1" />
     </LinearGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowRunning" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#00000000" Offset="0" />
-        <GradientStop Color="#00000000" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowStopped" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#00000000" Offset="0" />
-        <GradientStop Color="#00000000" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowAttention" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#00000000" Offset="0" />
-        <GradientStop Color="#00000000" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowIdle" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#00000000" Offset="0" />
-        <GradientStop Color="#00000000" Offset="1" />
-    </RadialGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="SelectionBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="FocusRing" Color="{x:Static SystemColors.HighlightColor}" />

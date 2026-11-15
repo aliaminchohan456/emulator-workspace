@@ -397,7 +397,8 @@
                                        Text="No pairing requests · agents connect from the CLI" />
                         </Border>
                     </Grid>
-                    <StackPanel DockPanel.Dock="Top" Margin="0,10,0,0">
+                    <StackPanel x:Name="ApprovalDetail" DockPanel.Dock="Top" Margin="0,10,0,0"
+                                Visibility="{Binding SelectedItem, ElementName=PairingsGrid, Converter={StaticResource NullToVis}}">
                         <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,0,0,10" />
 
                         <Grid Margin="0,0,0,6">
@@ -454,9 +455,22 @@
                                   DisplayMemberPath="Display"
                                   AutomationProperties.Name="Approval template" />
 
-                        <Button x:Name="ApproveButton" Style="{StaticResource PrimaryButton}"
+                        <Button x:Name="ApproveButton"
                                 HorizontalAlignment="Stretch" Height="34" Margin="0,14,0,0"
                                 Click="OnApprove" AutomationProperties.Name="Approve selected pairing">
+                            <!-- igr-feedback-ux11 item 4: no selected request, no
+                                 live Approve; the detail block itself is collapsed,
+                                 so this is the belt to that braces. -->
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=PairingsGrid}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Path Data="{StaticResource IconCheck}" Width="14" Height="14"
                                       Stretch="Uniform" Stroke="{DynamicResource AccentText}"

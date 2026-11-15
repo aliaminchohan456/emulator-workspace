@@ -56,6 +56,10 @@
     <!-- UX-10: dialogs dim at 40 % in the light theme; the dark consent keeps the
          50 % the UX-09 review asked for. -->
     <SolidColorBrush x:Key="DialogScrimBg" Color="#80000000" />
+    <!-- UX-11 (igr-feedback-ux11): the inspector overlay's 30 % dim. The light
+         theme is the one the reviewer specified; the dark theme matches it so the
+         panel separates from the near-black stage at the same weight. -->
+    <SolidColorBrush x:Key="InspectorScrimBg" Color="#4D000000" />
     <!-- UX-04b: the 1px specular edge of a floating surface is a VERTICAL
           gradient (top edge .14 white fading to .03 at the bottom), so the
           highlight runs along the top edge and dies out down the panel. It is
@@ -124,22 +128,6 @@
         <GradientStop Color="#7399A5B0" Offset="0" />
         <GradientStop Color="#5999A5B0" Offset="1" />
     </LinearGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowRunning" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#1F8ED8AF" Offset="0" />
-        <GradientStop Color="#008ED8AF" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowStopped" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#1FB3D9FA" Offset="0" />
-        <GradientStop Color="#00B3D9FA" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowAttention" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#1FEFC58A" Offset="0" />
-        <GradientStop Color="#00EFC58A" Offset="1" />
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CardGlowIdle" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#1F99A5B0" Offset="0" />
-        <GradientStop Color="#0099A5B0" Offset="1" />
-    </RadialGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="#243441" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#3D5266" />
     <SolidColorBrush x:Key="FocusRing" Color="#B3D9FA" />

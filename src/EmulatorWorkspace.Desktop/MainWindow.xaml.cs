@@ -78,6 +78,75 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// UX-11: the 1024 DIP layout. Below 1120 DIP the shell collapses its
+    /// inspector panel (the viewport is the hero there, as shots 12/13 draw it)
+    /// and condenses the command bar to icon-only groups. The flag is bound by
+    /// XAML only for presentation; no command, binding or handler moves.
+    /// </summary>
+    public static readonly DependencyProperty NarrowLayoutProperty = DependencyProperty.Register(
+        nameof(NarrowLayout), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool NarrowLayout
+    {
+        get => (bool)GetValue(NarrowLayoutProperty);
+        set => SetValue(NarrowLayoutProperty, value);
+    }
+
+    /// <summary>The command bar's breakpoint: below it the bar overflows.</summary>
+    private const double NarrowWidthLimit = 1120;
+
+    /// <summary>
+    /// The inspector's own breakpoint. igr-feedback-ux11 asks for the 48 DIP
+    /// strip below 1180 DIP, which is a wider trigger than the command bar's
+    /// 1120, so the panel leaves room for the stage a step earlier than the bar
+    /// condenses.
+    /// </summary>
+    private const double InspectorNarrowLimit = 1180;
+
+    /// <summary>
+    /// UX-11 reviewer refinement: below 1180 DIP the collapsed inspector leaves a
+    /// 48 DIP icon strip at the window edge that reopens it on the tab the
+    /// operator picked. The strip is visible only while the panel is collapsed and
+    /// the focus view is off, so it never competes with the panel's own tabs.
+    /// </summary>
+    public static readonly DependencyProperty ShowInspectorStripProperty = DependencyProperty.Register(
+        nameof(ShowInspectorStrip), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool ShowInspectorStrip
+    {
+        get => (bool)GetValue(ShowInspectorStripProperty);
+        set => SetValue(ShowInspectorStripProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the window is narrow enough for the inspector's strip behaviour
+    /// (1180 DIP), independent of the command bar's own 1120 DIP breakpoint.
+    /// </summary>
+    public static readonly DependencyProperty InspectorNarrowProperty = DependencyProperty.Register(
+        nameof(InspectorNarrow), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool InspectorNarrow
+    {
+        get => (bool)GetValue(InspectorNarrowProperty);
+        set => SetValue(InspectorNarrowProperty, value);
+    }
+
+    /// <summary>
+    /// True while the inspector is open as an overlay: the narrow layout lets the
+    /// stage span the panel's columns, so the panel floats over it behind a 30 %
+    /// scrim instead of narrowing the viewport. Presentation only - the panel, its
+    /// tabs and every value in it are the same objects.
+    /// </summary>
+    public static readonly DependencyProperty InspectorOverlayProperty = DependencyProperty.Register(
+        nameof(InspectorOverlay), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool InspectorOverlay
+    {
+        get => (bool)GetValue(InspectorOverlayProperty);
+        set => SetValue(InspectorOverlayProperty, value);
+    }
+
+    /// <summary>
     /// UX-06: whether the settings slide-over is open. The rail item binds it to
     /// mark itself as the active destination; the drawer's own open/close lives
     /// in code-behind so the 220 ms slide and the focus hand-off stay together.
@@ -412,11 +481,37 @@ public partial class MainWindow : Window
             return;
         }
 
-        CompactTelemetry = ActualWidth < 1120;
+        var narrow = ActualWidth < NarrowWidthLimit;
+        CompactTelemetry = narrow;
         // UX-06: the two bottom stage chips step aside at the same breakpoint;
         // below it the stage is narrower than the frame plus its chips, and the
         // drop hint sat on the frame's lower-left corner at 1024.
-        CompactStage = ActualWidth < 1120;
+        CompactStage = narrow;
+        NarrowLayout = narrow;
+
+        // UX-11: the inspector has its own, wider breakpoint (1180 DIP). Entering
+        // it collapses the panel so the stage keeps the hero width both responsive
+        // shots draw; leaving it restores the panel only when this pass was the one
+        // that hid it, so an operator who closed the panel themselves stays closed
+        // and one who opened it at 1024 keeps it. Focus view keeps ownership.
+        var inspectorNarrow = ActualWidth < InspectorNarrowLimit;
+        InspectorNarrow = inspectorNarrow;
+        if (!_focusView && inspectorNarrow != _isInspectorNarrow)
+        {
+            if (inspectorNarrow && !_detailsCollapsed)
+            {
+                _detailsAutoCollapsed = true;
+                SetDetailsCollapsed(true);
+            }
+            else if (!inspectorNarrow && _detailsCollapsed && _detailsAutoCollapsed)
+            {
+                _detailsAutoCollapsed = false;
+                SetDetailsCollapsed(false);
+            }
+        }
+
+        _isInspectorNarrow = inspectorNarrow;
+        UpdateInspectorStrip();
         // UX-06: the drawer keeps its 460 DIP width until the window drops below
         // 1024 DIP, where it clamps to 45 % (see UpdateSettingsDrawerWidth).
         if (IsSettingsOpen)
@@ -1405,7 +1500,18 @@ public partial class MainWindow : Window
     private bool _detailsCollapsed;
     private double _detailsWidth = DetailsDefaultWidth;
 
-    private void OnToggleDetails(object sender, RoutedEventArgs e) => SetDetailsCollapsed(!_detailsCollapsed);
+    // UX-11: whether the inspector breakpoint, not the operator, collapsed the
+    // panel.
+    private bool _detailsAutoCollapsed;
+    private bool _isInspectorNarrow;
+
+    private void OnToggleDetails(object sender, RoutedEventArgs e)
+    {
+        // An explicit toggle owns the panel from here: a later resize must not
+        // undo it.
+        _detailsAutoCollapsed = false;
+        SetDetailsCollapsed(!_detailsCollapsed);
+    }
 
     private void SetDetailsCollapsed(bool collapsed)
     {
@@ -1429,6 +1535,52 @@ public partial class MainWindow : Window
             columns[DetailsColumn].Width = new GridLength(
                 _detailsWidth >= DetailsMinWidth ? _detailsWidth : DetailsDefaultWidth);
             columns[DetailsSplitterColumn].Width = new GridLength(SplitterWidth);
+        }
+
+        UpdateInspectorStrip();
+    }
+
+    /// <summary>
+    /// The strip and the overlay are narrow-layout affordances only: the strip
+    /// appears when the panel is collapsed, the overlay flag when it is open, and
+    /// neither exists while the focus view owns the panes.
+    /// </summary>
+    private void UpdateInspectorStrip()
+    {
+        var narrow = InspectorNarrow && !_focusView;
+        ShowInspectorStrip = narrow && _detailsCollapsed;
+        InspectorOverlay = narrow && !_detailsCollapsed;
+    }
+
+    /// <summary>
+    /// One strip button per inspector tab. The panel opens on the chosen tab; this
+    /// only calls the existing collapse helper and selects a tab, so no data,
+    /// command or handler is duplicated. Below the inspector breakpoint the stage
+    /// spans the panel's column, so it opens as an overlay over the stage.
+    /// </summary>
+    private void OnInspectorStripOpen(object sender, RoutedEventArgs e)
+    {
+        var tab = ((sender as FrameworkElement)?.Tag as string) switch
+        {
+            "Capture" => 1,
+            "Diagnostics" => 2,
+            _ => 0,
+        };
+
+        _detailsAutoCollapsed = false;
+        SetDetailsCollapsed(false);
+        InspectorTabs.SelectedIndex = tab;
+        InspectorTabs.Focus();
+    }
+
+    /// <summary>Opens the command bar's narrow-layout overflow menu under its button.</summary>
+    private void OnOverflowMenu(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { ContextMenu: { } menu } button)
+        {
+            menu.PlacementTarget = button;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
         }
     }
 
@@ -1465,6 +1617,8 @@ public partial class MainWindow : Window
 
             _viewModel.IsLogcatOpen = _focusLogcatWasOpen;
         }
+
+        UpdateInspectorStrip();
     }
 
     private double _focusDetailsWidth;

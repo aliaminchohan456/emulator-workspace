@@ -33,6 +33,36 @@ public partial class DeviceLibraryWindow : Window
     /// <summary>Guards a superseded close animation from collapsing a reopened drawer.</summary>
     private int _drawerEpoch;
 
+    /// <summary>
+    /// UX-11: the same 1120 DIP breakpoint the Studio uses. Below it the header
+    /// puts search, sort and New device on their own row under the description
+    /// (mockup shot 13) instead of squeezing the sentence. Presentation only.
+    /// </summary>
+    public static readonly DependencyProperty NarrowLayoutProperty = DependencyProperty.Register(
+        nameof(NarrowLayout), typeof(bool), typeof(DeviceLibraryWindow), new PropertyMetadata(false));
+
+    public bool NarrowLayout
+    {
+        get => (bool)GetValue(NarrowLayoutProperty);
+        set => SetValue(NarrowLayoutProperty, value);
+    }
+
+    /// <summary>
+    /// igr-feedback-ux11: the card width the 2-column grid uses at 1024. It is half
+    /// the page measure minus the 16 DIP gutter, so two 280 DIP cards at wide sizes
+    /// stay untouched and the narrow grid never spills into a third column.
+    /// </summary>
+    public static readonly DependencyProperty TileWidthProperty = DependencyProperty.Register(
+        nameof(TileWidth), typeof(double), typeof(DeviceLibraryWindow), new PropertyMetadata(280d));
+
+    public double TileWidth
+    {
+        get => (double)GetValue(TileWidthProperty);
+        set => SetValue(TileWidthProperty, value);
+    }
+
+    private const double NarrowWidthLimit = 1120;
+
     public DeviceLibraryWindow()
     {
         InitializeComponent();
@@ -46,14 +76,23 @@ public partial class DeviceLibraryWindow : Window
         _viewModel.CloseRequested += OnCloseRequested;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-        SizeChanged += (_, _) => UpdateDrawerWidth();
+        SizeChanged += (_, _) => OnLibrarySizeChanged();
 
         Loaded += async (_, _) =>
         {
+            OnLibrarySizeChanged();
             UpdateDrawerWidth();
             await _viewModel.InitializeAsync();
             DesktopLog.Write($"library loaded cards={_viewModel.Tiles.Count}");
         };
+    }
+
+    private void OnLibrarySizeChanged()
+    {
+        NarrowLayout = ActualWidth < NarrowWidthLimit;
+        // Page measure = window - 56 DIP rail - 2 x 24 DIP page margin.
+        var page = Math.Max(0, ActualWidth - 104);
+        TileWidth = Math.Max(240, Math.Floor(page / 2) - 16);
     }
 
     public DeviceLibraryViewModel ViewModel => _viewModel;

@@ -221,6 +221,56 @@ and the consent ready/disabled pair in light; every light text pair measures
 remain deferred: they need a preference store, which this slice does not add.
 Evidence in `artifacts/ui/ux10-*.png`.
 
+UX-11 responsive 1024 (2026-11-15/16, same uncommitted tree, base HEAD
+`c454730` = UX-10): the 1024 DIP layout both responsive shots draw, in Dark and
+Light, without changing the wide layout's structure. Two breakpoints carry it:
+`NarrowLayout` (1120 DIP, command bar and Device Manager) and `InspectorNarrow`
+(1180 DIP, the inspector only, as `igr-feedback-ux11.md` asks). Studio: below
+1180 the inspector collapses to a new 48 DIP strip at the window edge (Device /
+Capture / Diagnostics glyphs); opening it from the strip floats the same panel
+over the stage behind a 30 % `InspectorScrimBg` scrim, because the stage spans the
+panel's columns at that width - the viewport keeps its full measure, and nothing
+in the panel is reparented or duplicated. The command bar hides the telemetry pill
+(the status bar keeps the live frame rate), the Install APK label (icon-only, name
+and tooltip kept) and the two lowest-priority groups, which move into a "..."
+menu with the same commands: fit/1:1/zoom and pop-out/fullscreen. Install APK and
+the power action never overflow. The status bar drops the Agents segment at 1024
+(there is no sample segment on this bar). The collapse is owned by the layout only
+when the layout performed it: widening restores the panel, an operator toggle is
+never undone, and Focus view keeps ownership while active. Device Manager: at 1120
+the header moves search, sort and New device to their own row under the title
+(shot 13), the description widens to one line, the grid becomes two columns of
+half-measure cards (`TileWidth`) and the four counters go 2x2. Everything else was
+already responsive: the Logcat dock and page fit with no horizontal scroll, the
+Settings slide-over stays 460 DIP, and the palette, Agent Sessions and the 560 DIP
+consent dialog fit. `igr-feedback-ux11-carryover.md` is verified item by item
+(header Revoke gone, content-sized sessions card, ImageNaming consent target,
+solid err confirm with a 50 % disabled state, owned/centred consent, doctor rows in
+Diagnostics) - all were already done in UX-10.
+`igr-feedback-ux11.md` (23:55, newer than the prompt) is folded in: the library
+card media strip takes its tint from the tokens (ok-soft Running, warn-soft
+recovery/attention, raised neutral Stopped; the old one-off radial glows are
+deleted, 66 theme keys per dictionary); light `TextTertiary` is the sheet's
+`#5A6976` (4.98:1 on raised, >=4.88:1 on every tint) and the stage captions stay
+`TextSecondary` `#52616E`; the dark settings scrim stays 50 %; the sparkline is a
+1.5 DIP accent line over a 12 % area; the frame-stall chip is anchored at the top
+of the stage above the bezel instead of over guest pixels; rail tooltips are names
+only; the palette footer keeps only its key hints; the active Settings tab is a
+raised fill with text1 and no border (accent ring stays keyboard-only); the
+Devices footer is the "Instances N" segment with the transient sentence kept,
+the Running count sits on one baseline with "of N", and Needs attention prints 0
+with a "none" caption and takes the warn tone only above 0; a W log line colours
+only its badge and tag, E/F rows get a ~6 % full-row err tint; a no-request pairing
+card collapses its detail and disables Approve, and Take over is disabled with no
+sessions; the first-run card's raw doctor dump is replaced by the three doctor
+rows. Deferred with reason: hosting Agent Sessions inside the shell content area
+(its own later slice - the window, its data and its consent path do not change
+here). Evidence at 1024 DIP (`1280x1000` physical, host 125 % scaling: 1024 x
+800 DIP) and wide (`1200x810` DIP = `1500x1012` physical), both themes, in
+`artifacts/ui/ux11b-*.png`. Build 0 errors / 22 warnings, 526/526 tests,
+`git diff --check` clean; theme keys 66/66/66. Also deferred: theme persistence,
+Follow Windows, and a true 1024 physical-pixel capture (would require changing the
+host display scale).
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

@@ -794,7 +794,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             RaiseCounts();
             StatusMessage = _cards.Count == 0
                 ? "No managed instance yet. Create one from the pinned AOSP profile."
-                : $"{_cards.Count} managed instance{(_cards.Count == 1 ? "" : "s")}.";
+                : "";
         }
         catch (Exception ex)
         {

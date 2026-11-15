@@ -642,11 +642,22 @@
                         <Grid>
                             <Border x:Name="B" Background="Transparent" BorderBrush="Transparent"
                                     BorderThickness="1" />
+                            <!-- igr-feedback-ux11 new nit 9: only E/F earn a full-row
+                                 tint, and only at half of the err-soft token (~6 %);
+                                 W keeps the badge and the tag as its colour. -->
+                            <Border x:Name="Tone" Background="{DynamicResource DangerBg}"
+                                    Opacity="0" IsHitTestVisible="False" />
                             <Border x:Name="PART_Hover" Background="{DynamicResource HoverBg}"
                                     Opacity="0" IsHitTestVisible="False" />
                             <ContentPresenter />
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Level}" Value="E">
+                                <Setter TargetName="Tone" Property="Opacity" Value="0.5" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="F">
+                                <Setter TargetName="Tone" Property="Opacity" Value="0.5" />
+                            </DataTrigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
                             </Trigger>
@@ -728,17 +739,16 @@
             </Style.Triggers>
         </Style>
 
-        <!-- The page's message text: text1 at rest, warn/err when the line is one,
-             so a loud line is loud by its own words rather than a row fill. -->
+        <!-- The page's message text: text1 at rest, err when the line is one, so a
+             loud line is loud by its own words rather than a row fill.
+             igr-feedback-ux11 new nit 9: a W line keeps its message in text1; only
+             its badge and tag carry the warning colour. -->
         <Style x:Key="LogMessageText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Level}" Value="W">
-                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
-                </DataTrigger>
                 <DataTrigger Binding="{Binding Level}" Value="E">
                     <Setter Property="Foreground" Value="{DynamicResource Danger}" />
                 </DataTrigger>
@@ -747,6 +757,20 @@
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Level}" Value="A">
                     <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- A warning row's tag is the second coloured element (the badge is the
+             first); everything else stays text2. -->
+        <Style x:Key="LogTagText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="W">
+                    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -1044,8 +1068,11 @@
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource AccentSoftBg}" />
-                                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                                <!-- igr-feedback-ux11 item 6: the active segment is a
+                                     raised fill with text1, no border; the accent
+                                     ring stays a keyboard-focus signal only. -->
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource PanelAlt}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                 <Setter TargetName="H" Property="TextElement.FontWeight" Value="SemiBold" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -1170,12 +1197,12 @@
                         <Path Data="{StaticResource IconSearch}" Style="{StaticResource Glyph}" />
                     </Button>
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding ToggleThemeCommand}"
-                            ToolTip="Switch between the dark and light theme"
+                            ToolTip="Theme"
                             AutomationProperties.Name="Switch theme">
                         <Path Data="{StaticResource IconTheme}" Style="{StaticResource Glyph}" />
                     </Button>
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding RefreshCommand}"
-                            Margin="0,0,0,4" ToolTip="Re-read the supervisor, the SDK report and the device state"
+                            Margin="0,0,0,4" ToolTip="Refresh"
                             AutomationProperties.Name="Refresh workspace state">
                         <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                     </Button>
@@ -1187,7 +1214,7 @@
                          the drawer's own open/close writes). -->
                     <Button x:Name="SettingsRailButton" Style="{StaticResource NavRailItem}" Margin="0"
                             Click="OnOpenSettings"
-                            ToolTip="Settings: appearance, shortcuts and diagnostics (Esc closes)"
+                            ToolTip="Settings (Esc)"
                             AutomationProperties.Name="Settings">
                         <Path Data="{StaticResource IconSettings}" Style="{StaticResource Glyph}" />
                     </Button>
@@ -1218,7 +1245,7 @@
 
                     <Grid Margin="0,0,0,4">
                         <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnDevices"
-                                ToolTip="Devices: the managed instance library"
+                                ToolTip="Devices"
                                 AutomationProperties.Name="Device library">
                             <Path Data="{StaticResource IconGrid}" Style="{StaticResource Glyph}" />
                         </Button>
@@ -1236,20 +1263,20 @@
 
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding OpenLogcatPageCommand}"
                             Tag="{Binding LogcatRailActive}"
-                            ToolTip="Logcat: the full log view (the dock stays on the tab bar)"
+                            ToolTip="Logcat"
                             AutomationProperties.Name="Logcat page">
                         <Path Data="{StaticResource IconLogs}" Style="{StaticResource Glyph}" />
                     </Button>
 
                     <Button Style="{StaticResource NavRailItem}" Click="OnAgents"
-                            ToolTip="Agents: supervise paired agent sessions"
+                            ToolTip="Agents"
                             AutomationProperties.Name="Agent sessions">
                         <Path Data="{StaticResource IconAgents}" Style="{StaticResource Glyph}" />
                     </Button>
 
                     <Grid Margin="0,0,0,4">
                         <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnRootLab"
-                                ToolTip="Root Lab: ADB daemon identity and the Magisk lab"
+                                ToolTip="Root Lab"
                                 AutomationProperties.Name="Root Lab">
                             <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}" />
                         </Button>
@@ -1364,11 +1391,23 @@
                      Clicking opens the popover with the fuller frame metrics. -->
                 <Button x:Name="TelemetryPill" Grid.Column="1" VerticalAlignment="Center"
                         Margin="0,0,8,0"
-                        Style="{StaticResource TelemetryPillButton}"
                         Click="OnTelemetryClick"
                         ToolTip="{Binding TelemetryTooltip}"
                         AutomationProperties.Name="Live telemetry"
                         AutomationProperties.HelpText="{Binding TelemetryTooltip}">
+                    <!-- UX-11: at 1024 DIP the pill steps aside so the command bar
+                         keeps one clean row; the status bar still prints the live
+                         frame rate, so no measured value is lost. -->
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource TelemetryPillButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="FPS" Style="{StaticResource StatusLabel}" Margin="0,0,5,0" />
                         <TextBlock Text="{Binding TelemetryFpsValue}" Style="{StaticResource TelemetryValue}" />
@@ -1380,9 +1419,9 @@
                             <Grid Width="40" Height="14" Margin="8,0,0,0" VerticalAlignment="Center"
                                   Visibility="{Binding HasSpark, Converter={StaticResource BoolToVis}}">
                                 <Polygon Points="{Binding SparkAreaPoints}"
-                                         Fill="{DynamicResource Accent}" Opacity="0.22" />
+                                         Fill="{DynamicResource Accent}" Opacity="0.12" />
                                 <Polyline x:Name="TelemetrySpark" Points="{Binding SparkPoints}"
-                                          Stroke="{DynamicResource Accent}" StrokeThickness="1.2"
+                                          Stroke="{DynamicResource Accent}" StrokeThickness="1.5"
                                           StrokeLineJoin="Round" />
                             </Grid>
                         </StackPanel>
@@ -1471,7 +1510,20 @@
                                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                           StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                           VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Install APK" VerticalAlignment="Center" />
+                                    <TextBlock Text="Install APK" VerticalAlignment="Center">
+                                        <!-- UX-11: icon-only at 1024, with the
+                                             name and the tooltip kept intact. -->
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                 Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                             </Button>
                             <Border Style="{StaticResource SegmentDivider}" />
@@ -1483,8 +1535,19 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- fit | 1:1 | zoom out | zoom in -->
-                    <Border Style="{StaticResource SegmentGroup}" Margin="8,0,0,0">
+                    <!-- fit | 1:1 | zoom out | zoom in. UX-11: the first group to
+                         overflow at 1024; it moves into the "..." menu below. -->
+                    <Border Margin="8,0,0,0">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource SegmentGroup}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                 Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <StackPanel Orientation="Horizontal">
                             <Button Style="{StaticResource SegmentButton}" Click="OnFit"
                                     ToolTip="Fit to window (Ctrl+wheel zooms)" AutomationProperties.Name="Fit to window">
@@ -1507,8 +1570,18 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- pop out | fullscreen -->
-                    <Border Style="{StaticResource SegmentGroup}" Margin="8,0,0,0">
+                    <!-- pop out | fullscreen. UX-11: the second overflow group. -->
+                    <Border Margin="8,0,0,0">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource SegmentGroup}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                 Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <StackPanel Orientation="Horizontal">
                             <Button Style="{StaticResource SegmentButton}" Click="OnPopOut"
                                     ToolTip="Pop out the viewport" AutomationProperties.Name="Pop-out">
@@ -1537,6 +1610,38 @@
                                 <Path Data="{StaticResource IconFocus}" Style="{StaticResource Glyph}" />
                             </Button>
                         </StackPanel>
+                    </Border>
+
+                    <!-- UX-11: the overflow for the two lowest-priority groups
+                         (zoom first, then the window tools). They keep their exact
+                         commands and handlers; only where they live changes, and
+                         only at 1024. Install APK and the power action never
+                         overflow. -->
+                    <Border Style="{StaticResource SegmentGroup}" Margin="8,0,0,0"
+                            Visibility="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
+                        <Button x:Name="BarOverflowButton" Style="{StaticResource SegmentButton}"
+                                Click="OnOverflowMenu" ToolTip="More view tools"
+                                AutomationProperties.Name="More view tools">
+                            <TextBlock Text="&#x2026;" FontSize="15" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,-4,0,0" />
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Fit to window" Click="OnFit"
+                                              AutomationProperties.Name="Fit to window" />
+                                    <MenuItem Header="Actual size (1:1)" Click="OnActualSize"
+                                              AutomationProperties.Name="Actual size" />
+                                    <MenuItem Header="Zoom out" Click="OnZoomOut"
+                                              AutomationProperties.Name="Zoom out" />
+                                    <MenuItem Header="Zoom in" Click="OnZoomIn"
+                                              AutomationProperties.Name="Zoom in" />
+                                    <Separator />
+                                    <MenuItem Header="Pop out the viewport" Click="OnPopOut"
+                                              AutomationProperties.Name="Pop-out" />
+                                    <MenuItem Header="Fullscreen (F11)" Click="OnFullscreen"
+                                              AutomationProperties.Name="Fullscreen" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </Border>
                 </StackPanel>
             </Grid>
@@ -1601,9 +1706,9 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="318" MinWidth="250" />
-                <!-- UX-05: 0 wide. The floating pill replaced the device strip;
-                     the column keeps its index so no child's Grid.Column moves. -->
-                <ColumnDefinition Width="0" />
+                <!-- UX-11: 0 wide at wide sizes. At 1024 it holds the 48 DIP
+                     inspector strip that reopens the collapsed panel. -->
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <!-- Viewport (B3): in the light theme the stage keeps the 02/17 feel,
@@ -1613,8 +1718,24 @@
                  frame behind the live frame, stage chips and the floating
                  toolbar pill. None of that is inside ViewportScroll, so the
                  canvas, the image and the input mapping are byte-identical. -->
-            <Border Grid.Column="2" Style="{StaticResource Panel}" Background="{DynamicResource ViewportBg}"
+            <Border Grid.Column="2" Background="{DynamicResource ViewportBg}"
                     BorderBrush="{DynamicResource BorderSubtle}" ClipToBounds="True">
+                <!-- UX-11 (igr-feedback-ux11): below 1180 DIP the stage spans the
+                     splitter and the inspector column, so the inspector can open
+                     over it instead of taking width away from the guest. Above the
+                     breakpoint the span is 1 and the layout is exactly as before. -->
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Panel}">
+                        <Setter Property="Background" Value="{DynamicResource ViewportBg}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding InspectorNarrow, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="True">
+                                <Setter Property="Grid.ColumnSpan" Value="3" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid x:Name="StageRoot" SizeChanged="OnStageSizeChanged" MouseMove="OnStageMouseMove">
                     <!-- Ambient stage (addendum 6): accent ~7 % with an ok core,
                          both static, plus the noise tile that kills banding. -->
@@ -1734,9 +1855,55 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <Border Style="{StaticResource Panel}" Padding="10" Margin="0,0,0,14">
-                                <TextBlock Text="{Binding DoctorText}" Style="{StaticResource Mono}"
-                                           TextWrapping="Wrap" />
+                            <!-- igr-feedback-ux11 UX-09 #10: the first-run card is
+                                 the last surface that printed the raw doctor dump.
+                                 It shows the same three rows as Diagnostics, so the
+                                 rows are the only doctor path in every state; the
+                                 full report stays behind Copy diagnostics. -->
+                            <Border Style="{StaticResource InnerCard}" Padding="10,2" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <Grid MinHeight="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Image" Style="{StaticResource RowLabel}" />
+                                        <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                   Text="{Binding DoctorImage, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                   ToolTip="{Binding DoctorImageTooltip}"
+                                                   Style="{StaticResource SettingsDoctorValue}" />
+                                    </Grid>
+                                    <Border Style="{StaticResource SettingsDivider}" />
+                                    <Grid MinHeight="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Acceleration" Style="{StaticResource RowLabel}" />
+                                        <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                   Text="{Binding DoctorAcceleration, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                   ToolTip="{Binding DoctorAccelerationTooltip}"
+                                                   Style="{StaticResource SettingsDoctorValue}" />
+                                        <Border Grid.Column="2" Style="{StaticResource SettingsOkChip}"
+                                                Visibility="{Binding DoctorAccelerationReady, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="Ready" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Success}" />
+                                        </Border>
+                                    </Grid>
+                                    <Border Style="{StaticResource SettingsDivider}" />
+                                    <Grid MinHeight="26">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="GPU" Style="{StaticResource RowLabel}" />
+                                        <TextBlock Grid.Column="1" Margin="12,0,0,0"
+                                                   Text="{Binding DoctorGpu, Converter={StaticResource MiddleEllipsis}, ConverterParameter=36}"
+                                                   ToolTip="{Binding DoctorGpuTooltip}"
+                                                   Style="{StaticResource SettingsDoctorValue}" />
+                                    </Grid>
+                                </StackPanel>
                             </Border>
                             <StackPanel Orientation="Horizontal">
                                 <!-- The primary turns into a 40 % ghost with its
@@ -1784,17 +1951,17 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- UX-03 stale frame, UX-05 chip pass: the last frame stays
-                         visible and is stamped. One line, bottom-centre over the
-                         stage, warn-soft with warn text, at most 90 % of the
-                         stage wide: "Frame stalled · 17s · input paused" with
-                         the real age of the last delivered frame. A supervised
-                         operation that holds the ADB channel keeps the same chip
-                         with its own words ("Frames paused ..."). -->
-                    <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16,0,16,46"
+                    <!-- UX-03 stale frame, UX-05 chip pass, igr-feedback-ux11 item 2:
+                         the last frame stays visible and is stamped. One line,
+                         top-centre UNDER the top chips, so it never covers guest
+                         pixels: "Frame stalled · 17s · input paused" with the real
+                         age of the last delivered frame. A supervised operation
+                         that holds the ADB channel keeps the same chip with its
+                         own words ("Frames paused ..."). -->
+                    <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,4,16,0"
                             MaxWidth="640" Background="{DynamicResource WarningBg}"
                             BorderBrush="{DynamicResource WarningBorder}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,5" IsHitTestVisible="False"
+                            CornerRadius="6" Padding="10,2" IsHitTestVisible="False"
                             Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}"
                             AutomationProperties.Name="Frame stream paused">
                         <TextBlock Width="Auto" MaxWidth="600" Text="{Binding StaleChipText}"
@@ -2014,6 +2181,17 @@
                                 HorizontalAlignment="Center" Visibility="Collapsed"
                                 MouseEnter="OnPillZoneEnter" />
                     </Grid>
+
+                    <!-- UX-11 (igr-feedback-ux11): while the inspector is open as
+                         an overlay at a narrow width, this 30 % scrim dims the stage
+                         under it so the panel reads as a floating surface. It is
+                         the last child of the stage, so it covers the chips, the
+                         pill and the guest alike, and it never exists at wide
+                         sizes or while the panel is collapsed. -->
+                    <Border x:Name="InspectorOverlayScrim" Panel.ZIndex="60"
+                            Background="{DynamicResource InspectorScrimBg}"
+                            Visibility="{Binding InspectorOverlay, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                            IsHitTestVisible="False" />
                 </Grid>
             </Border>
 
@@ -2030,7 +2208,21 @@
                  the SDK paths and the Root Lab so neither of them crowds the
                  identity rows. Every value is supervisor data; a field the
                  supervisor does not report is not rendered at all. -->
-            <Border x:Name="InspectorPanel" Grid.Column="4" Style="{StaticResource Panel}" Padding="12">
+            <Border x:Name="InspectorPanel" Grid.Column="4" Padding="12">
+                <!-- UX-11: as an overlay the panel is a floating surface, so it
+                     takes the shared ambient shadow and the card stroke; in the
+                     docked layout it keeps the plain Panel look it always had. -->
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Panel}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding InspectorOverlay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource CardStroke}" />
+                                <Setter Property="Effect" Value="{DynamicResource FloatingShadowAmbient}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <TabControl x:Name="InspectorTabs" Background="Transparent" BorderThickness="0" Padding="0">
                     <TabItem Header="Device">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -2576,6 +2768,34 @@
                     </TabItem>
                 </TabControl>
             </Border>
+
+            <!-- UX-11 reviewer refinement: below 1120 DIP the collapsed inspector
+                 leaves this 48 DIP strip at the window edge. Three 36 DIP glyphs
+                 reopen the panel on the tab they name; the strip hides while the
+                 panel is open or the focus view is on. It is a strip, not a second
+                 panel: no command, source or data is duplicated. -->
+            <Border Grid.Column="5" Width="48" Background="{DynamicResource NavBg}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+                    Visibility="{Binding ShowInspectorStrip, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                    AutomationProperties.Name="Inspector strip">
+                <StackPanel VerticalAlignment="Center" Margin="0,8">
+                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Device"
+                            ToolTip="Device details"
+                            AutomationProperties.Name="Open device details">
+                        <Path Data="{StaticResource IconDevice}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Capture"
+                            ToolTip="Capture details"
+                            AutomationProperties.Name="Open capture details">
+                        <Path Data="{StaticResource IconScreenshot}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Diagnostics"
+                            Margin="0" ToolTip="Diagnostics and Root Lab"
+                            AutomationProperties.Name="Open diagnostics details">
+                        <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}" />
+                    </Button>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- Drawer tab bar: 36 DIP, one real destination (Logcat), the compact count
@@ -2798,9 +3018,7 @@
                                             <Border Grid.Column="1" Style="{StaticResource LogLevelGlyph}" HorizontalAlignment="Left" Margin="0,0,8,0">
                                                 <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
                                             </Border>
-                                            <TextBlock Grid.Column="2" Text="{Binding Tag}" Style="{StaticResource Mono}"
-                                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
-                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                            <TextBlock Grid.Column="2" Text="{Binding Tag}" Style="{StaticResource LogTagText}"
                                                        Margin="0,0,8,0" />
                                             <TextBlock Grid.Column="3" Text="{Binding Message}"
                                                        Style="{StaticResource LogMessageText}"
@@ -3210,13 +3428,10 @@
                                             <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
                                         </Border>
                                         <views:HighlightTextBlock Grid.Column="2" TextValue="{Binding Tag}"
-                                                                  HighlightIndexes="{Binding TagHighlightIndexes}"
-                                                                  MarkMatches="True"
-                                                                  Style="{StaticResource Mono}" FontSize="12"
-                                                                  Foreground="{DynamicResource TextSecondary}"
-                                                                  VerticalAlignment="Center"
-                                                                  TextTrimming="CharacterEllipsis"
-                                                                  Margin="0,0,12,0" ToolTip="{Binding Tag}" />
+                                            HighlightIndexes="{Binding TagHighlightIndexes}"
+                                            MarkMatches="True"
+                                            Style="{StaticResource LogTagText}"
+                                            Margin="0,0,12,0" ToolTip="{Binding Tag}" />
                                         <!-- Search hits are painted by the palette's own
                                              HighlightTextBlock, so the page and the
                                              palette mark a match the same way. The
@@ -3335,18 +3550,23 @@
                 </Grid>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource StatusLink}" Click="OnAgents"
-                            ToolTip="Agent sessions: pairings, scopes and takeover"
-                            AutomationProperties.Name="Agent sessions">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource IconAgents}" Width="11" Height="11" Stretch="Uniform"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                  StrokeThickness="1.4" VerticalAlignment="Center" Margin="0,0,5,0" />
-                            <TextBlock Text="Agents" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- igr-feedback-ux11: the agents segment is the first to go at
+                         1024; the rail still reaches Agent Sessions. -->
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVis}}">
+                        <Button Style="{StaticResource StatusLink}" Click="OnAgents"
+                                ToolTip="Agent sessions: pairings, scopes and takeover"
+                                AutomationProperties.Name="Agent sessions">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconAgents}" Width="11" Height="11" Stretch="Uniform"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      StrokeThickness="1.4" VerticalAlignment="Center" Margin="0,0,5,0" />
+                                <TextBlock Text="Agents" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
 
-                    <Border Style="{StaticResource StatusDivider}" />
+                        <Border Style="{StaticResource StatusDivider}" />
+                    </StackPanel>
                     <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,5,0">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">

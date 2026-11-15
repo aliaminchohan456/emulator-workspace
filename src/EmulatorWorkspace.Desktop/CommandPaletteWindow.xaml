@@ -389,9 +389,6 @@
                                 </Border>
                                 <TextBlock Text="close" Style="{StaticResource PaletteMeta}" Margin="6,0,0,0" />
                             </StackPanel>
-                            <TextBlock Grid.Column="1" Text="Same command source as the toolbar"
-                                       FontSize="11" Foreground="{DynamicResource TextTertiary}"
-                                       VerticalAlignment="Center" Margin="16,0,0,0" />
                         </Grid>
                     </Border>
                 </Grid>
