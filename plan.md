@@ -122,6 +122,45 @@ exact 2 x 18 geometry. Validation and the per-item status are in
 `ux08fix-report.md`; evidence in `artifacts/ui/ux08fix-*.png`.
 
 
+UX-09 Agent Sessions, privileged consent and the UX-08 fold-in (2026-11-15, same
+uncommitted tree, base HEAD `921c829` = UX-08): the two remaining privileged
+surfaces are restyled to the Graphite mockup (`shots/08-agent-sessions.png`,
+`shots/06-magisk-consent-dialog.png`) and `igr-feedback-ux09.md` is folded in
+whole. Agent Sessions: AUTOMATION eyebrow, 24 DIP title, the two-line
+description, the live session summary, one err-outline "Take over · revoke all",
+a 280 DIP approval card (request list with mono ids and soft Pending/Expired/
+Approved/Completed chips, an accent edge only while a real request waits, the
+selected request's client/template, a live expiry countdown that turns warn in
+the last minute, the scope field and one accent Approve), and two table cards -
+Paired Sessions and Recent agent operations - over a 42 DIP caps header, a 30 DIP
+column header and 34/30 DIP rows with mono ids, up to three scope chips plus a
+"+N" chip, a live "in 1h 46m" expiry, an Active/Expiring (last five minutes)/
+Expired/Revoked chip, a per-row err-outline Revoke that is disabled with its
+reason, outcome chips that carry the supervisor's code ("Denied ·
+forbidden_scope") and a right-aligned `ms`. At 1024 DIP or narrower the card
+stacks above the tables and the body scrolls. The three collections, every
+supervisor call and every decision are unchanged (approve cloned a real guest,
+revoke turned the session chip red, takeover revoked every session on the
+guest); display rules live in `ViewModels/AgentSessionsPresentation.cs` with 55
+tests. The consent surface is one shared `ConsentDialogWindow` (50 % scrim, 560
+DIP card, 160 ms dialog curve, Esc/scrim/Cancel all cancel, focus starts on
+Cancel) used by the Magisk install (err tile, three artifacts with their real
+SHA-256 and a check, the five consequences, acknowledgment and the typed guest
+name), ADB root (warn tile, acknowledgment only) and stock recovery (accent
+tile, acknowledgment and typed name) - its copy is split out of the old
+MessageBox text only. Cancel returns before the caller's first supervisor
+request: after cancelling every variant `magisk.status` still said
+`not_configured` and `journal/` held no files. `igr-feedback-ux09.md`'s UX-08
+nits are folded in too: the dock is header plus lines (no filter row, no column
+header, one 28 DIP search that expands to 200 DIP, Resume while held, actions on
+the page), the counts are compact with 6 DIP separators, rows carry 8 DIP after
+the time and the level badge, the page shows one paused chip with its buffered
+count, the status bar holds segments only (transient sentences are a 2.5 s
+bottom-centre toast), the Logcat rail item carries the active indicator while
+the page is open, and every message keeps its full text in a tooltip. Build 0
+errors / 22 warnings, 514/514 tests, `git diff --check` clean; evidence in
+`artifacts/ui/ux09-*.png`.
+
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

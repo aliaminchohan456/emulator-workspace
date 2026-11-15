@@ -1364,18 +1364,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _statusMessage, value))
             {
                 OnPropertyChanged(nameof(StatusSentence));
+                // UX-08 fix pass: the status bar holds segments only, so a transient
+                // sentence (an install result, a copy, a refresh note) appears as one
+                // bottom-centre toast for 2.5 s instead of parking in the bar.
+                ShowStatusToast(value);
             }
         }
     }
 
     /// <summary>
-    /// UX-05: the status bar already carries a "Supervisor connected" segment and
-    /// a live metric row, so the plain housekeeping sentences the connect path
-    /// sets ("Supervisor connected.", "Refreshed.") are not repeated in the
-    /// flexible middle. Real operational sentences (a refusal, an install
-    /// result, a failed refresh) still appear there.
+    /// UX-05: the status bar carries only segments now, so the housekeeping
+    /// sentences the connect path sets are not repeated anywhere and the real
+    /// operational ones go to the toast.
     /// </summary>
-    public string StatusSentence => StatusMessage is "Supervisor connected." or "Refreshed." ? "" : StatusMessage;
+    public string StatusSentence => "";
 
     private string _errorMessage = "";
 
@@ -3980,9 +3982,35 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ShowToast(string title, string text, string? path)
     {
+        _toastTimer.Interval = TimeSpan.FromSeconds(6);
         ToastTitle = title;
         ToastText = text;
         _toastPath = path;
+        OnPropertyChanged(nameof(HasToastPath));
+        ToastVisible = true;
+        ToastHovered = false;
+        _toastTimer.Stop();
+        _toastTimer.Start();
+    }
+
+    /// <summary>
+    /// UX-08 fix pass: a transient status sentence becomes one short toast, bottom
+    /// centre, for 2.5 s. Housekeeping sentences ("Supervisor connected.") and
+    /// blanks are skipped, and a new sentence replaces the one on screen, so only
+    /// one toast is ever visible.
+    /// </summary>
+    private void ShowStatusToast(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)
+            || text is "Supervisor connected." or "Refreshed." or "Starting desktop...")
+        {
+            return;
+        }
+
+        _toastTimer.Interval = TimeSpan.FromSeconds(2.5);
+        ToastTitle = text;
+        ToastText = "";
+        _toastPath = null;
         OnPropertyChanged(nameof(HasToastPath));
         ToastVisible = true;
         ToastHovered = false;
@@ -4219,6 +4247,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        // UX-09: rooting the guest's daemon is the one consequential ADB step, so it
+        // asks for the same consent surface the lab actions use. Unroot stays a
+        // single click: it only removes privilege.
+        if (root && !AskConsent(AdbRootConsent(device)))
+        {
+            return;
+        }
+
         try
         {
             var result = await RequestAsync(
@@ -4251,13 +4287,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (apk is null) return;
         var probe = Pick("Select the lab app root probe APK", "Android package (*.apk)|*.apk");
         if (probe is null) return;
-        if (MessageBox.Show($"Install the base-only Magisk lab on {device.Name}?\n\n" +
-            "This permits temporary ADB root for provisioning, then returns adbd to UID 2000. " +
-            "While patched, host ADB shell can obtain Magisk root. Agents have observation access only. " +
-            "Zygisk stays off; no modules are installed. Stock and guest-data backups are preserved. " +
-            "Two cold boots verify app root. Snapshots are fenced for this generation.\n\n" +
-            $"Ramdisk: {patch}\nManager: {apk}\nProbe: {probe}", "Approve Magisk lab installation",
-            MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        // UX-09: the consent surface is the app's own dialog, not the OS message
+        // box. It prints the same facts (this guest, these three files, the same
+        // consequences) and the hashes are read from the selected files for
+        // display only. Declining here returns before the first supervisor
+        // request, so Cancel creates no transaction and writes no journal entry.
+        var artifacts = new[]
+        {
+            await ConsentArtifact.ReadAsync("Ramdisk", patch).ConfigureAwait(true),
+            await ConsentArtifact.ReadAsync("Manager APK", apk).ConfigureAwait(true),
+            await ConsentArtifact.ReadAsync("Root probe", probe).ConfigureAwait(true),
+        };
+        if (!AskConsent(InstallMagiskConsent(device, artifacts))) return;
         await RunBusyAsync("Checking Magisk lab inputs...", async () =>
         {
             var prepared = await RequestAsync("magisk.prepare", new JsonObject
@@ -4277,14 +4318,98 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             var state = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30));
             if (state["transaction"] is null) { MagiskState = "Magisk lab: not configured"; return; }
-            if (MessageBox.Show($"Restore stock boot for {device.Name}?\n\n" +
-                "The supervisor can stop an unbootable guest from Windows. It preserves current guest data " +
-                "when possible; if stock cannot boot, it restores the verified pre-install data backup. " +
-                "Failed overlays remain available as evidence.\n\nTransaction: " + state["transaction"],
-                "Approve stock recovery", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            if (!AskConsent(RecoverStockConsent(device))) return;
             await ApprovedMagiskAction(device.Name, state, "recover");
         });
     }
+
+    /// <summary>
+    /// UX-09: one shared consent surface for the consequential root actions. It
+    /// returns true only when the operator pressed the dialog's confirm; every
+    /// other exit (Cancel, Esc, the scrim, the window close box) returns false, and
+    /// the caller then returns before its first supervisor request.
+    /// </summary>
+    private bool AskConsent(ConsentDialogModel model)
+    {
+        var dialog = new ConsentDialogWindow(model) { Owner = Application.Current?.MainWindow };
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>"emulator-5554 · x86_64 · system-images;android-35;default;x86_64".</summary>
+    private static string GuestMetaText(DeviceItemViewModel device) =>
+        string.Join(" · ", new[] { device.Serial, device.Abi, device.ImagePackage }
+            .Where(part => !string.IsNullOrWhiteSpace(part)));
+
+    private static string GuestStateTone(DeviceItemViewModel device) =>
+        device.State is "Running" or "Starting" or "Stopping" or "Failed" ? "warn" : "neutral";
+
+    private static ConsentDialogModel InstallMagiskConsent(
+        DeviceItemViewModel device, IReadOnlyList<ConsentArtifact> artifacts) => new()
+    {
+        Title = "Install Magisk lab on this guest?",
+        Subtitle = "This patches the boot image. Check the exact target, artifacts and consequences first.",
+        TileTone = "err",
+        GuestName = device.Name,
+        GuestMeta = GuestMetaText(device),
+        GuestMetaTooltip = device.ImageDisplay,
+        StateLabel = device.StateLabel,
+        StateTone = GuestStateTone(device),
+        Artifacts = artifacts,
+        Consequences = new[]
+        {
+            new ConsentConsequence("warn", "ADB is rooted temporarily during the install, then restored to UID 2000 (shell)."),
+            new ConsentConsequence("warn", "Any host shell connected to this guest gets root access while Magisk is installed."),
+            new ConsentConsequence("ok", "A recovery point and a snapshot fence are taken first, so stock can be recovered even if boot fails."),
+            new ConsentConsequence("ok", "Zygisk stays off and no modules are installed."),
+            new ConsentConsequence("err", "Backups made after this point will contain a modified boot image."),
+        },
+        AcknowledgeText = "I understand this guest's boot image will be modified. This consent does not replace the supervisor's own authorization.",
+        ConfirmWord = device.Name,
+        ConfirmLabel = "Install Magisk lab",
+    };
+
+    private static ConsentDialogModel AdbRootConsent(DeviceItemViewModel device) => new()
+    {
+        Title = "Root this guest's ADB daemon?",
+        Subtitle = "A privileged provisioning step for this guest only. Read what changes before it runs.",
+        TileTone = "warn",
+        GuestName = device.Name,
+        GuestMeta = GuestMetaText(device),
+        GuestMetaTooltip = device.ImageDisplay,
+        StateLabel = device.StateLabel,
+        StateTone = GuestStateTone(device),
+        Consequences = new[]
+        {
+            new ConsentConsequence("warn", "The daemon restarts as uid 0; any process that can reach this guest's ADB gets root while it runs."),
+            new ConsentConsequence("ok", "ADB unroot returns the daemon to the shell user."),
+            new ConsentConsequence("ok", "This applies to this guest only; other guests keep their own daemon."),
+            new ConsentConsequence("info", "The Magisk lab state and agent sessions are not changed by this step."),
+        },
+        AcknowledgeText = "I understand this guest's ADB daemon will run as root until I unroot it.",
+        ConfirmLabel = "Root the daemon",
+    };
+
+    private static ConsentDialogModel RecoverStockConsent(DeviceItemViewModel device) => new()
+    {
+        Title = "Restore the stock boot image?",
+        Subtitle = "This returns the guest to its pre-install boot image and fences the lab.",
+        TileTone = "accent",
+        GuestName = device.Name,
+        GuestMeta = GuestMetaText(device),
+        GuestMetaTooltip = device.ImageDisplay,
+        StateLabel = device.StateLabel,
+        StateTone = GuestStateTone(device),
+        Consequences = new[]
+        {
+            new ConsentConsequence("ok", "The supervisor can stop an unbootable guest from Windows."),
+            new ConsentConsequence("warn", "Current guest data is preserved when possible; otherwise the verified pre-install data backup is restored."),
+            new ConsentConsequence("ok", "Failed overlays remain available as evidence."),
+            new ConsentConsequence("info", "The Magisk lab state returns to not configured for this guest."),
+        },
+        AcknowledgeText = "I understand this guest will boot from the stock boot image and its data may fall back to the verified backup.",
+        ConfirmWord = device.Name,
+        ConfirmLabel = "Restore stock",
+    };
 
     private async Task ApprovedMagiskAction(string name, JsonObject state, string action)
     {

@@ -21,6 +21,10 @@
     <!-- UX-08: the Logcat drawer's count line, level filter, stream chip and empty
          state are pure rules, so the tests compile that source file too. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/LogcatPresentation.cs" Link="Desktop/LogcatPresentation.cs" />
+    <!-- UX-09: the Agent Sessions table's chip words, tones and scope chips, and
+         the shared consent dialog's digest display, are pure rules as well. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/AgentSessionsPresentation.cs" Link="Desktop/AgentSessionsPresentation.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ConsentDialogModel.cs" Link="Desktop/ConsentDialogModel.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

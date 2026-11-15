@@ -830,6 +830,40 @@ public partial class MainWindow : Window
         (_logDockScroll ??= FindDescendant<ScrollViewer>(LogDockList))?.ScrollToEnd();
     }
 
+    /// <summary>
+    /// UX-08 fix pass: the dock's search icon expands into the 200 DIP field and
+    /// collapses again when the field is empty, so the dock stays a header plus
+    /// lines. An active query keeps the field open.
+    /// </summary>
+    private void OnToggleDockSearch(object sender, RoutedEventArgs e)
+    {
+        var open = DockSearchHost.Visibility != Visibility.Visible;
+        if (!open && !string.IsNullOrWhiteSpace(_viewModel.LogSearch))
+        {
+            // A click on the icon while a query is active clears it and closes.
+            _viewModel.LogSearch = "";
+        }
+
+        DockSearchHost.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        DockSearchButton.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
+        if (open)
+        {
+            LogSearchField.Focus();
+            LogSearchField.SelectAll();
+        }
+    }
+
+    private void OnDockSearchLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_viewModel.LogSearch) || DockSearchHost.IsKeyboardFocusWithin)
+        {
+            return;
+        }
+
+        DockSearchHost.Visibility = Visibility.Collapsed;
+        DockSearchButton.Visibility = Visibility.Visible;
+    }
+
     private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
     {
         for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
@@ -1649,6 +1683,14 @@ public partial class MainWindow : Window
         else if (LogcatVisible && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.F)
         {
             var field = _viewModel.IsLogcatPage ? LogPageSearchField : LogSearchField;
+            if (!_viewModel.IsLogcatPage)
+            {
+                // UX-08 fix pass: the dock's search lives behind a 28 DIP icon, so
+                // the chord opens the field before focusing it.
+                DockSearchHost.Visibility = Visibility.Visible;
+                DockSearchButton.Visibility = Visibility.Collapsed;
+            }
+
             field.Focus();
             field.SelectAll();
             e.Handled = true;

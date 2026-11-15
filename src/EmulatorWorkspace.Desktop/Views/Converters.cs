@@ -243,10 +243,13 @@ public sealed class SeverityToBrushConverter : IValueConverter
 
 /// <summary>
 /// UX-04b: a count badge is shown only when there is something to count, so the
-/// rail never carries a "0" bubble.
+/// rail never carries a "0" bubble. UX-09 adds <see cref="Invert"/> for the empty
+/// state of a table, which is visible only while the same count is zero.
 /// </summary>
 public sealed class CountToVisibilityConverter : IValueConverter
 {
+    public bool Invert { get; set; }
+
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var count = value switch
@@ -256,7 +259,13 @@ public sealed class CountToVisibilityConverter : IValueConverter
             _ => 0,
         };
 
-        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        var visible = count > 0;
+        if (Invert)
+        {
+            visible = !visible;
+        }
+
+        return visible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
