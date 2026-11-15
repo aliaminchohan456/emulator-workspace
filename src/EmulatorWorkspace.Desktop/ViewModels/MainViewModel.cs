@@ -1,7 +1,8 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
@@ -29,6 +30,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly ConcurrentQueue<LogEntryViewModel> _logInbox = new();
     private readonly List<double> _frameIntervals = new();
     private readonly List<double> _inputLatencies = new();
+    // UX-05: a 24-sample ring buffer of the REAL frame rate for the telemetry
+    // sparkline. It is fed only when the supervisor delivers a frame, so it can
+    // never draw a value the stream did not produce.
+    private readonly List<double> _fpsSamples = new();
+    private PointCollection _sparkPoints = new();
+    private PointCollection _sparkAreaPoints = new();
     private readonly Channel<PendingFrame> _frames = Channel.CreateBounded<PendingFrame>(new BoundedChannelOptions(1)
     {
         FullMode = BoundedChannelFullMode.DropOldest,
@@ -83,6 +90,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _stageDetail = "";
     private string _stageHint = "";
     private bool _showBootStages;
+    // igr-feedback-ux05 item 2: readiness as the supervisor last reported it
+    // (readiness.interactiveUtc), kept so the pill's IsEnabled binding has a
+    // value to read between status polls.
+    private bool _guestInteractive;
 
     private readonly bool _halfCapture;
 
@@ -331,6 +342,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         private set => SetProperty(ref _showBootStages, value);
     }
 
+    /// <summary>
+    /// igr-feedback-ux05 item 2: the nav cluster (back, home, recents) and the
+    /// screenshot action stay disabled until the guest is actually interactive.
+    /// This is a display-only gate over state the supervisor already reports or
+    /// the frame stream already proved: the command bindings are untouched, WPF
+    /// simply refuses to invoke a command from a disabled button.
+    /// </summary>
+    public bool IsGuestInteractive => _guestInteractive || Frame is not null;
+
     /// <summary>True when the last delivered frame is older than the stale budget.</summary>
     public bool IsFrameStale
     {
@@ -401,6 +421,325 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(StaleFrameTone));
         OnPropertyChanged(nameof(StaleFrameTitle));
         UpdateFrameHealth();
+    }
+
+    // ---- UX-05 stage, telemetry and status surfaces ------------------------
+    // Everything below is a DERIVED string or collection over state that already
+    // exists (the selected device, the delivered frames, the launch timestamp,
+    // the supervisor's uid/gpu fields). Nothing here polls, and a value the
+    // supervisor does not report prints an em dash instead of a guess.
+
+    /// <summary>The stage's top-left chip: the guest's own display size.</summary>
+    public string StageGuestChip => $"Guest display · {GuestDisplayText}";
+
+    public string StageGuestChipTooltip =>
+        "The guest display as the frame stream reports it. The window scales the frame; the guest resolution itself is never changed here.";
+
+    /// <summary>Top-right chip: orientation from the guest display, then the real zoom mode.</summary>
+    public string StageOrientationChip
+    {
+        get
+        {
+            var orientation = GuestWidth > 0 && GuestHeight > 0
+                ? GuestWidth > GuestHeight ? "Landscape" : "Portrait"
+                : "Display";
+            return $"{orientation} · {ZoomStatus}";
+        }
+    }
+
+    public string StageOrientationChipTooltip =>
+        "Orientation from the guest display, followed by the zoom mode the viewport is currently applying (Fit, 1:1 or a zoom factor).";
+
+    /// <summary>Bottom-left chip: the drop hint names the exact target guest.</summary>
+    public string StageDropHint => SelectedDevice is { } device
+        ? $"Drop an .apk here to install on {device.Name}"
+        : "Drop an .apk here to install on the selected guest";
+
+    /// <summary>Bottom-right chip: the input capability that actually exists.</summary>
+    public string InputCapabilityChip => "Single-touch · tap & drag";
+
+    public string InputCapabilityDetail =>
+        "Single-touch tap and drag only. Multi-touch is not enabled in Phase 1, and the viewport never overlays the guest frame.";
+
+    /// <summary>
+    /// "Elapsed 53s" from the supervisor's own launch timestamp. Empty when the
+    /// stepper is not showing or the launch time was never reported.
+    /// </summary>
+    public string BootElapsedText
+    {
+        get
+        {
+            if (!StageVisible || !ShowBootStages || _launchedUtc is not { } launched)
+            {
+                return "";
+            }
+
+            var seconds = Math.Max(0, (DateTimeOffset.UtcNow - launched).TotalSeconds);
+            return $"Elapsed {seconds:N0}s";
+        }
+    }
+
+    /// <summary>
+    /// The one-line stale chip: "Frame stalled · 17s · input paused" with the real
+    /// age of the last delivered frame, or the supervised operation that holds
+    /// the ADB channel in the same shape.
+    /// </summary>
+    public string StaleChipText
+    {
+        get
+        {
+            if (!_frameStale)
+            {
+                return "";
+            }
+
+            if (_frameHold.Length > 0)
+            {
+                return $"Frames paused · {_frameHold} · input paused";
+            }
+
+            var age = _lastFramePresented == default
+                ? 0
+                : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
+            return $"Frame stalled · {age:N0}s · input paused";
+        }
+    }
+
+    /// <summary>Telemetry pill: the live frame rate, or an em dash before the first frame.</summary>
+    public string TelemetryFpsValue => Frame is null ? "—" : FramesPerSecond.ToString("N0");
+
+    // igr-feedback-ux05 item 1: there is no CPU segment at any width. The
+    // supervisor reports no CPU sample for a running guest, so "FPS 9 · CPU —"
+    // was an em dash pretending to be a metric (and, behind a flat underline, it
+    // read like an empty text input). Nothing replaced it: the pill shows what
+    // the frame stream actually measures.
+
+    public string TelemetryTooltip => Frame is null
+        ? "Frame rate: no frame delivered yet. Click for the frame pipeline."
+        : $"Frame rate {FramesPerSecond:N1} fps measured from the delivered frames. Click for the frame pipeline.";
+
+    public string TelemetrySamplingNote =>
+        "Frame rate, delivered size and dropped frames come from the live frame stream. CPU, memory and disk are not reported for a running guest, so they are not shown.";
+
+    public PointCollection SparkPoints => _sparkPoints;
+
+    /// <summary>
+    /// The same series closed to the bottom of the 40 x 14 box, so the sparkline
+    /// reads as a chart (a filled area under the stroke) rather than as a lone
+    /// flat rule, which was exactly what made the old pill look like an empty
+    /// text input. Built from the same real samples, never a synthetic shape.
+    /// </summary>
+    public PointCollection SparkAreaPoints => _sparkAreaPoints;
+
+    /// <summary>
+    /// True only once there are two or more real samples: a one-point polyline
+    /// draws nothing, so the pill reserves no sparkline space until the stream
+    /// has actually produced a shape.
+    /// </summary>
+    public bool HasSpark => _sparkPoints.Count > 1;
+
+    public string StatusSerial => SelectedDevice is { Serial.Length: > 0 } device ? device.Serial : "—";
+
+    public string StatusSerialTooltip => SelectedDevice is { Serial.Length: > 0 } device
+        ? $"ADB serial {device.Serial}"
+        : "No ADB serial: no device is selected, or the supervisor has not reported one.";
+
+    public string StatusUid => AdbUid is "" or "n/a" ? "uid —" : $"uid {AdbUid}";
+
+    /// <summary>
+    /// Fix pass item 8: the status bar renders the uid segment only when the
+    /// supervisor has already reported a daemon uid. Nothing extra is polled.
+    /// </summary>
+    public bool HasAdbUid => AdbUid is not ("" or "n/a");
+
+    // ---- UX-05 fix pass: the Logcat dock's count line (item 7) -------------
+    // Counts come from the retained lines themselves, never from a running
+    // tally that a clear or a filter would leave stale.
+
+    public bool HasLogEntries => LogEntries.Count > 0;
+
+    public int LogWarningCount => LogEntries.Count(entry => entry.Level == "W");
+
+    public int LogErrorCount => LogEntries.Count(entry => entry.Level is "E" or "F" or "A");
+
+    /// <summary>
+    /// "1,284 lines · 3 warnings · 1 error": the mono line beside the dock tab.
+    /// Warnings and errors appear only when they exist, and the whole string is
+    /// empty for an empty drawer, which shows "No lines yet" instead.
+    /// </summary>
+    public string LogCountText
+    {
+        get
+        {
+            var total = LogEntries.Count;
+            if (total == 0)
+            {
+                return "";
+            }
+
+            var text = $"{total.ToString("N0", CultureInfo.InvariantCulture)} lines";
+            var warnings = LogWarningCount;
+            if (warnings > 0)
+            {
+                text += $" · {warnings.ToString(CultureInfo.InvariantCulture)} {(warnings == 1 ? "warning" : "warnings")}";
+            }
+
+            var errors = LogErrorCount;
+            if (errors > 0)
+            {
+                text += $" · {errors.ToString(CultureInfo.InvariantCulture)} {(errors == 1 ? "error" : "errors")}";
+            }
+
+            return text;
+        }
+    }
+
+    private void NotifyLogCounts()
+    {
+        OnPropertyChanged(nameof(HasLogEntries));
+        OnPropertyChanged(nameof(LogWarningCount));
+        OnPropertyChanged(nameof(LogErrorCount));
+        OnPropertyChanged(nameof(LogCountText));
+    }
+
+    public string StatusGpu => string.IsNullOrWhiteSpace(GpuMode) ? "—" : GpuMode;
+
+    public string StatusGpuTooltip => string.IsNullOrWhiteSpace(GpuMode)
+        ? "GPU mode is not reported for the selected guest."
+        : $"GPU mode {GpuMode}, as reported by the supervisor.";
+
+    // ---- UX-05 Root Lab presentation (Diagnostics tab) ---------------------
+    // The consent surfaces stay the OS MessageBox; these strings only present
+    // the state the supervisor already reported, with the exact target named.
+
+    /// <summary>"dev · emulator-5554": the exact guest every lab action applies to.</summary>
+    public string RootLabTarget => SelectedDevice is { } device
+        ? string.IsNullOrWhiteSpace(device.Serial)
+            ? device.Name
+            : $"{device.Name} · {device.Serial}"
+        : "No device selected";
+
+    public string RootLabTargetTooltip => SelectedDevice is { } device
+        ? $"ADB root and the Magisk lab apply to this guest only ({device.Name}, transport {device.Serial})."
+        : "Select a managed lab guest before any privileged action.";
+
+    /// <summary>The ADB daemon's identity as a word, never colour alone.</summary>
+    public string AdbDaemonChip => AdbUid switch
+    {
+        "0" => "Root",
+        "" or "n/a" => "Not reported",
+        _ => "Unprivileged",
+    };
+
+    public string AdbDaemonChipTone => AdbUid switch
+    {
+        "0" => "warn",
+        "" or "n/a" => "neutral",
+        _ => "ok",
+    };
+
+    /// <summary>
+    /// igr-feedback-ux05 item 6: one text3 line instead of a 24 DIP em-dash
+    /// badge — "UID · not reported" until the daemon uid is actually known, then
+    /// the real number. The detail sentence stays in the row's tooltip.
+    /// </summary>
+    public string AdbUidLine => AdbUid is "" or "n/a" ? "UID · not reported" : $"UID {AdbUid}";
+
+    public string AdbDaemonDetail => AdbUid is "" or "n/a"
+        ? "The daemon UID was not reported for this guest."
+        : string.Join(" · ", new[]
+        {
+            "shell",
+            string.IsNullOrWhiteSpace(AdbBuildType) ? "build not reported" : AdbBuildType,
+            string.IsNullOrWhiteSpace(AdbTransportId) ? "transport not reported" : $"transport {AdbTransportId}",
+        });
+
+    /// <summary>
+    /// Pushes one sample of the real frame rate into the 24-point sparkline and
+    /// rebuilds the polyline geometry. Called from the existing 250 ms frame-info
+    /// cadence, so it needs no timer of its own.
+    /// </summary>
+    private void PushTelemetrySample()
+    {
+        if (Frame is null)
+        {
+            if (_fpsSamples.Count > 0)
+            {
+                _fpsSamples.Clear();
+                _sparkPoints = new PointCollection();
+                _sparkAreaPoints = new PointCollection();
+                NotifyLiveSurfaces();
+            }
+
+            return;
+        }
+
+        _fpsSamples.Add(FramesPerSecond);
+        while (_fpsSamples.Count > 24)
+        {
+            _fpsSamples.RemoveAt(0);
+        }
+
+        // Auto-ranged like any sparkline: the tallest of the retained samples sets
+        // the top of the box, so a steady rate still fills the 40 x 14 chart
+        // (a constant series drawn against a fixed 60 fps ceiling was a flat rule
+        // in the middle of the pill, which is what the pill had to stop looking
+        // like). The samples themselves are untouched: no value is invented.
+        var peak = Math.Max(1.0, _fpsSamples.Max()) * 1.08;
+        var points = new PointCollection(_fpsSamples.Count);
+        for (var index = 0; index < _fpsSamples.Count; index++)
+        {
+            // 40 x 14 DIP: igr-feedback-ux05 item 1 asks for a 40 DIP sparkline in
+            // the raised pill, so the geometry is built at that width.
+            var x = _fpsSamples.Count == 1 ? 0 : index * 40.0 / (_fpsSamples.Count - 1);
+            var y = 13 - Math.Clamp(_fpsSamples[index] / peak, 0, 1) * 12;
+            points.Add(new Point(x, y));
+        }
+
+        _sparkPoints = points;
+
+        // The filled area under the same strokes.
+        var area = new PointCollection(points.Count + 2);
+        foreach (var point in points)
+        {
+            area.Add(point);
+        }
+
+        area.Add(new Point(points[^1].X, 14));
+        area.Add(new Point(points[0].X, 14));
+        _sparkAreaPoints = area;
+
+        NotifyLiveSurfaces();
+    }
+
+    /// <summary>
+    /// Raises every derived UX-05 surface string. It cannot promote a state: it
+    /// only re-reads values that other code already decided.
+    /// </summary>
+    private void NotifyLiveSurfaces()
+    {
+        OnPropertyChanged(nameof(StageGuestChip));
+        OnPropertyChanged(nameof(StageOrientationChip));
+        OnPropertyChanged(nameof(StageDropHint));
+        OnPropertyChanged(nameof(BootElapsedText));
+        OnPropertyChanged(nameof(StaleChipText));
+        OnPropertyChanged(nameof(TelemetryFpsValue));
+        OnPropertyChanged(nameof(TelemetryTooltip));
+        OnPropertyChanged(nameof(SparkPoints));
+        OnPropertyChanged(nameof(SparkAreaPoints));
+        OnPropertyChanged(nameof(HasSpark));
+        OnPropertyChanged(nameof(StatusSerial));
+        OnPropertyChanged(nameof(StatusSerialTooltip));
+        OnPropertyChanged(nameof(StatusUid));
+        OnPropertyChanged(nameof(HasAdbUid));
+        OnPropertyChanged(nameof(StatusGpu));
+        OnPropertyChanged(nameof(StatusGpuTooltip));
+        OnPropertyChanged(nameof(RootLabTarget));
+        OnPropertyChanged(nameof(RootLabTargetTooltip));
+        OnPropertyChanged(nameof(AdbDaemonChip));
+        OnPropertyChanged(nameof(AdbDaemonChipTone));
+        OnPropertyChanged(nameof(AdbDaemonDetail));
+        OnPropertyChanged(nameof(AdbUidLine));
     }
 
     /// <summary>The APK drag affordance: visible while a file drag is over the window.</summary>
@@ -580,6 +919,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(CanSendInput));
                 OnPropertyChanged(nameof(PortsText));
                 OnPropertyChanged(nameof(AbiApiText));
+                // UX-05: the stage chips, the status bar metrics and the
+                // telemetry pill all name the selected guest.
+                NotifyLiveSurfaces();
                 RaiseCommandStates();
                 _ = OnDeviceSelectedAsync(value);
             }
@@ -642,8 +984,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string StatusMessage
     {
         get => _statusMessage;
-        set => SetProperty(ref _statusMessage, value);
+        set
+        {
+            if (SetProperty(ref _statusMessage, value))
+            {
+                OnPropertyChanged(nameof(StatusSentence));
+            }
+        }
     }
+
+    /// <summary>
+    /// UX-05: the status bar already carries a "Supervisor connected" segment and
+    /// a live metric row, so the plain housekeeping sentences the connect path
+    /// sets ("Supervisor connected.", "Refreshed.") are not repeated in the
+    /// flexible middle. Real operational sentences (a refusal, an install
+    /// result, a failed refresh) still appear there.
+    /// </summary>
+    public string StatusSentence => StatusMessage is "Supervisor connected." or "Refreshed." ? "" : StatusMessage;
 
     private string _errorMessage = "";
 
@@ -718,9 +1075,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _frame, value) && hadFrame != HasFrame)
             {
                 OnPropertyChanged(nameof(HasFrame));
+                // igr-feedback-ux05 item 2: a delivered or cleared frame changes
+                // whether the nav cluster is usable.
+                OnPropertyChanged(nameof(IsGuestInteractive));
                 if (!HasFrame)
                 {
                     OnPropertyChanged(nameof(FrameInfo));
+                    // UX-05: a cleared frame also empties the telemetry pill and
+                    // the sparkline, so no stale rate survives a device switch.
+                    OnPropertyChanged(nameof(FrameRateText));
+                    OnPropertyChanged(nameof(DeliveredFrameText));
+                    OnPropertyChanged(nameof(DroppedFramesText));
+                    PushTelemetrySample();
                 }
             }
         }
@@ -830,6 +1196,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _zoomMode, value))
             {
                 OnPropertyChanged(nameof(ZoomStatus));
+                OnPropertyChanged(nameof(StageOrientationChip));
             }
         }
     }
@@ -846,6 +1213,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _zoomFactor, value))
             {
                 OnPropertyChanged(nameof(ZoomStatus));
+                OnPropertyChanged(nameof(StageOrientationChip));
             }
         }
     }
@@ -875,7 +1243,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _isLogcatOpen, value))
             {
-                OnPropertyChanged(nameof(LogcatDrawerHeight));
                 if (value)
                 {
                     _ = EnsureLogcatAsync();
@@ -887,8 +1254,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
     }
-
-    public GridLength LogcatDrawerHeight => IsLogcatOpen ? new GridLength(230) : new GridLength(0);
 
     private string _logSearch = "";
 
@@ -1910,6 +2275,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         LogEntries.Clear();
         _logInbox.Clear();
+        NotifyLogCounts();
     }
 
     private async Task ExportLogAsync()
@@ -2233,6 +2599,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(DeliveredFrameText));
             OnPropertyChanged(nameof(FrameRateText));
             OnPropertyChanged(nameof(DroppedFramesText));
+            // UX-05: one sparkline sample per 250 ms of delivered frames.
+            PushTelemetrySample();
         }
 
         if (_pendingInput is { } pending)
@@ -2305,9 +2673,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             added++;
         }
 
+        var trimmed = false;
         while (LogEntries.Count > 2500)
         {
             LogEntries.RemoveAt(0);
+            trimmed = true;
+        }
+
+        // Fix pass item 7: the dock's count line is derived from these lines, so
+        // it is re-read when the collection actually changed.
+        if (added > 0 || trimmed)
+        {
+            NotifyLogCounts();
         }
     }
 
@@ -2376,6 +2753,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private void UpdateStage()
     {
+        UpdateStageCore();
+        // UX-05: the stage chips, the boot elapsed figure and the status bar all
+        // re-read the same evidence after every stage decision.
+        NotifyLiveSurfaces();
+    }
+
+    private void UpdateStageCore()
+    {
         if (ShowSetup)
         {
             StageVisible = false;
@@ -2433,11 +2818,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (device.State == "Starting")
         {
-            var elapsed = ElapsedSinceLaunch();
+            // igr-feedback-ux05 item 2: the elapsed figure lives only in the
+            // stepper card's mono line (BootElapsedText); "Elapsed since launch:
+            // 48s" here was the same number twice in one card.
             SetStage("info", "Starting Android",
-                string.IsNullOrEmpty(elapsed)
-                    ? "The engine is running. Waiting for the supervisor's boot stages."
-                    : $"The engine is running. Elapsed since launch: {elapsed}.",
+                "The engine is running and the supervisor reports each boot stage as it lands.",
                 "");
             ShowBootStages = true;
             return;
@@ -2479,6 +2864,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StageDetail = detail;
         StageHint = hint;
         StageVisible = true;
+        NotifyLiveSurfaces();
     }
 
     /// <summary>
@@ -2501,6 +2887,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _launchedUtc = TryReadUtc(readiness["launchedUtc"]) ?? _launchedUtc;
         }
 
+        // igr-feedback-ux05 item 2: the same evidence that fills the third boot
+        // step gates the nav cluster.
+        if (_guestInteractive != interactive)
+        {
+            _guestInteractive = interactive;
+            OnPropertyChanged(nameof(IsGuestInteractive));
+        }
+
         var booting = state is "Starting" or "Running";
 
         BootStages[0].Set(
@@ -2521,6 +2915,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ResetBootStages()
     {
+        if (_guestInteractive)
+        {
+            _guestInteractive = false;
+            OnPropertyChanged(nameof(IsGuestInteractive));
+        }
+
         foreach (var stage in BootStages)
         {
             stage.Set("pending", "not started");
@@ -2559,6 +2959,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(StaleFrameTitle));
             OnPropertyChanged(nameof(StaleFrameDetail));
             OnPropertyChanged(nameof(StaleFrameTone));
+            OnPropertyChanged(nameof(StaleChipText));
+        }
+        else
+        {
+            OnPropertyChanged(nameof(StaleChipText));
         }
     }
 
@@ -2577,19 +2982,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (IsFrameStale)
         {
             OnPropertyChanged(nameof(StaleFrameTitle));
-        }
-    }
-
-    private string ElapsedSinceLaunch()
-    {
-        if (_launchedUtc is not { } launched)
-        {
-            return "";
+            OnPropertyChanged(nameof(StaleChipText));
         }
 
-        var seconds = Math.Max(0, (DateTimeOffset.UtcNow - launched).TotalSeconds);
-        return $"{seconds:N0}s";
+        // UX-05: "Elapsed 53s" is the only thing the one-second tick may touch
+        // besides those sentences - it re-reads the supervisor's launch stamp.
+        OnPropertyChanged(nameof(BootElapsedText));
     }
+
+    // igr-feedback-ux05 item 2: the "48s" string helper went with the duplicated
+    // "Elapsed since launch" sentence. BootElapsedText is the one elapsed figure.
 
     private static DateTimeOffset? TryReadUtc(JsonNode? node)
     {
@@ -2895,6 +3297,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(AdbBuildType));
         OnPropertyChanged(nameof(AdbTransportId));
         OnPropertyChanged(nameof(AdbRootState));
+        // UX-05: the Root Lab cards and the status bar read the same fields.
+        OnPropertyChanged(nameof(AdbDaemonChip));
+        OnPropertyChanged(nameof(AdbDaemonChipTone));
+        OnPropertyChanged(nameof(AdbDaemonDetail));
+        OnPropertyChanged(nameof(AdbUidLine));
+        OnPropertyChanged(nameof(StatusUid));
+        OnPropertyChanged(nameof(HasAdbUid));
         UpdateStage();
     }
 
@@ -3185,6 +3594,71 @@ public sealed class DeviceItemViewModel : ObservableObject
 
     public string ImagePackage { get; init; } = "";
 
+    /// <summary>
+    /// igr-feedback-ux05 item 5: the inspector's Image row prints a reading name
+    /// built from the REAL system-image package ("Android 15 · Google APIs ·
+    /// x86_64") and keeps the raw package in the tooltip. The API level maps to
+    /// an Android version through the same table the library uses (an unknown
+    /// level falls back to "API n"), and a tag the table does not name falls back
+    /// to its raw text. Nothing here is a hardcoded sample value.
+    /// </summary>
+    public string ImageDisplay
+    {
+        get
+        {
+            var package = (ImagePackage ?? "").Trim();
+            if (package.Length == 0)
+            {
+                return "—";
+            }
+
+            var parsed = DeviceLibraryViewModel.ParseImage(package);
+            var label = parsed.Tag.Length > 0
+                ? DeviceLibraryViewModel.TagLabel(parsed.Tag)
+                : RawImageTag(package);
+
+            var parts = new List<string>(3);
+            if (parsed.Api > 0)
+            {
+                parts.Add(DeviceLibraryViewModel.AndroidVersion(parsed.Api));
+            }
+
+            if (label.Length > 0)
+            {
+                parts.Add(label);
+            }
+
+            if (parsed.Abi.Length > 0)
+            {
+                parts.Add(parsed.Abi);
+            }
+
+            return parts.Count == 0 ? package : string.Join(" · ", parts);
+        }
+    }
+
+    /// <summary>
+    /// The tag segment of "system-images;android-35;google_apis_go;x86_64" when
+    /// the parser does not name it: the segment that is not the root prefix, not
+    /// the android-NN level and not an ABI.
+    /// </summary>
+    private static string RawImageTag(string package)
+    {
+        foreach (var part in package.Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (part.Equals("system-images", StringComparison.OrdinalIgnoreCase)
+                || part.StartsWith("android-", StringComparison.OrdinalIgnoreCase)
+                || part is "x86_64" or "x86" or "arm64-v8a" or "armeabi-v7a" or "riscv64")
+            {
+                continue;
+            }
+
+            return part;
+        }
+
+        return "";
+    }
+
     public int ConsolePort { get; init; }
 
     public int GrpcPort { get; init; }
@@ -3215,7 +3689,62 @@ public sealed class DeviceItemViewModel : ObservableObject
     public string Foreground
     {
         get => _foreground;
-        private set => SetProperty(ref _foreground, value);
+        private set
+        {
+            if (SetProperty(ref _foreground, value))
+            {
+                OnPropertyChanged(nameof(ForegroundDisplay));
+            }
+        }
+    }
+
+    /// <summary>
+    /// UX-05 fix pass (igr-feedback-ux04b item 6a): the supervisor reports
+    /// dumpsys' raw current-focus window ("Window{82fc746 u0 com.example/.Main}").
+    /// The inspector prints the PACKAGE ONLY ("com.android.launcher3") and keeps
+    /// the full raw string in the tooltip, so the row reads as identity rather
+    /// than a token dump.
+    /// </summary>
+    public string ForegroundDisplay
+    {
+        get
+        {
+            var raw = (Foreground ?? "").Trim();
+            if (raw.Length == 0)
+            {
+                return "—";
+            }
+
+            var start = raw.IndexOf("Window{", StringComparison.Ordinal);
+            if (start < 0)
+            {
+                return PackageOnly(raw);
+            }
+
+            var body = raw[(start + "Window{".Length)..];
+            var end = body.IndexOf('}');
+            if (end >= 0)
+            {
+                body = body[..end];
+            }
+
+            // Drop the "<hash> u<userId> " prefix, keep what is left.
+            var space = 0;
+            for (var tokens = 0; tokens < 2 && space >= 0; tokens++)
+            {
+                space = body.IndexOf(' ', space + 1);
+            }
+
+            var name = space > 0 ? body[(space + 1)..].Trim() : body.Trim();
+            return name.Length == 0 ? raw : PackageOnly(name);
+        }
+    }
+
+    /// <summary>"package/activity" and "package" both reduce to the package.</summary>
+    private static string PackageOnly(string name)
+    {
+        var slash = name.IndexOf('/');
+        return slash > 0 ? name[..slash] : name;
     }
 
     private string _abi = "";

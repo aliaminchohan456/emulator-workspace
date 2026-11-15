@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!-- Graphite Studio dark surfaces. Base/navigation/panel/raised match the
          approved design tokens; the viewport stays near-black so the guest
@@ -123,4 +124,67 @@
     <SolidColorBrush x:Key="InputBorder" Color="#64717C" />
     <SolidColorBrush x:Key="ScrollThumb" Color="#64717C" />
     <SolidColorBrush x:Key="ScrollThumbHover" Color="#7E8A94" />
+
+    <!-- UX-05 ambient stage (addendum 6): a STATIC radial glow behind the device
+          on the viewport colour - accent at ~7 % with a small ok core at ~3 % -
+          plus a 1.5 % monochrome noise tile that kills the banding of a large
+          flat viewport. Nothing here samples the guest frame, and none of it is
+          tinted by device state. -->
+    <RadialGradientBrush x:Key="StageGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5"
+                         RadiusX="0.6" RadiusY="0.72">
+        <GradientStop Color="#12B3D9FA" Offset="0" />
+        <GradientStop Color="#06B3D9FA" Offset="0.6" />
+        <GradientStop Color="#00B3D9FA" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="StageGlowOk" Center="0.5,0.5" GradientOrigin="0.5,0.5"
+                         RadiusX="0.3" RadiusY="0.38">
+        <GradientStop Color="#0A8ED8AF" Offset="0" />
+        <GradientStop Color="#008ED8AF" Offset="1" />
+    </RadialGradientBrush>
+    <!-- 8x8 tile of 1 px monochrome specks at 1.5-2.5 % alpha: a static dither,
+          not a texture the eye can read. -->
+    <DrawingBrush x:Key="StageNoise" TileMode="Tile" Stretch="None"
+                  Viewport="0,0,8,8" ViewportUnits="Absolute"
+                  Viewbox="0,0,8,8" ViewboxUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M0,0 L1,0 L1,1 L0,1 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M3,0 L4,0 L4,1 L3,1 Z" />
+                <GeometryDrawing Brush="#06FFFFFF" Geometry="M6,1 L7,1 L7,2 L6,2 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M1,2 L2,2 L2,3 L1,3 Z" />
+                <GeometryDrawing Brush="#04FFFFFF" Geometry="M4,2 L5,2 L5,3 L4,3 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M7,4 L8,4 L8,5 L7,5 Z" />
+                <GeometryDrawing Brush="#06FFFFFF" Geometry="M0,4 L1,4 L1,5 L0,5 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M2,5 L3,5 L3,6 L2,6 Z" />
+                <GeometryDrawing Brush="#04FFFFFF" Geometry="M5,6 L6,6 L6,7 L5,7 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M3,7 L4,7 L4,8 L3,8 Z" />
+                <GeometryDrawing Brush="#05FFFFFF" Geometry="M6,7 L7,7 L7,8 L6,8 Z" />
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+    <!-- The APK dropzone covers the whole viewport card, so it needs a raised
+          veil rather than a translucent box: panel at 92 % (igr-feedback-ux05
+          item 7), so the ghost phone and the pill do not read through it. -->
+    <SolidColorBrush x:Key="DropVeilBg" Color="#EB1B1E21" />
+    <!-- The decorative device frame is a drawn bezel AROUND the live frame, so
+          it has to read as a device body on the near-black stage (a shade above
+          the viewport colour) and stays dark in the light theme like the
+          library's drawn device. -->
+    <SolidColorBrush x:Key="DeviceFrameBg" Color="#1C2024" />
+    <!-- The decorative device frame is a drawn bezel behind the live frame, so
+          its shadow never sits under the streaming bitmap. -->
+    <DropShadowEffect x:Key="DeviceFrameShadow" BlurRadius="22" ShadowDepth="6"
+                      Direction="270" Opacity="0.55" Color="#000000" />
+
+    <!-- UX-05 fix pass (igr-feedback-ux04b item 2): the focus glow on the single
+          focused library card. FocusGlowColor is the accent as a raw Color for
+          the DropShadowEffect (an effect takes a Color, not a brush) and
+          FocusGlowOpacity is the weight the effect animates to over 120 ms. -->
+    <Color x:Key="FocusGlowColor">#B3D9FA</Color>
+    <sys:Double x:Key="FocusGlowOpacity">0.35</sys:Double>
+    <!-- UX-05 fix pass (item 9): the library Create tile's '+' disc needs an
+          accent-soft FILL. AccentSoftBg is the neutral navigation tint (#252A30),
+          which reads as grey here; this is the accent at ~22 % over the panel so
+          the disc reads as the accent family without becoming a solid fill. -->
+    <SolidColorBrush x:Key="AccentSoftTint" Color="#3A4650" />
 </ResourceDictionary>

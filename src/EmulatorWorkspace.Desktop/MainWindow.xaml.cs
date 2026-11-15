@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using System.Text.Json.Nodes;
 using EmulatorWorkspace.Desktop.Services;
 using EmulatorWorkspace.Desktop.ViewModels;
@@ -18,6 +19,34 @@ public partial class MainWindow : Window
     private Point? _dragStart;
     private (string? Subscription, int GuestWidth, int GuestHeight, double Width, double Height) _dragViewport;
 
+    /// <summary>
+    /// UX-05: SystemParameters.ClientAreaAnimation, exposed as a dependency
+    /// property so the boot stepper's pulse ring can be suppressed declaratively
+    /// in XAML when Windows reports reduced motion.
+    /// </summary>
+    public static readonly DependencyProperty MotionAllowedProperty = DependencyProperty.Register(
+        nameof(MotionAllowed), typeof(bool), typeof(MainWindow), new PropertyMetadata(true));
+
+    public bool MotionAllowed
+    {
+        get => (bool)GetValue(MotionAllowedProperty);
+        set => SetValue(MotionAllowedProperty, value);
+    }
+
+    /// <summary>
+    /// UX-05 fix pass (Q3 answer): below 1120 DIP the telemetry pill collapses to
+    /// a bare "FPS n" instead of stepping aside. The command bar binds this flag,
+    /// so the CPU segment and the sparkline hide while the frame rate stays.
+    /// </summary>
+    public static readonly DependencyProperty CompactTelemetryProperty = DependencyProperty.Register(
+        nameof(CompactTelemetry), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool CompactTelemetry
+    {
+        get => (bool)GetValue(CompactTelemetryProperty);
+        set => SetValue(CompactTelemetryProperty, value);
+    }
+
     /// <summary>The view model behind the window, for the automation modes.</summary>
     public MainViewModel ViewModel => _viewModel;
 
@@ -27,13 +56,25 @@ public partial class MainWindow : Window
         ThemeManager.Initialize();
         Chrome.Initialize();
         Chrome.Apply(this);
+        MotionAllowed = SystemParameters.ClientAreaAnimation;
         _viewModel = new MainViewModel(halfCapture);
         DataContext = _viewModel;
+
+        _pillIdle.Tick += (_, _) => CheckPillIdle();
+        _pillClipTimer.Tick += (_, _) =>
+        {
+            _pillClipTimer.Stop();
+            ToolbarPill.ClipToBounds = false;
+        };
 
         Loaded += async (_, _) =>
         {
             await _viewModel.InitializeAsync();
             UpdateViewportSize();
+            UpdateStageOverlays();
+            OnWindowSizeChanged(this, null!);
+            _lastStagePointer = DateTimeOffset.UtcNow;
+            _pillIdle.Start();
             Services.DesktopLog.Write(
                 $"layout window={ActualWidth:N0} body={BodyGrid.ActualWidth:N0} viewport={ViewportScroll.ActualWidth:N0} inspector={InspectorPanel.ActualWidth:N0} dpi={VisualTreeHelper.GetDpi(this).DpiScaleX}");
         };
@@ -157,6 +198,375 @@ public partial class MainWindow : Window
         {
             AnimateLogcatDrawer();
         }
+        else if (args.PropertyName == nameof(MainViewModel.DropVisible))
+        {
+            UpdateDropPulse();
+        }
+    }
+
+    // ---- UX-05 stage: device frame, pill geometry, auto-hide, telemetry -----
+
+    private readonly DispatcherTimer _pillIdle = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(400),
+    };
+
+    /// <summary>
+    /// Drops the pill's animation-only clip once the collapse/expand spline has
+    /// landed, so the resting pill's shadow keeps its rounded corner
+    /// (igr-feedback-ux05 item 3).
+    /// </summary>
+    private readonly DispatcherTimer _pillClipTimer = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(240),
+    };
+
+    private DateTimeOffset _lastStagePointer = DateTimeOffset.MinValue;
+    private bool _pillCollapsed;
+
+    /// <summary>
+    /// The left margin the pill held while a device was framed. igr-feedback-ux05
+    /// item 2: while Starting (no frame) the pill keeps this slot instead of
+    /// jumping to the stage edge.
+    /// </summary>
+    private double? _lastPillFramedLeft;
+
+    /// <summary>
+    /// Sizes the decorative device frame around the delivered frame and keeps
+    /// the toolbar pill beside the device. Both are overlays: nothing here
+    /// touches ViewportScroll, ViewportCanvas, ViewportImage or the input map.
+    /// </summary>
+    private void UpdateStageOverlays()
+    {
+        var canvasWidth = ViewportCanvas.Width;
+        var canvasHeight = ViewportCanvas.Height;
+        if (double.IsNaN(canvasWidth) || canvasWidth <= 0 || double.IsNaN(canvasHeight) || canvasHeight <= 0)
+        {
+            DeviceFrame.Width = 0;
+            DeviceFrame.Height = 0;
+        }
+        else
+        {
+            // 10 DIP bezel on each side: the outer 28 DIP radius then contains the
+            // frame's square corners, so the bezel reads as a device frame.
+            DeviceFrame.Width = canvasWidth + 20;
+            DeviceFrame.Height = canvasHeight + 20;
+        }
+
+        UpdatePillPosition();
+    }
+
+    /// <summary>
+    /// Places the pill 16 DIP to the right of the device frame's right edge,
+    /// vertically centred by the host grid. It never touches the window edge:
+    /// when the frame leaves no room (a landscape guest at 1024, for example)
+    /// the pill docks 12 DIP inside the stage instead of overflowing. The
+    /// horizontal margin is the pill's left edge - which is also where the
+    /// collapsed 3 DIP handle stays.
+    ///
+    /// igr-feedback-ux05 item 2: while a guest is Starting there is no frame, and
+    /// this used to park the pill at the stage's right edge (x ~= 700) and then
+    /// snap it back beside the bezel. It now stays in the bezel slot it will
+    /// occupy: the slot the last framed guest used, else the slot the reported
+    /// guest display would fit into, else a portrait-proportioned slot beside the
+    /// centred boot card. Only the floating overlay moves — the viewport, the
+    /// canvas, the image and the input map are untouched.
+    /// </summary>
+    private void UpdatePillPosition()
+    {
+        var stage = StageRoot.ActualWidth;
+        if (stage <= 0)
+        {
+            return;
+        }
+
+        const double pillWidth = 44;   // 36 DIP buttons inside 4 DIP of padding
+        const double frameGap = 16;    // fix pass item 10: 16 DIP off the frame
+        const double edgeInset = 12;   // the pill never touches the stage edge
+        const double bezel = 10;       // DeviceFrame is canvas + 10 DIP each side
+        // The canvas keeps its last explicit size after a frame is cleared, so
+        // ask the view model whether a device is actually framed instead of
+        // trusting the stale width - otherwise the pill floats over the stage
+        // card when a guest has no picture.
+        var framed = _viewModel.Frame is not null;
+        var canvasWidth = framed
+            ? !double.IsNaN(ViewportCanvas.Width) && ViewportCanvas.Width > 0
+                ? ViewportCanvas.Width
+                : ViewportCanvas.ActualWidth
+            : 0;
+        if (double.IsNaN(canvasWidth) || canvasWidth <= 0)
+        {
+            canvasWidth = 0;
+        }
+
+        var maxLeft = Math.Max(edgeInset, stage - pillWidth - edgeInset);
+        double left;
+        if (canvasWidth <= 0)
+        {
+            // No device framed: hold the bezel slot instead of jumping to the
+            // stage edge, so the pill does not move when the first frame lands.
+            left = Math.Clamp(_lastPillFramedLeft ?? PredictedFramedLeft(stage), edgeInset, maxLeft);
+        }
+        else
+        {
+            var frameRight = (stage + canvasWidth) / 2 + bezel;
+            left = Math.Clamp(frameRight + frameGap, edgeInset, maxLeft);
+            _lastPillFramedLeft = left;
+        }
+
+        ToolbarPillHost.Margin = new Thickness(left, 0, 0, 0);
+        // Keep the stage cards (boot stepper, first-run setup) out of the pill's
+        // lane while the guest has no frame; with a frame the cards are hidden
+        // and the lane collapses to 0 so nothing else moves.
+        var lane = canvasWidth <= 0 ? Math.Max(0, stage - left + 12) : 0;
+        if (StageCardLane is not null && StageCardLane.Margin.Right != lane)
+        {
+            StageCardLane.Margin = new Thickness(0, 0, lane, 0);
+        }
+    }
+
+    /// <summary>
+    /// Where the pill will sit once pixels arrive, for the Starting case: the
+    /// fitted width of the guest display the supervisor reported, or - before the
+    /// first frame reports one - the portrait aspect the phase-1 image ships
+    /// (1080 x 2400), applied to the height the stage can fit. This positions a
+    /// floating overlay only; it never sizes or scales the guest frame.
+    /// </summary>
+    private double PredictedFramedLeft(double stage)
+    {
+        const double bezel = 10;
+        const double frameGap = 16;
+        const double portraitAspect = 1080d / 2400d;
+        var availableHeight = Math.Max(80, ViewportScroll.ActualHeight - 32);
+        var fittedWidth = _viewModel.GuestWidth > 0 && _viewModel.GuestHeight > 0
+            ? availableHeight * (_viewModel.GuestWidth / (double)_viewModel.GuestHeight)
+            : availableHeight * portraitAspect;
+        return (stage + Math.Max(80, fittedWidth)) / 2 + bezel + frameGap;
+    }
+
+    private void OnStageSizeChanged(object sender, SizeChangedEventArgs e) => UpdateViewportSize();
+
+    /// <summary>
+    /// Responsive chrome: below 1120 DIP the command bar cannot hold the full
+    /// telemetry pill next to the identity and every tool group without
+    /// squeezing the state pill, so the pill collapses to a bare "FPS n" (no CPU
+    /// segment, no sparkline) instead of disappearing (fix pass, Q3).
+    /// </summary>
+    private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (TelemetryPill is null)
+        {
+            return;
+        }
+
+        CompactTelemetry = ActualWidth < 1120;
+    }
+
+    private void OnStageMouseMove(object sender, MouseEventArgs e)
+    {
+        _lastStagePointer = DateTimeOffset.UtcNow;
+        if (!_pillCollapsed)
+        {
+            return;
+        }
+
+        try
+        {
+            var host = ToolbarPillHost.TransformToAncestor(StageRoot)
+                .TransformBounds(new Rect(0, 0, ToolbarPillHost.ActualWidth, ToolbarPillHost.ActualHeight));
+            var point = e.GetPosition(StageRoot);
+            if (point.X >= host.Left - 24 && point.X <= host.Right + 24
+                && point.Y >= host.Top - 24 && point.Y <= host.Bottom + 24)
+            {
+                ExpandPill();
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // The pill is mid-template; the next move retries.
+        }
+    }
+
+    private void OnPillEnter(object sender, MouseEventArgs e)
+    {
+        _lastStagePointer = DateTimeOffset.UtcNow;
+        if (_pillCollapsed)
+        {
+            ExpandPill();
+        }
+    }
+
+    private void OnPillLeave(object sender, MouseEventArgs e) => _lastStagePointer = DateTimeOffset.UtcNow;
+
+    private void OnPillZoneEnter(object sender, MouseEventArgs e) => ExpandPill();
+
+    private void OnPillFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_pillCollapsed)
+        {
+            ExpandPill();
+        }
+    }
+
+    /// <summary>
+    /// Addendum 5: in fullscreen, 2.5 s without pointer movement over the stage
+    /// collapses the pill to a 3x48 handle at 35 %. Nothing collapses while the
+    /// pointer is on the pill (which is also what keeps a tooltip readable), and
+    /// reduced motion collapses instantly.
+    /// </summary>
+    private void CheckPillIdle()
+    {
+        if (!_fullscreen)
+        {
+            if (_pillCollapsed)
+            {
+                ExpandPill();
+            }
+
+            return;
+        }
+
+        if (_pillCollapsed || ToolbarPillHost.IsMouseOver)
+        {
+            return;
+        }
+
+        if ((DateTimeOffset.UtcNow - _lastStagePointer).TotalMilliseconds < 2500)
+        {
+            return;
+        }
+
+        CollapsePill();
+    }
+
+    private void CollapsePill()
+    {
+        _pillCollapsed = true;
+        PillButtons.IsHitTestVisible = false;
+        PillHandle.Visibility = Visibility.Visible;
+        PillHoverZone.Visibility = Visibility.Visible;
+        // igr-feedback-ux05 item 3: the pill's shadow is not clipped at rest (a
+        // ClipToBounds host cut its rounded corners into a square in the light
+        // theme), so clipping is switched on only for the 220 ms width animation
+        // and switched off again when it lands. The resting pill keeps its
+        // rounded shadow; the animating one keeps its content inside.
+        ClipPillDuringAnimation();
+
+        if (!MotionAllowed)
+        {
+            ToolbarPill.BeginAnimation(FrameworkElement.WidthProperty, null);
+            ToolbarPill.Width = 3;
+            ToolbarPill.Opacity = 0.35;
+            PillHandle.Opacity = 0.35;
+            PillButtons.Visibility = Visibility.Collapsed;
+            ToolbarPill.ClipToBounds = false;
+            return;
+        }
+
+        var from = ToolbarPill.ActualWidth > 0 ? ToolbarPill.ActualWidth : 44;
+        ToolbarPill.Width = from;
+        var duration = TimeSpan.FromMilliseconds(220);
+        var width = new DoubleAnimationUsingKeyFrames { Duration = new Duration(duration) };
+        width.KeyFrames.Add(new SplineDoubleKeyFrame(3, KeyTime.FromTimeSpan(duration),
+            new KeySpline(0.22, 1, 0.36, 1)));
+        ToolbarPill.BeginAnimation(FrameworkElement.WidthProperty, width);
+
+        var fade = new DoubleAnimation(0.35, duration) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut } };
+        ToolbarPill.BeginAnimation(UIElement.OpacityProperty, fade);
+        PillHandle.BeginAnimation(UIElement.OpacityProperty, fade);
+
+        // The content is hidden once the surface has finished shrinking, so the
+        // buttons never hang outside the 3 DIP handle.
+        var hideTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = duration };
+        hideTimer.Tick += (_, _) =>
+        {
+            hideTimer.Stop();
+            if (_pillCollapsed)
+            {
+                PillButtons.Visibility = Visibility.Collapsed;
+            }
+        };
+        hideTimer.Start();
+    }
+
+    private void ExpandPill()
+    {
+        if (!_pillCollapsed)
+        {
+            return;
+        }
+
+        _pillCollapsed = false;
+        PillButtons.Visibility = Visibility.Visible;
+        PillButtons.IsHitTestVisible = true;
+        PillHandle.Visibility = Visibility.Collapsed;
+        PillHoverZone.Visibility = Visibility.Collapsed;
+        _lastStagePointer = DateTimeOffset.UtcNow;
+        ClipPillDuringAnimation();
+
+        if (!MotionAllowed)
+        {
+            ToolbarPill.BeginAnimation(FrameworkElement.WidthProperty, null);
+            ToolbarPill.Width = double.NaN;
+            ToolbarPill.Opacity = 1;
+            PillHandle.Opacity = 0;
+            ToolbarPill.ClipToBounds = false;
+            return;
+        }
+
+        var from = ToolbarPill.ActualWidth > 0 ? ToolbarPill.ActualWidth : 3;
+        ToolbarPill.Width = from;
+        var duration = TimeSpan.FromMilliseconds(220);
+        var width = new DoubleAnimationUsingKeyFrames { Duration = new Duration(duration) };
+        width.KeyFrames.Add(new SplineDoubleKeyFrame(44, KeyTime.FromTimeSpan(duration),
+            new KeySpline(0.22, 1, 0.36, 1)));
+        ToolbarPill.BeginAnimation(FrameworkElement.WidthProperty, width);
+
+        var fade = new DoubleAnimation(1, duration) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut } };
+        ToolbarPill.BeginAnimation(UIElement.OpacityProperty, fade);
+        PillHandle.BeginAnimation(UIElement.OpacityProperty, fade);
+    }
+
+    /// <summary>
+    /// Clips the pill for the duration of a collapse/expand animation and drops
+    /// the clip afterwards. The resting pill must stay unclipped: a ClipToBounds
+    /// host cuts the two-layer float shadow's rounded corner square (the light
+    /// theme showed it plainly at the pill's bottom-right).
+    /// </summary>
+    private void ClipPillDuringAnimation()
+    {
+        ToolbarPill.ClipToBounds = true;
+        _pillClipTimer.Stop();
+        _pillClipTimer.Start();
+    }
+
+    /// <summary>Addendum 7: the pill opens the fuller real metrics in a floating surface.</summary>
+    private void OnTelemetryClick(object sender, RoutedEventArgs e)
+    {
+        TelemetryPopover.IsOpen = !TelemetryPopover.IsOpen;
+    }
+
+    /// <summary>
+    /// Addendum 9: the dropzone's dashed edge pulses 1.2 s while a drag is over
+    /// the stage, and is static under reduced motion. Only the dash opacity is
+    /// animated, so the veil itself never flickers.
+    /// </summary>
+    private void UpdateDropPulse()
+    {
+        DropDash.BeginAnimation(UIElement.OpacityProperty, null);
+        DropDash.Opacity = 1;
+        if (!_viewModel.DropVisible || !MotionAllowed)
+        {
+            return;
+        }
+
+        var pulse = new DoubleAnimation(1, 0.45, TimeSpan.FromMilliseconds(600))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        };
+        DropDash.BeginAnimation(UIElement.OpacityProperty, pulse);
     }
 
     /// <summary>
@@ -236,6 +646,11 @@ public partial class MainWindow : Window
         var frame = _viewModel.Frame;
         if (frame is null)
         {
+            // UX-05: without a frame there is no device to frame, so the
+            // decorative bezel collapses instead of framing empty space.
+            DeviceFrame.Width = 0;
+            DeviceFrame.Height = 0;
+            UpdatePillPosition();
             return;
         }
 
@@ -256,6 +671,7 @@ public partial class MainWindow : Window
         ViewportImage.Height = Math.Max(1, frame.PixelHeight * scale);
         ViewportCanvas.Width = ViewportImage.Width;
         ViewportCanvas.Height = ViewportImage.Height;
+        UpdateStageOverlays();
     }
 
     private bool TryMapToGuest(Point point, out int x, out int y)
@@ -641,6 +1057,7 @@ public partial class MainWindow : Window
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        _pillIdle.Stop();
         _ = _viewModel.DisposeAsync();
     }
 }

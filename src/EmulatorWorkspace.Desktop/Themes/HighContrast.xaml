@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!-- High contrast: system colors override every custom accent and surface.
          Labels and border distinctions are preserved; state brushes fall back
@@ -107,4 +108,26 @@
     <SolidColorBrush x:Key="InputBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="ScrollThumb" Color="{x:Static SystemColors.WindowFrameColor}" />
     <SolidColorBrush x:Key="ScrollThumbHover" Color="{x:Static SystemColors.WindowTextColor}" />
+
+    <!-- UX-05 ambient stage: high contrast does not tint or dither, so the glow
+          and the noise tile are transparent and the stage stays the system
+          window colour. The device frame keeps one crisp shadow. -->
+    <SolidColorBrush x:Key="StageGlow" Color="#00000000" />
+    <SolidColorBrush x:Key="StageGlowOk" Color="#00000000" />
+    <SolidColorBrush x:Key="StageNoise" Color="#00000000" />
+    <SolidColorBrush x:Key="DropVeilBg" Color="{x:Static SystemColors.WindowColor}" />
+    <!-- The bezel uses the system control surface with the window-frame stroke,
+          so the frame outline survives without colour. -->
+    <SolidColorBrush x:Key="DeviceFrameBg" Color="{x:Static SystemColors.ControlColor}" />
+    <DropShadowEffect x:Key="DeviceFrameShadow" BlurRadius="16" ShadowDepth="4"
+                      Direction="270" Opacity="0.65" Color="#000000" />
+
+    <!-- UX-05 fix pass (igr-feedback-ux04b item 2): High Contrast does not tint,
+          so the focus glow resolves to no colour and no weight while the token
+          ring (the accent border) still marks the focused card. -->
+    <Color x:Key="FocusGlowColor">#00000000</Color>
+    <sys:Double x:Key="FocusGlowOpacity">0</sys:Double>
+    <!-- UX-05 fix pass (item 9): the Create tile's disc keeps a system surface;
+          the glyph stays the highlight colour, so it is never colour-only. -->
+    <SolidColorBrush x:Key="AccentSoftTint" Color="{x:Static SystemColors.ControlColor}" />
 </ResourceDictionary>

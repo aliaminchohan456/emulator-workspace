@@ -43,7 +43,11 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private bool _disposed;
 
     private string _searchText = "";
-    private string _sortKey = "Name";
+    // UX-05 fix pass (igr-feedback-ux04b item 3): the library opens on State,
+    // which reads Running first, then the guests that need attention, then the
+    // rest. There is no per-workspace settings store to persist a choice in, so
+    // the default is the only persisted order.
+    private string _sortKey = "State";
     private bool _isLoading;
     private bool _isBusy;
     private string _busyText = "";
@@ -185,7 +189,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         get => _sortKey;
         set
         {
-            if (SetProperty(ref _sortKey, value ?? "Name"))
+            if (SetProperty(ref _sortKey, value ?? "State"))
             {
                 ApplyFilterAndSort();
             }
@@ -1580,8 +1584,12 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         switch (SortKey)
         {
             case "State":
+                // Fix pass item 3: Running first, then the guests that need
+                // attention (failed, or a Running record whose engine is gone),
+                // then the rest in the existing state order.
                 filtered = filtered
-                    .OrderBy(card => card.StateOrder)
+                    .OrderBy(card => card.StateRank)
+                    .ThenBy(card => card.StateOrder)
                     .ThenBy(card => card.Name, StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 break;
@@ -2117,6 +2125,18 @@ public sealed class LibraryCard : ObservableObject
         _ => 5,
     };
 
+    /// <summary>
+    /// Fix pass item 3: the State sort's first key — Running (0), then the guests
+    /// that need attention (1: failed, or a Running record whose engine process is
+    /// gone), then everything else (2).
+    /// </summary>
+    public int StateRank => StateKey switch
+    {
+        "running" => 0,
+        "failed" or "dead" => 1,
+        _ => 2,
+    };
+
     /// <summary>"open" | "start" | "starting" | "stopping" | "recover" | "unknown".</summary>
     public string PrimaryKind => StateKey switch
     {
@@ -2253,6 +2273,7 @@ public sealed class LibraryCard : ObservableObject
         OnPropertyChanged(nameof(PrimaryKind));
         OnPropertyChanged(nameof(IsRunning));
         OnPropertyChanged(nameof(StateOrder));
+        OnPropertyChanged(nameof(StateRank));
         OnPropertyChanged(nameof(ApiLevel));
         OnPropertyChanged(nameof(ApiText));
         OnPropertyChanged(nameof(TagText));

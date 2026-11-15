@@ -456,7 +456,10 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
-                    <TextBlock Text="LIBRARY" Style="{StaticResource Eyebrow}" />
+                    <!-- Fix pass: the LIBRARY eyebrow carries the design sheet's
+                         tracking. The text stays 'LIBRARY' for a screen reader
+                         (Caps.Tracking keeps the original as the accessible name). -->
+                    <TextBlock Text="LIBRARY" Style="{StaticResource Eyebrow}" views:Caps.Tracking="True" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Devices" Style="{StaticResource PageText}" Margin="0,2,0,0" />
                         <!-- Item 5: the count sits inline after the title as a
@@ -688,7 +691,8 @@
 
                                     <!-- Real card -->
                                     <Border Visibility="{Binding IsPlaceholder, Converter={StaticResource InverseBoolToVis}}"
-                                            Height="{StaticResource CardTileHeight}">
+                                            Height="{StaticResource CardTileHeight}"
+                                            views:CardFocusGlow.IsEnabled="True">
                                         <Border.Style>
                                             <Style TargetType="Border" BasedOn="{StaticResource Card}">
                                                 <Style.Triggers>
@@ -896,8 +900,11 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                         <StackPanel Margin="24,0" MaxWidth="220">
+                                            <!-- Fix pass item 9: accent-soft fill with
+                                                 an accent glyph. AccentSoftBg is the
+                                                 neutral nav tint and read as grey. -->
                                             <Border Width="40" Height="40" CornerRadius="20"
-                                                    Background="{DynamicResource AccentSoftBg}"
+                                                    Background="{DynamicResource AccentSoftTint}"
                                                     HorizontalAlignment="Center">
                                                 <Path Data="{StaticResource IconPlus}" Width="18" Height="18" Stretch="None"
                                                       Stroke="{DynamicResource Accent}" StrokeThickness="1.5"
