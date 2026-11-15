@@ -130,6 +130,15 @@
     <Geometry x:Key="IconTheme">M 5.6,8 A 2.4,2.4 0 1 1 10.4,8 A 2.4,2.4 0 1 1 5.6,8 M 8,2.2 L 8,3.8 M 8,12.2 L 8,13.8 M 2.2,8 L 3.8,8 M 12.2,8 L 13.8,8 M 3.9,3.9 L 5,5 M 11,11 L 12.1,12.1 M 12.1,3.9 L 11,5 M 5,11 L 3.9,12.1</Geometry>
     <!-- UX-05: a pointer cursor, used by the stage's input-capability chip. -->
     <Geometry x:Key="IconTouch">M 5.6,3.4 L 5.6,11.4 L 7.6,9.6 L 9.2,12.6 L 10.8,11.8 L 9.2,8.8 L 11.8,8.4 Z</Geometry>
+    <!-- UX-06: the settings cog. A 4.2 radius ring with an inner hub and eight
+         teeth, so it cannot be confused with IconTheme's sun (a small disc with
+         detached rays). Same 16-grid and 1.5 stroke as every other glyph. -->
+    <Geometry x:Key="IconSettings">M 3.8,8 A 4.2,4.2 0 1 1 12.2,8 A 4.2,4.2 0 1 1 3.8,8 M 6.2,8 A 1.8,1.8 0 1 1 9.8,8 A 1.8,1.8 0 1 1 6.2,8 M 8,3.8 L 8,2.4 M 8,12.2 L 8,13.6 M 3.8,8 L 2.4,8 M 12.2,8 L 13.6,8 M 5.03,5.03 L 4.04,4.04 M 10.97,10.97 L 11.96,11.96 M 10.97,5.03 L 11.96,4.04 M 5.03,10.97 L 4.04,11.96</Geometry>
+    <!-- UX-06 path actions: a copy sheet and a folder, same 16-grid and 1.5
+         stroke as every other glyph. The folder tab is drawn as the step in the
+         top edge, so it reads at 16 DIP without a second line. -->
+    <Geometry x:Key="IconCopy">M 5.6,5.6 L 12.4,5.6 L 12.4,12.4 L 5.6,12.4 Z M 5.6,10.4 L 3.6,10.4 L 3.6,3.6 L 10.4,3.6 L 10.4,5.6</Geometry>
+    <Geometry x:Key="IconFolder">M 2.8,4.8 L 6.3,4.8 L 7.6,6.2 L 13.2,6.2 L 13.2,12.2 L 2.8,12.2 Z</Geometry>
 
     <Style x:Key="FocusRingBorder" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />

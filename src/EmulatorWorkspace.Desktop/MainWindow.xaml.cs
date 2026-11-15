@@ -47,6 +47,34 @@ public partial class MainWindow : Window
         set => SetValue(CompactTelemetryProperty, value);
     }
 
+    /// <summary>
+    /// UX-06: the same 1120 DIP breakpoint, for the two stage chips that overlap
+    /// the device frame once the stage is narrow. Grok Bot's UX-05 review decision
+    /// was to hide them rather than leave them on top of the frame.
+    /// </summary>
+    public static readonly DependencyProperty CompactStageProperty = DependencyProperty.Register(
+        nameof(CompactStage), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool CompactStage
+    {
+        get => (bool)GetValue(CompactStageProperty);
+        set => SetValue(CompactStageProperty, value);
+    }
+
+    /// <summary>
+    /// UX-06: whether the settings slide-over is open. The rail item binds it to
+    /// mark itself as the active destination; the drawer's own open/close lives
+    /// in code-behind so the 220 ms slide and the focus hand-off stay together.
+    /// </summary>
+    public static readonly DependencyProperty IsSettingsOpenProperty = DependencyProperty.Register(
+        nameof(IsSettingsOpen), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool IsSettingsOpen
+    {
+        get => (bool)GetValue(IsSettingsOpenProperty);
+        set => SetValue(IsSettingsOpenProperty, value);
+    }
+
     /// <summary>The view model behind the window, for the automation modes.</summary>
     public MainViewModel ViewModel => _viewModel;
 
@@ -360,6 +388,16 @@ public partial class MainWindow : Window
         }
 
         CompactTelemetry = ActualWidth < 1120;
+        // UX-06: the two bottom stage chips step aside at the same breakpoint;
+        // below it the stage is narrower than the frame plus its chips, and the
+        // drop hint sat on the frame's lower-left corner at 1024.
+        CompactStage = ActualWidth < 1120;
+        // UX-06: the drawer keeps its 460 DIP width until the window drops below
+        // 1024 DIP, where it clamps to 45 % (see UpdateSettingsDrawerWidth).
+        if (IsSettingsOpen)
+        {
+            UpdateSettingsDrawerWidth();
+        }
     }
 
     private void OnStageMouseMove(object sender, MouseEventArgs e)
@@ -597,6 +635,308 @@ public partial class MainWindow : Window
             KeyTime.FromTimeSpan(duration),
             new KeySpline(0.22, 1, 0.36, 1)));
         LogcatHost.BeginAnimation(FrameworkElement.HeightProperty, timeline);
+    }
+
+    // ---- UX-06 settings slide-over -----------------------------------------
+    //
+    // The drawer is the UX-04 Create/Clone drawer language moved into the Studio
+    // window. The reviewer's spec fixes the motion: 460 DIP on the right (45 % of
+    // the window below 1024 DIP), 220 ms translateX 24 -> 0 plus opacity on
+    // cubic-bezier(0.22,1,0.36,1), 160 ms exit, an instant fade under Windows
+    // reduced motion, Esc and a scrim click to close, focus cycling inside and
+    // returning to the rail Settings item. It never creates a second OS window,
+    // and it reads no state of its own: the tab contents bind to values the app
+    // already has.
+
+    private const double SettingsDrawerMaxWidth = 460;
+    private const double SettingsDrawerInset = 48;
+    private const double SettingsDrawerNarrowLimit = 1024;
+    private const double SettingsDrawerNarrowShare = 0.45;
+    private const double SettingsDrawerNudge = 24;
+
+    private static readonly TimeSpan SettingsDrawerEnterDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly TimeSpan SettingsDrawerExitDuration = TimeSpan.FromMilliseconds(160);
+
+    private IInputElement? _settingsFocusReturn;
+    private int _settingsDrawerEpoch;
+    private readonly List<(UIElement Element, bool HitTest, KeyboardNavigationMode Tab)> _inertChrome = new();
+    private DispatcherTimer? _themeSavedTimer;
+    private bool _suppressThemeSaved;
+
+    private void OnOpenSettings(object sender, RoutedEventArgs e) => OpenSettings();
+
+    private void OnCloseSettings(object sender, RoutedEventArgs e) => CloseSettings();
+
+    /// <summary>A click on the scrim closes the drawer, like Escape.</summary>
+    private void OnSettingsScrimClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        CloseSettings();
+    }
+
+    private void OpenSettings()
+    {
+        if (IsSettingsOpen)
+        {
+            return;
+        }
+
+        _settingsFocusReturn = Keyboard.FocusedElement;
+        IsSettingsOpen = true;
+        // The rail item paints the accent-soft active surface from its Tag, the
+        // same flag the selection triggers in the shared rail style use.
+        SettingsRailButton.Tag = true;
+        SetChromeInert(true);
+        // Theme, motion and high-contrast facts are read from Windows and the
+        // theme manager, so they are refreshed on open rather than polled.
+        _viewModel.RefreshSettingsFacts();
+        UpdateSettingsDrawerWidth();
+        HideThemeSaved();
+
+        _settingsDrawerEpoch++;
+        SettingsDrawerSlide.BeginAnimation(TranslateTransform.XProperty, null);
+        SettingsDrawerShell.BeginAnimation(OpacityProperty, null);
+        SettingsScrim.BeginAnimation(UIElement.OpacityProperty, null);
+        SettingsDrawerHost.Visibility = Visibility.Visible;
+
+        if (SystemParameters.ClientAreaAnimation)
+        {
+            // Enter from 24 DIP to the right and fade in together; the shell is
+            // already inside the window, so the slide never exposes the studio.
+            SettingsDrawerSlide.X = SettingsDrawerNudge;
+            SettingsDrawerShell.Opacity = 0;
+            SettingsScrim.Opacity = 0;
+            SettingsDrawerSlide.BeginAnimation(TranslateTransform.XProperty,
+                SettingsDrawerTimeline(0, SettingsDrawerEnterDuration));
+            SettingsDrawerShell.BeginAnimation(OpacityProperty,
+                SettingsDrawerTimeline(1, SettingsDrawerEnterDuration));
+            SettingsScrim.BeginAnimation(UIElement.OpacityProperty,
+                SettingsDrawerTimeline(1, SettingsDrawerEnterDuration));
+        }
+        else
+        {
+            // Reduced motion: an instant fade, no translation at all.
+            SettingsDrawerSlide.X = 0;
+            SettingsDrawerShell.Opacity = 1;
+            SettingsScrim.Opacity = 1;
+        }
+
+        FocusSettingsDrawer();
+
+        // The theme radios are checked while the tab content is first built.
+        // That is not a user change, so the confirmation tick stays off until
+        // the layout pass that follows has finished (Background runs after the
+        // render pass that creates and binds the tab).
+        _suppressThemeSaved = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => _suppressThemeSaved = false));
+    }
+
+    private void CloseSettings()
+    {
+        if (!IsSettingsOpen)
+        {
+            return;
+        }
+
+        IsSettingsOpen = false;
+        SettingsRailButton.Tag = false;
+        HideThemeSaved();
+        var epoch = ++_settingsDrawerEpoch;
+
+        // Read what the open animation is showing, then make it the base value,
+        // so clearing the animation does not snap the panel back to its start.
+        var fromX = SettingsDrawerSlide.X;
+        var fromShellOpacity = SettingsDrawerShell.Opacity;
+        var fromScrimOpacity = SettingsScrim.Opacity;
+        SettingsDrawerSlide.BeginAnimation(TranslateTransform.XProperty, null);
+        SettingsDrawerShell.BeginAnimation(OpacityProperty, null);
+        SettingsScrim.BeginAnimation(UIElement.OpacityProperty, null);
+        SettingsDrawerSlide.X = fromX;
+        SettingsDrawerShell.Opacity = fromShellOpacity;
+        SettingsScrim.Opacity = fromScrimOpacity;
+
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            Finish();
+            return;
+        }
+
+        var exit = SettingsDrawerTimeline(SettingsDrawerNudge, SettingsDrawerExitDuration);
+        exit.Completed += (_, _) =>
+        {
+            if (epoch == _settingsDrawerEpoch)
+            {
+                Finish();
+            }
+        };
+        SettingsDrawerSlide.BeginAnimation(TranslateTransform.XProperty, exit);
+        SettingsDrawerShell.BeginAnimation(OpacityProperty,
+            SettingsDrawerTimeline(0, SettingsDrawerExitDuration));
+        SettingsScrim.BeginAnimation(UIElement.OpacityProperty,
+            SettingsDrawerTimeline(0, SettingsDrawerExitDuration));
+
+        void Finish()
+        {
+            SettingsDrawerSlide.BeginAnimation(TranslateTransform.XProperty, null);
+            SettingsDrawerShell.BeginAnimation(OpacityProperty, null);
+            SettingsScrim.BeginAnimation(UIElement.OpacityProperty, null);
+            SettingsDrawerSlide.X = 0;
+            SettingsDrawerShell.Opacity = 1;
+            SettingsScrim.Opacity = 1;
+            SettingsDrawerHost.Visibility = Visibility.Collapsed;
+            SetChromeInert(false);
+            RestoreSettingsFocus();
+        }
+    }
+
+    private static DoubleAnimationUsingKeyFrames SettingsDrawerTimeline(double to, TimeSpan duration)
+    {
+        var timeline = new DoubleAnimationUsingKeyFrames { Duration = new Duration(duration) };
+        timeline.KeyFrames.Add(new SplineDoubleKeyFrame(
+            to,
+            KeyTime.FromTimeSpan(duration),
+            new KeySpline(0.22, 1, 0.36, 1)));
+        return timeline;
+    }
+
+    /// <summary>
+    /// 460 DIP, or 45 % of the window below 1024 DIP so the scrim still shows a
+    /// usable strip of the studio; never narrower than 320 DIP even at the
+    /// window's 980 DIP minimum.
+    /// </summary>
+    private void UpdateSettingsDrawerWidth()
+    {
+        var width = ActualWidth < SettingsDrawerNarrowLimit
+            ? ActualWidth * SettingsDrawerNarrowShare
+            : ActualWidth - SettingsDrawerInset;
+        SettingsDrawerShell.Width = Math.Min(SettingsDrawerMaxWidth, Math.Max(320, width));
+    }
+
+    /// <summary>
+    /// While the drawer is open, every other child of the window grid takes no
+    /// pointer input and no tab stop, so nothing behind the scrim can be clicked
+    /// or focused. The previous values are restored exactly on close; the drawer
+    /// host keeps its own TabNavigation="Cycle" as the second half of the trap.
+    /// </summary>
+    private void SetChromeInert(bool inert)
+    {
+        if (!inert)
+        {
+            foreach (var (element, hitTest, tab) in _inertChrome)
+            {
+                element.IsHitTestVisible = hitTest;
+                KeyboardNavigation.SetTabNavigation(element, tab);
+            }
+
+            _inertChrome.Clear();
+            return;
+        }
+
+        foreach (var child in RootGrid.Children.OfType<UIElement>())
+        {
+            if (ReferenceEquals(child, SettingsDrawerHost))
+            {
+                continue;
+            }
+
+            _inertChrome.Add((child, child.IsHitTestVisible, KeyboardNavigation.GetTabNavigation(child)));
+            child.IsHitTestVisible = false;
+            KeyboardNavigation.SetTabNavigation(child, KeyboardNavigationMode.None);
+        }
+    }
+
+    /// <summary>Puts the caret on the first tab once the drawer is on screen.</summary>
+    private void FocusSettingsDrawer() =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+        {
+            SettingsTabs.SelectedIndex = 0;
+            if (SettingsTabs.SelectedItem is TabItem tab)
+            {
+                tab.Focus();
+            }
+            else
+            {
+                SettingsTabs.Focus();
+            }
+        }));
+
+    private void RestoreSettingsFocus()
+    {
+        var target = _settingsFocusReturn;
+        _settingsFocusReturn = null;
+        if (target is UIElement element && element.IsVisible && element.Focus())
+        {
+            return;
+        }
+
+        if (target is FrameworkContentElement content)
+        {
+            content.Focus();
+            return;
+        }
+
+        SettingsRailButton.Focus();
+    }
+
+    /// <summary>
+    /// The drawer's theme control names a mode instead of flipping it. The
+    /// change itself is the radio's two-way binding into the view model (the
+    /// same ThemeManager call the rail toggle makes), so a click, the keyboard
+    /// and assistive technology all apply it the same way; this handler adds the
+    /// quiet ok-soft "Saved" tick on the row for 1.5 s. The tick is suppressed
+    /// while the tab is first built, because the initial check is not a change.
+    /// </summary>
+    private void OnThemeChoice(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string mode })
+        {
+            return;
+        }
+
+        _viewModel.SetTheme(string.Equals(mode, "Dark", StringComparison.Ordinal));
+        if (!_suppressThemeSaved)
+        {
+            ShowThemeSaved();
+        }
+    }
+
+    private void ShowThemeSaved()
+    {
+        ThemeSavedTick.Visibility = Visibility.Visible;
+        _themeSavedTimer ??= new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(1500),
+        };
+        _themeSavedTimer.Stop();
+        _themeSavedTimer.Tick -= OnThemeSavedElapsed;
+        _themeSavedTimer.Tick += OnThemeSavedElapsed;
+        _themeSavedTimer.Start();
+    }
+
+    private void OnThemeSavedElapsed(object? sender, EventArgs e) => HideThemeSaved();
+
+    private void HideThemeSaved()
+    {
+        _themeSavedTimer?.Stop();
+        ThemeSavedTick.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>Copies a path from a path row (the row carries it in Tag).</summary>
+    private void OnCopySettingsPath(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string path } && path.Length > 0)
+        {
+            _viewModel.CopyPath(path);
+        }
+    }
+
+    /// <summary>Opens a path row's folder in Explorer.</summary>
+    private void OnOpenSettingsPath(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string path } && path.Length > 0)
+        {
+            _viewModel.OpenFolder(path);
+        }
     }
 
     // ---- UX-04 device library ---------------------------------------------
@@ -1038,7 +1378,14 @@ public partial class MainWindow : Window
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F11)
+        // UX-06: Escape closes the settings drawer first, so the overlay is
+        // always the topmost thing Escape can dismiss.
+        if (IsSettingsOpen && e.Key == Key.Escape)
+        {
+            CloseSettings();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F11)
         {
             ToggleFullscreen();
             e.Handled = true;

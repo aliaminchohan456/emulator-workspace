@@ -32,6 +32,11 @@
           by the active navigation item and the neutral "info" chip. -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="#252A30" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
+    <!-- UX-06: the settings slide-over dims the studio at 50 % in the dark
+          theme. It is its own token because the UX-04 library drawers keep the
+          original ScrimBg; the settings drawer is the only surface the reviewer
+          specified at 50 / 30 instead of a single 50 % value. -->
+    <SolidColorBrush x:Key="SettingsScrimBg" Color="#80000000" />
     <!-- UX-04b: the 1px specular edge of a floating surface is a VERTICAL
           gradient (top edge .14 white fading to .03 at the bottom), so the
           highlight runs along the top edge and dies out down the panel. It is

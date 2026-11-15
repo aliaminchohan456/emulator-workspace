@@ -34,6 +34,11 @@
     <!-- Accent-soft = accent at 10% over the light base (#E1E8ED). -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="#E1E8ED" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
+    <!-- UX-06: the light settings slide-over dims the studio at 30 %, not 50 %.
+          On a near-white studio the same scrim weight reads twice as heavy, and
+          the reviewer's spec is base black at 30 % for the light theme. The
+          UX-04 library drawers keep ScrimBg. -->
+    <SolidColorBrush x:Key="SettingsScrimBg" Color="#4D000000" />
     <!-- UX-04b: a white specular line is invisible on a white surface, so the
           light theme keeps the same vertical top-edge gradient in ink (top 14 %
           fading to 3 % at the bottom). -->
@@ -132,17 +137,20 @@
           intermediate stop so the falloff stays smooth on the light viewport
           (#E0E5E9). The noise tile is still black specks at 1.5-2 % so it
           dithers without greying the stage. -->
+    <!-- UX-06 (igr-feedback-ux06, UX-05 nit 2): the two stacked radials still
+          left faint concentric rings on the light stage. The ok layer is dropped
+          here (transparent, so the key still resolves) and the single accent
+          radial carries five stops, which is enough to make each alpha step fall
+          below the banding threshold on #E0E5E9. The dark stage is unchanged. -->
     <RadialGradientBrush x:Key="StageGlow" Center="0.5,0.5" GradientOrigin="0.5,0.5"
                          RadiusX="0.6" RadiusY="0.72">
         <GradientStop Color="#0B235E89" Offset="0" />
-        <GradientStop Color="#04235E89" Offset="0.6" />
+        <GradientStop Color="#08235E89" Offset="0.3" />
+        <GradientStop Color="#05235E89" Offset="0.55" />
+        <GradientStop Color="#02235E89" Offset="0.8" />
         <GradientStop Color="#00235E89" Offset="1" />
     </RadialGradientBrush>
-    <RadialGradientBrush x:Key="StageGlowOk" Center="0.5,0.5" GradientOrigin="0.5,0.5"
-                         RadiusX="0.3" RadiusY="0.38">
-        <GradientStop Color="#07216443" Offset="0" />
-        <GradientStop Color="#00216443" Offset="1" />
-    </RadialGradientBrush>
+    <SolidColorBrush x:Key="StageGlowOk" Color="#00000000" />
     <DrawingBrush x:Key="StageNoise" TileMode="Tile" Stretch="None"
                   Viewport="0,0,8,8" ViewportUnits="Absolute"
                   Viewbox="0,0,8,8" ViewboxUnits="Absolute">

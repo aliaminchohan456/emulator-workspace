@@ -26,6 +26,8 @@
         <views:ToneToBrushConverter x:Key="ToneRoles" />
         <views:StringEqualsToVisibilityConverter x:Key="StringVis" />
         <views:CountToVisibilityConverter x:Key="CountVis" />
+        <!-- UX-06: a path keeps its leaf folder visible in a narrow drawer. -->
+        <views:MiddleEllipsisConverter x:Key="MiddleEllipsis" />
 
         <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,0,8,4" />
@@ -211,12 +213,14 @@
         </Style>
 
         <!-- igr-feedback-ux05 item 6: the quiet action in a privileged card.
-             Same 32 DIP geometry as ToolButton, but no resting surface and no
-             border, so only the consequential (warn/err) actions carry an
-             outline. Hover and press still paint through the shared layers. -->
+             Same 32 DIP geometry as ToolButton. igr-feedback-ux06 (UX-05 nit 1):
+             a ghost keeps a 1 px stroke-soft edge at rest, so it reads as a
+             control rather than as a word, and hover raises the surface through
+             the shared ChipBg layer. A consequential action still takes the
+             warn/err outline; only the quiet one uses this hairline. -->
         <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Padding" Value="10,0" />
@@ -485,9 +489,240 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- UX-06 settings slide-over (polish addendum item 8). It reuses the
+             UX-04 Create/Clone drawer language: the same 460 DIP panel, the same
+             two-layer floating shadow (wide ambient behind, tight key on the
+             surface), the same 12 radius on the leading corners and the same
+             specular edge, now also run down the left edge so the panel separates
+             from the scrim without a hard line. -->
+        <Style x:Key="SettingsDrawerAmbient" TargetType="Border">
+            <!-- PanelBg, not PopupBg: the shell has to sit below its own cards.
+                 PopupBg equals PanelAlt in the dark sheet, which would make a
+                 raised card invisible against the shell. -->
+            <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+            <Setter Property="CornerRadius" Value="12,0,0,12" />
+            <Setter Property="Effect" Value="{DynamicResource FloatingShadowAmbient}" />
+        </Style>
+
+        <Style x:Key="SettingsDrawerSurface" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="CornerRadius" Value="12,0,0,12" />
+            <Setter Property="Effect" Value="{DynamicResource FloatingShadowKey}" />
+        </Style>
+
+        <!-- One settings group: a raised 12 radius card with a hairline edge on
+             the drawer's panel surface, so the group reads as a surface rather
+             than a stretch of white space. -->
+        <Style x:Key="SettingsCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusDialog}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- Rows inside a card are separated by stroke-soft dividers, never by
+             gaps: the divider is inset to the text column, so the card keeps a
+             clean outer edge. -->
+        <Style x:Key="SettingsDivider" TargetType="Border">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="16,0" />
+            <Setter Property="Background" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <Style x:Key="SettingsRowLabel" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="LineHeight" Value="18" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SettingsRowDescription" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="LineHeight" Value="16" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <!-- A read-only policy value (a Windows setting the drawer only reports). -->
+        <Style x:Key="SettingsRowValue" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Segmented tabs inside the drawer. One WindowBg surface holds the tab
+             headers, which are 6 DIP pills inside 3 DIP of padding (outer 8 =
+             inner 5 + padding, close enough that the corners read concentric);
+             the selected pill is accent-soft, the same selected treatment the
+             inspector tabs use. TabPanel is the items host so Tab/arrow keys
+             keep their standard behaviour. Three real groups fit, so there is no
+             More overflow and no scrolling strip. -->
+        <Style x:Key="SettingsTabs" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border HorizontalAlignment="Left" Background="{DynamicResource WindowBg}"
+                                    BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusInnerCard}" Padding="3"
+                                    SnapsToDevicePixels="True">
+                                <TabPanel IsItemsHost="True" />
+                            </Border>
+                            <ContentPresenter x:Name="PART_SelectedContentHost" Grid.Row="1"
+                                              ContentSource="SelectedContent" Margin="0,14,0,0" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SettingsTab" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Pill" Background="Transparent" Padding="12,4"
+                                CornerRadius="{StaticResource RadiusControl}">
+                            <!-- The weight lives on the presenter, not the
+                                 TabItem: FontWeight inherits, and a SemiBold
+                                 TabItem would embolden the whole tab body. -->
+                            <ContentPresenter x:Name="H" ContentSource="Header" RecognizesAccessKey="True"
+                                              TextElement.FontWeight="Normal"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource ChipBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource AccentSoftBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="H" Property="TextElement.FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Theme segmented control: the card is raised, so the group sits on a
+             PanelBg surface with 2 DIP of padding around 6 DIP pills (outer 8 =
+             inner 6 + 2). Only the two real modes are offered. -->
+        <Style x:Key="SettingsSegment" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusInnerCard}" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <Style x:Key="SettingsSegmentRadio" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Pill" Background="Transparent" Padding="12,4"
+                                CornerRadius="{StaticResource RadiusControl}">
+                            <ContentPresenter x:Name="H" ContentSource="Content" RecognizesAccessKey="True"
+                                              TextElement.FontWeight="Normal"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource ChipBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource AccentSoftBg}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="H" Property="TextElement.FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A shortcut key in Cascadia Mono: the design sheet's key chip. The chip
+             sits on a PanelAlt card, so its surface is ChipBg, not PanelAlt. -->
+        <Style x:Key="KeyChip" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <Style x:Key="KeyChipText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="LineHeight" Value="16" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        </Style>
+
+        <!-- A path in the drawer: mono, one line, middle ellipsis (the converter
+             keeps the leaf folder) and the full string in the tooltip. No
+             editable box, because this build cannot change the workspace root. -->
+        <Style x:Key="SettingsPathValue" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="LineHeight" Value="16" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+
+        <!-- 28 DIP path action (copy, open folder): the spec's path row size,
+             with the shared hover/press layers, focus ring and 1.07 glyph scale. -->
+        <Style x:Key="SettingsIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+        </Style>
+
+        <!-- 32 DIP close control in the 56 DIP header. -->
+        <Style x:Key="SettingsCloseButton" TargetType="Button" BasedOn="{StaticResource SettingsIconButton}">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+        </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Grid.ColumnDefinitions>
             <!-- UX-04b: the 48 DIP destination rail replaces the permanent
                  device column. It spans every row, so the rail is the window's
@@ -510,8 +745,9 @@
         <!-- Destination rail. Only real destinations appear: Studio (the view
              this window is), Devices (the U-04 library window), Logcat (the
              drawer), Agents (the sessions window) and Root Lab (the lab section
-             of the inspector's Diagnostics tab). There is no Settings command in
-             the app, so there is no Settings item. -->
+             of the inspector's Diagnostics tab). UX-06 adds Settings at the
+             bottom: it opens the in-window settings drawer, not a separate OS
+             window, so the rail keeps exactly one surface per destination. -->
         <Border x:Name="NavRail" Grid.Column="0" Grid.Row="0" Grid.RowSpan="6"
                 Background="{DynamicResource NavBg}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
@@ -527,9 +763,21 @@
                         <Path Data="{StaticResource IconTheme}" Style="{StaticResource Glyph}" />
                     </Button>
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding RefreshCommand}"
-                            Margin="0" ToolTip="Re-read the supervisor, the SDK report and the device state"
+                            Margin="0,0,0,4" ToolTip="Re-read the supervisor, the SDK report and the device state"
                             AutomationProperties.Name="Refresh workspace state">
                         <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <!-- UX-06: the drawer's opener. 36 DIP icon button with the
+                         shared hover/press layers, the 1.07 glyph scale over the
+                         accent-soft radial and the 2 px keyboard focus ring; the
+                         accent-soft surface marks it while the drawer is open
+                         (Tag is set in code with the drawer state, the same flag
+                         the drawer's own open/close writes). -->
+                    <Button x:Name="SettingsRailButton" Style="{StaticResource NavRailItem}" Margin="0"
+                            Click="OnOpenSettings"
+                            ToolTip="Settings: appearance, shortcuts and diagnostics (Esc closes)"
+                            AutomationProperties.Name="Settings">
+                        <Path Data="{StaticResource IconSettings}" Style="{StaticResource Glyph}" />
                     </Button>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Top">
@@ -1253,8 +1501,15 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- UX-06 carry-over from the UX-05 review: below 1120 DIP
+                         the stage is too narrow for the two bottom chips and the
+                         bottom-left drop hint overlapped the device frame's
+                         lower-left corner at 1024. Both bottom chips stand down
+                         there; the top pair (guest display, orientation) and the
+                         dropzone veil still carry the same information. -->
                     <Border Style="{StaticResource StageChip}" HorizontalAlignment="Left"
-                            VerticalAlignment="Bottom" Margin="14" Opacity="0.85">
+                            VerticalAlignment="Bottom" Margin="14" Opacity="0.85"
+                            Visibility="{Binding CompactStage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVis}}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconInstall}" Width="12" Height="12" Stretch="Uniform"
                                   Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
@@ -1266,7 +1521,8 @@
 
                     <Border Style="{StaticResource StageChip}" HorizontalAlignment="Right"
                             VerticalAlignment="Bottom" Margin="14" Opacity="0.85"
-                            ToolTip="{Binding InputCapabilityDetail}">
+                            ToolTip="{Binding InputCapabilityDetail}"
+                            Visibility="{Binding CompactStage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVis}}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconTouch}" Width="12" Height="12" Stretch="Uniform"
                                   Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
@@ -1636,7 +1892,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Zoom" Style="{StaticResource RowLabel}" />
                                     <TextBlock Grid.Column="1" Text="{Binding ZoomStatus}"
-                                               Style="{StaticResource RowValueMono}" />
+                                               Style="{StaticResource RowValue}" />
                                 </Grid>
 
                                 <Border Style="{StaticResource RowRule}" />
@@ -1731,12 +1987,27 @@
                                                 <TextBlock Text="ADB daemon" Style="{StaticResource SectionHeader}"
                                                            FontSize="13" />
                                             </StackPanel>
-                                            <Border Grid.Column="1" Style="{StaticResource StatePill}"
-                                                    Background="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=bg}">
-                                                <TextBlock Text="{Binding AdbDaemonChip}"
-                                                           Style="{StaticResource StatePillText}"
-                                                           Foreground="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}" />
-                                            </Border>
+                                            <!-- UX-06 (UX-05 nit 1): "Refresh state" left
+                                                 the button row. It is a 28 DIP refresh icon in
+                                                 the card header, left of the chip, with the
+                                                 same command and the tooltip carrying the
+                                                 words so the icon is never alone. -->
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <Button Style="{StaticResource SettingsIconButton}"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding RefreshAdbStateCommand}"
+                                                        ToolTip="Re-read the ADB daemon identity"
+                                                        AutomationProperties.Name="Refresh ADB daemon state">
+                                                    <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
+                                                </Button>
+                                                <Border Style="{StaticResource StatePill}"
+                                                        Background="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=bg}">
+                                                    <TextBlock Text="{Binding AdbDaemonChip}"
+                                                               Style="{StaticResource StatePillText}"
+                                                               Foreground="{Binding AdbDaemonChipTone, Converter={StaticResource ToneRoles}, ConverterParameter=fg}" />
+                                                </Border>
+                                            </StackPanel>
                                         </Grid>
                                         <!-- igr-feedback-ux05 item 6: one text3 line —
                                              "UID · not reported", or the real uid —
@@ -1746,25 +2017,23 @@
                                                    FontSize="12" Foreground="{DynamicResource TextTertiary}"
                                                    TextWrapping="Wrap" Margin="0,8,0,0"
                                                    ToolTip="{Binding AdbDaemonDetail}" />
-                                        <!-- One row: root, unroot, and the quiet
-                                             Refresh state. Only ADB root keeps an
-                                             outline here (it is the consequential
-                                             one); the other two are ghosts. -->
-                                        <WrapPanel Margin="0,10,0,0">
+                                        <!-- One row, no wrap: root and unroot are the
+                                             pair an operator chooses between, and the
+                                             quiet Refresh state now lives in the card
+                                             header as a 28 DIP icon. Only ADB root keeps
+                                             a tone outline (it is the consequential one);
+                                             unroot is a hairline ghost. -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                             <Button Content="ADB root" Style="{StaticResource WarnButton}"
                                                     Height="32" Padding="10,0"
-                                                    Command="{Binding AdbRootCommand}" Margin="0,0,6,4"
+                                                    Command="{Binding AdbRootCommand}" Margin="0,0,6,0"
                                                     ToolTip="Run adb root on the selected guest (confirmation is the supervisor's approval)"
                                                     AutomationProperties.Name="ADB root" />
                                             <Button Content="ADB unroot" Style="{StaticResource GhostButton}"
-                                                    Command="{Binding AdbUnrootCommand}" Margin="0,0,6,4"
+                                                    Command="{Binding AdbUnrootCommand}" Margin="0"
                                                     ToolTip="Return the guest ADB daemon to the shell user"
                                                     AutomationProperties.Name="ADB unroot" />
-                                            <Button Content="Refresh state" Style="{StaticResource GhostButton}"
-                                                    Command="{Binding RefreshAdbStateCommand}" Margin="0,0,0,4"
-                                                    ToolTip="Re-read the ADB daemon identity"
-                                                    AutomationProperties.Name="Refresh ADB daemon state" />
-                                        </WrapPanel>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -2050,5 +2319,610 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- UX-06 settings slide-over (polish addendum item 8). A 460 DIP panel
+             on the right over a 50 % scrim, 220 ms on cubic-bezier(0.22,1,0.36,1)
+             (instant under reduced motion), Esc and a scrim click close it, focus
+             cycles inside while it is open and returns to the opener on close.
+             It is a child of the window grid, never a second OS window. The
+             tabs hold only groups that exist in code: Appearance (the real theme
+             and the two Windows policies), Shortcuts (the gestures this build
+             already handles) and Diagnostics (the real redaction/export paths). -->
+        <Grid x:Name="SettingsDrawerHost" Grid.Row="0" Grid.RowSpan="6"
+              Grid.Column="0" Grid.ColumnSpan="2" Panel.ZIndex="40"
+              Visibility="Collapsed"
+              KeyboardNavigation.TabNavigation="Cycle"
+              KeyboardNavigation.ControlTabNavigation="Cycle"
+              AutomationProperties.Name="Settings drawer">
+            <Border x:Name="SettingsScrim" Background="{DynamicResource SettingsScrimBg}"
+                    MouseLeftButtonDown="OnSettingsScrimClick" />
+            <Grid x:Name="SettingsDrawerShell" Width="460" HorizontalAlignment="Right">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="SettingsDrawerSlide" X="0" />
+                </Grid.RenderTransform>
+
+                <Border Style="{StaticResource SettingsDrawerAmbient}" />
+                <Border Style="{StaticResource SettingsDrawerSurface}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Specular edges of the floating surface: 1 DIP along
+                             the top and down the leading edge, on the theme's
+                             specular gradient so neither theme needs a fade of
+                             its own. -->
+                        <Border Height="1" Margin="12,0,0,0" VerticalAlignment="Top" IsHitTestVisible="False"
+                                Background="{DynamicResource SpecularEdge}" />
+                        <Border Width="1" VerticalAlignment="Stretch" HorizontalAlignment="Left"
+                                IsHitTestVisible="False" Background="{DynamicResource SpecularEdge}" />
+
+                        <!-- Header: exactly 56 DIP, "Settings" at 16 SemiBold and a
+                             32 DIP ghost close on the right. The eyebrow and the
+                             subtitle the first pass carried are gone: the spec
+                             fixes the header height, and the tab names already
+                             say what the drawer holds. -->
+                        <Grid Grid.Row="0" Height="56" Margin="24,0,16,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Settings" FontFamily="{StaticResource UiFont}"
+                                       FontSize="16" FontWeight="SemiBold" LineHeight="24"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center" />
+                            <Button x:Name="SettingsCloseButton" Grid.Column="1"
+                                    Style="{StaticResource SettingsCloseButton}"
+                                    Click="OnCloseSettings" ToolTip="Close (Esc)"
+                                    AutomationProperties.Name="Close settings">
+                                <Path Data="{StaticResource IconClose}" Style="{StaticResource Glyph}" />
+                            </Button>
+                        </Grid>
+
+                        <TabControl x:Name="SettingsTabs" Grid.Row="1" Margin="24,0,24,0"
+                                    Style="{StaticResource SettingsTabs}"
+                                    ItemContainerStyle="{StaticResource SettingsTab}"
+                                    AutomationProperties.Name="Settings sections">
+
+                            <!-- 1. Appearance: the real theme switch plus the two
+                                 Windows policies the app actually honours. There
+                                 is no preference store, so the theme row says so
+                                 instead of promising persistence. -->
+                            <TabItem Header="Appearance" AutomationProperties.Name="Settings Appearance">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="0,0,4,16">
+                                        <TextBlock Text="THEME" Style="{StaticResource RowSection}"
+                                                   Margin="2,0,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <Grid MinHeight="64" Margin="16,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Margin="0,10,12,10">
+                                                    <TextBlock Text="Theme" Style="{StaticResource SettingsRowLabel}" />
+                                                    <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                               Text="Dark and Light apply immediately. Session only: this build stores no preference, so the next launch follows Windows again." />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                            VerticalAlignment="Center">
+                                                    <!-- The quiet confirmation the spec asks for:
+                                                         an ok-soft tick on the row for 1.5 s,
+                                                         never a modal or an Apply footer. -->
+                                                    <Border x:Name="ThemeSavedTick" Visibility="Collapsed"
+                                                            Background="{DynamicResource SuccessBg}"
+                                                            BorderBrush="{DynamicResource SuccessBorder}"
+                                                            BorderThickness="1" CornerRadius="999"
+                                                            Padding="7,2" Margin="0,0,8,0"
+                                                            AutomationProperties.Name="Theme saved">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Path Data="{StaticResource IconCheck}" Width="11" Height="11"
+                                                                  Stretch="Uniform" Stroke="{DynamicResource Success}"
+                                                                  StrokeThickness="1.8" StrokeStartLineCap="Round"
+                                                                  StrokeEndLineCap="Round" VerticalAlignment="Center" />
+                                                            <TextBlock Text="Saved" FontSize="11" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource Success}"
+                                                                       Margin="4,0,0,0" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border Style="{StaticResource SettingsSegment}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <RadioButton Content="Dark" Tag="Dark"
+                                                                         GroupName="SettingsTheme"
+                                                                         Style="{StaticResource SettingsSegmentRadio}"
+                                                                         IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"
+                                                                         Checked="OnThemeChoice"
+                                                                         ToolTip="Graphite Studio dark surfaces"
+                                                                         AutomationProperties.Name="Dark theme" />
+                                                            <RadioButton Content="Light" Tag="Light"
+                                                                         GroupName="SettingsTheme"
+                                                                         Style="{StaticResource SettingsSegmentRadio}"
+                                                                         IsChecked="{Binding IsLightTheme, Mode=TwoWay}"
+                                                                         Checked="OnThemeChoice"
+                                                                         ToolTip="Porcelain light surfaces"
+                                                                         AutomationProperties.Name="Light theme" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <TextBlock Text="WINDOWS" Style="{StaticResource RowSection}"
+                                                   Margin="2,18,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Animation effects"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Reduced motion drops every drawer, hover and pulse animation." />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding MotionState}"
+                                                               Style="{StaticResource SettingsRowValue}" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="High contrast"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Wins over the theme with system colours." />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding HighContrastState}"
+                                                               Style="{StaticResource SettingsRowValue}" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Style="{StaticResource Caption}" FontSize="12"
+                                                   Foreground="{DynamicResource TextTertiary}"
+                                                   TextWrapping="Wrap" Margin="2,12,0,0"
+                                                   Text="Both are Windows policies the app honours and never overrides. High contrast is not a third theme: while it is on, the system palette replaces the selected theme." />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- 2. Shortcuts: every gesture this build handles, in
+                                 Cascadia Mono chips. Read-only, because there is
+                                 no key-binding store to rebind against. -->
+                            <TabItem Header="Shortcuts" AutomationProperties.Name="Settings Shortcuts">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="0,0,4,16">
+                                        <TextBlock Text="STUDIO" Style="{StaticResource RowSection}"
+                                                   Margin="2,0,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Command palette"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Searches every command this build registers." />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource KeyChip}">
+                                                            <TextBlock Text="Ctrl" Style="{StaticResource KeyChipText}" />
+                                                        </Border>
+                                                        <TextBlock Text="+" Style="{StaticResource Caption}"
+                                                                   Foreground="{DynamicResource TextTertiary}"
+                                                                   Margin="4,0" VerticalAlignment="Center" />
+                                                        <Border Style="{StaticResource KeyChip}">
+                                                            <TextBlock Text="K" Style="{StaticResource KeyChipText}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Fullscreen"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Immersive stage; Esc leaves it." />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Style="{StaticResource KeyChip}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="F11" Style="{StaticResource KeyChipText}" />
+                                                    </Border>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Close the open overlay"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="This drawer, or the command palette." />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Style="{StaticResource KeyChip}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="Esc" Style="{StaticResource KeyChipText}" />
+                                                    </Border>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Zoom the viewport"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Around the pointer, in 10 % steps." />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource KeyChip}">
+                                                            <TextBlock Text="Ctrl" Style="{StaticResource KeyChipText}" />
+                                                        </Border>
+                                                        <TextBlock Text="+" Style="{StaticResource Caption}"
+                                                                   Foreground="{DynamicResource TextTertiary}"
+                                                                   Margin="4,0" VerticalAlignment="Center" />
+                                                        <Border Style="{StaticResource KeyChip}">
+                                                            <TextBlock Text="wheel" Style="{StaticResource KeyChipText}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Text="COMMAND PALETTE" Style="{StaticResource RowSection}"
+                                                   Margin="2,18,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="52" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Run the selected command"
+                                                               Style="{StaticResource SettingsRowLabel}"
+                                                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                                                    <Border Grid.Column="1" Style="{StaticResource KeyChip}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="Enter" Style="{StaticResource KeyChipText}" />
+                                                    </Border>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="52" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Close without running anything"
+                                                               Style="{StaticResource SettingsRowLabel}"
+                                                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                                                    <Border Grid.Column="1" Style="{StaticResource KeyChip}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="Esc" Style="{StaticResource KeyChipText}" />
+                                                    </Border>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Style="{StaticResource Caption}" FontSize="12"
+                                                   Foreground="{DynamicResource TextTertiary}"
+                                                   TextWrapping="Wrap" Margin="2,12,0,0"
+                                                   Text="Read-only. Each gesture is bound once in code; this build has no key-binding store, so nothing can be reassigned and there is no conflict check to show." />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- 3. Diagnostics: the same redacted copy, the same
+                                 logcat export, the same error bar state and the
+                                 real paths. One accent primary in the drawer;
+                                 everything else is a ghost. -->
+                            <TabItem Header="Diagnostics" AutomationProperties.Name="Settings Diagnostics">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="0,0,4,16">
+                                        <!-- err-soft infobar with Retry, mirroring
+                                             the window's error bar: while the
+                                             drawer is open the scrim hides that
+                                             bar, so the same state is shown here
+                                             instead of in two places at once. -->
+                                        <Border Background="{DynamicResource DangerBg}"
+                                                BorderBrush="{DynamicResource DangerBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource RadiusCard}"
+                                                Margin="0,0,0,14"
+                                                Visibility="{Binding HasErrorBar, Converter={StaticResource BoolToVis}}"
+                                                AutomationProperties.Name="Diagnostics error">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Background="{DynamicResource Danger}" CornerRadius="10,0,0,10" />
+                                                <StackPanel Grid.Column="1" Margin="12,10">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Path Data="{StaticResource IconWarning}"
+                                                              Stroke="{DynamicResource Danger}" StrokeThickness="1.5"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                              StrokeLineJoin="Round" Width="14" Height="14"
+                                                              Stretch="None" VerticalAlignment="Top"
+                                                              Margin="0,2,8,0" />
+                                                        <TextBlock Text="{Binding ErrorBarTitle}" FontSize="13"
+                                                                   FontWeight="SemiBold" TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource TextPrimary}" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding ErrorBarText}"
+                                                               Style="{StaticResource Caption}"
+                                                               Foreground="{DynamicResource TextSecondary}"
+                                                               TextWrapping="Wrap" Margin="22,3,0,0" />
+                                                    <TextBlock Text="{Binding ErrorBarAction}"
+                                                               Style="{StaticResource Caption}"
+                                                               Foreground="{DynamicResource TextTertiary}"
+                                                               TextWrapping="Wrap" Margin="22,3,0,0" />
+                                                    <StackPanel Orientation="Horizontal" Margin="22,8,0,0">
+                                                        <Button Content="Retry" Style="{StaticResource ToolButton}"
+                                                                Command="{Binding RefreshCommand}"
+                                                                Visibility="{Binding ShowErrorRetry, Converter={StaticResource BoolToVis}}"
+                                                                ToolTip="Re-read the supervisor, the SDK report and the device state"
+                                                                AutomationProperties.Name="Retry the failed operation" />
+                                                        <Button Content="Dismiss" Style="{StaticResource ToolButton}"
+                                                                Command="{Binding DismissErrorCommand}" Margin="0"
+                                                                AutomationProperties.Name="Dismiss the error" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <TextBlock Text="ACTIONS" Style="{StaticResource RowSection}"
+                                                   Margin="2,0,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Copy diagnostics"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="The supervisor's redacted summary, ready to paste." />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Copy diagnostics"
+                                                            Style="{StaticResource PrimaryButton}"
+                                                            Height="32" Padding="12,0" Margin="0"
+                                                            Command="{Binding CopyDiagnosticsCommand}"
+                                                            ToolTip="Copy the supervisor's redacted diagnostics summary"
+                                                            AutomationProperties.Name="Copy diagnostics" />
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,12,9">
+                                                        <TextBlock Text="Export logcat"
+                                                                   Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsRowDescription}"
+                                                                   Text="Writes the retained lines to the workspace log folder." />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Export logcat"
+                                                            Style="{StaticResource GhostButton}" Margin="0"
+                                                            Command="{Binding ExportLogCommand}"
+                                                            ToolTip="Write the retained Logcat lines to the workspace log folder"
+                                                            AutomationProperties.Name="Export logcat" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Text="DOCTOR" Style="{StaticResource RowSection}"
+                                                   Margin="2,18,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}" Padding="14,12">
+                                            <!-- No inner scroll: the tab's own
+                                                 ScrollViewer is the only one, so
+                                                 the whole report is readable and
+                                                 there is one scrollbar, not two. -->
+                                            <TextBlock Text="{Binding DoctorText}"
+                                                       Style="{StaticResource Mono}" FontSize="11"
+                                                       LineHeight="16" TextWrapping="Wrap" />
+                                        </Border>
+
+                                        <TextBlock Text="PATHS" Style="{StaticResource RowSection}"
+                                                   Margin="2,18,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,10,9">
+                                                        <TextBlock Text="Workspace" Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsPathValue}"
+                                                                   Margin="0,2,0,0"
+                                                                   Text="{Binding WorkspaceRoot, Converter={StaticResource MiddleEllipsis}}"
+                                                                   ToolTip="{Binding WorkspaceRoot}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SettingsIconButton}" Margin="0,0,2,0"
+                                                                Tag="{Binding WorkspaceRoot}" Click="OnCopySettingsPath"
+                                                                ToolTip="Copy this path" AutomationProperties.Name="Copy workspace path">
+                                                            <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource SettingsIconButton}"
+                                                                Tag="{Binding WorkspaceRoot}" Click="OnOpenSettingsPath"
+                                                                ToolTip="Open this folder in Explorer" AutomationProperties.Name="Open workspace folder">
+                                                            <Path Data="{StaticResource IconFolder}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,10,9">
+                                                        <TextBlock Text="Captures" Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsPathValue}"
+                                                                   Margin="0,2,0,0"
+                                                                   Text="{Binding CapturesFolder, Converter={StaticResource MiddleEllipsis}}"
+                                                                   ToolTip="{Binding CapturesFolder}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SettingsIconButton}" Margin="0,0,2,0"
+                                                                Tag="{Binding CapturesFolder}" Click="OnCopySettingsPath"
+                                                                ToolTip="Copy this path" AutomationProperties.Name="Copy captures path">
+                                                            <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource SettingsIconButton}"
+                                                                Tag="{Binding CapturesFolder}" Click="OnOpenSettingsPath"
+                                                                ToolTip="Open this folder in Explorer" AutomationProperties.Name="Open captures folder">
+                                                            <Path Data="{StaticResource IconFolder}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <Border Style="{StaticResource SettingsDivider}" />
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,10,9">
+                                                        <TextBlock Text="Logs" Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsPathValue}"
+                                                                   Margin="0,2,0,0"
+                                                                   Text="{Binding LogsFolder, Converter={StaticResource MiddleEllipsis}}"
+                                                                   ToolTip="{Binding LogsFolder}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SettingsIconButton}" Margin="0,0,2,0"
+                                                                Tag="{Binding LogsFolder}" Click="OnCopySettingsPath"
+                                                                ToolTip="Copy this path" AutomationProperties.Name="Copy logs path">
+                                                            <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource SettingsIconButton}"
+                                                                Tag="{Binding LogsFolder}" Click="OnOpenSettingsPath"
+                                                                ToolTip="Open this folder in Explorer" AutomationProperties.Name="Open logs folder">
+                                                            <Path Data="{StaticResource IconFolder}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- The last capture exists only after a real
+                                             capture in this session; with none, the
+                                             whole group is absent rather than an
+                                             empty card. -->
+                                        <StackPanel Visibility="{Binding HasToastPath, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="LAST CAPTURE" Style="{StaticResource RowSection}"
+                                                       Margin="2,18,0,6" />
+                                            <Border Style="{StaticResource SettingsCard}">
+                                                <Grid MinHeight="56" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,9,10,9">
+                                                        <TextBlock Text="Last file" Style="{StaticResource SettingsRowLabel}" />
+                                                        <TextBlock Style="{StaticResource SettingsPathValue}" Margin="0,2,0,0"
+                                                                   Text="{Binding ScreenshotPath, Converter={StaticResource MiddleEllipsis}}"
+                                                                   ToolTip="{Binding ScreenshotPath}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SettingsIconButton}" Margin="0,0,2,0"
+                                                                Command="{Binding CopyToastCommand}"
+                                                                ToolTip="Copy the last file's path" AutomationProperties.Name="Copy the last saved path">
+                                                            <Path Data="{StaticResource IconCopy}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource SettingsIconButton}"
+                                                                Command="{Binding OpenToastCommand}"
+                                                                ToolTip="Show the last file in Explorer" AutomationProperties.Name="Open the last saved file">
+                                                            <Path Data="{StaticResource IconFolder}" Style="{StaticResource Glyph}" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <TextBlock Text="ABOUT" Style="{StaticResource RowSection}"
+                                                   Margin="2,18,0,6" />
+                                        <Border Style="{StaticResource SettingsCard}">
+                                            <StackPanel>
+                                                <Grid MinHeight="52" Margin="16,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Version" Style="{StaticResource SettingsRowLabel}"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding AppVersion}"
+                                                               Style="{StaticResource SettingsRowValue}"
+                                                               FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                               ToolTip="{Binding AppVersion}" />
+                                                </Grid>
+                                                <StackPanel Visibility="{Binding HasAppCommit, Converter={StaticResource BoolToVis}}">
+                                                    <Border Style="{StaticResource SettingsDivider}" />
+                                                    <Grid MinHeight="52" Margin="16,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Commit" Style="{StaticResource SettingsRowLabel}"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding AppCommit}"
+                                                                   Style="{StaticResource SettingsRowValue}"
+                                                                   FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                                   ToolTip="{Binding AppCommit}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Style="{StaticResource Caption}" FontSize="12"
+                                                   Foreground="{DynamicResource TextTertiary}"
+                                                   TextWrapping="Wrap" Margin="2,12,0,0"
+                                                   Text="Version and commit come from the application assembly. This build has no update checker and no external links." />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+                        </TabControl>
+
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource BorderSubtle}"
+                                BorderThickness="0,1,0,0" Padding="24,11">
+                            <!-- No Apply/OK footer: every control applies at once and
+                                 confirms on its own row. This line only states that
+                                 model and the two ways out. -->
+                            <TextBlock Text="Changes apply immediately. Esc or a click outside closes this drawer."
+                                       Style="{StaticResource Caption}"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

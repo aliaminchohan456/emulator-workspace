@@ -254,3 +254,43 @@ public sealed class CountToVisibilityConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>
+/// UX-06: a long filesystem path keeps its beginning and its tail with an
+/// ellipsis in the middle, because the last folder is the part a reader needs.
+/// The full string always stays in the row's tooltip. The limit is a character
+/// count (a path row is a fixed 460 DIP drawer minus its padding and buttons, so
+/// the mono fit is known); a value already within the limit is returned as is.
+/// </summary>
+public sealed class MiddleEllipsisConverter : IValueConverter
+{
+    // A path row in the 460 DIP drawer leaves about 300 DIP for the value after
+    // the label column and the two 28 DIP actions; 38 mono characters at 12 DIP
+    // stay inside that at every theme and DPI, so the middle ellipsis is the one
+    // the reader sees rather than a second tail trim.
+    public int MaxLength { get; set; } = 38;
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var text = value?.ToString() ?? "";
+        var limit = MaxLength;
+        if (parameter is string raw && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+        {
+            limit = parsed;
+        }
+
+        if (limit < 8 || text.Length <= limit)
+        {
+            return text;
+        }
+
+        // 60 / 40: enough head to recognise the workspace, enough tail to read
+        // the leaf folder, and one character for the ellipsis itself.
+        var head = (int)((limit - 1) * 0.6);
+        var tail = limit - 1 - head;
+        return string.Concat(text.AsSpan(0, head), "\u2026", text.AsSpan(text.Length - tail));
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

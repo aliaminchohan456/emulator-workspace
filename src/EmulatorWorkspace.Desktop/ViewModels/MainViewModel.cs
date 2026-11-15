@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using System.Windows;
@@ -1325,6 +1326,130 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public string WorkspaceRoot => _paths.Root;
 
+    // ---- UX-06 settings drawer: derived facts only -------------------------
+    //
+    // Every value below already exists in the app; the drawer displays it. No
+    // property decides anything, calls the supervisor or invents a preference.
+    // The theme is session-only (ThemeManager keeps no store), so the drawer says
+    // so rather than pretending to persist it.
+
+    /// <summary>
+    /// The two theme modes this build really has. ThemeManager exposes System,
+    /// Dark and Light; the system choice resolves to one of the two concrete
+    /// dictionaries, and high contrast is a Windows policy rather than a third
+    /// selectable mode, so the drawer's segmented control shows these two.
+    /// The setters exist so a radio that is selected by assistive technology or
+    /// by the keyboard applies the mode exactly like a click does; unchecking
+    /// (false) is only ever the other radio in the group and applies nothing.
+    /// </summary>
+    public bool IsDarkTheme
+    {
+        get => ThemeManager.IsDark;
+        set
+        {
+            if (value)
+            {
+                SetTheme(true);
+            }
+        }
+    }
+
+    public bool IsLightTheme
+    {
+        get => !ThemeManager.IsDark;
+        set
+        {
+            if (value)
+            {
+                SetTheme(false);
+            }
+        }
+    }
+
+    /// <summary>The name, version and commit the assembly itself carries.</summary>
+    public string AppVersion => AppBuild.Version;
+
+    /// <summary>Empty unless the build embedded a commit in its metadata.</summary>
+    public string AppCommit => AppBuild.Commit;
+
+    public bool HasAppCommit => AppBuild.Commit.Length > 0;
+
+    // Read once: the assembly cannot change while the process runs. The SDK
+    // appends "+&lt;commit&gt;" to InformationalVersion only when a revision id is
+    // supplied at build time, so the commit row renders only when that (or an
+    // explicit AssemblyMetadata row) is really present - never a guessed hash.
+    private static readonly (string Version, string Commit) AppBuild = ReadAppBuild();
+
+    private static (string Version, string Commit) ReadAppBuild()
+    {
+        var assembly = typeof(MainViewModel).Assembly;
+        var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString()
+            ?? "unknown";
+        var commit = "";
+        var plus = informational.IndexOf('+');
+        if (plus >= 0)
+        {
+            commit = informational[(plus + 1)..];
+            informational = informational[..plus];
+        }
+
+        foreach (var metadata in assembly.GetCustomAttributes<AssemblyMetadataAttribute>())
+        {
+            if (metadata.Key is "Commit" or "SourceRevisionId"
+                && !string.IsNullOrWhiteSpace(metadata.Value))
+            {
+                commit = metadata.Value;
+                break;
+            }
+        }
+
+        if (commit.Length > 12)
+        {
+            commit = commit[..12];
+        }
+
+        return (string.IsNullOrWhiteSpace(informational) ? "unknown" : informational, commit);
+    }
+
+    /// <summary>Windows' animation-effects policy, which every animation honours.</summary>
+    public string MotionState => SystemParameters.ClientAreaAnimation ? "Full" : "Reduced (Windows)";
+
+    /// <summary>Windows' high-contrast policy, which always wins over the theme.</summary>
+    public string HighContrastState => SystemParameters.HighContrast ? "On" : "Off";
+
+    /// <summary>Where ScreenshotAsync writes its PNGs (real folder, created on demand).</summary>
+    public string CapturesFolder => Path.Combine(_paths.Root, "screenshots");
+
+    /// <summary>Where ExportLogAsync writes its text files (real folder, created on demand).</summary>
+    public string LogsFolder => Path.Combine(_paths.Root, "logs");
+
+    /// <summary>
+    /// Re-raises the derived settings facts. The drawer calls this when it opens,
+    /// because motion and high contrast can change while the window is running.
+    /// </summary>
+    public void RefreshSettingsFacts()
+    {
+        OnPropertyChanged(nameof(IsDarkTheme));
+        OnPropertyChanged(nameof(IsLightTheme));
+        OnPropertyChanged(nameof(MotionState));
+        OnPropertyChanged(nameof(HighContrastState));
+        OnPropertyChanged(nameof(CapturesFolder));
+        OnPropertyChanged(nameof(LogsFolder));
+    }
+
+    /// <summary>
+    /// Applies one of the two real theme modes. This is the same ThemeManager
+    /// call the rail's theme toggle makes; the drawer's segmented control names
+    /// the mode explicitly instead of flipping it.
+    /// </summary>
+    public void SetTheme(bool dark)
+    {
+        ThemeManager.Apply(dark ? Services.ThemeMode.Dark : Services.ThemeMode.Light);
+        OnPropertyChanged(nameof(IsDarkTheme));
+        OnPropertyChanged(nameof(IsLightTheme));
+    }
+
     public string PrimaryActionText => SelectedDevice switch
     {
         null => "Create device",
@@ -2268,7 +2393,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ToggleTheme()
     {
-        ThemeManager.Apply(ThemeManager.IsDark ? Services.ThemeMode.Light : Services.ThemeMode.Dark);
+        // UX-06: the settings drawer names both modes and shows the name and the
+        // segmented selection, so the facts are re-raised with the swap.
+        SetTheme(!ThemeManager.IsDark);
     }
 
     private void ClearLog()
@@ -3226,6 +3353,41 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             StatusMessage = "Could not open the artifact: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// UX-06: copies a workspace path from the settings drawer's path row. The
+    /// same Clipboard call and the same status sentence as the capture toast, so
+    /// a copy behaves identically wherever it is offered.
+    /// </summary>
+    public void CopyPath(string path)
+    {
+        try
+        {
+            Clipboard.SetText(path);
+            StatusMessage = "Copied: " + path;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not copy the path: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// UX-06: opens a folder in Explorer. The folder exists by the time it is
+    /// shown (the workspace root, and the capture/log folders are created on
+    /// demand), so this never invents a location.
+    /// </summary>
+    public void OpenFolder(string path)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not open the folder: " + ex.Message;
         }
     }
 

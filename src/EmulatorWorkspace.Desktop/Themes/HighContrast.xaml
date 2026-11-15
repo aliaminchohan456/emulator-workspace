@@ -30,6 +30,9 @@
           so selection is never colour-only. -->
     <SolidColorBrush x:Key="AccentSoftBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="ScrimBg" Color="#80000000" />
+    <!-- UX-06: high contrast keeps the 50 % scrim; depth and separators are
+          carried by the system frame colour, not by the dimming level. -->
+    <SolidColorBrush x:Key="SettingsScrimBg" Color="#80000000" />
     <!-- UX-04b: the specular edge keeps the system window text colour, in a
           vertical top-to-bottom gradient like the other themes. -->
     <LinearGradientBrush x:Key="SpecularEdge" StartPoint="0,0" EndPoint="0,1">
