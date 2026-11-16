@@ -184,11 +184,15 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Grid Background="Transparent">
-                            <Border x:Name="Fill" Background="Transparent" CornerRadius="6" />
+                            <!-- UX-15: the hover/selection layers cover the 44 DIP
+                                 row only, never the "Past" rule above it. -->
+                            <Border x:Name="Fill" Background="Transparent" CornerRadius="6"
+                                    Height="44" VerticalAlignment="Bottom" />
                             <Border x:Name="PART_Hover" Background="{DynamicResource HoverBg}" Opacity="0"
-                                    CornerRadius="6" IsHitTestVisible="False" />
+                                    CornerRadius="6" Height="44" VerticalAlignment="Bottom" IsHitTestVisible="False" />
                             <Border x:Name="Ring" BorderThickness="1" CornerRadius="6"
                                     BorderBrush="{DynamicResource FocusRing}" Opacity="0"
+                                    Height="44" VerticalAlignment="Bottom"
                                     IsHitTestVisible="False" />
                             <ContentPresenter />
                         </Grid>
@@ -205,19 +209,32 @@
             </Setter>
         </Style>
 
-        <!-- The per-row Revoke: a 24 DIP err-outline button that is only live on a
-             session that can still be revoked. -->
+        <!-- UX-15 item 5: the per-row Revoke is a ghost text button in text2
+             that takes the err colour on hover and keyboard focus. It stays only
+             live on a session that can still be revoked; the confirm flow in
+             OnRevoke is unchanged. -->
         <Style x:Key="RowRevoke" TargetType="Button" BasedOn="{StaticResource ToolButton}">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}" />
-            <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Height" Value="24" />
             <Setter Property="MinHeight" Value="24" />
-            <Setter Property="Width" Value="46" />
-            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="52" />
+            <Setter Property="Padding" Value="6,0" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontSize" Value="11" />
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource TextDisabled}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- The empty state of one card: icon, one title, one caption, centred
@@ -266,29 +283,39 @@
         </Grid.RowDefinitions>
 
         <!-- Page header: the mockup's AUTOMATION eyebrow, the title and the
-             one-line caption on the left, the real counts in text2 at the right. -->
+             one-line caption on the left, the real counts at the right. UX-15
+             item 9: the counts sit in the caption's own row, so they share its
+             baseline instead of hanging off the title. -->
         <Grid Grid.Row="0" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MinWidth="0" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                <TextBlock Text="AUTOMATION" Style="{StaticResource CardTitle}" />
-                <TextBlock Text="Agent Sessions" Style="{StaticResource PageText}" Margin="0,2,0,0" />
-                <TextBlock Style="{StaticResource Body}" FontSize="13" Margin="0,3,0,0"
+            <TextBlock Grid.Row="0" Text="AUTOMATION" Style="{StaticResource CardTitle}" />
+            <TextBlock Grid.Row="1" Text="Agent Sessions" Style="{StaticResource PageText}" Margin="0,2,0,0" />
+
+            <Grid Grid.Row="2" Margin="0,3,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="0" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Style="{StaticResource Body}" FontSize="13"
+                           VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSecondary}"
                            TextTrimming="CharacterEllipsis"
                            Text="Local clients bound to disposable lab guests. Off by default; each pairing names the caller, device, scopes and expiry." />
-            </StackPanel>
 
-            <TextBlock Grid.Column="1" Text="{Binding SummaryText, ElementName=Page}"
-                       Style="{StaticResource Body}" FontSize="13"
-                       Typography.NumeralAlignment="Tabular"
-                       Foreground="{DynamicResource TextSecondary}"
-                       VerticalAlignment="Bottom" Margin="16,0,0,2"
-                       AutomationProperties.LiveSetting="Polite"
-                       AutomationProperties.Name="Session counts" />
+                <TextBlock Grid.Column="1" Text="{Binding SummaryText, ElementName=Page}"
+                           Style="{StaticResource Body}" FontSize="13"
+                           Typography.NumeralAlignment="Tabular"
+                           Foreground="{DynamicResource TextSecondary}"
+                           VerticalAlignment="Center" Margin="16,0,0,0"
+                           AutomationProperties.LiveSetting="Polite"
+                           AutomationProperties.Name="Session counts" />
+            </Grid>
         </Grid>
 
         <!-- Refresh failure: err-soft band with one sentence and a Retry, the
@@ -318,7 +345,10 @@
 
         <!-- Wide: the 320 DIP card beside the two tables. Stacked (below 1180
              DIP): the card above them and the whole body scrolls, because the
-             three panels need more height than a short window has. -->
+             three panels need more height than a short window has. UX-15 item 8:
+             at wide the body itself does not scroll; the left column owns a
+             scroll viewer that shows a bar only when the card is taller than the
+             window. -->
         <ScrollViewer x:Name="BodyScroll" Grid.Row="2"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
@@ -336,8 +366,12 @@
 
                 <!-- Approval card: the pairing requests, the template the approval
                      clones, the scopes it grants, and one accent primary. There is
-                     no Deny action because the supervisor has no deny operation. -->
-                <Border x:Name="PairingCard" Grid.Row="0" Grid.Column="0" Padding="14"
+                     no Deny action because the supervisor has no deny operation.
+                     UX-15 item 8: content-sized with 16 DIP under the caption. -->
+                <ScrollViewer x:Name="LeftScroll" Grid.Row="0" Grid.Column="0"
+                              VerticalScrollBarVisibility="Disabled"
+                              HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <Border x:Name="PairingCard" Padding="14,14,14,16"
                         VerticalAlignment="Top">
                     <Border.Style>
                         <Style TargetType="Border" BasedOn="{StaticResource Panel}">
@@ -384,31 +418,53 @@
                               Visibility="{Binding Items.Count, ElementName=PairingsGrid, Converter={StaticResource CountVis}}">
                             <ListBox x:Name="PairingsGrid"
                                      ItemContainerStyle="{StaticResource PairingRowItem}"
-                                     SelectionMode="Single" MaxHeight="138"
+                                     SelectionMode="Single" MaxHeight="164"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                                      AutomationProperties.Name="Agent pairing requests">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Height="44" AutomationProperties.Name="{Binding AccessibleName}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="6,0,6,0">
-                                                <TextBlock Text="{Binding Client}" Style="{StaticResource RowText}"
-                                                           FontSize="12" FontWeight="SemiBold"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Pairing}" Style="{StaticResource RowMono}"
-                                                           FontSize="10" Foreground="{DynamicResource TextTertiary}"
-                                                           Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                                        <!-- UX-15 item 1: answered requests sit under a
+                                             thin "Past" rule, dimmed to 85 %. The strip
+                                             exists only above the first past request. -->
+                                        <Grid AutomationProperties.Name="{Binding AccessibleName}">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                                                        Margin="6,8,6,6"
+                                                        Visibility="{Binding IsFirstPast, Converter={StaticResource BoolToVis}}">
+                                                <Border Width="12" Height="1" VerticalAlignment="Center"
+                                                        Background="{DynamicResource BorderSubtle}" />
+                                                <TextBlock Text="Past" Style="{StaticResource Caption}"
+                                                           FontSize="10" Margin="6,0,0,0"
+                                                           Foreground="{DynamicResource TextTertiary}" />
+                                                <Border Height="1" Margin="6,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Background="{DynamicResource BorderSubtle}"
+                                                        HorizontalAlignment="Stretch" />
                                             </StackPanel>
-                                            <Border Grid.Column="1" Style="{StaticResource ToneChip}"
-                                                    VerticalAlignment="Center" Margin="0,0,4,0">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Ellipse Style="{StaticResource ToneDot}" />
-                                                    <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource ToneChipText}" />
+                                            <Grid Grid.Row="1" Height="44" Opacity="{Binding RowOpacity}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Margin="6,0,6,0">
+                                                    <TextBlock Text="{Binding Client}" Style="{StaticResource RowText}"
+                                                               FontSize="12" FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Pairing}" Style="{StaticResource RowMono}"
+                                                               FontSize="10" Foreground="{DynamicResource TextTertiary}"
+                                                               Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
                                                 </StackPanel>
-                                            </Border>
+                                                <Border Grid.Column="1" Style="{StaticResource ToneChip}"
+                                                        VerticalAlignment="Center" Margin="0,0,4,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse Style="{StaticResource ToneDot}" />
+                                                        <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource ToneChipText}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
@@ -437,14 +493,21 @@
                                 <TextBlock Grid.Column="1" Style="{StaticResource FieldValue}"
                                            Text="{Binding SelectedItem.Client, ElementName=PairingsGrid, TargetNullValue=—, FallbackValue=—}" />
                             </Grid>
-                            <Grid Margin="0,0,0,6">
+                            <!-- UX-15 item 2: the request carries no template of its
+                                 own (the field read empty), so the row prints the
+                                 real guest the approval will clone - the same
+                                 selection the dropdown below holds - and disappears
+                                 when no template is selected at all. -->
+                            <Grid Margin="0,0,0,6"
+                                  Visibility="{Binding SelectedItem, ElementName=TemplateBox, Converter={StaticResource NullToVis}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Template" Style="{StaticResource FieldLabel}" />
                                 <TextBlock Grid.Column="1" Style="{StaticResource FieldValue}"
-                                           Text="{Binding SelectedItem.Template, ElementName=PairingsGrid, TargetNullValue=—, FallbackValue=—}" />
+                                           Text="{Binding SelectedItem.Name, ElementName=TemplateBox, TargetNullValue=—, FallbackValue=—}"
+                                           ToolTip="{Binding SelectedItem.Display, ElementName=TemplateBox}" />
                             </Grid>
                             <Grid Margin="0,0,0,6">
                                 <Grid.ColumnDefinitions>
@@ -453,12 +516,16 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Expires" Style="{StaticResource FieldLabel}" />
                                 <TextBlock Grid.Column="1"
-                                           FontFamily="{StaticResource MonoFont}" FontWeight="Normal"
                                            Text="{Binding SelectedItem.Countdown, ElementName=PairingsGrid, TargetNullValue=—, FallbackValue=—}"
                                            ToolTip="{Binding SelectedItem.ExpiresText, ElementName=PairingsGrid}">
                                     <TextBlock.Style>
+                                        <!-- UX-15 item 2: a human countdown is a UI value,
+                                             not an identifier, so it sets in the UI face
+                                             with tabular figures and turns warn inside the
+                                             last minute. -->
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldValue}">
                                             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedItem.Expiring, ElementName=PairingsGrid}" Value="True">
                                                     <Setter Property="Foreground" Value="{DynamicResource Warning}" />
@@ -470,20 +537,40 @@
                             </Grid>
 
                             <TextBlock Text="Scopes" Style="{StaticResource FieldLabel}" Margin="0,8,0,4" />
+                            <!-- UX-15 item 3: one line tall when the grant is one
+                                 scope, growing to four wrapped lines and then
+                                 scrolling, with 12 DIP sides and 8 DIP top and
+                                 bottom - no fixed 64 DIP box with dead space. -->
                             <TextBox x:Name="ScopesBox" FontFamily="{StaticResource MonoFont}" FontSize="11"
-                                     Padding="7,4" MinHeight="64" Height="64" TextWrapping="Wrap"
-                                     AcceptsReturn="False" VerticalScrollBarVisibility="Disabled"
+                                     Padding="12,8" MinHeight="30" MaxHeight="78" TextWrapping="Wrap"
+                                     AcceptsReturn="False" VerticalScrollBarVisibility="Auto"
                                      VerticalContentAlignment="Center"
                                      ToolTip="Comma-separated scopes granted to the paired client."
                                      AutomationProperties.Name="Approval scopes" />
 
-                            <TextBlock Text="Template" Style="{StaticResource FieldLabel}" Margin="0,10,0,4" />
+                            <TextBlock Text="Approve against" Style="{StaticResource FieldLabel}" Margin="0,10,0,4" />
                             <ComboBox x:Name="TemplateBox" Height="30"
                                       DisplayMemberPath="Display"
                                       AutomationProperties.Name="Approval template" />
 
-                            <Button x:Name="ApproveButton"
-                                    HorizontalAlignment="Stretch" Height="34" Margin="0,14,0,0"
+                            <!-- UX-15 item 4: at 1024 the card spans the page, so the
+                                 primary does not stretch across it - the caption keeps
+                                 the left and the button sits right at content width (136
+                                 minimum). Wide (320 DIP card) keeps the full-width
+                                 primary with the caption beneath it. ApplyLayout moves
+                                 the two children; the XAML here is the wide shape. -->
+                            <Grid x:Name="ApproveRow" Margin="0,14,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="0" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                            <Button x:Name="ApproveButton" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                    HorizontalAlignment="Stretch" Height="34" Margin="0"
                                     Click="OnApprove" AutomationProperties.Name="Approve selected pairing">
                                 <!-- Only a pending request can be approved: the
                                      supervisor rejects any other status, so the
@@ -520,15 +607,21 @@
                                                Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <TextBlock Style="{StaticResource Caption}" FontSize="11"
+                            <TextBlock x:Name="ApproveCaption" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Style="{StaticResource Caption}" FontSize="11"
                                        Foreground="{DynamicResource TextTertiary}" TextWrapping="Wrap"
                                        Margin="0,8,0,0"
                                        Text="Approval clones the stopped template and grants exactly these scopes." />
+                            </Grid>
                         </StackPanel>
                     </DockPanel>
                 </Border>
+                </ScrollViewer>
 
-                <Grid x:Name="TableStack" Grid.Row="0" Grid.Column="2">
+                <ScrollViewer x:Name="RightScroll" Grid.Row="0" Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <Grid x:Name="TableStack">
                     <Grid.RowDefinitions>
                         <!-- Both cards size to their content and keep a 120 DIP
                              floor for the empty state; the page body scrolls when
@@ -563,7 +656,7 @@
                                         <ColumnDefinition Width="1.6*" />
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="0.85*" />
-                                        <ColumnDefinition Width="48" />
+                                        <ColumnDefinition Width="64" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Session" Style="{StaticResource ColumnHead}" />
                                     <TextBlock Grid.Column="1" Text="Client" Style="{StaticResource ColumnHead}" />
@@ -590,16 +683,31 @@
                                                     <ColumnDefinition Width="1.6*" />
                                                     <ColumnDefinition Width="1*" />
                                                     <ColumnDefinition Width="0.85*" />
-                                                    <ColumnDefinition Width="48" />
+                                                    <ColumnDefinition Width="64" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Session}" Style="{StaticResource RowMono}"
                                                            ToolTip="{Binding Session}" />
                                                 <TextBlock Grid.Column="1" Text="{Binding Client}"
                                                            Style="{StaticResource RowText}" Margin="0,0,10,0"
                                                            ToolTip="{Binding Client}" />
-                                                <TextBlock Grid.Column="2" Text="{Binding Instance}"
-                                                           Style="{StaticResource RowMono}" Margin="0,0,10,0"
-                                                           ToolTip="{Binding Instance}" />
+                                                <!-- UX-15 item 6: the supervisor names the
+                                                     guest, not a friendly alias, so the raw
+                                                     id is what the column prints, in mono
+                                                     text3. If a reported display name ever
+                                                     arrives it takes the UI face and the id
+                                                     stays beneath it. -->
+                                                <Grid Grid.Column="2" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                      ToolTip="{Binding GuestTip}">
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding GuestName}"
+                                                                   Style="{StaticResource RowText}" FontSize="12"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Visibility="{Binding HasGuestName, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Text="{Binding GuestId}" Style="{StaticResource RowMono}"
+                                                                   FontSize="10.5" Foreground="{DynamicResource TextTertiary}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Grid>
                                                 <Grid Grid.Column="3" Margin="0,0,10,0" ClipToBounds="True">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                                                                 ToolTip="{Binding ScopeTip}">
@@ -628,7 +736,13 @@
                                                            Margin="0,0,10,0"
                                                            ToolTip="{Binding ExpiresText}">
                                                     <TextBlock.Style>
-                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RowMono}">
+                                                        <!-- UX-15 item 2: a countdown is a human
+                                                             value, so it sets in the UI face with
+                                                             tabular figures, and turns warn in the
+                                                             last minute. -->
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RowText}">
+                                                            <Setter Property="FontSize" Value="12" />
+                                                            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
                                                             <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding Tone}" Value="warn">
@@ -697,6 +811,7 @@
                                     <TextBlock Grid.Column="2" Text="Operation" Style="{StaticResource ColumnHead}" Margin="0,0,10,0" />
                                     <TextBlock Grid.Column="3" Text="Outcome" Style="{StaticResource ColumnHead}" />
                                     <TextBlock Grid.Column="4" Text="ms" Style="{StaticResource ColumnHead}"
+                                               Typography.NumeralAlignment="Tabular"
                                                TextAlignment="Right" />
                                 </Grid>
                             </Border>
@@ -725,8 +840,12 @@
                                                 <TextBlock Grid.Column="2" Text="{Binding Operation}"
                                                            Style="{StaticResource RowMono}" Margin="0,0,10,0"
                                                            ToolTip="{Binding Operation}" />
+                                                <!-- UX-15 item 7: the outcome chip hugs its
+                                                     words instead of filling the column; the
+                                                     column width is the cap, not the size. -->
                                                 <Border Grid.Column="3" Style="{StaticResource ToneChip}"
                                                         HorizontalAlignment="Left" MaxWidth="220"
+                                                        Margin="0,0,10,0"
                                                         ToolTip="{Binding Code}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Ellipse Style="{StaticResource ToneDot}" />
@@ -736,7 +855,9 @@
                                                     </StackPanel>
                                                 </Border>
                                                 <TextBlock Grid.Column="4" Text="{Binding Duration}"
-                                                           Style="{StaticResource RowMono}" TextAlignment="Right"
+                                                           Style="{StaticResource RowText}" FontSize="12"
+                                                           Typography.NumeralAlignment="Tabular"
+                                                           TextAlignment="Right"
                                                            Foreground="{DynamicResource TextTertiary}" />
                                             </Grid>
                                         </DataTemplate>
@@ -754,6 +875,7 @@
                         </DockPanel>
                     </Border>
                 </Grid>
+                </ScrollViewer>
             </Grid>
         </ScrollViewer>
     </Grid>

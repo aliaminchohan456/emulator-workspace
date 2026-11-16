@@ -194,4 +194,113 @@ public class AgentSessionsPresentationTests
     [InlineData("hyphen-code", "Hyphen code")]
     public void CodeLabel_MapsTheSupervisorCodeToWords(string? code, string expected) =>
         Assert.Equal(expected, AgentSessionsPresentation.CodeLabel(code));
+
+    // UX-15 item 1: the Past rule. A request is waiting only while it is
+    // "pending" and inside its window; everything else is answered.
+    [Fact]
+    public void IsPendingPairing_UsesTheSameClockAsTheChip()
+    {
+        var now = new DateTimeOffset(2026, 11, 16, 6, 0, 0, TimeSpan.Zero);
+
+        Assert.True(AgentSessionsPresentation.IsPendingPairing("pending", now.AddSeconds(30), now));
+        Assert.True(AgentSessionsPresentation.IsPendingPairing("PENDING", null, now));
+        Assert.False(AgentSessionsPresentation.IsPendingPairing("pending", now.AddSeconds(-1), now));
+        Assert.False(AgentSessionsPresentation.IsPendingPairing("approved", now.AddMinutes(5), now));
+        Assert.False(AgentSessionsPresentation.IsPendingPairing("", now.AddMinutes(5), now));
+
+        Assert.False(AgentSessionsPresentation.IsPastPairing("pending", now.AddSeconds(30), now));
+        Assert.True(AgentSessionsPresentation.IsPastPairing("completed", now.AddMinutes(5), now));
+        Assert.True(AgentSessionsPresentation.IsPastPairing("pending", now, now));
+    }
+
+    [Fact]
+    public void PartitionPairings_PutsTheWaitingRequestFirstAndKeepsTheRealOrder()
+    {
+        var now = new DateTimeOffset(2026, 11, 16, 6, 0, 0, TimeSpan.Zero);
+        var rows = new[]
+        {
+            (Client: "studio-bot", Status: "completed", Expires: (DateTimeOffset?)now.AddMinutes(-1)),
+            (Client: "qa-runner", Status: "pending", Expires: (DateTimeOffset?)now.AddSeconds(48)),
+            (Client: "opencode-cli", Status: "expired", Expires: (DateTimeOffset?)now.AddMinutes(-3)),
+            (Client: "lab", Status: "pending", Expires: (DateTimeOffset?)now.AddMinutes(-2)),
+        };
+
+        var (live, past) = AgentSessionsPresentation.PartitionPairings(
+            rows, row => row.Status, row => row.Expires, now);
+
+        Assert.Single(live);
+        Assert.Equal("qa-runner", live[0].Client);
+        Assert.Equal(new[] { "studio-bot", "opencode-cli", "lab" }, past.Select(row => row.Client));
+
+        var (noneLive, allPast) = AgentSessionsPresentation.PartitionPairings(
+            rows.Where(row => row.Status != "pending"), row => row.Status, row => row.Expires, now);
+        Assert.Empty(noneLive);
+        Assert.Equal(2, allPast.Count);
+    }
+}
+
+/// <summary>
+/// UX-15 item 0: the badge poll's lifetime rule. The timer may run only when the
+/// supervisor is connected and the window is not minimised; a disconnect stops
+/// it outright and a minimise pauses it until the window returns.
+/// </summary>
+public class PendingPairingPollTests
+{
+    [Fact]
+    public void Poll_NeverRunsBeforeAConnection()
+    {
+        var poll = new PendingPairingPoll();
+
+        Assert.False(poll.ShouldPoll);
+        Assert.Equal("stopped: disconnected", poll.State);
+        Assert.Equal(TimeSpan.FromSeconds(10), PendingPairingPoll.Interval);
+    }
+
+    [Fact]
+    public void Poll_StartsOnConnectAndPausesOnMinimise()
+    {
+        var poll = new PendingPairingPoll();
+
+        Assert.True(poll.OnConnected());
+        Assert.True(poll.ShouldPoll);
+        Assert.Equal("running", poll.State);
+
+        Assert.False(poll.OnMinimised());
+        Assert.False(poll.ShouldPoll);
+        Assert.Equal("paused: window minimised", poll.State);
+
+        Assert.True(poll.OnRestored());
+        Assert.True(poll.ShouldPoll);
+    }
+
+    [Fact]
+    public void Poll_StopsOnDisconnectAndStaysStoppedUntilReconnect()
+    {
+        var poll = new PendingPairingPoll();
+        poll.OnConnected();
+
+        Assert.False(poll.OnDisconnected());
+        Assert.False(poll.ShouldPoll);
+        Assert.Equal("stopped: disconnected", poll.State);
+
+        // A window restore must not bring the poll back on its own.
+        Assert.False(poll.OnRestored());
+        Assert.False(poll.ShouldPoll);
+
+        Assert.True(poll.OnConnected());
+        Assert.True(poll.ShouldPoll);
+    }
+
+    [Fact]
+    public void Poll_StaysPausedWhenTheSupervisorReconnectsBehindAMinimisedWindow()
+    {
+        var poll = new PendingPairingPoll();
+        poll.OnMinimised();
+
+        Assert.False(poll.OnConnected());
+        Assert.False(poll.ShouldPoll);
+
+        Assert.True(poll.OnRestored());
+        Assert.True(poll.ShouldPoll);
+    }
 }

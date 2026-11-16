@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
@@ -8,6 +10,7 @@ using System.Windows.Threading;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Core.Supervisor;
 using EmulatorWorkspace.Core.Workspace;
+using EmulatorWorkspace.Desktop.Services;
 using EmulatorWorkspace.Desktop.ViewModels;
 
 namespace EmulatorWorkspace.Desktop.Views;
@@ -61,9 +64,15 @@ public partial class AgentSessionsPage : UserControl
     private readonly ObservableCollection<PairingRow> _pairings = new();
     private readonly ObservableCollection<OperationRow> _operations = new();
     private readonly DispatcherTimer _countdown;
+    private readonly DispatcherTimer _badgePoll;
+    private readonly PendingPairingPoll _pollState = new();
     private SupervisorConnection? _connection;
+    private Window? _shellWindow;
+    private MainViewModel? _shellModel;
     private bool _busy;
+    private bool _pollBusy;
     private bool _loadedOnce;
+    private int _lastPolledPending = -1;
 
     public AgentSessionsPage()
     {
@@ -81,14 +90,29 @@ public partial class AgentSessionsPage : UserControl
         };
         _countdown.Tick += (_, _) => Tick();
 
+        // UX-15 item 0: the rail badge's own light poll. It reads only the
+        // pending count, only while the shell is connected, and only while the
+        // window is not minimised; the page's ticker above is unrelated and
+        // still stops whenever the page is hidden.
+        _badgePoll = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = PendingPairingPoll.Interval,
+        };
+        _badgePoll.Tick += async (_, _) => await PollBadgeAsync();
+
         Loaded += (_, _) =>
         {
             ApplyLayout(ActualWidth);
+            HookShell();
             if (IsVisible)
             {
                 ActivatePage();
             }
+
+            SyncBadgePoll();
         };
+        Unloaded += (_, _) => UnhookShell();
+        DataContextChanged += (_, _) => HookShell();
         IsVisibleChanged += (_, e) =>
         {
             if ((bool)e.NewValue)
@@ -166,6 +190,15 @@ public partial class AgentSessionsPage : UserControl
     public void ActivatePage()
     {
         _countdown.Start();
+
+        // UX-15 item 0: a stopped poll comes back when the shell is connected
+        // again and the operator uses the page; plain re-entry while running
+        // changes nothing.
+        if (_shellModel?.IsConnected == true)
+        {
+            ResumeBadgePoll();
+        }
+
         if (!_loadedOnce)
         {
             _loadedOnce = true;
@@ -182,7 +215,10 @@ public partial class AgentSessionsPage : UserControl
     /// <summary>
     /// The mockup puts the approval card beside the tables at 1180 DIP and wider
     /// and stacks it above them below that. The switch only moves the three
-    /// panels; no content changes.
+    /// panels; no content changes. UX-15: at wide the page body no longer
+    /// scrolls as a whole - each column owns a scroll viewer that shows its bar
+    /// only when that column is taller than the window - and the approval
+    /// primary keeps its content width at 1024 instead of spanning the card.
     /// </summary>
     private void ApplyLayout(double width)
     {
@@ -203,27 +239,61 @@ public partial class AgentSessionsPage : UserControl
             TopRow.Height = GridLength.Auto;
             GapRow.Height = new GridLength(12);
             BodyRow.Height = GridLength.Auto;
-            Grid.SetRow(PairingCard, 0);
-            Grid.SetColumn(PairingCard, 0);
-            Grid.SetColumnSpan(PairingCard, 3);
-            Grid.SetColumn(TableStack, 0);
-            Grid.SetColumnSpan(TableStack, 3);
-            Grid.SetRow(TableStack, 2);
+            Grid.SetRow(LeftScroll, 0);
+            Grid.SetColumn(LeftScroll, 0);
+            Grid.SetColumnSpan(LeftScroll, 3);
+            Grid.SetColumn(RightScroll, 0);
+            Grid.SetColumnSpan(RightScroll, 3);
+            Grid.SetRow(RightScroll, 2);
+            BodyScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            LeftScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            RightScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+
+            // The caption keeps the left of one line and the primary sits at its
+            // own content width (136 minimum) on the right.
+            Grid.SetRow(ApproveButton, 0);
+            Grid.SetColumn(ApproveButton, 1);
+            Grid.SetColumnSpan(ApproveButton, 1);
+            ApproveButton.HorizontalAlignment = HorizontalAlignment.Right;
+            ApproveButton.MinWidth = 136;
+            ApproveButton.Padding = new Thickness(16, 6, 16, 6);
+            Grid.SetRow(ApproveCaption, 0);
+            Grid.SetColumn(ApproveCaption, 0);
+            Grid.SetColumnSpan(ApproveCaption, 1);
+            ApproveCaption.VerticalAlignment = VerticalAlignment.Center;
+            ApproveCaption.Margin = new Thickness(0, 0, 12, 0);
         }
         else
         {
             LeftColumn.Width = new GridLength(320);
             GapColumn.Width = new GridLength(12);
             RightColumn.Width = new GridLength(1, GridUnitType.Star);
-            TopRow.Height = GridLength.Auto;
+            TopRow.Height = new GridLength(1, GridUnitType.Star);
             GapRow.Height = new GridLength(0);
             BodyRow.Height = new GridLength(0);
-            Grid.SetRow(PairingCard, 0);
-            Grid.SetColumn(PairingCard, 0);
-            Grid.SetColumnSpan(PairingCard, 1);
-            Grid.SetColumn(TableStack, 2);
-            Grid.SetColumnSpan(TableStack, 1);
-            Grid.SetRow(TableStack, 0);
+            Grid.SetRow(LeftScroll, 0);
+            Grid.SetColumn(LeftScroll, 0);
+            Grid.SetColumnSpan(LeftScroll, 1);
+            Grid.SetColumn(RightScroll, 2);
+            Grid.SetColumnSpan(RightScroll, 1);
+            Grid.SetRow(RightScroll, 0);
+            BodyScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            LeftScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            RightScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+
+            // The 320 DIP card keeps the full-width primary with the caption
+            // beneath it, as the mockup draws it.
+            Grid.SetRow(ApproveButton, 0);
+            Grid.SetColumn(ApproveButton, 0);
+            Grid.SetColumnSpan(ApproveButton, 2);
+            ApproveButton.HorizontalAlignment = HorizontalAlignment.Stretch;
+            ApproveButton.MinWidth = 0;
+            ApproveButton.Padding = new Thickness(14, 6, 14, 6);
+            Grid.SetRow(ApproveCaption, 1);
+            Grid.SetColumn(ApproveCaption, 0);
+            Grid.SetColumnSpan(ApproveCaption, 2);
+            ApproveCaption.VerticalAlignment = VerticalAlignment.Top;
+            ApproveCaption.Margin = new Thickness(0, 8, 0, 0);
         }
     }
 
@@ -247,6 +317,210 @@ public partial class AgentSessionsPage : UserControl
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
 
     private async void OnRetry(object sender, RoutedEventArgs e) => await RefreshAsync();
+
+    /// <summary>
+    /// UX-15 item 0: follows the shell's supervisor connection and the window's
+    /// state so the badge poll never outlives either. The page is hosted, so the
+    /// main window and its view model are the shell's; both are observed, never
+    /// changed.
+    /// </summary>
+    private void HookShell()
+    {
+        if (_shellWindow is null && Window.GetWindow(this) is { } window)
+        {
+            _shellWindow = window;
+            window.StateChanged += OnShellStateChanged;
+            ApplyShellState(window.WindowState == WindowState.Minimized);
+        }
+
+        if (DataContext is MainViewModel model && !ReferenceEquals(model, _shellModel))
+        {
+            if (_shellModel is not null)
+            {
+                _shellModel.PropertyChanged -= OnShellModelPropertyChanged;
+            }
+
+            _shellModel = model;
+            model.PropertyChanged += OnShellModelPropertyChanged;
+            ApplyShellConnection(model.IsConnected);
+        }
+    }
+
+    private void UnhookShell()
+    {
+        if (_shellWindow is not null)
+        {
+            _shellWindow.StateChanged -= OnShellStateChanged;
+            _shellWindow = null;
+        }
+
+        if (_shellModel is not null)
+        {
+            _shellModel.PropertyChanged -= OnShellModelPropertyChanged;
+            _shellModel = null;
+        }
+    }
+
+    private void OnShellStateChanged(object? sender, EventArgs e)
+    {
+        if (_shellWindow is { } window)
+        {
+            ApplyShellState(window.WindowState == WindowState.Minimized);
+        }
+    }
+
+    private void OnShellModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.IsConnected) && _shellModel is { } model)
+        {
+            ApplyShellConnection(model.IsConnected);
+        }
+    }
+
+    private void ApplyShellConnection(bool connected)
+    {
+        var was = _pollState.State;
+        if (connected)
+        {
+            _pollState.OnConnected();
+        }
+        else
+        {
+            _pollState.OnDisconnected();
+        }
+
+        if (was != _pollState.State)
+        {
+            DesktopLog.Write($"badge poll: {_pollState.State}");
+        }
+
+        SyncBadgePoll();
+    }
+
+    /// <summary>
+    /// A successful read proves a supervisor is reachable again, so a poll that
+    /// stopped on a broken pipe may start again - unless the window is
+    /// minimised, which the poll's own rule still honours.
+    /// </summary>
+    private void ResumeBadgePoll()
+    {
+        var was = _pollState.State;
+        _pollState.OnConnected();
+        if (was != _pollState.State)
+        {
+            DesktopLog.Write($"badge poll: {_pollState.State}");
+        }
+
+        SyncBadgePoll();
+    }
+
+    private void ApplyShellState(bool minimised)
+    {
+        var was = _pollState.State;
+        if (minimised)
+        {
+            _pollState.OnMinimised();
+        }
+        else
+        {
+            _pollState.OnRestored();
+        }
+
+        if (was != _pollState.State)
+        {
+            DesktopLog.Write($"badge poll: {_pollState.State}");
+        }
+
+        SyncBadgePoll();
+    }
+
+    /// <summary>Starts or stops the timer to match the poll's own lifetime rule.</summary>
+    private void SyncBadgePoll()
+    {
+        if (_pollState.ShouldPoll)
+        {
+            if (!_badgePoll.IsEnabled)
+            {
+                _badgePoll.Start();
+            }
+
+            return;
+        }
+
+        _badgePoll.Stop();
+    }
+
+    /// <summary>
+    /// One light read of the pairing list every ten seconds. Only the pending
+    /// count leaves this method: the tables, the selection and the counts the
+    /// last full refresh published stay exactly as they were.
+    /// </summary>
+    private async Task PollBadgeAsync()
+    {
+        if (_pollBusy || !_pollState.ShouldPoll)
+        {
+            return;
+        }
+
+        _pollBusy = true;
+        try
+        {
+            var connection = _connection ?? await EnsureConnectionAsync(TimeSpan.FromSeconds(5));
+            var response = await connection.RequestAsync(
+                OperationNames.AgentSessionList, null, TimeSpan.FromSeconds(5));
+            if (!response.Ok)
+            {
+                // A typed refusal (a scope problem, a bad request) is not a lost
+                // pipe; the badge simply keeps its last real value.
+                DesktopLog.Write($"badge poll: {response.Code} {response.Message}");
+                return;
+            }
+
+            var data = response.Data as JsonObject ?? new JsonObject();
+            var pairings = data["pairings"] as JsonArray ?? new JsonArray();
+            var now = DateTimeOffset.Now;
+            var pending = pairings
+                .OfType<JsonObject>()
+                .Count(node => AgentSessionsPresentation.IsPendingPairing(
+                    Text(node, "status"), Time(node, "expiresUtc"), now));
+
+            PendingPairingCount = pending;
+            if (pending != _lastPolledPending)
+            {
+                _lastPolledPending = pending;
+                DesktopLog.Write($"badge poll: {pending} pending pairing(s)");
+            }
+        }
+        catch (SupervisorUnavailableException ex)
+        {
+            StopBadgePollOnDisconnect(ex.Message);
+        }
+        catch (IOException ex)
+        {
+            // A vanished supervisor surfaces on the write side as a broken
+            // pipe, not as the reader's typed exception: both mean the same
+            // thing to the badge, so both stop it.
+            StopBadgePollOnDisconnect(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            // A slow or busy supervisor is not a disconnect: keep the schedule.
+            DesktopLog.Write("badge poll: transient " + ex.Message);
+        }
+        finally
+        {
+            _pollBusy = false;
+        }
+    }
+
+    /// <summary>The pipe is gone: drop it and stop the poll until the shell reconnects.</summary>
+    private void StopBadgePollOnDisconnect(string reason)
+    {
+        _connection = null;
+        _pollState.OnDisconnected();
+        _badgePoll.Stop();
+        DesktopLog.Write($"badge poll: stopped (disconnected) {reason}");
+    }
 
     private async Task RefreshAsync()
     {
@@ -278,23 +552,44 @@ public partial class AgentSessionsPage : UserControl
                     Text(node, "clientName"),
                     Text(node, "session"),
                     Text(node, "instance"),
+                    Text(node, "guestName"),
                     Text(node, "scopes"),
                     Time(node, "expiresUtc"),
                     Bool(node, "revoked") ? "revoked" : Bool(node, "expired") ? "expired" : "active",
                     now));
             }
 
-            _pairings.Clear();
-            foreach (var node in pairings.OfType<JsonObject>())
-            {
-                _pairings.Add(new PairingRow(
+            // UX-15 item 1: waiting requests first, answered ones under the
+            // "Past" rule, each group in the supervisor's own newest-first order.
+            // Only the first past row carries the divider, so a list with no past
+            // requests draws no divider at all.
+            var built = pairings
+                .OfType<JsonObject>()
+                .Select(node => new PairingRow(
                     Text(node, "clientName"),
                     Text(node, "pairingId"),
                     Text(node, "status"),
                     Text(node, "template"),
                     Text(node, "instance"),
                     Time(node, "expiresUtc"),
-                    now));
+                    now))
+                .ToList();
+            var (livePairings, pastPairings) = AgentSessionsPresentation.PartitionPairings(
+                built, row => row.Status, row => row.ExpiresUtc, now);
+
+            _pairings.Clear();
+            foreach (var row in livePairings)
+            {
+                _pairings.Add(row);
+            }
+
+            if (pastPairings.Count > 0)
+            {
+                pastPairings[0].MarkFirstPast();
+                foreach (var row in pastPairings)
+                {
+                    _pairings.Add(row);
+                }
             }
 
             // The approval card prints the selected request, so it keeps the
@@ -321,6 +616,11 @@ public partial class AgentSessionsPage : UserControl
             PublishCounts();
             HasError = false;
             ErrorText = "";
+
+            // The read just succeeded, so a supervisor is reachable again: a
+            // poll that stopped on a broken pipe may resume, unless the window
+            // is minimised (the poll's own rule keeps it paused then).
+            ResumeBadgePoll();
         }
         catch (Exception ex)
         {
@@ -360,9 +660,21 @@ public partial class AgentSessionsPage : UserControl
             .OrderBy(row => row.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
         TemplateBox.ItemsSource = templates;
+        // UX-15: a pending request is approved against a stopped template, and
+        // the supervisor names every agent clone "ag-…". Defaulting to the
+        // first stopped guest would offer a clone of a clone, so a real
+        // template wins when one exists; otherwise the old first-stopped rule
+        // still answers.
         TemplateBox.SelectedItem = templates.FirstOrDefault(row => row.Name == selected)
-                                   ?? templates.FirstOrDefault(row => row.State is "Defined" or "Stopped");
+                                   ?? templates.FirstOrDefault(row => IsTemplate(row) && !IsAgentClone(row))
+                                   ?? templates.FirstOrDefault(IsTemplate);
     }
+
+    private static bool IsTemplate(TemplateRow row) => row.State is "Defined" or "Stopped";
+
+    /// <summary>The supervisor's own name for a guest an approval cloned.</summary>
+    private static bool IsAgentClone(TemplateRow row) =>
+        row.Name.StartsWith("ag-", StringComparison.OrdinalIgnoreCase);
 
     private async void OnApprove(object sender, RoutedEventArgs e)
     {
@@ -470,7 +782,7 @@ public partial class AgentSessionsPage : UserControl
         }
     }
 
-    private async Task<SupervisorConnection> EnsureConnectionAsync()
+    private async Task<SupervisorConnection> EnsureConnectionAsync(TimeSpan? startup = null)
     {
         if (_connection is not null)
         {
@@ -478,7 +790,7 @@ public partial class AgentSessionsPage : UserControl
         }
 
         _connection = await SupervisorConnection.ConnectAsync(
-            WorkspacePaths.Resolve().Root, TimeSpan.FromSeconds(20));
+            WorkspacePaths.Resolve().Root, startup ?? TimeSpan.FromSeconds(20));
         return _connection;
     }
 
@@ -565,12 +877,17 @@ public partial class AgentSessionsPage : UserControl
         private bool _canRevoke;
 
         public SessionRow(
-            string client, string session, string instance, string scopes,
+            string client, string session, string instance, string guestName, string scopes,
             DateTimeOffset? expiresUtc, string state, DateTimeOffset now)
         {
             Client = client;
             Session = session;
             Instance = instance;
+            // UX-15 item 6: the supervisor reports the guest's own id, not a
+            // friendly alias. Only a value that really arrived is printed as a
+            // name; otherwise the raw id stands alone in mono text3.
+            GuestName = guestName.Length > 0 ? guestName : instance;
+            HasGuestName = guestName.Length > 0;
             Scopes = scopes;
             ExpiresUtc = expiresUtc;
             State = state;
@@ -588,6 +905,17 @@ public partial class AgentSessionsPage : UserControl
         public string Session { get; }
 
         public string Instance { get; }
+
+        /// <summary>The friendly guest name when the supervisor reports one, else the raw id.</summary>
+        public string GuestName { get; }
+
+        /// <summary>True only when <see cref="GuestName"/> came from the supervisor, not from the id.</summary>
+        public bool HasGuestName { get; }
+
+        /// <summary>The guest's raw id, printed in mono text3 under a friendly name.</summary>
+        public string GuestId => Instance;
+
+        public string GuestTip => HasGuestName ? $"{GuestName} · {Instance}" : Instance;
 
         public string Scopes { get; }
 
@@ -662,6 +990,7 @@ public partial class AgentSessionsPage : UserControl
         private string _tone = "neutral";
         private bool _expiring;
         private bool _isPending;
+        private bool _isFirstPast;
 
         public PairingRow(
             string client, string pairing, string status, string template,
@@ -674,6 +1003,7 @@ public partial class AgentSessionsPage : UserControl
             Instance = instance;
             ExpiresUtc = expiresUtc;
             ExpiresText = expiresUtc?.ToString("dd MMM HH:mm:ss", CultureInfo.CurrentCulture) ?? "—";
+            IsPast = AgentSessionsPresentation.IsPastPairing(status, expiresUtc, now);
             Tick(now);
         }
 
@@ -723,7 +1053,24 @@ public partial class AgentSessionsPage : UserControl
             private set => SetProperty(ref _expiring, value);
         }
 
-        public string AccessibleName => $"{StatusLabel} pairing request from {Client}";
+        /// <summary>True when the request sits in the Past group at 85 % opacity.</summary>
+        public bool IsPast { get; }
+
+        /// <summary>Row opacity: past requests read quieter than the live one.</summary>
+        public double RowOpacity => IsPast ? 0.85 : 1.0;
+
+        /// <summary>The row that draws the thin "Past" rule: only the first past one.</summary>
+        public bool IsFirstPast
+        {
+            get => _isFirstPast;
+            private set => SetProperty(ref _isFirstPast, value);
+        }
+
+        public void MarkFirstPast() => IsFirstPast = true;
+
+        public string AccessibleName => IsPast
+            ? $"{StatusLabel} pairing request from {Client}, past"
+            : $"{StatusLabel} pairing request from {Client}";
 
         public void Tick(DateTimeOffset now)
         {

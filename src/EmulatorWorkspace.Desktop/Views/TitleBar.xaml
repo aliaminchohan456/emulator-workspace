@@ -60,8 +60,10 @@
 
         <!-- Close keeps the same geometry and takes the Windows close red on
              hover (#C42B1C) with a white glyph, in both themes (igr-feedback-ux13
-             item 2); the press step is the same red at 90 %. Every other caption
-             button stays on the neutral Chip/Pressed layers. -->
+             item 2). UX-15b: the press step is a solid #A8251A - visibly darker
+             than hover instead of the same red at 90 % - and the glyph drops to
+             90 % on press. Every other caption button stays on the neutral
+             Chip/Pressed layers. -->
         <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -75,8 +77,16 @@
                             <Border x:Name="PART_Press" Background="{DynamicResource CaptionClosePress}"
                                     CornerRadius="{StaticResource RadiusControl}" Opacity="0"
                                     IsHitTestVisible="False" />
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ContentPresenter x:Name="Glyph" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Glyph" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="views:Motion.CaptionPressed" Value="True">
+                                <Setter TargetName="Glyph" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

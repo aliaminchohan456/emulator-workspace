@@ -294,6 +294,52 @@ public static class AgentSessionsPresentation
         return value.Length == 0 ? "Unknown" : Normalize(value) == "defined" ? "Stopped" : Capitalize(value);
     }
 
+    /// <summary>
+    /// UX-15: a request still waiting for an answer. The supervisor calls it
+    /// "pending"; a pending request whose window has closed is answered by time
+    /// and belongs with the past ones, exactly like the chip that already reads
+    /// "Expired" without a refresh.
+    /// </summary>
+    public static bool IsPendingPairing(string? status, DateTimeOffset? expiresUtc, DateTimeOffset now) =>
+        Normalize(status) == "pending" && (expiresUtc is null || expiresUtc > now);
+
+    /// <summary>
+    /// The other half of the same rule: expired, approved, completed, denied or
+    /// any state the supervisor has moved on from. Unknown words count as past
+    /// because nothing can be approved on them.
+    /// </summary>
+    public static bool IsPastPairing(string? status, DateTimeOffset? expiresUtc, DateTimeOffset now) =>
+        !IsPendingPairing(status, expiresUtc, now);
+
+    /// <summary>
+    /// UX-15 item 1: the pairing list prints the waiting requests first and the
+    /// answered ones afterwards, each group in the order the supervisor returned
+    /// (newest first). The split is by the same clock the chips use, so the list
+    /// and the "Expired" label never disagree.
+    /// </summary>
+    public static (IReadOnlyList<T> Live, IReadOnlyList<T> Past) PartitionPairings<T>(
+        IEnumerable<T> rows,
+        Func<T, string?> status,
+        Func<T, DateTimeOffset?> expiresUtc,
+        DateTimeOffset now)
+    {
+        var live = new List<T>();
+        var past = new List<T>();
+        foreach (var row in rows)
+        {
+            if (IsPendingPairing(status(row), expiresUtc(row), now))
+            {
+                live.Add(row);
+            }
+            else
+            {
+                past.Add(row);
+            }
+        }
+
+        return (live, past);
+    }
+
     /// <summary>"3 sessions · 1 pairing" for the window's status line.</summary>
     public static string Summary(int sessions, int pairings) =>
         string.Format(
@@ -310,4 +356,57 @@ public static class AgentSessionsPresentation
 
     private static string Capitalize(string value) =>
         char.ToUpperInvariant(value[0]) + value[1..];
+}
+
+/// <summary>
+/// UX-15 item 0: the lifetime rule of the badge poll, kept out of the window so
+/// it can be tested. The poll may run only while the supervisor is connected and
+/// the main window is not minimised; losing the connection stops it until a new
+/// connection is reported, and minimising pauses it without forgetting that the
+/// supervisor is there. It never polls on its own account: the page owns the
+/// timer and asks this object whether the timer should be running.
+/// </summary>
+public sealed class PendingPairingPoll
+{
+    /// <summary>One light read every ten seconds, as the design sheet asks.</summary>
+    public static readonly TimeSpan Interval = TimeSpan.FromSeconds(10);
+
+    private bool _connected;
+    private bool _minimised;
+
+    /// <summary>True when the timer is allowed to run and its next tick may read.</summary>
+    public bool ShouldPoll => _connected && !_minimised;
+
+    /// <summary>The reason the poll is in its current state, for the desktop log.</summary>
+    public string State => !_connected
+        ? "stopped: disconnected"
+        : _minimised ? "paused: window minimised" : "running";
+
+    /// <summary>The supervisor connection arrived; returns whether the timer should now run.</summary>
+    public bool OnConnected()
+    {
+        _connected = true;
+        return ShouldPoll;
+    }
+
+    /// <summary>The pipe or the shell's connection is gone; the poll stops until a reconnect.</summary>
+    public bool OnDisconnected()
+    {
+        _connected = false;
+        return ShouldPoll;
+    }
+
+    /// <summary>The window was minimised; nothing is visible, so nothing is read.</summary>
+    public bool OnMinimised()
+    {
+        _minimised = true;
+        return ShouldPoll;
+    }
+
+    /// <summary>The window came back; the poll resumes only if the supervisor is connected.</summary>
+    public bool OnRestored()
+    {
+        _minimised = false;
+        return ShouldPoll;
+    }
 }

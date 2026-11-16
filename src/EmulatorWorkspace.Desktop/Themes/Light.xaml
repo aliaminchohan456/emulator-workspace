@@ -100,10 +100,11 @@
     <SolidColorBrush x:Key="OnDanger" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DangerBorder" Color="#59A52C36" />
     <!-- UX-13 fold-in (igr-feedback-ux13 item 2): the same Windows close hover
-         in light, #C42B1C with a white glyph. -->
+         in light, #C42B1C with a white glyph. UX-15b: the press step is a solid,
+         visibly darker red (#A8251A, no alpha). -->
     <SolidColorBrush x:Key="CaptionCloseHover" Color="#C42B1C" />
     <SolidColorBrush x:Key="CaptionCloseHoverText" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="CaptionClosePress" Color="#E6C42B1C" />
+    <SolidColorBrush x:Key="CaptionClosePress" Color="#A8251A" />
     <SolidColorBrush x:Key="Success" Color="#216443" />
     <!-- UX-10: soft state tints follow the design sheet (ok #E8EFEC, warn
          #F8EFE3, err #F8EEEF). The previous values were 12 % of each tone over
