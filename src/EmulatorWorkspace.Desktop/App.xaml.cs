@@ -21,9 +21,30 @@ public partial class App : Application
         }
 
         Services.DesktopLog.Write("startup");
+        // UX-16 item B: every exit path leaves one line that says why. The
+        // notes are taken while the app still runs; OnExit writes the line.
+        SessionEnding += (_, args) => Services.ExitBreadcrumb.Note(
+            args.ReasonSessionEnding == ReasonSessionEnding.Logoff
+                ? "session ending: logoff"
+                : "session ending: system shutdown",
+            shutdown: true);
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            var exception = args.ExceptionObject as Exception;
+            Services.ExitBreadcrumb.Note(
+                exception is null ? "unhandled appdomain exception" : "unhandled appdomain exception " + Services.ExitBreadcrumb.Describe(exception),
+                fault: true);
+            Services.ExitBreadcrumb.Write(-1);
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) => Services.ExitBreadcrumb.Note(
+            "unobserved task exception " + Services.ExitBreadcrumb.Describe(args.Exception),
+            fault: true);
         DispatcherUnhandledException += (_, args) =>
         {
             Services.DesktopLog.Write("UNHANDLED " + args.Exception);
+            Services.ExitBreadcrumb.Note(
+                "unhandled dispatcher exception " + Services.ExitBreadcrumb.Describe(args.Exception),
+                fault: true);
             MessageBox.Show(args.Exception.Message, "Emulator Workspace", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
@@ -66,6 +87,7 @@ public partial class App : Application
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
                 await File.WriteAllTextAsync(output, probeWindow.AgentSessionsProbeSummary());
+                Services.ExitBreadcrumb.Note("explicit shutdown: agent sessions probe complete", shutdown: true);
                 Shutdown(0);
             };
             probeWindow.Show();
@@ -205,6 +227,7 @@ public partial class App : Application
                     Environment.GetEnvironmentVariable("EMULATOR_WORKSPACE_HOME") ?? ".",
                     "latency-probe.json");
                 var code = await window.RunLatencyProbeAsync(probeCount, output);
+                Services.ExitBreadcrumb.Note("explicit shutdown: latency probe complete", shutdown: true);
                 Shutdown(code);
             };
         }
@@ -272,5 +295,16 @@ public partial class App : Application
         }
 
         window.Show();
+    }
+
+    /// <summary>
+    /// UX-16 item B: the last point this app controls before the process ends.
+    /// The reason was noted by whichever path is ending the session; the line
+    /// is written and flushed here, once.
+    /// </summary>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        Services.ExitBreadcrumb.Write(e.ApplicationExitCode);
+        base.OnExit(e);
     }
 }

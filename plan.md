@@ -339,6 +339,31 @@ with a real pending request, two real sessions and real operations, plus the
 empty state on a fresh root. Build 0 errors / 22 warnings, 526/526 tests,
 `git diff --check` clean, theme keys 69/69/69 (the three caption-close tokens
 added to every dictionary).
+UX-16 open items (2026-11-16, same uncommitted tree, base HEAD `8febeee` = UX-15),
+minimal code only:
+A) the shell has one overlay state (`ViewModels/OverlayStack`, pure and tested).
+The settings drawer and the command palette take the Shell scope (rail, title
+bar content and page body), the narrow inspector takes the Stage scope (guest
+frame, chips and pill; its own scrim stays clickable). While a scope is open the
+chrome behind it is disabled, out of the hit test and out of Tab order, so UI
+Automation reports it as unavailable, while the overlay keeps its focus, its tab
+cycle and its automation tree. The title bar's crumbs and Ctrl+K pill go with it;
+the three caption buttons stay live. Focus returns to the invoking control in
+every case. WPF on .NET has no `AutomationProperties.AccessibilityView`, so
+`IsEnabled` is the exposure control the framework offers.
+B) `Services/ExitBreadcrumb` writes one `exit reason=<cause> code=<n>` line to
+the existing `logs/desktop.log` from `Application.OnExit`, with notes from the
+window close, `SessionEnding`, the dispatcher/AppDomain/TaskScheduler handlers
+and the explicit probe shutdowns; `DesktopLog` appends with `AppendAllText`, so
+the line is flushed before the process ends.
+C) `ViewModels/SupervisorWatchdog` (pure and tested) bounds recovery at five
+attempts with 1/2/4/8/15 s delays; `SupervisorConnection.Closed` plus the failed
+requests start exactly one run, which reuses `SupervisorLocator` (attach first,
+start only when nothing answers) and the existing `InitializeAsync`. The existing
+err-soft bar with Retry is what remains when the budget is spent. Evidence in
+`artifacts/ui/ux16-*.png` and `artifacts/ux16/` (UI Automation walks, watchdog
+and exit logs). Build 0 errors / 22 warnings, 542/542 tests, `git diff --check`
+clean, theme keys 69/69/69 (none added).
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

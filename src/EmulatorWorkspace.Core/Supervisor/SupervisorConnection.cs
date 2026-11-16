@@ -27,6 +27,14 @@ public sealed class SupervisorConnection : IAsyncDisposable
 
     public event Action<EventEnvelope>? EventReceived;
 
+    /// <summary>
+    /// UX-16 item C: raised once when the reader stops, which happens when the
+    /// supervisor process ends or closes the pipe. Pending requests still fail
+    /// on their own; this lets the desktop notice a dead pipe before it sends
+    /// the next one. Runs on the reader's thread.
+    /// </summary>
+    public event Action? Closed;
+
     public Action<string>? Trace { get; set; }
 
     public string? DefaultAuth { get; set; }
@@ -147,6 +155,8 @@ public sealed class SupervisorConnection : IAsyncDisposable
             {
                 completion.TrySetException(new SupervisorUnavailableException("The supervisor connection closed."));
             }
+
+            Closed?.Invoke();
         }
     }
 

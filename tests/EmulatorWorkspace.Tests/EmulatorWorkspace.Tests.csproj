@@ -25,6 +25,10 @@
          the shared consent dialog's digest display, are pure rules as well. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/AgentSessionsPresentation.cs" Link="Desktop/AgentSessionsPresentation.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ConsentDialogModel.cs" Link="Desktop/ConsentDialogModel.cs" />
+    <!-- UX-16: the shell's overlay state and the supervisor watchdog are pure
+         rules too, so they compile here instead of linking the WPF desktop. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/OverlayStack.cs" Link="Desktop/OverlayStack.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/SupervisorWatchdog.cs" Link="Desktop/SupervisorWatchdog.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

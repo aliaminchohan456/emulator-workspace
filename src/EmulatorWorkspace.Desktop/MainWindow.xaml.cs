@@ -1047,7 +1047,12 @@ public partial class MainWindow : Window, IOverlayAnchor
 
     private IInputElement? _settingsFocusReturn;
     private int _settingsDrawerEpoch;
-    private readonly List<(UIElement Element, bool HitTest, KeyboardNavigationMode Tab)> _inertChrome = new();
+    // UX-16 item A: one overlay state for the whole shell. Each floating
+    // surface enters the scope it covers and leaves it on close; the chrome
+    // behind is then out of reach for the pointer, Tab and UI Automation, and
+    // the recorded values restore exactly on the last exit.
+    private readonly OverlayStack _overlays = new();
+    private readonly List<(UIElement Element, bool HitTest, bool Enabled, KeyboardNavigationMode Tab)> _inertChrome = new();
     private DispatcherTimer? _themeSavedTimer;
     private bool _suppressThemeSaved;
 
@@ -1074,7 +1079,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         // The rail item paints the accent-soft active surface from its Tag, the
         // same flag the selection triggers in the shared rail style use.
         SettingsRailButton.Tag = true;
-        SetChromeInert(true);
+        EnterOverlay(OverlayScope.Shell, "settings drawer");
         // Theme, motion and high-contrast facts are read from Windows and the
         // theme manager, so they are refreshed on open rather than polled.
         _viewModel.RefreshSettingsFacts();
@@ -1172,7 +1177,7 @@ public partial class MainWindow : Window, IOverlayAnchor
             SettingsDrawerShell.Opacity = 1;
             SettingsScrim.Opacity = 1;
             SettingsDrawerHost.Visibility = Visibility.Collapsed;
-            SetChromeInert(false);
+            ExitOverlay(OverlayScope.Shell, "settings drawer");
             RestoreSettingsFocus();
         }
     }
@@ -1201,36 +1206,104 @@ public partial class MainWindow : Window, IOverlayAnchor
     }
 
     /// <summary>
-    /// While the drawer is open, every other child of the window grid takes no
-    /// pointer input and no tab stop, so nothing behind the scrim can be clicked
-    /// or focused. The previous values are restored exactly on close; the drawer
-    /// host keeps its own TabNavigation="Cycle" as the second half of the trap.
+    /// UX-16 item A: the shell's single overlay state. A drawer, a dialog or
+    /// the command palette covers the whole shell; the narrow inspector covers
+    /// the stage. While any of them is open the chrome behind it takes no
+    /// pointer input, no tab stop and no control-view UI Automation node, and
+    /// the overlay itself keeps its focus, its own tab cycle and its own
+    /// automation tree. Nested surfaces keep the chrome inert until the last
+    /// one closes (OverlayStack is the rule).
     /// </summary>
-    private void SetChromeInert(bool inert)
+    private void EnterOverlay(OverlayScope scope, string reason)
     {
-        if (!inert)
+        var changed = _overlays.Push(scope);
+        DesktopLog.Write($"overlay open: {reason} scope={scope} depth={_overlays.Count}");
+        if (changed)
         {
-            foreach (var (element, hitTest, tab) in _inertChrome)
+            ApplyChromeInert();
+        }
+    }
+
+    private void ExitOverlay(OverlayScope scope, string reason)
+    {
+        var changed = _overlays.Pop(scope);
+        DesktopLog.Write($"overlay closed: {reason} scope={scope} depth={_overlays.Count}");
+        if (changed)
+        {
+            // Not a plain restore: another surface may still own the chrome.
+            ApplyChromeInert();
+        }
+    }
+
+    /// <summary>
+    /// Applies the state the stack reports. The drawer host is the one child of
+    /// the body grid that is never inert while it is the overlay, and the
+    /// inspector's scrim stays clickable so a click beside the panel still
+    /// dismisses it.
+    /// </summary>
+    private void ApplyChromeInert()
+    {
+        RestoreChrome();
+
+        if (_overlays.ShellInert)
+        {
+            foreach (var child in RootGrid.Children.OfType<UIElement>())
             {
-                element.IsHitTestVisible = hitTest;
-                KeyboardNavigation.SetTabNavigation(element, tab);
+                if (ReferenceEquals(child, SettingsDrawerHost))
+                {
+                    continue;
+                }
+
+                Inert(child);
             }
 
-            _inertChrome.Clear();
-            return;
+            // Caption buttons stay live: closing the window while a drawer or
+            // a dialog is open must keep working.
+            WindowTitleBar.SetContentInert(true);
         }
 
-        foreach (var child in RootGrid.Children.OfType<UIElement>())
+        if (_overlays.StageInert)
         {
-            if (ReferenceEquals(child, SettingsDrawerHost))
+            foreach (var child in StageRoot.Children.OfType<UIElement>())
             {
-                continue;
-            }
+                if (ReferenceEquals(child, InspectorOverlayScrim))
+                {
+                    continue;
+                }
 
-            _inertChrome.Add((child, child.IsHitTestVisible, KeyboardNavigation.GetTabNavigation(child)));
-            child.IsHitTestVisible = false;
-            KeyboardNavigation.SetTabNavigation(child, KeyboardNavigationMode.None);
+                Inert(child);
+            }
         }
+    }
+
+    /// <summary>
+    /// Disabled, no hit test, no tab stop. WPF reports IsEnabled and
+    /// IsKeyboardFocusable from exactly these flags, so a UIA client finds the
+    /// chrome behind the overlay present but unavailable, and its invoke pattern
+    /// refuses; Tab skips a disabled subtree the same way. (WPF on .NET has no
+    /// AutomationProperties.AccessibilityView, so this is the exposure control
+    /// the framework actually offers.)
+    /// </summary>
+    private void Inert(UIElement element)
+    {
+        _inertChrome.Add((element, element.IsHitTestVisible, element.IsEnabled,
+            KeyboardNavigation.GetTabNavigation(element)));
+        element.IsHitTestVisible = false;
+        element.IsEnabled = false;
+        KeyboardNavigation.SetTabNavigation(element, KeyboardNavigationMode.None);
+    }
+
+    private void RestoreChrome()
+    {
+        foreach (var (element, hitTest, enabled, tab) in _inertChrome)
+        {
+            element.IsHitTestVisible = hitTest;
+            element.IsEnabled = enabled;
+            KeyboardNavigation.SetTabNavigation(element, tab);
+        }
+
+        _inertChrome.Clear();
+        WindowTitleBar.SetContentInert(false);
     }
 
     /// <summary>Puts the caret on the first tab once the drawer is on screen.</summary>
@@ -1598,6 +1671,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         }
 
         _paletteOpen = true;
+        EnterOverlay(OverlayScope.Shell, "command palette");
         try
         {
             // UX-07 fix pass: the palette hands focus back to whatever opened it.
@@ -1608,6 +1682,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         finally
         {
             _paletteOpen = false;
+            ExitOverlay(OverlayScope.Shell, "command palette");
         }
     }
 
@@ -1695,7 +1770,20 @@ public partial class MainWindow : Window, IOverlayAnchor
     {
         var narrow = InspectorNarrow && !_focusView;
         ShowInspectorStrip = narrow;
-        InspectorOverlay = narrow && !_detailsCollapsed;
+        var overlay = narrow && !_detailsCollapsed;
+        if (overlay != InspectorOverlay)
+        {
+            InspectorOverlay = overlay;
+            if (overlay)
+            {
+                EnterOverlay(OverlayScope.Stage, "inspector overlay");
+            }
+            else
+            {
+                ExitOverlay(OverlayScope.Stage, "inspector overlay");
+            }
+        }
+
         RefreshStripSelection();
     }
 
@@ -2163,6 +2251,11 @@ public partial class MainWindow : Window, IOverlayAnchor
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        if (!e.Cancel)
+        {
+            ExitBreadcrumb.Note("main window closed");
+        }
+
         _pillIdle.Stop();
         _ = _viewModel.DisposeAsync();
     }

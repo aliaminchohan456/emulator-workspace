@@ -52,6 +52,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly CancellationTokenSource _lifetime = new();
 
     private SupervisorConnection? _connection;
+
+    // UX-16 item C: the bounded recovery rule for a supervisor that went away.
+    // The view model owns the start/connect/log; the rule owns the budget.
+    private readonly SupervisorWatchdog _watchdog = new();
+    private bool _watchdogRecovering;
     private int _frameSequence;
     private string? _frameSubscription;
     private bool _frameSubscribePending;
@@ -2099,13 +2104,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         BusyText = "Connecting to the local supervisor...";
         ClearError();
 
+        // A deliberate refresh or Retry re-arms the watchdog; its own recovery
+        // attempts must not, or the budget would never be spent.
+        if (!_watchdogRecovering)
+        {
+            _watchdog.Reset();
+        }
+
         try
         {
             _connection ??= await SupervisorConnection.ConnectAsync(_paths.Root, TimeSpan.FromSeconds(25))
                 .ConfigureAwait(true);
-            _connection.EventReceived -= OnSupervisorEvent;
-            _connection.EventReceived += OnSupervisorEvent;
-            _connection.Trace = DesktopLog.Write;
+            HookConnection(_connection);
 
             IsConnected = true;
             DesktopLog.Write("supervisor connected");
@@ -2168,6 +2178,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SetupIssues.Add("Supervisor not reachable: " + ex.Message);
                 SetupIssues.Add("The pinned image, emulator and SDK licences are not changed by this failure.");
                 SetDoctorUnavailable("No supervisor report available. The pinned image and emulator are never substituted automatically.");
+                BeginSupervisorRecovery("initialize: " + ex.Message);
             }
             else
             {
@@ -2184,6 +2195,126 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             BusyText = "";
             UpdateStage();
         }
+    }
+
+    /// <summary>
+    /// UX-16 item C: subscribes the one connection to the desktop's handlers.
+    /// The pipe-closed callback is the watchdog's early warning; a failed
+    /// request is the other, so both end in the same bounded run.
+    /// </summary>
+    private void HookConnection(SupervisorConnection connection)
+    {
+        connection.EventReceived -= OnSupervisorEvent;
+        connection.EventReceived += OnSupervisorEvent;
+        connection.Trace = DesktopLog.Write;
+        connection.Closed -= OnSupervisorClosed;
+        connection.Closed += OnSupervisorClosed;
+    }
+
+    /// <summary>
+    /// The pipe is gone. The reader raises this off the UI thread, so the state
+    /// change and the recovery run are marshalled first.
+    /// </summary>
+    private void OnSupervisorClosed()
+    {
+        _dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            if (_lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (_connection is null)
+            {
+                // A failed request already took the connection down and started
+                // the run; the second report would be a duplicate.
+                return;
+            }
+
+            var dead = _connection;
+            _connection = null;
+            IsConnected = false;
+            if (Volatile.Read(ref _logcatSubscription) is not null)
+            {
+                Volatile.Write(ref _logcatSubscription, null);
+                NotifyLogFilterState();
+            }
+
+            _ = dead.DisposeAsync();
+            DesktopLog.Write("supervisor pipe closed");
+            BeginSupervisorRecovery("pipe closed");
+        }));
+    }
+
+    /// <summary>
+    /// UX-16 item C: one bounded run per loss. It reuses the app's own start
+    /// path (SupervisorLocator.EnsureRunningAsync attaches to a supervisor that
+    /// is already listening and only starts one when nothing answers), waits a
+    /// growing delay between attempts, and stops after the budget. The existing
+    /// err-soft bar with Retry is what the operator keeps when it stops.
+    /// </summary>
+    private void BeginSupervisorRecovery(string reason)
+    {
+        if (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (!_watchdog.SupervisorLost())
+        {
+            DesktopLog.Write($"watchdog: already recovering, ignored ({reason})");
+            return;
+        }
+
+        DesktopLog.Write($"watchdog: supervisor lost: {reason}; up to {SupervisorWatchdog.MaxAttempts} attempts");
+        _ = RecoverSupervisorAsync();
+    }
+
+    private async Task RecoverSupervisorAsync()
+    {
+        while (_watchdog.TryNextDelay(out var delay))
+        {
+            var attempt = _watchdog.Attempts + 1;
+            DesktopLog.Write($"watchdog: attempt {attempt}/{SupervisorWatchdog.MaxAttempts} in {delay.TotalSeconds:0}s");
+            try
+            {
+                await Task.Delay(delay, _lifetime.Token).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            _watchdogRecovering = true;
+            try
+            {
+                // The same initialization the app runs on launch and on Retry:
+                // locate or start the supervisor, connect, doctor, devices.
+                await InitializeAsync().ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                // InitializeAsync reports its own failures; this keeps a
+                // cancelled or unexpected throw from escaping the fire-and-forget
+                // run as an unobserved task exception.
+                DesktopLog.Write("watchdog: attempt threw " + ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                _watchdogRecovering = false;
+            }
+
+            if (IsConnected)
+            {
+                _watchdog.AttemptSucceeded();
+                DesktopLog.Write($"watchdog: supervisor reachable again on attempt {attempt}");
+                return;
+            }
+
+            _watchdog.AttemptFailed();
+        }
+
+        DesktopLog.Write("watchdog: gave up; the error bar keeps Retry");
     }
 
     private void ApplyDoctor(JsonObject doctor)
@@ -4511,7 +4642,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             return response.Data as JsonObject ?? new JsonObject();
         }
-        catch (SupervisorUnavailableException)
+        catch (SupervisorUnavailableException ex)
         {
             // The pipe is gone. Drop the client so Refresh can reconnect instead
             // of reusing a dead stream forever.
@@ -4531,6 +4662,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 _ = dead.DisposeAsync();
             }
 
+            // UX-16 item C: a dead pipe starts one bounded recovery run.
+            BeginSupervisorRecovery($"request {op}: {ex.Message}");
             throw;
         }
     }

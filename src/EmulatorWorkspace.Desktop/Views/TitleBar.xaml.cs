@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
@@ -94,6 +95,47 @@ public partial class TitleBar : UserControl
 
         Loaded += (_, _) => AttachWindowProc();
         Unloaded += (_, _) => DetachWindowProc();
+    }
+
+    /// <summary>
+    /// UX-16 item A: while a floating surface covers the shell, the crumbs and
+    /// the Ctrl+K pill take no pointer input, no tab stop and no control-view
+    /// UI Automation node, exactly like the body behind the scrim. The three
+    /// caption buttons stay live, so the window can still be minimised and
+    /// closed while the drawer or a dialog is open.
+    /// </summary>
+    public void SetContentInert(bool inert)
+    {
+        SetInert(CrumbBar, ref _crumbState, inert);
+        SetInert(CommandPill, ref _pillState, inert);
+    }
+
+    private (bool HitTest, bool Enabled, KeyboardNavigationMode Tab)? _crumbState;
+    private (bool HitTest, bool Enabled, KeyboardNavigationMode Tab)? _pillState;
+
+    private static void SetInert(
+        UIElement element,
+        ref (bool HitTest, bool Enabled, KeyboardNavigationMode Tab)? state,
+        bool inert)
+    {
+        if (inert)
+        {
+            state ??= (element.IsHitTestVisible,
+                element.IsEnabled,
+                KeyboardNavigation.GetTabNavigation(element));
+            element.IsHitTestVisible = false;
+            element.IsEnabled = false;
+            KeyboardNavigation.SetTabNavigation(element, KeyboardNavigationMode.None);
+            return;
+        }
+
+        if (state is { } restore)
+        {
+            state = null;
+            element.IsHitTestVisible = restore.HitTest;
+            element.IsEnabled = restore.Enabled;
+            KeyboardNavigation.SetTabNavigation(element, restore.Tab);
+        }
     }
 
     public string PageName
