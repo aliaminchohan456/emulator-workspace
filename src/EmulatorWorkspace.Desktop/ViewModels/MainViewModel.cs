@@ -81,6 +81,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _labInstallInProgress;
     private bool _statusPollInFlight;
     private bool _frameStale;
+    private FrameStreamState _frameState = FrameStreamState.Live;
+
+    /// <summary>
+    /// UX-18: whether the supervisor says the capture is running. Null until the
+    /// first status read answers, which is not the same as "not running".
+    /// </summary>
+    private bool? _frameStreamRunning;
+
+    /// <summary>
+    /// UX-18: whether the guest answered the last status read (its ADB
+    /// transport was usable). A guest that stopped answering is the one case
+    /// where an old frame really can be out of date.
+    /// </summary>
+    private bool _guestResponsive = true;
     private string _frameHold = "";
     private bool _dropVisible;
     private bool _dropAccepted;
@@ -476,30 +490,33 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
+    /// UX-18: the input waits while the stream is stalled (the picture may be
+    /// out of date) and while a supervised operation holds the guest's ADB
+    /// channel. An idle guest - a screen that simply did not change - keeps
+    /// its input, because its picture is current.
+    /// </summary>
+    public bool IsInputPaused => FrameStreamHealth.PausesInput(_frameState);
+
+    /// <summary>
     /// "warning" when the stream stalled on its own, "info" when a supervised
     /// operation that owns the guest's ADB channel is running. The tone only
     /// styles the chip; both sentences say what happened and what is blocked.
     /// </summary>
-    public string StaleFrameTone => _frameHold.Length > 0 ? "info" : "warning";
+    public string StaleFrameTone => FrameStreamHealth.Tone(_frameState);
 
     public string StaleFrameTitle
     {
         get
         {
-            if (!_frameStale)
+            if (_frameState == FrameStreamState.Live)
             {
                 return "";
-            }
-
-            if (_frameHold.Length > 0)
-            {
-                return $"Paused while {_frameHold} runs";
             }
 
             var age = _lastFramePresented == default
                 ? 0
                 : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
-            return $"Frame stalled · last frame {age:N0} s ago";
+            return FrameStreamHealth.Title(_frameState, _frameHold, age);
         }
     }
 
@@ -507,9 +524,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// Kept short and split from the title so the chip wraps instead of clipping
     /// at the narrow layouts (1024 px) the design matrix requires.
     /// </summary>
-    public string StaleFrameDetail => _frameStale
-        ? "The frame stream resumes with the next frame; input is paused until then."
-        : "";
+    public string StaleFrameDetail => FrameStreamHealth.Detail(_frameState);
 
     /// <summary>
     /// Marks the start of a supervised operation that holds the guest's ADB
@@ -554,6 +569,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         get
         {
+            // UX-18: a held guest says "Paused" and a broken stream says
+            // "Stalled" with the real age. An idle guest says nothing: its
+            // picture is current.
+            if (_frameState == FrameStreamState.Held)
+            {
+                return $"{StageGuestChip} · Paused";
+            }
+
             if (!_frameStale)
             {
                 return StageGuestChip;
@@ -566,11 +589,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    public string StageGuestChipTooltipLive => _frameStale
-        ? _frameHold.Length > 0
-            ? $"Input paused until frames resume. The supervisor holds the ADB channel: {_frameHold}."
-            : "Input paused until frames resume."
-        : StageGuestChipTooltip;
+    public string StageGuestChipTooltipLive => _frameState switch
+    {
+        FrameStreamState.Held =>
+            $"Input paused while {_frameHold} runs. The supervisor holds the guest's ADB channel.",
+        FrameStreamState.Stalled => "Input paused until frames resume.",
+        _ => StageGuestChipTooltip,
+    };
 
     /// <summary>Top-right chip: orientation from the guest display, then the real zoom mode.</summary>
     public string StageOrientationChip
@@ -2212,11 +2237,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 _connection = null;
                 // UX-08: no pipe, no log stream; the drawer's chip must not keep
                 // claiming it is following.
-                if (Volatile.Read(ref _logcatSubscription) is not null)
-                {
-                    Volatile.Write(ref _logcatSubscription, null);
-                    NotifyLogFilterState();
-                }
+                ForgetSubscriptions();
 
                 _ = dead.DisposeAsync();
             }
@@ -2291,16 +2312,36 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var dead = _connection;
             _connection = null;
             IsConnected = false;
-            if (Volatile.Read(ref _logcatSubscription) is not null)
-            {
-                Volatile.Write(ref _logcatSubscription, null);
-                NotifyLogFilterState();
-            }
+            ForgetSubscriptions();
 
             _ = dead.DisposeAsync();
             DesktopLog.Write("supervisor pipe closed");
             BeginSupervisorRecovery("pipe closed");
         }));
+    }
+
+    /// <summary>
+    /// UX-18: a subscription does not survive the supervisor that owns it.
+    ///
+    /// The subscription lives in the supervisor's in-memory hub. When the pipe
+    /// closes, that supervisor is gone and the id the window holds points at
+    /// nothing: the status poll read "already subscribed" and never opened a
+    /// new stream, so the viewport stayed dead even after the supervisor came
+    /// back and the guest was running again. Both ids are dropped here, so the
+    /// next poll re-attaches to the guest that is up.
+    /// </summary>
+    private void ForgetSubscriptions()
+    {
+        if (Volatile.Read(ref _frameSubscription) is not null)
+        {
+            Volatile.Write(ref _frameSubscription, null);
+        }
+
+        if (Volatile.Read(ref _logcatSubscription) is not null)
+        {
+            Volatile.Write(ref _logcatSubscription, null);
+            NotifyLogFilterState();
+        }
     }
 
     /// <summary>
@@ -2625,9 +2666,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 await SubscribeFramesAsync(device).ConfigureAwait(true);
             }
+
+            // UX-18: a closed log stream is re-attached the same way the frame
+            // stream is, so the drawer comes back by itself after the guest
+            // does.
+            if (IsLogcatOpen && _logcatSubscription is null)
+            {
+                await EnsureLogcatAsync().ConfigureAwait(true);
+            }
         }
         catch (Exception ex)
         {
+            // UX-18: a status read that failed is the one hard evidence that the
+            // guest stopped answering, so the frame stream's state follows it.
+            _guestResponsive = false;
+            UpdateFrameHealth();
             StatusMessage = "Status refresh failed: " + ex.Message;
         }
         finally
@@ -3030,12 +3083,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (IsFrameStale)
+        if (IsInputPaused)
         {
-            // UX-03: a stalled frame must not accept coordinates. UX-07 fix pass:
-            // the status bar carries no sentence here - the stale chip beside the
-            // stage already says frames are paused, and a second long line was
-            // the noisiest text in the shell.
+            // UX-03: a stalled frame must not accept coordinates, because the
+            // picture may be out of date. UX-18: an idle guest is not stalled -
+            // its picture is current, so the tap goes through. A supervised
+            // operation that holds the guest's ADB channel still pauses the
+            // input.
             return;
         }
 
@@ -3062,9 +3116,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (IsFrameStale)
+        if (IsInputPaused)
         {
-            // UX-07 fix pass: as with a tap, the stale chip is the feedback.
+            // UX-18: as with a tap, only a stalled stream or a held channel
+            // pauses the input; an idle guest still swipes.
             return;
         }
 
@@ -3509,7 +3564,36 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 _dispatcher.BeginInvoke(() =>
                 {
                     var reason = envelope.Data?["reason"]?.GetValue<string>() ?? "closed";
-                    StatusMessage = "Subscription closed: " + reason;
+
+                    // UX-18: a closed subscription is not the end of the stream.
+                    // The supervisor closes it when the guest's engine goes away
+                    // or a session is reset; the window used to keep the closed
+                    // id, so the status poll saw "already subscribed" and never
+                    // opened a new one - the viewport stayed dead for the rest of
+                    // the session. Clearing the field lets the poll re-attach
+                    // as soon as the guest is up again.
+                    var kind = SubscriptionClose.Which(
+                        envelope.Subscription,
+                        Volatile.Read(ref _frameSubscription),
+                        Volatile.Read(ref _logcatSubscription));
+
+                    switch (kind)
+                    {
+                        case SubscriptionKind.Frames:
+                            Volatile.Write(ref _frameSubscription, null);
+                            StatusMessage = "Frame stream closed: " + reason;
+                            break;
+
+                        case SubscriptionKind.Logcat:
+                            Volatile.Write(ref _logcatSubscription, null);
+                            NotifyLogFilterState();
+                            StatusMessage = "Log stream closed: " + reason;
+                            break;
+
+                        default:
+                            StatusMessage = "Subscription closed: " + reason;
+                            break;
+                    }
                 });
                 break;
 
@@ -3979,6 +4063,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _launchedUtc = TryReadUtc(readiness["launchedUtc"]) ?? _launchedUtc;
         }
 
+        // UX-18: the guest's own focused window is the evidence that it is
+        // interactive. A guest this supervisor did not start (adopted after a
+        // restart) has no readiness stamp, and its window answers the same
+        // question.
+        if (!interactive && bootCompleted)
+        {
+            var focus = (status["foreground"]?.GetValue<string>() ?? "").Trim();
+            interactive = focus.Length > 0;
+        }
+
         // igr-feedback-ux05 item 2: the same evidence that fills the third boot
         // step gates the nav cluster.
         if (_guestInteractive != interactive)
@@ -3986,6 +4080,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _guestInteractive = interactive;
             OnPropertyChanged(nameof(IsGuestInteractive));
         }
+
+        // UX-18: the frame stream's own health. The supervisor says whether the
+        // capture is running, and the guest's transport says whether the guest
+        // is still answering. Together they tell an idle guest apart from a
+        // stalled stream.
+        if (status["frameStream"] is JsonObject frameStream)
+        {
+            _frameStreamRunning = frameStream["running"]?.GetValue<bool>();
+        }
+
+        _guestResponsive = adbOnline;
+        UpdateFrameHealth();
 
         // UX-18: the stepper reads the same lifecycle as every other surface,
         // so a guest that reported boot completion is shown as booted even when
@@ -4047,27 +4153,41 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// <summary>
     /// A frame older than the stale budget is visibly stale and stops accepting
     /// input; the last delivered frame is timestamped in the chip, never hidden.
+    ///
+    /// UX-18: the budget alone is not a fault. The emulator's image stream is
+    /// change driven, so a guest whose screen does not change sends no frames:
+    /// that is an idle guest with a current picture, not a stalled stream. The
+    /// stream is only stalled when the supervisor says the capture is not
+    /// running or the guest stopped answering.
     /// </summary>
     private void UpdateFrameHealth()
     {
-        var running = SelectedDevice?.IsRunning == true;
-        var stale = running && HasFrame && _lastFramePresented != default
-                       && (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds > StaleFrameSeconds;
-        IsFrameStale = stale;
-        if (stale)
+        var running = SelectedDevice?.Lifecycle.IsRunning == true;
+        var age = _lastFramePresented == default
+            ? 0
+            : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
+        var state = FrameStreamHealth.Evaluate(
+            running,
+            HasFrame,
+            age,
+            streamBroken: _frameStreamRunning == false,
+            guestResponsive: _guestResponsive,
+            held: _frameHold.Length > 0);
+
+        if (_frameState != state)
         {
-            // The age is part of the sentence, so refresh it while it holds.
+            _frameState = state;
             OnPropertyChanged(nameof(StaleFrameTitle));
             OnPropertyChanged(nameof(StaleFrameDetail));
             OnPropertyChanged(nameof(StaleFrameTone));
-            OnPropertyChanged(nameof(StageGuestChipLive));
-            OnPropertyChanged(nameof(StageGuestChipTooltipLive));
+            OnPropertyChanged(nameof(IsInputPaused));
         }
-        else
-        {
-            OnPropertyChanged(nameof(StageGuestChipLive));
-            OnPropertyChanged(nameof(StageGuestChipTooltipLive));
-        }
+
+        IsFrameStale = FrameStreamHealth.IsStalled(state);
+
+        // The age is part of the sentence, so refresh it while it holds.
+        OnPropertyChanged(nameof(StageGuestChipLive));
+        OnPropertyChanged(nameof(StageGuestChipTooltipLive));
     }
 
     /// <summary>

@@ -39,6 +39,8 @@
          The lab phase rules live in Core, which this project already
          references. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/DeviceLifecycle.cs" Link="Desktop/DeviceLifecycle.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/FrameStreamHealth.cs" Link="Desktop/FrameStreamHealth.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/SubscriptionClose.cs" Link="Desktop/SubscriptionClose.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

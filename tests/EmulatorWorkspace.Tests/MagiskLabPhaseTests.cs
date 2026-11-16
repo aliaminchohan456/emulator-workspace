@@ -16,10 +16,12 @@ public class MagiskLabPhaseTests
     private static readonly DateTimeOffset Now = new(2026, 11, 16, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void APreparedLab_NeedsNoRecovery()
+    public void APreparedLab_NeedsNoRecoveryAndIsNotRunning()
     {
+        // "prepared" is a stable state between two operator actions: the patch
+        // is staged, the guest is still stock and nothing is running.
         Assert.False(MagiskLabPhase.RequiresRecovery("prepared", Now, Now));
-        Assert.True(MagiskLabPhase.InProgress("prepared"));
+        Assert.False(MagiskLabPhase.InProgress("prepared"));
     }
 
     [Fact]

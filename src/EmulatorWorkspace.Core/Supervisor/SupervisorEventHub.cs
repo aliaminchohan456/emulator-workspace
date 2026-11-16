@@ -30,6 +30,17 @@ public sealed class SupervisorEventHub
     public int Count(string instance, string kind) =>
         _subscribers.Values.Count(s => s.Instance == instance && s.Kind == kind);
 
+    /// <summary>
+    /// The ids of the live subscribers of one stream. A pump that dies uses
+    /// this to close exactly the subscriptions it owned, so a closed stream
+    /// leaves nothing behind in the hub.
+    /// </summary>
+    public IReadOnlyList<string> Ids(string instance, string kind) =>
+        _subscribers.Values
+            .Where(s => s.Instance == instance && s.Kind == kind)
+            .Select(s => s.Id)
+            .ToList();
+
     public IReadOnlyList<string> RemoveInstance(string instance)
     {
         var removed = new List<string>();

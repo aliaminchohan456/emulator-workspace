@@ -51,11 +51,16 @@ public static class MagiskLabPhase
     /// <summary>
     /// The transaction is still running: it has a journal, it is between two
     /// steps and it has not failed.
+    ///
+    /// "prepared" is deliberately not one of them. That phase is a stable state
+    /// between two operator actions - the patch is staged and the guest is
+    /// still stock - so nothing is running, and a surface that said "install in
+    /// progress" would be claiming work that is not happening.
     /// </summary>
     public static bool InProgress(string? phase)
     {
         var value = Normalize(phase);
-        return value is "staging" or "prepared" or "baseline_boot" or "activating" or "provisioned"
+        return value is "staging" or "baseline_boot" or "activating" or "provisioned"
             or "recovering_baseline" or "recovering"
             || value.StartsWith("verifying_boot_", StringComparison.Ordinal);
     }

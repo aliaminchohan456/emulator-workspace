@@ -64,6 +64,7 @@ public sealed class FramePump : IAsyncDisposable
     private readonly Queue<string> _rawFiles = new();
     private int _guestWidth;
     private int _guestHeight;
+    private int _publishedFrames;
 
     public FramePump(
         InstanceRecord record,
@@ -80,6 +81,28 @@ public sealed class FramePump : IAsyncDisposable
     }
 
     public bool IsRunning => _loop is { IsCompleted: false };
+
+    /// <summary>
+    /// UX-18: how many frames this pump has published. A surface can compare it
+    /// with the count it saw before to tell a live stream from a stopped one.
+    /// </summary>
+    public int PublishedFrames => Volatile.Read(ref _publishedFrames);
+
+    /// <summary>
+    /// UX-18: when the last frame was published, or null when the pump has not
+    /// delivered one. The emulator's image stream is change driven, so this is
+    /// the only honest way to tell an idle guest from a broken capture.
+    /// </summary>
+    public DateTimeOffset? LastFrameUtc
+    {
+        get
+        {
+            lock (_traceGate)
+            {
+                return _trace.Count == 0 ? null : _trace.Last().ReceivedUtc;
+            }
+        }
+    }
 
     public string OutputPath => System.IO.Path.Combine(
         _outputDirectory,
@@ -282,6 +305,7 @@ public sealed class FramePump : IAsyncDisposable
         }
 
         _lastPublished = received;
+        Interlocked.Increment(ref _publishedFrames);
 
         var dropped = 0;
         if (_lastSequence != 0 && sequence > _lastSequence + 1)

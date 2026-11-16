@@ -689,6 +689,17 @@ public sealed class InstanceManager
                 },
             ["frameSubscription"] = _hub.Count(record.Name, "frame"),
             ["logcatSubscription"] = _hub.Count(record.Name, "logcat"),
+            // UX-18: the capture's own health. The emulator's image stream is
+            // change driven, so "no new frame" only means the guest's screen
+            // did not change. A surface that wants to know whether the stream
+            // is broken reads this instead of counting seconds.
+            ["frameStream"] = new JsonObject
+            {
+                ["running"] = runtime.Frames?.IsRunning == true,
+                ["subscribers"] = _hub.Count(record.Name, "frame"),
+                ["lastFrameUtc"] = runtime.Frames?.LastFrameUtc?.ToString("O"),
+                ["frames"] = runtime.Frames?.PublishedFrames ?? 0,
+            },
         };
     }
 
@@ -699,6 +710,11 @@ public sealed class InstanceManager
     /// guest answered for itself. A guest that booted while nobody was waiting
     /// for it therefore still reports when it booted, and the desktop's boot
     /// stepper reads the same three stages the wait operation writes.
+    ///
+    /// A guest this supervisor did not start (one adopted after a restart) has
+    /// no launch stamp, so its stages stay unreported: the supervisor cannot
+    /// tell when that guest booted, and a figure measured from the moment it
+    /// was first seen again would be a guess.
     /// </summary>
     private ReadyStages? UpdateReadiness(
         Runtime runtime,
@@ -710,18 +726,7 @@ public sealed class InstanceManager
         var stages = runtime.Ready;
         if (stages is null)
         {
-            if (!adbOnline && !bootCompleted)
-            {
-                return null;
-            }
-
-            // A guest that was adopted after a supervisor restart has no launch
-            // stamp of its own. The engine's start time is the closest real
-            // answer, so the elapsed figures stay honest.
-            var launched = DateTimeOffset.TryParse(record.EngineStartTimeUtc, out var parsed)
-                ? parsed
-                : DateTimeOffset.UtcNow;
-            stages = new ReadyStages(launched, null, null, null);
+            return null;
         }
 
         var updated = stages;
@@ -2449,7 +2454,8 @@ public sealed class InstanceManager
         if (runtime.Frames is null || !runtime.Frames.IsRunning)
         {
             var options = new FramePumpOptions(format, width, height);
-            var pump = new FramePump(
+            FramePump? pump = null;
+            pump = new FramePump(
                 record,
                 _frameDirectory,
                 options,
@@ -2474,19 +2480,60 @@ public sealed class InstanceManager
                 },
                 async (instance, reason) =>
                 {
-                    await _hub.PublishAsync(instance, "frame", EventNames.SubscriptionClosed, new JsonObject
+                    // A pump that was already replaced must not close the stream
+                    // that replaced it.
+                    if (!ReferenceEquals(runtime.Frames, pump))
                     {
-                        ["reason"] = reason,
-                    }).ConfigureAwait(false);
+                        return;
+                    }
+
+                    runtime.Frames = null;
+                    await CloseSubscriptionsAsync(instance, "frame", reason).ConfigureAwait(false);
                 });
 
-            await pump.StartAsync(cancellationToken).ConfigureAwait(false);
+            // The pump owns the runtime slot before it starts: a capture that
+            // dies during its start still has to be the one the runtime knows
+            // about, so the close below finds it.
             runtime.Frames = pump;
+            try
+            {
+                await pump.StartAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                if (ReferenceEquals(runtime.Frames, pump))
+                {
+                    runtime.Frames = null;
+                }
+
+                throw;
+            }
         }
 
         var id = _hub.Add(name, "frame", send);
         _subscriptions[id] = (name, "frame");
         return id;
+    }
+
+    /// <summary>
+    /// Closes every subscription of one kind for an instance and tells the
+    /// holder why.
+    ///
+    /// A capture that dies (the guest's engine went away) leaves the hub's
+    /// subscribers behind: the stream was closed but the subscription was
+    /// still counted as live. The next reader then saw a stream that was
+    /// attached and would never open another one, and the capture of a guest
+    /// nobody watched any more kept running. Closing the subscriptions removes
+    /// them from the hub and from the unsubscribe bookkeeping, so the next
+    /// subscriber starts from a clean slate.
+    /// </summary>
+    private async Task CloseSubscriptionsAsync(string instance, string kind, string reason)
+    {
+        foreach (var id in _hub.Ids(instance, kind))
+        {
+            _subscriptions.TryRemove(id, out _);
+            await _hub.CloseAsync(id, reason).ConfigureAwait(false);
+        }
     }
 
     public async Task UnsubscribeAsync(string id, CancellationToken cancellationToken)
@@ -2529,7 +2576,8 @@ public sealed class InstanceManager
 
         if (runtime.Logcat is null)
         {
-            var pump = new LogcatPump(
+            LogcatPump? pump = null;
+            pump = new LogcatPump(
                 record.AdbSerial,
                 _sdk.AdbExe,
                 async entry =>
@@ -2545,13 +2593,29 @@ public sealed class InstanceManager
                 },
                 async reason =>
                 {
-                    await _hub.PublishAsync(name, "logcat", EventNames.SubscriptionClosed, new JsonObject
+                    if (!ReferenceEquals(runtime.Logcat, pump))
                     {
-                        ["reason"] = reason,
-                    }).ConfigureAwait(false);
+                        return;
+                    }
+
+                    runtime.Logcat = null;
+                    await CloseSubscriptionsAsync(name, "logcat", reason).ConfigureAwait(false);
                 });
-            await pump.StartAsync(cancellationToken).ConfigureAwait(false);
+
             runtime.Logcat = pump;
+            try
+            {
+                await pump.StartAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                if (ReferenceEquals(runtime.Logcat, pump))
+                {
+                    runtime.Logcat = null;
+                }
+
+                throw;
+            }
         }
 
         var id = _hub.Add(name, "logcat", send);
