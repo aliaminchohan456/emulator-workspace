@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
@@ -24,11 +25,20 @@ public static class PipeFraming
             throw new InvalidOperationException("Supervisor message exceeds the maximum frame size.");
         }
 
-        var header = new byte[4];
-        BinaryPrimitives.WriteInt32LittleEndian(header, json.Length);
-        await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
-        await stream.WriteAsync(json, cancellationToken).ConfigureAwait(false);
-        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        // Header and body go out as one buffer. Two separate writes let a second
+        // writer land between them, which the reader sees as a bad frame length.
+        var buffer = ArrayPool<byte>.Shared.Rent(json.Length + 4);
+        try
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, json.Length);
+            json.CopyTo(buffer.AsSpan(4));
+            await stream.WriteAsync(buffer.AsMemory(0, json.Length + 4), cancellationToken).ConfigureAwait(false);
+            await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
     public static async Task<JsonObject?> ReadAsync(Stream stream, int maxBytes, CancellationToken cancellationToken)

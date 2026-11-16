@@ -13,10 +13,15 @@ namespace EmulatorWorkspace.Core.Supervisor;
 /// </summary>
 public sealed class SupervisorConnection : IAsyncDisposable
 {
+    private const int StateOpen = 0;
+    private const int StateClosed = 1;
+
     private readonly NamedPipeClientStream _pipe;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ResponseEnvelope>> _pending = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _reader;
+    private int _state = StateOpen;
     private int _disposed;
 
     private SupervisorConnection(NamedPipeClientStream pipe)
@@ -38,6 +43,27 @@ public sealed class SupervisorConnection : IAsyncDisposable
     public Action<string>? Trace { get; set; }
 
     public string? DefaultAuth { get; set; }
+
+    /// <summary>
+    /// True until the reader stops or a write proves the pipe is gone. Callers
+    /// can use this to tell "the supervisor ended" from "the request was bad".
+    /// </summary>
+    public bool IsOpen => Volatile.Read(ref _state) == StateOpen;
+
+    /// <summary>
+    /// Wraps a pipe that is already connected, for in-process hosts and tests.
+    /// Production connects through <see cref="ConnectAsync"/>.
+    /// </summary>
+    public static SupervisorConnection FromConnectedPipe(NamedPipeClientStream pipe)
+    {
+        ArgumentNullException.ThrowIfNull(pipe);
+        if (!pipe.IsConnected)
+        {
+            throw new ArgumentException("The pipe must already be connected.", nameof(pipe));
+        }
+
+        return new SupervisorConnection(pipe);
+    }
 
     public static async Task<SupervisorConnection> ConnectAsync(
         string root,
@@ -72,6 +98,12 @@ public sealed class SupervisorConnection : IAsyncDisposable
         string? auth = null,
         string? idempotencyKey = null)
     {
+        // A closed connection can never answer; waiting is a ten-minute spinner.
+        if (!IsOpen)
+        {
+            throw new SupervisorUnavailableException("The supervisor connection closed.");
+        }
+
         var id = Guid.NewGuid().ToString("N");
         var request = new RequestEnvelope
         {
@@ -86,9 +118,38 @@ public sealed class SupervisorConnection : IAsyncDisposable
         var completion = new TaskCompletionSource<ResponseEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = completion;
 
+        // The reader closes the state before it fails the pending table, so a
+        // request that registered after that loop would never be failed unless
+        // it checks again here.
+        if (!IsOpen)
+        {
+            _pending.TryRemove(id, out _);
+            throw new SupervisorUnavailableException("The supervisor connection closed.");
+        }
+
         try
         {
-            await PipeFraming.WriteAsync(_pipe, request, cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await PipeFraming.WriteAsync(_pipe, request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+            {
+                Interlocked.Exchange(ref _state, StateClosed);
+                throw new SupervisorUnavailableException("The supervisor connection closed.", ex);
+            }
+            finally
+            {
+                try
+                {
+                    _writeLock.Release();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // DisposeAsync won the race; the caller already has the write error.
+                }
+            }
 
             var effective = deadline ?? TimeSpan.FromMinutes(10);
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -151,6 +212,10 @@ public sealed class SupervisorConnection : IAsyncDisposable
         }
         finally
         {
+            // State first: a request that registers from now on must fail at
+            // once instead of waiting for a response this loop can't deliver.
+            Interlocked.Exchange(ref _state, StateClosed);
+
             foreach (var completion in _pending.Values)
             {
                 completion.TrySetException(new SupervisorUnavailableException("The supervisor connection closed."));
@@ -167,6 +232,7 @@ public sealed class SupervisorConnection : IAsyncDisposable
             return;
         }
 
+        Interlocked.Exchange(ref _state, StateClosed);
         _cts.Cancel();
         try
         {
@@ -177,6 +243,7 @@ public sealed class SupervisorConnection : IAsyncDisposable
         }
 
         _pipe.Dispose();
+        _writeLock.Dispose();
         _cts.Dispose();
     }
 }

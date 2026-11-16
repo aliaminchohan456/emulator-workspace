@@ -156,4 +156,5 @@ public static class SupervisorLocator
     }
 }
 
-public sealed class SupervisorUnavailableException(string message) : Exception(message);
+public sealed class SupervisorUnavailableException(string message, Exception? innerException = null)
+    : Exception(message, innerException);
