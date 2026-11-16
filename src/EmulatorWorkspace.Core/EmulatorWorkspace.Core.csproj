@@ -2,6 +2,9 @@
   <PropertyGroup>
     <RootNamespace>EmulatorWorkspace.Core</RootNamespace>
     <AssemblyName>EmulatorWorkspace.Core</AssemblyName>
+    <!-- EV-11: the shared-memory frame ring copies one frame through a mapped
+         pointer; both processes already run on Windows only. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

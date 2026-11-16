@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Controller;
 using EmulatorWorkspace.Core.Engine;
+using EmulatorWorkspace.Core.Frames;
 using EmulatorWorkspace.Core.Instances;
 using EmulatorWorkspace.Core.Storage;
 using EmulatorWorkspace.Core.Workspace;
@@ -817,12 +818,18 @@ public sealed class InstanceManager
             // change driven, so "no new frame" only means the guest's screen
             // did not change. A surface that wants to know whether the stream
             // is broken reads this instead of counting seconds.
+            // EV-11: the ring the frames are published into, and how many
+            // subscribers want a file, are the two facts a capture diagnostic
+            // needs to tell shared memory from the file fallback.
             ["frameStream"] = new JsonObject
             {
                 ["running"] = runtime.Frames?.IsRunning == true,
                 ["subscribers"] = _hub.Count(record.Name, "frame"),
+                ["fileSubscribers"] = _hub.Count(record.Name, "frame", wantsFiles: true),
                 ["lastFrameUtc"] = runtime.Frames?.LastFrameUtc?.ToString("O"),
                 ["frames"] = runtime.Frames?.PublishedFrames ?? 0,
+                ["mapName"] = runtime.Frames?.MapName,
+                ["mapCapacity"] = runtime.Frames?.MapCapacity ?? 0,
             },
         };
     }
@@ -2565,8 +2572,20 @@ public sealed class InstanceManager
         return new JsonObject { ["name"] = name, ["foreground"] = focus };
     }
 
+    /// <summary>
+    /// EV-11: opens one frame subscription. <paramref name="delivery"/> is
+    /// "file" (the default, and what the CLI and the MCP client ask for) or
+    /// "shared", which names the per-instance ring in the reply and adds the
+    /// slot to every frame event.
+    /// </summary>
     public async Task<string> SubscribeFramesAsync(
-        string name, string format, int width, int height, Func<EventEnvelope, Task> send, CancellationToken cancellationToken)
+        string name,
+        string format,
+        int width,
+        int height,
+        string? delivery,
+        Func<EventEnvelope, Task> send,
+        CancellationToken cancellationToken)
     {
         var runtime = RuntimeFor(name);
         var record = runtime.Record;
@@ -2585,22 +2604,11 @@ public sealed class InstanceManager
                 options,
                 async frame =>
                 {
-                    await _hub.PublishAsync(frame.Instance, "frame", EventNames.Frame, new JsonObject
-                    {
-                        ["seq"] = frame.Sequence,
-                        ["width"] = frame.Width,
-                        ["height"] = frame.Height,
-                        ["stride"] = frame.Stride,
-                        ["format"] = frame.Format,
-                        ["guestWidth"] = frame.GuestWidth,
-                        ["guestHeight"] = frame.GuestHeight,
-                        ["bytes"] = frame.Bytes,
-                        ["emulatorTimestampUs"] = frame.EmulatorTimestampUs,
-                        ["receivedUtc"] = frame.ReceivedUtc.ToString("O"),
-                        ["writtenUtc"] = frame.WrittenUtc.ToString("O"),
-                        ["path"] = frame.Path,
-                        ["dropped"] = frame.DroppedSincePrevious,
-                    }).ConfigureAwait(false);
+                    var payload = FrameEventPayload.Build(frame);
+
+                    // EV-11: additive. An old client reads the fields it knows
+                    // and this one is absent exactly when no file was written.
+                    await _hub.PublishAsync(frame.Instance, "frame", EventNames.Frame, payload).ConfigureAwait(false);
                 },
                 async (instance, reason) =>
                 {
@@ -2613,7 +2621,8 @@ public sealed class InstanceManager
 
                     runtime.Frames = null;
                     await CloseSubscriptionsAsync(instance, "frame", reason).ConfigureAwait(false);
-                });
+                },
+                () => _hub.Count(name, "frame", wantsFiles: true) > 0);
 
             // The pump owns the runtime slot before it starts: a capture that
             // dies during its start still has to be the one the runtime knows
@@ -2634,10 +2643,14 @@ public sealed class InstanceManager
             }
         }
 
-        var id = _hub.Add(name, "frame", send);
+        var id = _hub.Add(name, "frame", send, FrameDelivery.WantsFiles(delivery));
         _subscriptions[id] = (name, "frame");
         return id;
     }
+
+    /// <summary>EV-11: the ring this instance's frames are published into, or null.</summary>
+    public string? FrameMapName(string name) =>
+        _runtimes.TryGetValue(name, out var runtime) ? runtime.Frames?.MapName : null;
 
     /// <summary>
     /// Closes every subscription of one kind for an instance and tells the

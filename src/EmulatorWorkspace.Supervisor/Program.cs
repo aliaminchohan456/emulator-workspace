@@ -32,6 +32,7 @@ internal static class Program
         }
 
         _logPath = Path.Combine(paths.LogsDirectory, "supervisor.log");
+        SupervisorDiagnostics.Use(Log);
         Log($"Supervisor starting (pid {Environment.ProcessId}, session {System.Diagnostics.Process.GetCurrentProcess().SessionId}).");
         Log($"Root: {paths.Root}");
 

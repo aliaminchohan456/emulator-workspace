@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Core.Engine;
+using EmulatorWorkspace.Core.Frames;
 using EmulatorWorkspace.Core.Host;
 using EmulatorWorkspace.Core.Instances;
 using EmulatorWorkspace.Core.Storage;
@@ -1251,8 +1252,11 @@ public sealed class OperationDispatcher
                 var width = JsonArgs.Int(args, "width") ?? 540;
                 var height = JsonArgs.Int(args, "height") ?? 1200;
                 var format = JsonArgs.String(args, "format") ?? "rgb";
+                // EV-11: "file" (the default) or "shared". The CLI and the MCP
+                // client say nothing and keep getting the path they always got.
+                var delivery = FrameDelivery.Parse(JsonArgs.String(args, "delivery"));
                 var id = await _manager.SubscribeFramesAsync(
-                        name, format, width, height, sink.SendEventAsync, cancellationToken)
+                        name, format, width, height, delivery, sink.SendEventAsync, cancellationToken)
                     .ConfigureAwait(false);
                 sink.TrackSubscription(id);
                 return new JsonObject
@@ -1260,7 +1264,9 @@ public sealed class OperationDispatcher
                     ["subscription"] = id,
                     ["name"] = name,
                     ["width"] = width,
-                    ["path"] = _manager.FramePath(name, format),
+                    ["delivery"] = delivery,
+                    ["mapName"] = _manager.FrameMapName(name),
+                    ["path"] = delivery == FrameDelivery.File ? _manager.FramePath(name, format) : null,
                 };
             }
 

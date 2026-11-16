@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using EmulatorWorkspace.Contracts;
+using EmulatorWorkspace.Core.Frames;
 using EmulatorWorkspace.Core.Supervisor;
 using EmulatorWorkspace.Core.Workspace;
 using EmulatorWorkspace.Desktop.Services;
@@ -53,6 +54,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // failed TryLock goes back here and is retried, without being a drop.
     private readonly FrameStageSlot<StagedFrame> _stageSlot = new();
     private readonly ViewportSurfaceCache _surfaceCache = new();
+    // EV-11: one reader per frame subscription, opened when the stream goes
+    // live and disposed when it ends (unsubscribe, guest switch, lost pipe).
+    private readonly object _mapGate = new();
+    private FrameRingReader? _frameMap;
+    /// <summary>
+    /// EV-11: EW_FRAME_DELIVERY=file pins the pre-change path (a file per
+    /// frame, read back by the window) for the before/after measurement; the
+    /// default reads the shared-memory ring and falls back to files by itself.
+    /// </summary>
+    private bool _frameFileFallback = Environment.GetEnvironmentVariable("EW_FRAME_DELIVERY") is "file";
+    private bool _mapFailureLogged;
     private readonly bool _legacyViewport = ViewportPathSelection.LegacyEnabled(
         Environment.GetEnvironmentVariable("EW_VIEWPORT_LEGACY"),
         ViewportPathSelection.LegacyByDefault);
@@ -70,6 +82,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Environment.GetEnvironmentVariable("EW_VIEWPORT_TRACE") is "1";
     private int _viewportTraceCounter;
     private int _lockBusy;
+    private int _frameRingTorn;
+    private int _frameRingSkipped;
     private long _renderTicks;
     private long _traceTicksAtLastLine;
     private PendingPresentTrace? _pendingTrace;
@@ -2474,7 +2488,78 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// EV-05: the only writer of the frame stream's state. Returns the id that
     /// has to be unsubscribed, if the event made one obsolete.
     /// </summary>
-    private string? ApplyFrameEvent(SubEvent e) => Advance(ref _frameSub, e);
+    private string? ApplyFrameEvent(SubEvent e)
+    {
+        var unsubscribe = Advance(ref _frameSub, e);
+        // EV-11: the ring belongs to the subscription's life. A stream that
+        // stopped holding an id - unsubscribe, guest switch, a close from the
+        // supervisor, a lost pipe - closes the mapping here and nowhere else.
+        if (Volatile.Read(ref _frameSub).Phase != SubPhase.Live)
+        {
+            CloseFrameMap();
+        }
+
+        return unsubscribe;
+    }
+
+    /// <summary>
+    /// EV-11: opens the per-instance ring once for this subscription. Returns
+    /// false when the supervisor did not name a map or the map could not be
+    /// opened, which is the caller's signal to fall back to frame files.
+    /// </summary>
+    private bool OpenFrameMap(string? mapName, string device)
+    {
+        if (string.IsNullOrEmpty(mapName))
+        {
+            if (!_mapFailureLogged)
+            {
+                _mapFailureLogged = true;
+                DesktopLog.Write($"frames {device} map: the supervisor named no ring; using frame files");
+            }
+
+            _frameFileFallback = true;
+            return false;
+        }
+
+        var reader = FrameRingReader.TryOpen(mapName, out var error);
+        if (reader is null)
+        {
+            if (!_mapFailureLogged)
+            {
+                _mapFailureLogged = true;
+                DesktopLog.Write($"frames {device} map {mapName} could not be opened: {error}");
+            }
+
+            _frameFileFallback = true;
+            return false;
+        }
+
+        lock (_mapGate)
+        {
+            _frameMap?.Dispose();
+            _frameMap = reader;
+        }
+
+        DesktopLog.Write(
+            $"frames {device} map {mapName} opened ({reader.SlotCount} slots of {reader.Capacity} bytes)");
+        return true;
+    }
+
+    private void CloseFrameMap()
+    {
+        lock (_mapGate)
+        {
+            if (_frameMap is null)
+            {
+                return;
+            }
+
+            _frameMap.Dispose();
+            _frameMap = null;
+        }
+
+        DesktopLog.Write("frames map closed");
+    }
 
     /// <summary>EV-05: the only writer of the log stream's state.</summary>
     private string? ApplyLogcatEvent(SubEvent e) => Advance(ref _logSub, e);
@@ -3594,10 +3679,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     ["format"] = "rgb",
                     ["width"] = _halfCapture ? 270 : 540,
                     ["height"] = _halfCapture ? 600 : 1200,
+                    // EV-11: read the per-instance ring. A window that falls back
+                    // to files asks for "file", which is what the CLI always
+                    // asked for, so only a real fallback makes frames/ churn.
+                    // The legacy A/B path renders from the file, so it asks for
+                    // one too.
+                    ["delivery"] = _frameFileFallback || _legacyViewport ? FrameDelivery.File : FrameDelivery.Shared,
                 },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
-            var subscription = data["subscription"]!.GetValue<string>();
 
+            var subscription = data["subscription"]!.GetValue<string>();
             // EV-05: a grant lands only for the guest the stream waits on. A
             // late one - the selection moved while this request was out - is
             // handed back to the supervisor instead of becoming this window's
@@ -3607,6 +3698,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 DesktopLog.Write($"frames subscribe {device.Name} late id={subscription}; unsubscribed");
                 await UnsubscribeAsync(OperationNames.FrameUnsubscribe, stale, TimeSpan.FromSeconds(15))
+                    .ConfigureAwait(true);
+                return;
+            }
+
+            // EV-11: the map is opened once, here, while the subscription is
+            // live. A window that cannot open it falls back to the file path on
+            // the next poll, and says so once.
+            if (!_frameFileFallback && !OpenFrameMap(data["mapName"]?.GetValue<string>(), device.Name))
+            {
+                DesktopLog.Write($"frames subscribe {device.Name} map unavailable; falling back to files");
+                var live = Volatile.Read(ref _frameSub).Id;
+                ApplyFrameEvent(new SubEvent.Closed(live ?? subscription));
+                await UnsubscribeAsync(OperationNames.FrameUnsubscribe, subscription, TimeSpan.FromSeconds(15))
                     .ConfigureAwait(true);
                 return;
             }
@@ -3779,9 +3883,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         switch (envelope.Event)
         {
             case EventNames.Frame:
-                if (AcceptsFrames(envelope.Subscription)
-                    && envelope.Data is JsonObject frame && frame["path"]?.GetValue<string>() is { } path)
+                if (AcceptsFrames(envelope.Subscription) && envelope.Data is JsonObject frame)
                 {
+                    // EV-11: a shared-memory frame carries its slot; a file
+                    // frame carries its path. Either one is a deliverable frame.
+                    var slot = frame["slot"]?.GetValue<int>() ?? -1;
+                    var mapName = frame["mapName"]?.GetValue<string>();
+                    var path = frame["path"]?.GetValue<string>() ?? "";
+                    if (slot < 0 && path.Length == 0)
+                    {
+                        break;
+                    }
+
                     var format = frame["format"]?.GetValue<string>() ?? "png";
                     var frameWidth = frame["width"]?.GetValue<int>() ?? 0;
                     var frameHeight = frame["height"]?.GetValue<int>() ?? 0;
@@ -3793,7 +3906,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     var receivedUtc = frame["receivedUtc"]?.GetValue<DateTimeOffset>();
                     var writtenUtc = frame["writtenUtc"]?.GetValue<DateTimeOffset>();
                     _frameSlot.Post(new PendingFrame(envelope.Subscription, path, format, frameWidth, frameHeight,
-                        stride, guestWidth, guestHeight, sequence, dropped, receivedUtc, writtenUtc, Stopwatch.GetTimestamp()));
+                        stride, guestWidth, guestHeight, sequence, dropped, receivedUtc, writtenUtc,
+                        Stopwatch.GetTimestamp(), slot, mapName));
                 }
 
                 break;
@@ -4323,7 +4437,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             $"uiMs={trace.UiMs:N1} totalMs={Elapsed(trace.EventTimestamp, trace.PresentedAt):N1} " +
             $"retries={trace.Retries} ticks={ticks} copy={(_writePixelsCopy ? "write" : "lock")} " +
             $"format={trace.SurfaceFormat} stageMode={_stageMode} busy={Volatile.Read(ref _lockBusy)} " +
-            $"slotDropped={_frameSlot.Dropped} stageReplaced={_stageSlot.Replaced}");
+            $"slotDropped={_frameSlot.Dropped} stageReplaced={_stageSlot.Replaced} " +
+            $"ringTorn={Volatile.Read(ref _frameRingTorn)} ringSkipped={Volatile.Read(ref _frameRingSkipped)}");
     }
 
     private readonly record struct PendingPresentTrace(
@@ -4351,8 +4466,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// frames are read straight into the pool; a PNG (the fallback transport) is
     /// decoded to BGRA into the same kind of buffer, so the UI thread only ever
     /// converts and copies.
+    ///
+    /// EV-11: a raw frame that names a ring slot is copied out of shared memory,
+    /// which is one memcpy instead of a file open plus a 1.94 MB read. The copy
+    /// is verified against the slot's seqlock; a torn copy is retried once and
+    /// then skipped. The file path stays for everything else.
     /// </summary>
-    private static FrameRead? ReadFrame(PendingFrame frame)
+    private FrameRead? ReadFrame(PendingFrame frame)
     {
         if (FramePixelConverter.TryParse(frame.Format, out var format))
         {
@@ -4373,6 +4493,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             var length = checked(stride * frame.Height);
+            if (frame.Slot >= 0 && ReadFromMap(frame, length, stride, format) is { } mapped)
+            {
+                return mapped;
+            }
+
+            if (frame.Path.Length == 0)
+            {
+                return null;
+            }
+
             var buffer = FrameBuffers.Rent(length);
             try
             {
@@ -4416,6 +4546,66 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             FrameBuffers.Return(pngBuffer);
             throw;
         }
+    }
+
+    /// <summary>
+    /// EV-11: one frame copied out of the shared-memory ring. The copy is
+    /// verified by the slot's seqlock; a torn copy is retried exactly once and
+    /// then skipped, which is the price of a writer that never waits for a
+    /// reader. Returns null when the ring cannot serve this frame, and the
+    /// caller then uses the file path if the event carried one.
+    /// </summary>
+    private FrameRead? ReadFromMap(PendingFrame frame, int length, int stride, FramePixelFormat format)
+    {
+        var buffer = FrameBuffers.Rent(length);
+        try
+        {
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                FrameRingReadStatus status;
+                FrameRingFrameInfo info;
+                lock (_mapGate)
+                {
+                    if (_frameMap is null)
+                    {
+                        break;
+                    }
+
+                    status = _frameMap.TryRead(frame.Slot, buffer.AsSpan(0, length), stride, out info);
+                }
+
+                if (status == FrameRingReadStatus.Ok)
+                {
+                    // The slot must describe exactly the frame the event named;
+                    // a slot from another size would not fit the rented buffer.
+                    if (info.Width <= 0 || info.Height <= 0 || info.Stride != stride || info.Bytes > length)
+                    {
+                        break;
+                    }
+
+                    return new FrameRead(buffer, info.Width, info.Height, info.Stride, format);
+                }
+
+                if (status != FrameRingReadStatus.Torn)
+                {
+                    break;
+                }
+
+                // Torn: the writer took this slot while the copy ran. One more
+                // attempt, then the frame is skipped rather than shown half
+                // written.
+                Interlocked.Increment(ref _frameRingTorn);
+            }
+        }
+        catch
+        {
+            FrameBuffers.Return(buffer);
+            throw;
+        }
+
+        FrameBuffers.Return(buffer);
+        Interlocked.Increment(ref _frameRingSkipped);
+        return null;
     }
 
     private static BitmapSource? LoadFrame(PendingFrame frame)
@@ -5815,6 +6005,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         await UnsubscribeFramesAsync().ConfigureAwait(false);
         await StopLogcatAsync().ConfigureAwait(false);
+        CloseFrameMap();
         if (_connection is not null)
         {
             await _connection.DisposeAsync().ConfigureAwait(false);
@@ -5846,7 +6037,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private sealed record PendingFrame(string Subscription, string Path, string Format, int Width, int Height, int Stride,
         int GuestWidth, int GuestHeight, int Sequence, int Dropped, DateTimeOffset? ReceivedUtc, DateTimeOffset? WrittenUtc,
-        long EventTimestamp);
+        long EventTimestamp, int Slot = -1, string? MapName = null);
 
     /// <summary>
     /// EV-10: one frame read into a rented buffer, disposed back to the pool
