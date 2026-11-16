@@ -49,6 +49,11 @@
          pure rule, so the races (late grant, close while subscribing, lost
          pipe, double request) are pinned here instead of needing a guest. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/StreamSubscription.cs" Link="Desktop/StreamSubscription.cs" />
+    <!-- EV-06: the shell's one page and the inspector's five session-only rows
+         are pure rules too, so they are pinned here instead of through a WPF
+         window. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ShellPage.cs" Link="Desktop/ShellPage.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/InspectorSessionRows.cs" Link="Desktop/InspectorSessionRows.cs" />
     <!-- UX-18: the remembered Magisk lab inputs hold no WPF types either, so
          their failure paths are unit-tested here. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/LabInputsStore.cs" Link="Desktop/LabInputsStore.cs" />

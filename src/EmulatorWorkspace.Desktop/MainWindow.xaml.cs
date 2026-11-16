@@ -1061,9 +1061,22 @@ public partial class MainWindow : Window, IOverlayAnchor
 
     // UX-17: the Appearance tab's radios are bound and checked while the window
     // is built, long before anyone opens the drawer. That check is not a user
-    // choice, so saving is suppressed from construction until the first drawer
-    // pass clears the flag (see OpenSettings).
-    private bool _suppressThemeSaved = true;
+    // choice, so the drawer starts Closed and only Open accepts a click (see
+    // OpenSettings and OnThemeChoice).
+    //
+    // EV-06 (UX-17 defect 4): one state replaces the flag. Loading is the whole
+    // open pass - binding, refresh and the layout pass that follows - and only
+    // Open accepts a theme click. Closed accepts nothing, so closing the drawer
+    // can no longer re-raise a Checked and re-save a "Follow Windows" default as
+    // a pinned theme.
+    private SettingsDrawerState _settingsDrawer = SettingsDrawerState.Closed;
+
+    private enum SettingsDrawerState
+    {
+        Closed,
+        Loading,
+        Open,
+    }
 
     private void OnOpenSettings(object sender, RoutedEventArgs e) => OpenSettings();
 
@@ -1085,11 +1098,11 @@ public partial class MainWindow : Window, IOverlayAnchor
 
         _settingsFocusReturn = Keyboard.FocusedElement;
         IsSettingsOpen = true;
-        // UX-17: the radios are re-bound by RefreshSettingsFacts below (and are
-        // checked while the tab content is first built), and both raise Checked.
-        // Neither is a user choice, so the flag is raised before the refresh and
-        // dropped after the layout pass that follows.
-        _suppressThemeSaved = true;
+        // UX-17 / EV-06: the radios are re-bound by RefreshSettingsFacts below
+        // (and are checked while the tab content is first built), and both raise
+        // Checked. Neither is a user choice, so the drawer is Loading until the
+        // layout pass that follows this handler has finished.
+        _settingsDrawer = SettingsDrawerState.Loading;
         // The rail item paints the accent-soft active surface from its Tag, the
         // same flag the selection triggers in the shared rail style use.
         SettingsRailButton.Tag = true;
@@ -1130,10 +1143,17 @@ public partial class MainWindow : Window, IOverlayAnchor
 
         FocusSettingsDrawer();
 
-        // The flag stays raised until the background pass that follows this
+        // The drawer is Loading until the background pass that follows this
         // handler: the tab content is created and bound during that layout pass,
-        // so any Checked it raises is infrastructure, not a choice.
-        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => _suppressThemeSaved = false));
+        // so any Checked it raises is infrastructure, not a choice. A close that
+        // arrives first leaves the state Closed and this does nothing.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            if (IsSettingsOpen && _settingsDrawer == SettingsDrawerState.Loading)
+            {
+                _settingsDrawer = SettingsDrawerState.Open;
+            }
+        }));
     }
 
     private void CloseSettings()
@@ -1144,6 +1164,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         }
 
         IsSettingsOpen = false;
+        _settingsDrawer = SettingsDrawerState.Closed;
         SettingsRailButton.Tag = false;
         HideThemeSaved();
         var epoch = ++_settingsDrawerEpoch;
@@ -1369,8 +1390,9 @@ public partial class MainWindow : Window, IOverlayAnchor
         // Opening the drawer checks the matching radio while the tab content is
         // first built. That is not a choice: applying it would be harmless, but
         // UX-17 saves the theme, and saving here would turn a "follow Windows"
-        // default into a pinned Dark the operator never picked.
-        if (_suppressThemeSaved)
+        // default into a pinned Dark the operator never picked. Only a click
+        // while the drawer is fully Open is a choice.
+        if (_settingsDrawer != SettingsDrawerState.Open)
         {
             return;
         }
@@ -1584,18 +1606,12 @@ public partial class MainWindow : Window, IOverlayAnchor
 
     /// <summary>
     /// Rail: Studio is the destination behind every full page (Logcat, Agents).
-    /// The same close path each page uses runs here, so the Logcat stream is
-    /// detached exactly when its own close would detach it.
+    /// One page state means one assignment; leaving the Logcat page detaches the
+    /// stream exactly when its own close would detach it, because the setter
+    /// re-evaluates the log surfaces.
     /// </summary>
-    private void OnStudio(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel.IsLogcatPage && _viewModel.CloseLogcatPageCommand.CanExecute(null))
-        {
-            _viewModel.CloseLogcatPageCommand.Execute(null);
-        }
-
-        _viewModel.IsAgentsPage = false;
-    }
+    private void OnStudio(object sender, RoutedEventArgs e) =>
+        _viewModel.CurrentPage = ShellPage.Studio;
 
     /// <summary>
     /// Rail / Ctrl+4 / status bar: Agent Sessions is a shell page beside Studio,
@@ -1645,13 +1661,11 @@ public partial class MainWindow : Window, IOverlayAnchor
         switch (destination)
         {
             case 1:
-                if (_viewModel.IsLogcatPage && _viewModel.CloseLogcatPageCommand.CanExecute(null))
-                {
-                    _viewModel.CloseLogcatPageCommand.Execute(null);
-                }
-
-                // UX-13: Studio is also behind the Agents page; Ctrl+1 lands on it.
-                _viewModel.IsAgentsPage = false;
+                // EV-06: Studio is one page assignment; it is also behind the
+                // Agents page and the Logcat page, and the setter re-evaluates the
+                // log surfaces so the stream is detached exactly as its own close
+                // would detach it.
+                _viewModel.CurrentPage = ShellPage.Studio;
                 break;
             case 2:
                 OpenDeviceLibrary();
@@ -1710,9 +1724,10 @@ public partial class MainWindow : Window, IOverlayAnchor
     /// </summary>
     private void OnRootLab(object sender, RoutedEventArgs e)
     {
-        // UX-13: Root Lab is the inspector's Diagnostics tab, so a full page
-        // covering the body has to give way first or the selection is invisible.
-        _viewModel.IsAgentsPage = false;
+        // UX-13 / EV-06: Root Lab is the inspector's Diagnostics tab, so a full
+        // page (Agents or Logcat) covering the body has to give way first or the
+        // selection is invisible.
+        _viewModel.CurrentPage = ShellPage.Studio;
         SetDetailsCollapsed(false);
         var diagnostics = InspectorTabs.Items.OfType<TabItem>().FirstOrDefault(
             tab => string.Equals(tab.Header as string, "Diagnostics", StringComparison.Ordinal));
@@ -2160,6 +2175,25 @@ public partial class MainWindow : Window, IOverlayAnchor
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
         {
             OpenPalette();
+            e.Handled = true;
+        }
+        // EV-06: Refresh has a chord. It runs the same command the rail item and
+        // the error bar's Retry run, so it obeys the same CanExecute (false while
+        // a connect or a recovery is in flight).
+        else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.R)
+        {
+            if (_viewModel.RefreshCommand.CanExecute(null))
+            {
+                _viewModel.RefreshCommand.Execute(null);
+            }
+            else
+            {
+                // EV-06: the chord arrived but the single-flight connect or a
+                // recovery owns the next move. One line per refused press, so the
+                // acceptance can count what was delivered and what was ignored.
+                DesktopLog.Write("refresh chord ignored: connect or recovery in flight");
+            }
+
             e.Handled = true;
         }
         // UX-12: the rail's five destinations on the number row (and numpad).

@@ -1286,7 +1286,7 @@
                         <Path Data="{StaticResource IconTheme}" Style="{StaticResource Glyph}" />
                     </Button>
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding RefreshCommand}"
-                            Margin="0,0,0,4" ToolTip="Refresh"
+                            Margin="0,0,0,4" ToolTip="Refresh (Ctrl+R)"
                             AutomationProperties.Name="Refresh workspace state">
                         <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                     </Button>

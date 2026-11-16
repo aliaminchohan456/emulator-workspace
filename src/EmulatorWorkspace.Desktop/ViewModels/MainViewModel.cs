@@ -56,8 +56,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // UX-16 item C: the bounded recovery rule for a supervisor that went away.
     // The view model owns the start/connect/log; the rule owns the budget.
     private readonly SupervisorWatchdog _watchdog = new();
-    private bool _watchdogRecovering;
     private int _frameSequence;
+
+    // EV-06: the connect is single-flight. The slot is claimed before any work
+    // runs, so a second Refresh, a watchdog attempt or a re-entrant call joins
+    // the task already in flight instead of opening a second pipe.
+    private readonly object _initializeGate = new();
+    private Task? _initializeTask;
+    private bool _isConnecting;
 
     // EV-05: each stream has one owner and one transition function. The phase,
     // the guest its id belongs to and the id itself are one value, changed only
@@ -166,7 +172,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             () => LaunchAsync("dev.emulatorworkspace.sample"),
             () => SelectedDevice?.Lifecycle.CanInstall == true && !IsBusy);
         RotateCommand = new AsyncRelayCommand(ToggleRotationAsync, () => CanSendInput);
-        RefreshCommand = new AsyncRelayCommand(InitializeAsync);
+        RefreshCommand = new AsyncRelayCommand(InitializeAsync, () => !IsConnecting && !_watchdog.IsRunning);
         ToggleLogcatCommand = new RelayCommand(() => IsLogcatOpen = !IsLogcatOpen);
         ClearLogCommand = new RelayCommand(ClearLog);
         ExportLogCommand = new AsyncRelayCommand(ExportLogAsync);
@@ -649,7 +655,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>Telemetry pill: the live frame rate, or an em dash before the first frame.</summary>
-    public string TelemetryFpsValue => Frame is null ? "—" : FramesPerSecond.ToString("N0");
+    /// <remarks>
+    /// EV-06: the status bar reads the same value, so it is gated by the same
+    /// session rule as the inspector rows. A stopped guest shows the dash, not
+    /// the rate the previous run ended on.
+    /// </remarks>
+    public string TelemetryFpsValue =>
+        Frame is null || !InspectorSessionRows.IsReported(SelectedPhase)
+            ? "—"
+            : FramesPerSecond.ToString("N0");
 
     // igr-feedback-ux05 item 1: there is no CPU segment at any width. The
     // supervisor reports no CPU sample for a running guest, so "FPS 9 · CPU —"
@@ -970,78 +984,72 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // stream; leaving it detaches only when the dock is closed too. There is no
     // second log source, no sample row and no capability the dock does not have.
 
-    private bool _isLogcatPage;
+    // ---- EV-06: one page ------------------------------------------------
+    //
+    // UX-08's full Logcat page and UX-13's Agents page used to be two independent
+    // flags, so the shell could say "Logcat" and "Agents" at the same time and
+    // the Studio was hidden by both. One value now answers every question, and
+    // the UI still binds to the same computed names.
 
-    public bool IsLogcatPage
+    private ShellPage _currentPage = ShellPage.Studio;
+
+    public ShellPage CurrentPage
     {
-        get => _isLogcatPage;
+        get => _currentPage;
         set
         {
-            if (SetProperty(ref _isLogcatPage, value))
+            var previous = _currentPage;
+            if (previous == value)
             {
-                OnPropertyChanged(nameof(IsStudioVisible));
-                OnPropertyChanged(nameof(LogcatRailActive));
+                return;
+            }
+
+            _currentPage = value;
+            OnPropertyChanged(nameof(CurrentPage));
+            OnPropertyChanged(nameof(IsLogcatPage));
+            OnPropertyChanged(nameof(IsAgentsPage));
+            OnPropertyChanged(nameof(IsStudioVisible));
+            OnPropertyChanged(nameof(LogcatRailActive));
+            OnPropertyChanged(nameof(AgentsRailActive));
+
+            // Only a Logcat page entering or leaving changes whether a log
+            // surface is visible; Studio <-> Agents leaves the dock untouched.
+            if (ShellPageRules.TouchesLogcat(previous, value))
+            {
                 UpdateLogcatAttachment();
                 NotifyLogFilterState();
             }
         }
     }
 
+    /// <summary>The full Logcat page is the current page.</summary>
+    public bool IsLogcatPage => ShellPageRules.ShowsLogcat(CurrentPage);
+
     // ---- UX-13 Agents page --------------------------------------------------
-    //
-    // Agent Sessions is the fifth shell page: the same content the separate
-    // window hosted, shown in the body cell under the rail, command bar and
-    // status bar. The page and the Logcat page are mutually exclusive, and the
-    // Studio is visible only when neither page covers it.
 
-    private bool _isAgentsPage;
-
-    public bool IsAgentsPage
-    {
-        get => _isAgentsPage;
-        set
-        {
-            if (SetProperty(ref _isAgentsPage, value))
-            {
-                OnPropertyChanged(nameof(IsStudioVisible));
-                OnPropertyChanged(nameof(AgentsRailActive));
-            }
-        }
-    }
+    /// <summary>The Agents page is the current page.</summary>
+    public bool IsAgentsPage => ShellPageRules.ShowsAgents(CurrentPage);
 
     /// <summary>The Studio exercises are shown whenever no full page covers them.</summary>
-    public bool IsStudioVisible => !IsLogcatPage && !IsAgentsPage;
+    public bool IsStudioVisible => ShellPageRules.ShowsStudio(CurrentPage);
 
     /// <summary>The rail's Logcat destination is active for the dock or the page.</summary>
-    public bool LogcatRailActive => IsLogcatOpen || IsLogcatPage;
+    public bool LogcatRailActive => ShellPageRules.LogcatRailActive(CurrentPage, IsLogcatOpen);
 
     /// <summary>The rail's Agents destination is active only while its page is.</summary>
-    public bool AgentsRailActive => IsAgentsPage;
+    public bool AgentsRailActive => ShellPageRules.AgentsRailActive(CurrentPage);
 
     /// <summary>
     /// Rail / Ctrl+4: show the Agents page. Leaving the Logcat page detaches the
     /// stream only when the dock is closed too, exactly like its own close.
     /// </summary>
-    public void OpenAgentsPage()
-    {
-        if (IsLogcatPage)
-        {
-            IsLogcatPage = false;
-        }
-
-        IsAgentsPage = true;
-    }
+    public void OpenAgentsPage() => CurrentPage = ShellPage.Agents;
 
     private void OpenLogcatPage()
     {
         // Page first, then close the dock: the attachment decision below then sees
         // one open log surface and never unsubscribes between the two.
-        IsLogcatPage = true;
-        if (IsAgentsPage)
-        {
-            IsAgentsPage = false;
-        }
-
+        CurrentPage = ShellPage.Logcat;
         if (IsLogcatOpen)
         {
             IsLogcatOpen = false;
@@ -1052,7 +1060,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void CloseLogcatPage()
     {
-        IsLogcatPage = false;
+        if (IsLogcatPage)
+        {
+            CurrentPage = ShellPage.Studio;
+        }
+
         if (!IsLogcatOpen)
         {
             _ = StopLogcatAsync();
@@ -1621,9 +1633,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     OnPropertyChanged(nameof(FrameInfo));
                     // UX-05: a cleared frame also empties the telemetry pill and
                     // the sparkline, so no stale rate survives a device switch.
-                    OnPropertyChanged(nameof(FrameRateText));
-                    OnPropertyChanged(nameof(DeliveredFrameText));
-                    OnPropertyChanged(nameof(DroppedFramesText));
+                    NotifySessionRows();
                     PushTelemetrySample();
                 }
             }
@@ -1664,21 +1674,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // value each (tabular mono, fixed width). They are raised on the same 250 ms
     // cadence as FrameInfo, so nothing here runs its own timer and no value is
     // shown before the supervisor has delivered a frame.
-    public string GuestDisplayText => GuestWidth > 0 && GuestHeight > 0
-        ? $"{GuestWidth} × {GuestHeight}"
-        : "not reported";
+    //
+    // EV-06: they are session rows, so they are also gated by the lifecycle. A
+    // guest that is not Running or Starting reports nothing, even when a stale
+    // frame or a readiness stamp from the previous run is still in memory.
+    private DevicePhase? SelectedPhase => SelectedDevice?.Lifecycle.Phase;
 
-    public string DeliveredFrameText => Frame is null
-        ? "not reported"
-        : $"{FrameWidth} × {FrameHeight}";
+    public string GuestDisplayText =>
+        InspectorSessionRows.GuestDisplay(SelectedPhase, GuestWidth, GuestHeight);
 
-    public string FrameRateText => Frame is null
-        ? "not reported"
-        : $"{FramesPerSecond:N1} fps";
+    public string DeliveredFrameText =>
+        InspectorSessionRows.DeliveredFrame(SelectedPhase, Frame is not null, FrameWidth, FrameHeight);
 
-    public string DroppedFramesText => Frame is null
-        ? "not reported"
-        : _droppedFrames.ToString("N0");
+    public string FrameRateText =>
+        InspectorSessionRows.FrameRate(SelectedPhase, Frame is not null, FramesPerSecond);
+
+    public string DroppedFramesText =>
+        InspectorSessionRows.Dropped(SelectedPhase, Frame is not null, _droppedFrames);
 
     private double _lastInputLatency = double.NaN;
 
@@ -1690,6 +1702,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         get
         {
+            if (!InspectorSessionRows.IsReported(SelectedPhase))
+            {
+                return "boot is reported while the guest runs";
+            }
+
             var readiness = SelectedDevice?.Readiness;
             if (readiness is null)
             {
@@ -1713,16 +1730,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// UX-04b fix pass (B2): the Boot row is a single tabular number (time to
     /// interactive, the figure the supervisor itself reports), or an em dash when
     /// this session has no readiness measurement. <see cref="ReadinessText"/> is
-    /// the explanation behind the tooltip.
+    /// the explanation behind the tooltip. EV-06: it is a session row, so a guest
+    /// that is not Running or Starting shows the dash, never last run's figure.
     /// </summary>
-    public string BootValueText
-    {
-        get
-        {
-            var interactive = SelectedDevice?.Readiness?["launchedToInteractiveSeconds"];
-            return interactive is null ? "—" : $"{interactive.GetValue<double>():N1} s";
-        }
-    }
+    public string BootValueText =>
+        InspectorSessionRows.Boot(
+            SelectedPhase,
+            SelectedDevice?.Readiness?["launchedToInteractiveSeconds"] is { } interactive
+                ? interactive.GetValue<double>()
+                : null);
 
     public string BootTooltip => ReadinessText;
 
@@ -2192,15 +2208,74 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _ => "Working...",
     };
 
-    public async Task InitializeAsync()
+    /// <summary>
+    /// EV-06: true only while the connect/doctor/devices pass is running. It is
+    /// what disables Refresh: pressing it again cannot start a second connect.
+    /// </summary>
+    public bool IsConnecting
     {
+        get => _isConnecting;
+        private set
+        {
+            if (SetProperty(ref _isConnecting, value))
+            {
+                RefreshCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// EV-06: one connect at a time. The slot is claimed before any work runs,
+    /// so the Refresh command, the watchdog's recovery attempt and a re-entrant
+    /// caller all share the task in flight instead of opening a second pipe.
+    /// A completed task is replaced, so a later Refresh really does re-read.
+    /// </summary>
+    public Task InitializeAsync()
+    {
+        lock (_initializeGate)
+        {
+            if (_initializeTask is { IsCompleted: false } running)
+            {
+                DesktopLog.Write("initialize: joined the connect already in flight");
+                return running;
+            }
+
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _initializeTask = completion.Task;
+            DesktopLog.Write("initialize: connect requested");
+            _ = CompleteInitializeAsync(completion);
+            return completion.Task;
+        }
+    }
+
+    private async Task CompleteInitializeAsync(TaskCompletionSource completion)
+    {
+        try
+        {
+            await InitializeCoreAsync().ConfigureAwait(true);
+            completion.TrySetResult();
+        }
+        catch (Exception ex)
+        {
+            // InitializeCoreAsync reports its own failures; this keeps an
+            // unexpected throw observable by the awaiter instead of escaping as
+            // an unobserved task exception.
+            completion.TrySetException(ex);
+        }
+    }
+
+    private async Task InitializeCoreAsync()
+    {
+        IsConnecting = true;
         IsBusy = true;
         BusyText = "Connecting to the local supervisor...";
         ClearError();
 
         // A deliberate refresh or Retry re-arms the watchdog; its own recovery
-        // attempts must not, or the budget would never be spent.
-        if (!_watchdogRecovering)
+        // attempts must not, or the budget would never be spent. The watchdog is
+        // running for the whole attempt, not just while this method executes, so
+        // a Refresh that lands during a backoff delay cannot reset the budget.
+        if (!_watchdog.IsRunning)
         {
             _watchdog.Reset();
         }
@@ -2281,6 +2356,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         finally
         {
+            IsConnecting = false;
             IsBusy = false;
             BusyText = "";
             UpdateStage();
@@ -2423,6 +2499,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         DesktopLog.Write($"watchdog: supervisor lost: {reason}; up to {SupervisorWatchdog.MaxAttempts} attempts");
+        RefreshCommand.RaiseCanExecuteChanged();
         _ = RecoverSupervisorAsync();
     }
 
@@ -2441,11 +2518,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
-            _watchdogRecovering = true;
             try
             {
                 // The same initialization the app runs on launch and on Retry:
-                // locate or start the supervisor, connect, doctor, devices.
+                // locate or start the supervisor, connect, doctor, devices. It is
+                // single-flight, so a Refresh that races this attempt joins it
+                // instead of opening a second pipe.
                 await InitializeAsync().ConfigureAwait(true);
             }
             catch (Exception ex)
@@ -2455,19 +2533,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 // run as an unobserved task exception.
                 DesktopLog.Write("watchdog: attempt threw " + ex.GetType().Name + ": " + ex.Message);
             }
-            finally
-            {
-                _watchdogRecovering = false;
-            }
 
             if (IsConnected)
             {
                 _watchdog.AttemptSucceeded();
                 DesktopLog.Write($"watchdog: supervisor reachable again on attempt {attempt}");
+                RefreshCommand.RaiseCanExecuteChanged();
                 return;
             }
 
             _watchdog.AttemptFailed();
+            RefreshCommand.RaiseCanExecuteChanged();
         }
 
         DesktopLog.Write("watchdog: gave up; the error bar keeps Retry");
@@ -2632,6 +2708,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _captureRestrictedReason = "";
             _lab = LabUiState.NotChecked;
             MagiskState = _lab.Tooltip;
+            // EV-06: the inspector's session rows belong to the guest that was
+            // selected, so the new selection starts from "not reported".
+            NotifySessionRows();
             UpdateFrameHealth();
             ClearError();
             ResetBootStages();
@@ -5095,8 +5174,29 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(PrimaryActionEnabled));
         OnPropertyChanged(nameof(CanSendInput));
         OnPropertyChanged(nameof(IsGuestUp));
+        // EV-06: a guest that just stopped must stop reporting the frame and
+        // boot figures of the run it was in, without waiting for the next frame.
+        NotifySessionRows();
         NotifyLogFilterState();
         RaiseCommandStates();
+    }
+
+    /// <summary>
+    /// EV-06: raises the five session-only inspector rows together. They share
+    /// one rule (<see cref="InspectorSessionRows"/>) and one moment to change:
+    /// a new selection, a lifecycle change or a cleared frame.
+    /// </summary>
+    private void NotifySessionRows()
+    {
+        OnPropertyChanged(nameof(GuestDisplayText));
+        OnPropertyChanged(nameof(DeliveredFrameText));
+        OnPropertyChanged(nameof(FrameRateText));
+        OnPropertyChanged(nameof(DroppedFramesText));
+        OnPropertyChanged(nameof(BootValueText));
+        OnPropertyChanged(nameof(ReadinessText));
+        OnPropertyChanged(nameof(BootTooltip));
+        OnPropertyChanged(nameof(TelemetryFpsValue));
+        OnPropertyChanged(nameof(TelemetryTooltip));
     }
 
     private void RaiseCommandStates()
@@ -5115,6 +5215,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         BuildApkSetCommand.RaiseCanExecuteChanged();
         LaunchSampleCommand.RaiseCanExecuteChanged();
         RotateCommand.RaiseCanExecuteChanged();
+        RefreshCommand.RaiseCanExecuteChanged();
         AdbRootCommand.RaiseCanExecuteChanged();
         AdbUnrootCommand.RaiseCanExecuteChanged();
         RefreshAdbStateCommand.RaiseCanExecuteChanged();
@@ -5495,6 +5596,14 @@ public sealed class DeviceItemViewModel : ObservableObject
         }
 
         State = status["state"]?.GetValue<string>() ?? State;
+
+        // EV-06: readiness is a session-only measurement. A guest that is no
+        // longer Running or Starting keeps no boot figure from the run it was
+        // in, so the next run cannot show the previous run's number.
+        if (!InspectorSessionRows.IsReported(Lifecycle.Phase))
+        {
+            Readiness = null;
+        }
 
         if (Lifecycle != before)
         {
