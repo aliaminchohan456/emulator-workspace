@@ -54,6 +54,11 @@
          window. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ShellPage.cs" Link="Desktop/ShellPage.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/InspectorSessionRows.cs" Link="Desktop/InspectorSessionRows.cs" />
+    <!-- EV-07: the device library's one sheet and its one load state are pure
+         rules too, so the sheet transitions and the single-flight refresh are
+         pinned here instead of through a WPF window. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/LibrarySheet.cs" Link="Desktop/LibrarySheet.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/LibraryLoad.cs" Link="Desktop/LibraryLoad.cs" />
     <!-- UX-18: the remembered Magisk lab inputs hold no WPF types either, so
          their failure paths are unit-tested here. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/LabInputsStore.cs" Link="Desktop/LabInputsStore.cs" />

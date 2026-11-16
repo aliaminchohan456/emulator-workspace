@@ -22,6 +22,9 @@ public static class InspectorSessionRows
     /// <summary>The Boot row's empty value: one quiet dash, never a number.</summary>
     public const string NoMeasurement = "—";
 
+    /// <summary>The identity row's empty value: one dash, never a blank cell.</summary>
+    public const string NoValue = "—";
+
     /// <summary>Whether this lifecycle can report session-only rows at all.</summary>
     public static bool IsReported(DevicePhase? phase) =>
         phase is DevicePhase.Running or DevicePhase.Starting;
@@ -54,4 +57,31 @@ public static class InspectorSessionRows
         IsReported(phase) && interactiveSeconds is { } seconds
             ? $"{seconds:N1} s"
             : NoMeasurement;
+
+    /// <summary>
+    /// EV-07: the inspector's ABI / API row. A stopped guest's status carries no
+    /// <c>abi</c> or <c>sdkLevel</c>, so the row used to go blank the moment the
+    /// engine stopped. The last reported pair is cached, and the image package
+    /// the record already carries is the fallback before any run; only when
+    /// neither exists does the row read the dash. It is never an empty string.
+    /// </summary>
+    public static string AbiApi(string reportedAbi, string reportedApi, string cachedAbi, string cachedApi)
+    {
+        var abi = FirstReported(reportedAbi, cachedAbi);
+        var api = FirstReported(reportedApi, cachedApi);
+        if (abi.Length == 0 && api.Length == 0)
+        {
+            return NoValue;
+        }
+
+        if (abi.Length == 0)
+        {
+            return api;
+        }
+
+        return api.Length == 0 ? abi : $"{abi} · {api}";
+    }
+
+    private static string FirstReported(string reported, string cached) =>
+        reported.Trim().Length > 0 ? reported.Trim() : cached.Trim();
 }

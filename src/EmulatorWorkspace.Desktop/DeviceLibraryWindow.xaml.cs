@@ -264,9 +264,19 @@ public partial class DeviceLibraryWindow : Window, IOverlayAnchor
     /// itself; the dialog it opens does the real work only when the operator
     /// confirms. Spec: <c>create</c>, <c>clone:&lt;device&gt;</c>,
     /// <c>recovery:&lt;device&gt;</c>, <c>reset:&lt;device&gt;</c>,
-    /// <c>delete:&lt;device&gt;</c>.
+    /// <c>delete:&lt;device&gt;</c>. EV-07: a comma-separated list runs the
+    /// steps in order, which is how "Clone while Create is open" is captured
+    /// through the same entry points.
     /// </summary>
     public async Task RunEvidenceHookAsync(string spec)
+    {
+        foreach (var step in spec.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            await RunEvidenceStepAsync(step);
+        }
+    }
+
+    private async Task RunEvidenceStepAsync(string spec)
     {
         var parts = spec.Split(':', 2);
         var action = parts[0].Trim().ToLowerInvariant();
@@ -308,6 +318,27 @@ public partial class DeviceLibraryWindow : Window, IOverlayAnchor
                 break;
             case "delete" when card is not null:
                 _viewModel.ConfirmDeleteFor(card);
+                break;
+            case "delete-point" when card is not null:
+                // EV-07: the only confirmation that stacks over another sheet
+                // is the recovery panel's point deletion, so this step opens the
+                // panel through the same entry point and then calls the same
+                // command the point's Delete button calls.
+                await _viewModel.OpenRecoveryForAsync(card);
+                for (var waited = 0; waited < 100 && _viewModel.RecoveryPoints.Count == 0; waited++)
+                {
+                    await Task.Delay(300);
+                }
+
+                if (_viewModel.RecoveryPoints.FirstOrDefault() is { } point)
+                {
+                    _viewModel.ConfirmDeleteFor(point);
+                }
+                else
+                {
+                    DesktopLog.Write("library hook: no recovery point to confirm");
+                }
+
                 break;
             default:
                 DesktopLog.Write("library hook: nothing to do for " + spec);
@@ -602,23 +633,7 @@ public partial class DeviceLibraryWindow : Window, IOverlayAnchor
             return;
         }
 
-        if (_viewModel.IsConfirmOpen)
-        {
-            _viewModel.CancelConfirmCommand.Execute(null);
-        }
-        else if (_viewModel.IsCreateOpen)
-        {
-            _viewModel.CloseCreateCommand.Execute(null);
-        }
-        else if (_viewModel.IsCloneOpen)
-        {
-            _viewModel.CloseCloneCommand.Execute(null);
-        }
-        else if (_viewModel.IsRecoveryOpen)
-        {
-            _viewModel.CloseRecoveryCommand.Execute(null);
-        }
-        else
+        if (!_viewModel.TryDismissSheet())
         {
             Close();
         }

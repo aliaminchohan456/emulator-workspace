@@ -79,4 +79,46 @@ public class InspectorSessionRowsTests
     {
         Assert.Equal("not reported", InspectorSessionRows.NotReported);
     }
+
+    [Fact]
+    public void ALiveGuestReportsTheCurrentPair()
+    {
+        Assert.Equal(
+            "x86_64 · 35",
+            InspectorSessionRows.AbiApi("x86_64", "35", cachedAbi: "", cachedApi: ""));
+    }
+
+    [Fact]
+    public void AStoppedGuestKeepsTheCachedProfilePair()
+    {
+        // EV-07: instance.status carries no abi/sdkLevel for a stopped guest.
+        Assert.Equal(
+            "x86_64 · 35",
+            InspectorSessionRows.AbiApi(reportedAbi: "", reportedApi: "", cachedAbi: "x86_64", cachedApi: "35"));
+    }
+
+    [Fact]
+    public void TheReportedPairWinsOverTheCachedOne()
+    {
+        Assert.Equal(
+            "arm64-v8a · 36",
+            InspectorSessionRows.AbiApi("arm64-v8a", "36", cachedAbi: "x86_64", cachedApi: "35"));
+    }
+
+    [Theory]
+    [InlineData("x86_64", "", "x86_64")]
+    [InlineData("", "35", "35")]
+    public void OneKnownHalfIsReportedAlone(string abi, string api, string expected)
+    {
+        Assert.Equal(expected, InspectorSessionRows.AbiApi(abi, api, cachedAbi: "", cachedApi: ""));
+    }
+
+    [Fact]
+    public void AnUnknownGuestNeverShowsABlankRow()
+    {
+        Assert.Equal("—", InspectorSessionRows.AbiApi("", "", "", ""));
+        Assert.Equal("—", InspectorSessionRows.AbiApi("  ", "  ", " ", " "));
+        Assert.Equal("—", InspectorSessionRows.NoValue);
+        Assert.Single(InspectorSessionRows.NoValue);
+    }
 }

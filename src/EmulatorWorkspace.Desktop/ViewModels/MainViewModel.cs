@@ -5462,6 +5462,15 @@ public sealed class DeviceItemViewModel : ObservableObject
 
     private string _abi = "";
 
+    /// <summary>
+    /// EV-07: the last pair the supervisor reported, plus the pair the record's
+    /// image package already names. A stopped guest's status carries no
+    /// <c>abi</c>/<c>sdkLevel</c>, so the identity row falls back to these
+    /// instead of going blank.
+    /// </summary>
+    private string _cachedAbi = "";
+    private string _cachedSdkLevel = "";
+
     public string Abi
     {
         get => _abi;
@@ -5499,22 +5508,12 @@ public sealed class DeviceItemViewModel : ObservableObject
     public string ApiLabel => string.IsNullOrWhiteSpace(SdkLevel) ? "" : $"API {SdkLevel}";
 
     /// <summary>
-    /// UX-04b: "x86_64 · 35" for the inspector's ABI / API row. Built from the
-    /// reported fields and notified whenever a status tick fills them, so the row
-    /// never shows a stale pair or a bare separator.
+    /// UX-04b: "x86_64 · 35" for the inspector's ABI / API row. EV-07: the row
+    /// reads the current report first, then the cached pair, and finally one dash
+    /// - never an empty string - so a stopped guest still names its ABI and API.
     /// </summary>
-    public string AbiApi
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(Abi))
-            {
-                return string.IsNullOrWhiteSpace(SdkLevel) ? "" : SdkLevel;
-            }
-
-            return string.IsNullOrWhiteSpace(SdkLevel) ? Abi : $"{Abi} · {SdkLevel}";
-        }
-    }
+    public string AbiApi =>
+        InspectorSessionRows.AbiApi(Abi, SdkLevel, _cachedAbi, _cachedSdkLevel);
 
     /// <summary>
     /// UX-04b: the identity line under the device name — "API 35 · x86_64 ·
@@ -5574,6 +5573,14 @@ public sealed class DeviceItemViewModel : ObservableObject
         // process is a guest that was started, which the lifecycle needs to
         // tell "never started" from "the process is gone".
         device._enginePidKnown = node["enginePid"]?.GetValue<int>() is > 0;
+
+        // EV-07: the image package names the ABI and API before the guest ever
+        // runs, so the identity row has a cached pair for a stopped guest.
+        var image = ImageNaming.ParseImage(device.ImagePackage);
+        device._cachedAbi = image.Abi;
+        device._cachedSdkLevel = image.Api > 0
+            ? image.Api.ToString(CultureInfo.InvariantCulture)
+            : "";
         return device;
     }
 
@@ -5587,8 +5594,20 @@ public sealed class DeviceItemViewModel : ObservableObject
         _enginePidKnown = status["pid"]?.GetValue<int>() is > 0;
         _bootCompleted = status["bootCompleted"]?.GetValue<string>()?.Trim() == "1";
         Foreground = status["foreground"]?.GetValue<string>() ?? "";
-        Abi = status["abi"]?.GetValue<string>() ?? "";
-        SdkLevel = status["sdkLevel"]?.GetValue<string>() ?? "";
+        var abi = status["abi"]?.GetValue<string>() ?? "";
+        var sdkLevel = status["sdkLevel"]?.GetValue<string>() ?? "";
+        if (abi.Trim().Length > 0)
+        {
+            _cachedAbi = abi.Trim();
+        }
+
+        if (sdkLevel.Trim().Length > 0)
+        {
+            _cachedSdkLevel = sdkLevel.Trim();
+        }
+
+        Abi = abi;
+        SdkLevel = sdkLevel;
         LastError = status["lastError"]?.GetValue<string>() ?? "";
         if (status["readiness"] is JsonObject readiness)
         {

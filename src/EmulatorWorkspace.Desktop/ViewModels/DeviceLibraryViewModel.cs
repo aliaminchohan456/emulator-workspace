@@ -39,7 +39,6 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private readonly SemaphoreSlim _requestGate = new(1, 1);
     private SupervisorConnection? _connection;
     private JsonObject? _doctor;
-    private bool _refreshing;
     private bool _disposed;
 
     private string _searchText = "";
@@ -48,8 +47,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     // rest. There is no per-workspace settings store to persist a choice in, so
     // the default is the only persisted order.
     private string _sortKey = "State";
-    private bool _isLoading;
-    private bool _isBusy;
+    private LibraryLoad _load = LibraryLoad.Idle;
     private string _busyText = "";
     private string _statusMessage = "Connecting to the supervisor...";
     private bool _isConnected;
@@ -59,7 +57,8 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _errorAction = "";
     private string _errorDetails = "";
 
-    private bool _isCreateOpen;
+    private LibrarySheet _sheet = LibrarySheet.None;
+    private LibrarySheet _confirmParent = LibrarySheet.None;
     private string _createName = "dev";
     private string _createNameError = "";
     private string _createBlockedReason = "";
@@ -72,7 +71,6 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _createDiskTone = "info";
     private string _createDiskVerdict = "not reported";
 
-    private bool _isCloneOpen;
     private string _cloneSource = "";
     private string _cloneSourceState = "";
     private string _cloneSourceImage = "";
@@ -81,7 +79,6 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _cloneBlockedReason = "";
     private string _cloneNote = "";
 
-    private bool _isRecoveryOpen;
     private string _recoveryDevice = "";
     private string _recoverySubtitle = "";
     private string _recoveryMessage = "";
@@ -91,7 +88,6 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _savePointHint = "";
     private bool _canSavePoint;
 
-    private bool _isConfirmOpen;
     private string _confirmTitle = "";
     private string _confirmText = "";
     private string _confirmActionText = "Continue";
@@ -115,7 +111,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         SubmitCloneCommand = new AsyncRelayCommand(CloneAsync, () => CanClone && !IsBusy);
         CloseRecoveryCommand = new RelayCommand(CloseRecovery);
         SavePointCommand = new AsyncRelayCommand(SavePointAsync, () => CanSavePoint && !IsBusy);
-        CancelConfirmCommand = new RelayCommand(CloseConfirm);
+        CancelConfirmCommand = new RelayCommand(CancelConfirm);
         ConfirmCommand = new AsyncRelayCommand(ConfirmAsync, () => !IsBusy);
         DismissErrorCommand = new RelayCommand(ClearError);
         CopyErrorDetailsCommand = new RelayCommand(CopyErrorDetails);
@@ -196,26 +192,22 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    public bool IsLoading
+    /// <summary>
+    /// EV-07: one value owns the list. Its setter re-raises everything derived
+    /// from it (the busy flag, the loading flag, the two empty states and every
+    /// command that is gated on either), so no two surfaces can disagree.
+    /// </summary>
+    public LibraryLoad Load
     {
-        get => _isLoading;
+        get => _load;
         private set
         {
-            if (SetProperty(ref _isLoading, value))
+            if (SetProperty(ref _load, value))
             {
+                OnPropertyChanged(nameof(IsLoading));
+                OnPropertyChanged(nameof(IsBusy));
                 OnPropertyChanged(nameof(ShowEmptyState));
                 OnPropertyChanged(nameof(ShowNoMatchState));
-            }
-        }
-    }
-
-    public bool IsBusy
-    {
-        get => _isBusy;
-        private set
-        {
-            if (SetProperty(ref _isBusy, value))
-            {
                 RaiseCommandStates();
                 OnPropertyChanged(nameof(CanCreate));
                 OnPropertyChanged(nameof(CanClone));
@@ -227,6 +219,10 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             }
         }
     }
+
+    public bool IsLoading => LibraryLoadRules.IsLoading(Load);
+
+    public bool IsBusy => LibraryLoadRules.IsBusy(Load);
 
     public string BusyText
     {
@@ -374,13 +370,67 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         set => SetProperty(ref _errorDetails, value);
     }
 
+    // ---------------------------------------------------------------- sheets
+
+    /// <summary>
+    /// EV-07: the one sheet the library is showing. Create, clone, recovery and
+    /// confirm used to be four booleans; opening a sheet now closes whatever was
+    /// open, and the four <c>Is*Open</c> bindings the XAML already uses are
+    /// computed from this value plus the confirmation's remembered parent.
+    /// </summary>
+    public LibrarySheet Sheet
+    {
+        get => _sheet;
+        private set
+        {
+            if (SetProperty(ref _sheet, value))
+            {
+                OnPropertyChanged(nameof(IsCreateOpen));
+                OnPropertyChanged(nameof(IsCloneOpen));
+                OnPropertyChanged(nameof(IsRecoveryOpen));
+                OnPropertyChanged(nameof(IsConfirmOpen));
+            }
+        }
+    }
+
+    private void OpenSheet(LibrarySheet target)
+    {
+        _confirmParent = LibrarySheet.None;
+        Sheet = LibrarySheetRules.Open(Sheet, target);
+    }
+
+    private void CloseSheet()
+    {
+        _confirmParent = LibrarySheet.None;
+        Sheet = LibrarySheetRules.Close();
+    }
+
+    /// <summary>
+    /// Escape closes exactly one layer. A confirmation returns to the sheet that
+    /// asked for it; any other sheet closes and leaves the page. False means
+    /// nothing was open, so the window may close itself.
+    /// </summary>
+    public bool TryDismissSheet()
+    {
+        if (Sheet == LibrarySheet.None)
+        {
+            return false;
+        }
+
+        if (Sheet == LibrarySheet.Confirm)
+        {
+            CancelConfirm();
+            return true;
+        }
+
+        Sheet = LibrarySheetRules.Escape(Sheet, _confirmParent);
+        _confirmParent = LibrarySheet.None;
+        return true;
+    }
+
     // ---------------------------------------------------------- create flow
 
-    public bool IsCreateOpen
-    {
-        get => _isCreateOpen;
-        private set => SetProperty(ref _isCreateOpen, value);
-    }
+    public bool IsCreateOpen => LibrarySheetRules.Shows(Sheet, _confirmParent, LibrarySheet.Create);
 
     public string CreateName
     {
@@ -551,11 +601,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     // ----------------------------------------------------------- clone flow
 
-    public bool IsCloneOpen
-    {
-        get => _isCloneOpen;
-        private set => SetProperty(ref _isCloneOpen, value);
-    }
+    public bool IsCloneOpen => LibrarySheetRules.Shows(Sheet, _confirmParent, LibrarySheet.Clone);
 
     public string CloneSource
     {
@@ -631,11 +677,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     // -------------------------------------------------------- recovery flow
 
-    public bool IsRecoveryOpen
-    {
-        get => _isRecoveryOpen;
-        private set => SetProperty(ref _isRecoveryOpen, value);
-    }
+    public bool IsRecoveryOpen => LibrarySheetRules.Shows(Sheet, _confirmParent, LibrarySheet.Recovery);
 
     public string RecoveryDevice
     {
@@ -727,11 +769,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     // --------------------------------------------------------- confirmation
 
-    public bool IsConfirmOpen
-    {
-        get => _isConfirmOpen;
-        private set => SetProperty(ref _isConfirmOpen, value);
-    }
+    public bool IsConfirmOpen => Sheet == LibrarySheet.Confirm;
 
     public string ConfirmTitle
     {
@@ -755,14 +793,15 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     public async Task InitializeAsync()
     {
-        IsLoading = true;
+        Load = LibraryLoad.Loading;
+        DesktopLog.Write("library load: first pass started");
         StatusMessage = "Connecting to the local supervisor...";
         try
         {
             await EnsureConnectionAsync().ConfigureAwait(true);
             IsConnected = true;
             DesktopLog.Write("library connected");
-            await RefreshAsync(loadProfiles: true).ConfigureAwait(true);
+            await RefreshCoreAsync(loadProfiles: true).ConfigureAwait(true);
             _stateTimer.Start();
         }
         catch (Exception ex)
@@ -770,19 +809,54 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             IsConnected = false;
             ShowError(ex, "library.initialize");
             StatusMessage = "The supervisor is unavailable.";
-            IsLoading = false;
+        }
+        finally
+        {
+            Load = LibraryLoadRules.PassEnds(Load, LibraryLoad.Loading);
+            DesktopLog.Write($"library load: first pass finished instances={_cards.Count}");
         }
     }
 
+    /// <summary>
+    /// EV-07: a requested refresh is single-flight. The state is claimed before
+    /// the first await, so a second request that arrives while the first pass is
+    /// still reading the list is ignored instead of opening a second supervisor
+    /// pass. A pass that runs inside a supervised operation goes through
+    /// <see cref="RefreshNestedAsync"/>, which does not steal the operation's
+    /// ownership.
+    /// </summary>
     private async Task RefreshAsync(bool loadProfiles)
     {
-        if (_refreshing)
+        if (!LibraryLoadRules.AcceptsRefresh(Load))
         {
+            DesktopLog.Write($"library load: refresh ignored (load={Load})");
             return;
         }
 
-        _refreshing = true;
-        IsLoading = true;
+        Load = LibraryLoadRules.BeginRefresh(Load);
+        DesktopLog.Write("library load: refresh started");
+        try
+        {
+            await RefreshCoreAsync(loadProfiles).ConfigureAwait(true);
+        }
+        finally
+        {
+            Load = LibraryLoadRules.PassEnds(Load, LibraryLoad.Refreshing);
+            DesktopLog.Write($"library load: refresh finished instances={_cards.Count}");
+        }
+    }
+
+    /// <summary>
+    /// A pass the library itself asks for while an operation owns it (a create,
+    /// a stop or a boot wait). It keeps the operation's Busy state.
+    /// </summary>
+    private Task RefreshNestedAsync(bool loadProfiles) =>
+        Load == LibraryLoad.Busy
+            ? RefreshCoreAsync(loadProfiles)
+            : RefreshAsync(loadProfiles);
+
+    private async Task RefreshCoreAsync(bool loadProfiles)
+    {
         try
         {
             var data = await RequestAsync(OperationNames.InstanceList, null, TimeSpan.FromSeconds(30))
@@ -809,11 +883,6 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             ShowError(ex, "instance.list");
             StatusMessage = "The device list could not be read.";
         }
-        finally
-        {
-            IsLoading = false;
-            _refreshing = false;
-        }
     }
 
     /// <summary>
@@ -823,7 +892,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private async Task RefreshStatesAsync()
     {
-        if (_disposed || _refreshing || IsBusy || IsCreateOpen || IsCloneOpen || IsConfirmOpen)
+        if (_disposed || IsLoading || IsBusy || IsCreateOpen || IsCloneOpen || IsConfirmOpen)
         {
             return;
         }
@@ -1145,7 +1214,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         ClearError();
         CreateName = NextDeviceName();
         CreateNameError = "";
-        IsCreateOpen = true;
+        OpenSheet(LibrarySheet.Create);
         await LoadDiskEstimateAsync().ConfigureAwait(true);
         if (_doctor is not null)
         {
@@ -1168,7 +1237,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     private void CloseCreate()
     {
-        IsCreateOpen = false;
+        CloseSheet();
         CreateNameError = "";
         ClearError();
     }
@@ -1188,8 +1257,8 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                 OperationNames.InstanceCreate,
                 new JsonObject { ["name"] = name },
                 TimeSpan.FromMinutes(5)).ConfigureAwait(true);
-            IsCreateOpen = false;
-            await RefreshAsync(loadProfiles: true).ConfigureAwait(true);
+            CloseSheet();
+            await RefreshNestedAsync(loadProfiles: true).ConfigureAwait(true);
             var serial = created["serial"]?.GetValue<string>() ?? "";
             var console = created["consolePort"]?.GetValue<int>() ?? 0;
             var grpc = created["grpcPort"]?.GetValue<int>() ?? 0;
@@ -1217,7 +1286,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             "The copy gets its own AVD directory, a new port pair and a new disk lineage whose parent is the source "
             + "lineage. The source AVD is only read; the supervisor verifies it afterwards. The copied byte count is "
             + "reported by instance.duplicate when it finishes.";
-        IsCloneOpen = true;
+        OpenSheet(LibrarySheet.Clone);
         await Task.CompletedTask.ConfigureAwait(true);
     }
 
@@ -1241,7 +1310,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     private void CloseClone()
     {
-        IsCloneOpen = false;
+        CloseSheet();
         CloneNameError = "";
         ClearError();
     }
@@ -1262,8 +1331,8 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                 OperationNames.InstanceDuplicate,
                 new JsonObject { ["name"] = source, ["target"] = target },
                 TimeSpan.FromMinutes(10)).ConfigureAwait(true);
-            IsCloneOpen = false;
-            await RefreshAsync(loadProfiles: true).ConfigureAwait(true);
+            CloseSheet();
+            await RefreshNestedAsync(loadProfiles: true).ConfigureAwait(true);
             var bytes = result["copiedBytes"]?.GetValue<long>() ?? 0;
             var files = result["copiedFiles"] as JsonArray;
             StatusMessage =
@@ -1305,7 +1374,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                 new JsonObject { ["name"] = card.Name, ["coldBoot"] = true },
                 TimeSpan.FromMinutes(2)).ConfigureAwait(true);
             StatusMessage = $"{card.Name}: the engine start was accepted. The state below is the supervisor's.";
-            await RefreshAsync(loadProfiles: false).ConfigureAwait(true);
+            await RefreshNestedAsync(loadProfiles: false).ConfigureAwait(true);
         }).ConfigureAwait(true);
     }
 
@@ -1319,7 +1388,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                 new JsonObject { ["name"] = card.Name },
                 TimeSpan.FromMinutes(2)).ConfigureAwait(true);
             StatusMessage = $"{card.Name}: stop accepted.";
-            await RefreshAsync(loadProfiles: false).ConfigureAwait(true);
+            await RefreshNestedAsync(loadProfiles: false).ConfigureAwait(true);
         }).ConfigureAwait(true);
     }
 
@@ -1393,7 +1462,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             + "Save and restore need a running guest; the supervisor answers with its own reason when they do not.";
         RecoveryMessage = "";
         RecoveryPoints.Clear();
-        IsRecoveryOpen = true;
+        OpenSheet(LibrarySheet.Recovery);
         SavePointTag = "baseline-" + DateTimeOffset.Now.ToString("MMdd-HHmm", CultureInfo.InvariantCulture);
         SavePointError = "";
         await LoadRecoveryAsync(card).ConfigureAwait(true);
@@ -1441,7 +1510,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     private void CloseRecovery()
     {
-        IsRecoveryOpen = false;
+        CloseSheet();
         RecoveryPoints.Clear();
         RecoveryMessage = "";
         ClearError();
@@ -1488,7 +1557,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             RecoveryMessage = readiness is > 0
                 ? $"Restored {point.Tag} in {seconds:N1} s; the guest answered again after {readiness:N1} s ({recovery})."
                 : $"Restored {point.Tag} in {seconds:N1} s ({recovery}).";
-            await RefreshAsync(loadProfiles: false).ConfigureAwait(true);
+            await RefreshNestedAsync(loadProfiles: false).ConfigureAwait(true);
             if (_cards.FirstOrDefault(c => c.Name == device) is { } card)
             {
                 await LoadRecoveryAsync(card).ConfigureAwait(true);
@@ -1556,20 +1625,29 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         ConfirmText = text;
         ConfirmActionText = action;
         _confirmAction = run;
-        IsConfirmOpen = true;
+        _confirmParent = Sheet;
+        Sheet = LibrarySheetRules.Confirm(Sheet);
     }
 
-    private void CloseConfirm()
+    /// <summary>
+    /// EV-07: Cancel returns to the sheet the confirmation stacked over - the
+    /// recovery panel it was opened from, or the page when it came from a card.
+    /// </summary>
+    private void CancelConfirm()
     {
-        IsConfirmOpen = false;
+        var parent = _confirmParent;
+        _confirmParent = LibrarySheet.None;
+        Sheet = LibrarySheetRules.Cancel(parent);
         _confirmAction = null;
     }
 
     private async Task ConfirmAsync()
     {
         var action = _confirmAction;
-        IsConfirmOpen = false;
-        _confirmAction = null;
+
+        // Accepting is the same return as Cancel: the parent sheet stays as it
+        // was while the action runs, and its own refresh lands on that page.
+        CancelConfirm();
         if (action is null)
         {
             return;
@@ -1727,7 +1805,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     private async Task RunBusyAsync(string busyText, Func<Task> action)
     {
-        IsBusy = true;
+        Load = LibraryLoadRules.BeginOperation(Load);
         BusyText = busyText;
         ClearError();
         try
@@ -1741,7 +1819,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         }
         finally
         {
-            IsBusy = false;
+            Load = LibraryLoadRules.EndOperation(Load);
             BusyText = "";
         }
     }
