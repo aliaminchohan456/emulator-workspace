@@ -4729,17 +4729,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private async Task InstallMagiskAsync()
     {
         if (SelectedDevice is not { } device) return;
-        string? Pick(string title, string filter)
+
+        // UX-18: the lab needs the same three files every time and the
+        // supervisor pins their hashes. The operator picks them once; after
+        // that this button goes straight to the consent dialog. A file that has
+        // gone missing, or that no longer matches its pin, asks for that one
+        // file only.
+        var remembered = LabInputsStore.Load(LabInputsStore.DefaultPath, DesktopLog.Write);
+        var resolved = await ResolveLabInputsAsync(remembered).ConfigureAwait(true);
+        if (resolved is null)
         {
-            var dialog = new OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };
-            return dialog.ShowDialog() == true ? dialog.FileName : null;
+            return;
         }
-        var patch = Pick("Select the verified Magisk lab ramdisk", "Ramdisk (*.img)|*.img");
-        if (patch is null) return;
-        var apk = Pick("Select the pinned Magisk manager APK", "Android package (*.apk)|*.apk");
-        if (apk is null) return;
-        var probe = Pick("Select the lab app root probe APK", "Android package (*.apk)|*.apk");
-        if (probe is null) return;
+
         // UX-09: the consent surface is the app's own dialog, not the OS message
         // box. It prints the same facts (this guest, these three files, the same
         // consequences) and the hashes are read from the selected files for
@@ -4747,21 +4749,110 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         // request, so Cancel creates no transaction and writes no journal entry.
         var artifacts = new[]
         {
-            await ConsentArtifact.ReadAsync("Ramdisk", patch).ConfigureAwait(true),
-            await ConsentArtifact.ReadAsync("Manager APK", apk).ConfigureAwait(true),
-            await ConsentArtifact.ReadAsync("Root probe", probe).ConfigureAwait(true),
+            await ConsentArtifact.ReadAsync("Ramdisk", resolved.Ramdisk).ConfigureAwait(true),
+            await ConsentArtifact.ReadAsync("Manager APK", resolved.ManagerApk).ConfigureAwait(true),
+            await ConsentArtifact.ReadAsync("Root probe", resolved.ProbeApk).ConfigureAwait(true),
         };
         if (!AskConsent(InstallMagiskConsent(device, artifacts))) return;
+
+        // The files are remembered only after the operator has seen them in the
+        // consent dialog, so what is stored is what was agreed to.
+        LabInputsStore.Save(LabInputsStore.DefaultPath, resolved, DesktopLog.Write);
+
         await RunBusyAsync("Checking Magisk lab inputs...", async () =>
         {
             var prepared = await RequestAsync("magisk.prepare", new JsonObject
             {
-                ["name"] = device.Name, ["patch"] = patch, ["apk"] = apk,
-                ["probe"] = probe, ["allowProvisioningAdbRoot"] = true,
+                ["name"] = device.Name,
+                ["patch"] = resolved.Ramdisk,
+                ["apk"] = resolved.ManagerApk,
+                ["probe"] = resolved.ProbeApk,
+                ["allowProvisioningAdbRoot"] = true,
             }, TimeSpan.FromMinutes(3));
             MagiskState = "Magisk lab: prepared";
             await ApprovedMagiskAction(device.Name, prepared, "install");
         });
+    }
+
+    /// <summary>
+    /// UX-18: the lab's three input files.
+    ///
+    /// A remembered file is used as it is when it is still there and still
+    /// matches the supervisor's pin. Otherwise the operator is asked for that
+    /// one file, and a file that does not match its pin is refused here with
+    /// the exact expected hash - before any consent, any journal or any guest
+    /// change. The supervisor verifies the same pins again when it stages the
+    /// transaction; this is the early, clearer half of that check.
+    /// </summary>
+    private async Task<LabInputs?> ResolveLabInputsAsync(LabInputs remembered)
+    {
+        var inputs = remembered;
+        foreach (var role in LabInputRoles.All)
+        {
+            var path = inputs.For(role);
+            if (path.Length > 0 && File.Exists(path) && IsPinnedLabInput(role, path))
+            {
+                continue;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Title = LabInputRoles.PickerTitle(role),
+                Filter = role == LabInputRoles.Ramdisk ? "Ramdisk (*.img)|*.img" : "Android package (*.apk)|*.apk",
+                CheckFileExists = true,
+                FileName = path.Length > 0 ? Path.GetFileName(path) : "",
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return null;
+            }
+
+            if (!IsPinnedLabInput(role, dialog.FileName))
+            {
+                var expected = ExpectedPin(role);
+                ShowError(
+                    new SupervisorRequestException(
+                        ErrorCodes.InvalidRequest,
+                        $"That file is not the pinned lab artifact. Expected SHA-256 {expected}, got {MagiskLabArtifacts.Hash(dialog.FileName)}."),
+                    "magisk.prepare",
+                    SelectedDevice?.Name ?? "");
+                return null;
+            }
+
+            inputs = inputs.With(role, dialog.FileName);
+        }
+
+        return inputs;
+    }
+
+    /// <summary>Whether a file matches the supervisor's pin for that role.</summary>
+    private static bool IsPinnedLabInput(string role, string path)
+    {
+        var expected = ExpectedPin(role);
+        if (expected.Length == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            return MagiskLabArtifacts.Hash(path) == expected;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>The supervisor's pinned hash for one role.</summary>
+    private static string ExpectedPin(string role)
+    {
+        var key = LabInputRoles.PinKey(role);
+        return key.Length > 0 && MagiskLabArtifacts.Pins.TryGetValue(key, out var hash)
+            ? hash
+            : "";
     }
 
     private async Task RecoverMagiskAsync()
