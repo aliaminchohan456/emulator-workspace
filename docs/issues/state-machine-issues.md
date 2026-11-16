@@ -26,7 +26,7 @@ WHPX guest. They are listed so the next run knows what to look at.
 | A | A guest started **without** a waiter reaches `Running` in durable state and the Studio attaches to it. | `wsctl start --name <guest> --root <root>`, then `wsctl list --root <root>` (the state must not stay "Starting"), then open the Studio on that guest (the viewport must attach). | `artifacts/ux18/` | **Proved** (a real guest: `wsctl start` with no waiter, then `wsctl status` alone drove Starting -> Running in ~90 s, the record persisted `Running`, the Studio attached and showed the live guest) |
 | B | A guest whose engine is gone reads "Engine gone" in both the Studio and the device library, and the library offers Start. | Kill the engine process for a running guest, then read the Studio's state pill and the library card. | `artifacts/ux18/` | **Proved** on a real guest (the engine was killed: `wsctl status` printed `state=Stopped engineAlive=false`, the Studio read "Engine gone" and the stage "The guest's engine is gone") |
 | C | A Magisk install in flight reports "install in progress", not "Lab recovery required"; an interrupted install reports that a stock recovery is due. | Run `magisk.prepare` + `magisk.install` from the CLI while the Studio watches the guest. | `artifacts/ux18/` | **Open**: it needs the disposable Magisk lab (a patched API 35 ramdisk), which is not built on this host. The phase rules are unit-tested; the runtime wording is not proven yet. |
-| D | The supervisor's `instance.status` still answers every agent scope the same way after the reconciliation change (no new write in a read scope, no scope change). | The Phase 2 agent acceptance run. | `artifacts/phase2/` | **Open**: the Phase 2 acceptance needs its own root (a template instance, a paired session, the sample APK and the two MCP clients). |
+| D | The supervisor's `instance.status` still answers every agent scope the same way after the reconciliation change (no new write in a read scope, no scope change). | The Phase 2 agent acceptance run. | `artifacts/phase2/` | **Proved**: the Phase 2 acceptance ran against the UX-18 tree (commit `0df52c8`) - 43 checks, 0 failures (`artifacts/phase2/20261116-134436`). The agent path is intact after the reconciliation: `status`, the unpaired refusal, the wrong-instance refusal, the stale-frame refusal, the idempotency replay and conflict, the scoped cleanup and the revoked-session refusal all pass. |
 
 ### B was first proved without a guest
 
@@ -38,3 +38,17 @@ showed "Engine gone" and the stage "The guest's engine is gone"
 chip, a Start button and "Needs attention 1 · guest to review"
 (`artifacts/ui/ux18-engine-gone-library.png`). The row is now closed by the
 run on a real guest described above.
+
+### The Phase 2 acceptance needed two fixture waits, not two product fixes
+
+The first two runs of the Phase 2 acceptance after the reconciliation failed
+`fixture.duplicate-selectors` and `deny.ambiguous` (`dup_action matches=0`),
+and one of them also failed `cli.login`. The cause was measured, not guessed:
+the MCP workflow ends with a snapshot restore, and a guest that is still
+settling after a restore answers the UI tree with what it has drawn so far -
+one root node instead of the app's tree. The same guest, the same operation
+and the same session returned all 19 nodes with the two `dup_action` nodes a
+minute later, and the guest's framebuffer showed the fixture in the
+foreground the whole time (`artifacts/ui/phase2-after-restore.png`). The
+acceptance now waits for the fixture the way its own CLI section already
+does; the run after that change is 43/43.

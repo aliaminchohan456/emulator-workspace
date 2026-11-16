@@ -437,6 +437,19 @@ idle guest shows no "Stalled" chip; a tap in the viewport opens the Gallery
 app in the guest; a killed engine reads "Engine gone"; the viewport
 re-attaches by itself after the guest comes back and after the supervisor is
 restarted; the leftover guest is named and then cleared.
+UX-18 closed (2026-11-16, commit `ed3c437`): the Phase 2 agent acceptance ran
+against the UX-18 tree - 43 checks, 0 failures
+(`artifacts/phase2/20261116-134436`, root `D:\Phase2Ux18`, template `tpl`,
+disposable instance `ag-a2dd29`, commit `0df52c8`). The agent path is intact
+after the `instance.status` reconciliation: the status read, the unpaired,
+wrong-instance and stale-frame refusals, the idempotency replay and conflict,
+the scoped cleanup and the revoked-session refusal all pass. Two of the
+harness's own checks needed a bounded wait for the fixture (a guest that is
+still settling after a snapshot restore answers the UI tree with one node
+instead of the app's tree - measured on the same guest, the same operation
+and the same session a minute later), so the harness waits the way its CLI
+section already did. The only proof still open is a Magisk install in flight,
+which needs the patched lab ramdisk.
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.
