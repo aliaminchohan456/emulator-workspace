@@ -75,14 +75,34 @@ public sealed class MagiskLabService
         // UX-18: "recovery required" means the guest really needs a stock
         // recovery. A transaction that is still running is reported as running,
         // so a healthy install never looks like a broken lab.
+        //
+        // A phase word on its own proves nothing: the journal keeps the last
+        // phase it wrote, so a transaction whose supervisor died still says
+        // "activating". Two facts decide it: whether this supervisor is
+        // driving the transaction now (it holds the lab's lease while the
+        // operation runs), and whether the journal still moves.
         var phase = state["phase"]?.GetValue<string>();
         var updated = DateTimeOffset.TryParse(state["updatedUtc"]?.GetValue<string>(), out var stamp)
             ? stamp
             : (DateTimeOffset?)null;
-        result["recoveryRequired"] = MagiskLabPhase.RequiresRecovery(phase, updated, DateTimeOffset.UtcNow);
-        result["installInProgress"] = MagiskLabPhase.InProgress(phase);
+        var now = DateTimeOffset.UtcNow;
+        var driven = IsDriven(name);
+        var fresh = updated is not null && now - updated.Value <= MagiskLabPhase.StaleAfter;
+        result["recoveryRequired"] = MagiskLabPhase.RequiresRecovery(phase, driven, fresh);
+        result["installInProgress"] = MagiskLabPhase.InProgress(phase, driven, fresh);
         return result;
     }
+
+    /// <summary>
+    /// Whether this supervisor is driving the lab transaction right now.
+    ///
+    /// The lab's lease is taken by the operation that runs the transaction and
+    /// released when it ends, so a held lease is proof that the transaction is
+    /// alive here. A transaction whose supervisor is gone is not running,
+    /// whatever its journal says.
+    /// </summary>
+    private bool IsDriven(string name) =>
+        _gates.TryGetValue(name, out var gate) && gate.CurrentCount == 0;
     public void ArchiveDeleted(string name)
     {
         var path = StatePath(name);
