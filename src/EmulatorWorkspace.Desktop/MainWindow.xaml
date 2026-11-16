@@ -2346,12 +2346,30 @@
                          theme's soft shadow keeps its rounded corner. -->
                     <!-- igr-feedback-ux12 item 10: with no device selected there are
                          no guest controls to offer, so the pill stands down and the
-                         setup card uses the whole stage. -->
+                         setup card uses the whole stage.
+                         EV-05 nit: while a stage card is on screen (stopped, engine
+                         gone, starting, failed, lab in progress) the frame is not
+                         interactive, so the pill's Back/Home/Recents/Rotate/
+                         Screenshot controls have nothing to act on. The pill is
+                         hidden rather than left disabled so the card owns the
+                         stage; it returns with the first frame. -->
                     <Grid x:Name="ToolbarPillHost" HorizontalAlignment="Left" VerticalAlignment="Center"
                           Panel.ZIndex="20" Margin="0"
-                          Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}"
                           MouseEnter="OnPillEnter" MouseLeave="OnPillLeave"
                           GotKeyboardFocus="OnPillFocus">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding StageVisible}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <views:FloatingSurface x:Name="ToolbarPill" Style="{StaticResource FloatingPill}"
                                                AutomationProperties.Name="Device toolbar">
                             <StackPanel x:Name="PillButtons" Orientation="Vertical">

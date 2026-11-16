@@ -45,6 +45,10 @@
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/LabUiState.cs" Link="Desktop/LabUiState.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/StudioStage.cs" Link="Desktop/StudioStage.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/SubscriptionClose.cs" Link="Desktop/SubscriptionClose.cs" />
+    <!-- EV-05: the frame and log subscriptions' one transition function is a
+         pure rule, so the races (late grant, close while subscribing, lost
+         pipe, double request) are pinned here instead of needing a guest. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/StreamSubscription.cs" Link="Desktop/StreamSubscription.cs" />
     <!-- UX-18: the remembered Magisk lab inputs hold no WPF types either, so
          their failure paths are unit-tested here. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/LabInputsStore.cs" Link="Desktop/LabInputsStore.cs" />

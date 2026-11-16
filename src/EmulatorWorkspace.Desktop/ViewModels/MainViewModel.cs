@@ -58,9 +58,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly SupervisorWatchdog _watchdog = new();
     private bool _watchdogRecovering;
     private int _frameSequence;
-    private string? _frameSubscription;
-    private bool _frameSubscribePending;
-    private string? _logcatSubscription;
+
+    // EV-05: each stream has one owner and one transition function. The phase,
+    // the guest its id belongs to and the id itself are one value, changed only
+    // through StreamSubscription.Next - so a late grant, a stale close and a
+    // second request cannot leave a field behind.
+    private StreamSubscription _frameSub = StreamSubscription.None;
+    private StreamSubscription _logSub = StreamSubscription.None;
     private bool _frameLoopRunning;
     private PendingInput? _pendingInput;
     private ProbeState? _probe;
@@ -796,7 +800,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string LogPageSubtitle => "Live stream from " + LogSerial;
 
     /// <summary>A subscription is attached to the selected guest right now.</summary>
-    public bool HasLogStream => Volatile.Read(ref _logcatSubscription) is not null;
+    public bool HasLogStream => Volatile.Read(ref _logSub).Phase == SubPhase.Live;
 
     /// <summary>
     /// The guest's engine is up, so a log stream can be attached to it. The
@@ -1650,7 +1654,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public double FramesPerSecond { get; private set; }
 
-    internal string? ViewportSubscription => _frameSubscription;
+    internal string? ViewportSubscription => Volatile.Read(ref _frameSub).Id;
 
     public string FrameInfo => Frame is null
         ? "no frame"
@@ -2337,18 +2341,64 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// new stream, so the viewport stayed dead even after the supervisor came
     /// back and the guest was running again. Both ids are dropped here, so the
     /// next poll re-attaches to the guest that is up.
+    ///
+    /// EV-05: this is the <see cref="SubEvent.PipeLost"/> event on both
+    /// streams. No unsubscribe is sent - there is no pipe to send it on - and a
+    /// subscribe that is still in flight is handed back when its grant lands.
     /// </summary>
     private void ForgetSubscriptions()
     {
-        if (Volatile.Read(ref _frameSubscription) is not null)
+        ApplyFrameEvent(new SubEvent.PipeLost());
+        ApplyLogcatEvent(new SubEvent.PipeLost());
+        NotifyLogFilterState();
+    }
+
+    /// <summary>
+    /// EV-05: the only writer of the frame stream's state. Returns the id that
+    /// has to be unsubscribed, if the event made one obsolete.
+    /// </summary>
+    private string? ApplyFrameEvent(SubEvent e) => Advance(ref _frameSub, e);
+
+    /// <summary>EV-05: the only writer of the log stream's state.</summary>
+    private string? ApplyLogcatEvent(SubEvent e) => Advance(ref _logSub, e);
+
+    /// <summary>
+    /// EV-05: applies one event to one stream. The field is re-read and swapped
+    /// until the swap wins, so a caller on the pipe thread and a caller on the
+    /// UI thread cannot both apply an event to the same old value.
+    /// </summary>
+    private static string? Advance(ref StreamSubscription field, SubEvent e)
+    {
+        while (true)
         {
-            Volatile.Write(ref _frameSubscription, null);
+            var current = Volatile.Read(ref field);
+            var (next, unsubscribe) = StreamSubscription.Next(current, e);
+            if (ReferenceEquals(Interlocked.CompareExchange(ref field, next, current), current))
+            {
+                return unsubscribe;
+            }
+        }
+    }
+
+    /// <summary>
+    /// EV-05: sends an unsubscribe for an id this window no longer holds. The
+    /// state already moved; a refusal here (the supervisor already closed it,
+    /// or the pipe is gone) changes nothing and is only logged.
+    /// </summary>
+    private async Task UnsubscribeAsync(string operation, string id, TimeSpan deadline)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            return;
         }
 
-        if (Volatile.Read(ref _logcatSubscription) is not null)
+        try
         {
-            Volatile.Write(ref _logcatSubscription, null);
-            NotifyLogFilterState();
+            await RequestAsync(operation, new JsonObject { ["subscription"] = id }, deadline).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            DesktopLog.Write($"unsubscribe {operation} id={id} failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -2554,31 +2604,45 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private async Task OnDeviceSelectedAsync(DeviceItemViewModel? device)
     {
         DesktopLog.Write($"select {device?.Name}");
-        var unsubscribe = UnsubscribeFramesAsync();
-        Frame = null;
-        FrameWidth = 0;
-        FrameHeight = 0;
-        GuestWidth = 0;
-        GuestHeight = 0;
-        _frameSequence = 0;
-        _droppedFrames = 0;
-        _lastFramePresented = default;
-        _lastFrameInfoUpdated = default;
-        FramesPerSecond = 0;
-        _frameIntervals.Clear();
-        _pendingInput = null;
-        _frameWaitSince = null;
-        _launchedUtc = null;
-        _captureRestricted = false;
-        _captureRestrictedReason = "";
-        _lab = LabUiState.NotChecked;
-        MagiskState = _lab.Tooltip;
-        UpdateFrameHealth();
-        ClearError();
-        ResetBootStages();
-        UpdateStage();
-        await StopLogcatAsync().ConfigureAwait(true);
-        await unsubscribe.ConfigureAwait(true);
+
+        // EV-05: the selection change is the DeviceChanged event on both
+        // streams. It is a no-op when the same guest is re-selected (a refresh
+        // rebuilds the list), so a poll never churns a live stream, and a live
+        // id is unsubscribed exactly once here.
+        var sameFrameGuest = StreamSubscription.IsSameGuest(Volatile.Read(ref _frameSub), device?.Name);
+        var unsubscribedFrame = ApplyFrameEvent(new SubEvent.DeviceChanged(device?.Name));
+        var unsubscribedLog = ApplyLogcatEvent(new SubEvent.DeviceChanged(device?.Name));
+        if (!sameFrameGuest)
+        {
+            Frame = null;
+            FrameWidth = 0;
+            FrameHeight = 0;
+            GuestWidth = 0;
+            GuestHeight = 0;
+            _frameSequence = 0;
+            _droppedFrames = 0;
+            _lastFramePresented = default;
+            _lastFrameInfoUpdated = default;
+            FramesPerSecond = 0;
+            _frameIntervals.Clear();
+            _pendingInput = null;
+            _frameWaitSince = null;
+            _launchedUtc = null;
+            _captureRestricted = false;
+            _captureRestrictedReason = "";
+            _lab = LabUiState.NotChecked;
+            MagiskState = _lab.Tooltip;
+            UpdateFrameHealth();
+            ClearError();
+            ResetBootStages();
+            UpdateStage();
+        }
+
+        NotifyLogFilterState();
+        await UnsubscribeAsync(OperationNames.FrameUnsubscribe, unsubscribedFrame ?? "", TimeSpan.FromSeconds(15))
+            .ConfigureAwait(true);
+        await UnsubscribeAsync(OperationNames.LogcatUnsubscribe, unsubscribedLog ?? "", TimeSpan.FromSeconds(10))
+            .ConfigureAwait(true);
 
         if (device is null)
         {
@@ -2609,14 +2673,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnLifecycleChanged(device, before);
 
             // UX-18: the frame stream is attached when the guest is really up,
-            // not when a stale record word says so.
-            if (device.Lifecycle.CanAttachFrames)
+            // not when a stale record word says so. EV-05: the state machine
+            // decides whether anything has to be opened at all.
+            if (StreamSubscription.ShouldSubscribe(
+                    Volatile.Read(ref _frameSub), device.Lifecycle.CanAttachFrames, device.Name))
             {
                 await SubscribeFramesAsync(device).ConfigureAwait(true);
-                if (IsLogcatOpen)
-                {
-                    await EnsureLogcatAsync().ConfigureAwait(true);
-                }
+            }
+
+            if (IsLogcatOpen || IsLogcatPage)
+            {
+                await EnsureLogcatAsync().ConfigureAwait(true);
             }
         }
         catch (Exception ex)
@@ -2678,7 +2745,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(BootTooltip));
             OnPropertyChanged(nameof(AbiApiText));
             OnLifecycleChanged(device, before);
-            if (device.Lifecycle.CanAttachFrames && _frameSubscription is null)
+            if (StreamSubscription.ShouldSubscribe(
+                    Volatile.Read(ref _frameSub), device.Lifecycle.CanAttachFrames, device.Name))
             {
                 await SubscribeFramesAsync(device).ConfigureAwait(true);
             }
@@ -2686,7 +2754,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // UX-18: a closed log stream is re-attached the same way the frame
             // stream is, so the drawer comes back by itself after the guest
             // does.
-            if (IsLogcatOpen && _logcatSubscription is null)
+            if (IsLogcatOpen || IsLogcatPage)
             {
                 await EnsureLogcatAsync().ConfigureAwait(true);
             }
@@ -3386,14 +3454,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // boot stepper and the state pill depend on.
             // UX-18: the lifecycle decides, so a guest whose own boot answer
             // says it is up is attached even if the record still says Starting.
-            if (_frameSubscription is not null
-                || !device.Lifecycle.CanAttachFrames
-                || SelectedDevice?.Name != device.Name)
+            // EV-05: the state machine decides whether anything is opened at
+            // all, so two callers cannot each start a stream.
+            if (SelectedDevice?.Name != device.Name
+                || !StreamSubscription.ShouldSubscribe(
+                    Volatile.Read(ref _frameSub), device.Lifecycle.CanAttachFrames, device.Name))
             {
                 return;
             }
-            DesktopLog.Write("subscribe request");
-            Volatile.Write(ref _frameSubscribePending, true);
+
+            DesktopLog.Write($"frames subscribe {device.Name}");
+            ApplyFrameEvent(new SubEvent.Requested(device.Name));
             var data = await RequestAsync(
                 OperationNames.FrameSubscribe,
                 new JsonObject
@@ -3405,15 +3476,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 },
                 TimeSpan.FromSeconds(60)).ConfigureAwait(true);
             var subscription = data["subscription"]!.GetValue<string>();
-            if (SelectedDevice?.Name != device.Name)
+
+            // EV-05: a grant lands only for the guest the stream waits on. A
+            // late one - the selection moved while this request was out - is
+            // handed back to the supervisor instead of becoming this window's
+            // id, which used to leave the viewport attached to the wrong guest.
+            var stale = ApplyFrameEvent(new SubEvent.Granted(subscription, device.Name));
+            if (stale is not null)
             {
-                await RequestAsync(OperationNames.FrameUnsubscribe,
-                    new JsonObject { ["subscription"] = subscription }, TimeSpan.FromSeconds(15)).ConfigureAwait(true);
+                DesktopLog.Write($"frames subscribe {device.Name} late id={subscription}; unsubscribed");
+                await UnsubscribeAsync(OperationNames.FrameUnsubscribe, stale, TimeSpan.FromSeconds(15))
+                    .ConfigureAwait(true);
                 return;
             }
 
-            Volatile.Write(ref _frameSubscription, subscription);
-            DesktopLog.Write($"frame subscribed {device.Name} sub={subscription}");
+            DesktopLog.Write($"frames subscribed {device.Name} id={subscription}");
             _frameWaitSince = DateTimeOffset.UtcNow;
             StartFrameLoop();
             if (SelectedDevice?.Name == device.Name)
@@ -3423,6 +3500,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
+            // EV-05: a failed request leaves nothing behind, so the state
+            // returns to None and the next poll may try again.
+            ApplyFrameEvent(new SubEvent.Refused());
+            DesktopLog.Write($"frames subscribe {device.Name} failed: {ex.GetType().Name}: {ex.Message}");
+
             // A frame subscription that fails while Android is still starting is
             // a normal part of boot; it is reported in the status line and the
             // frame-wait stage, not as a persistent error the operator must clear.
@@ -3444,37 +3526,46 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         finally
         {
-            Volatile.Write(ref _frameSubscribePending, false);
             _subscribeGate.Release();
         }
     }
 
+    /// <summary>
+    /// EV-05: ends the frame stream. A live id is closed locally, which hands
+    /// back the id for an unsubscribe; a subscribe that is still in flight is
+    /// dropped instead, because the window does not know its id yet - the grant
+    /// is handed back when it lands.
+    /// </summary>
     private async Task UnsubscribeFramesAsync()
     {
-        if (_frameSubscription is null)
+        var current = Volatile.Read(ref _frameSub);
+        if (current.Phase == SubPhase.Live && current.Id is { Length: > 0 } live)
         {
+            // A local close: the id is closed here, so it is this caller that
+            // hands it back. (The state machine's Closed rule answers a close
+            // the supervisor sent, which needs no second request.)
+            ApplyFrameEvent(new SubEvent.Closed(live));
+            DesktopLog.Write($"frames unsubscribe id={live}");
+            await UnsubscribeAsync(OperationNames.FrameUnsubscribe, live, TimeSpan.FromSeconds(15))
+                .ConfigureAwait(true);
             return;
         }
 
-        var subscription = _frameSubscription;
-        Volatile.Write(ref _frameSubscription, null);
-        try
-        {
-            await RequestAsync(
-                OperationNames.FrameUnsubscribe,
-                new JsonObject { ["subscription"] = subscription },
-                TimeSpan.FromSeconds(15)).ConfigureAwait(true);
-        }
-        catch (Exception)
-        {
-        }
+        // A subscribe that is still in flight has no id yet: it is dropped here
+        // and its grant is handed back when it lands.
+        ApplyFrameEvent(new SubEvent.PipeLost());
     }
 
     private async Task EnsureLogcatAsync()
     {
         // UX-18: the log stream follows the guest's engine, so it attaches
         // while Android is still booting - the boot log is worth reading.
-        if (_logcatSubscription is not null || SelectedDevice is null || !SelectedDevice.Lifecycle.EngineAlive)
+        // EV-05: one state machine decides whether a stream is opened, so
+        // opening the drawer twice cannot open two streams.
+        var device = SelectedDevice;
+        if (device is null
+            || !StreamSubscription.ShouldSubscribe(
+                Volatile.Read(ref _logSub), device.Lifecycle.EngineAlive, device.Name))
         {
             NotifyLogFilterState();
             return;
@@ -3482,16 +3573,30 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         try
         {
+            DesktopLog.Write($"logcat subscribe {device.Name}");
+            ApplyLogcatEvent(new SubEvent.Requested(device.Name));
             var data = await RequestAsync(
                 OperationNames.LogcatSubscribe,
-                new JsonObject { ["name"] = SelectedDevice.Name },
+                new JsonObject { ["name"] = device.Name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
-            Volatile.Write(ref _logcatSubscription, data["subscription"]!.GetValue<string>());
+            var subscription = data["subscription"]!.GetValue<string>();
+            var stale = ApplyLogcatEvent(new SubEvent.Granted(subscription, device.Name));
+            if (stale is not null)
+            {
+                DesktopLog.Write($"logcat subscribe {device.Name} late id={subscription}; unsubscribed");
+                await UnsubscribeAsync(OperationNames.LogcatUnsubscribe, stale, TimeSpan.FromSeconds(10))
+                    .ConfigureAwait(true);
+                return;
+            }
+
+            DesktopLog.Write($"logcat subscribed {device.Name} id={subscription}");
             // UX-08: a successful attach clears the drawer's own error band.
             SetLogcatError("");
         }
         catch (Exception ex)
         {
+            ApplyLogcatEvent(new SubEvent.Refused());
+            DesktopLog.Write($"logcat subscribe {device.Name} failed: {ex.GetType().Name}: {ex.Message}");
             // UX-08: a refused subscription now reports inside the drawer, beside
             // the Retry that re-attaches it. The window-wide bar is left for the
             // operations it can retry itself (it re-reads the whole workspace), and
@@ -3520,30 +3625,32 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// EV-05: ends the log stream the same way the frame stream is ended - a
+    /// live id is closed locally and handed back, an in-flight subscribe is
+    /// dropped and its grant handed back when it lands.
+    /// </summary>
     private async Task StopLogcatAsync()
     {
-        if (_logcatSubscription is null)
+        var current = Volatile.Read(ref _logSub);
+        // The window's shutdown path disposes off the dispatcher once its first
+        // await has completed; a visual refresh there would touch the log view
+        // from a pool thread.
+        if (_dispatcher.CheckAccess())
         {
             NotifyLogFilterState();
+        }
+
+        if (current.Phase == SubPhase.Live && current.Id is { Length: > 0 } live)
+        {
+            ApplyLogcatEvent(new SubEvent.Closed(live));
+            DesktopLog.Write($"logcat unsubscribe id={live}");
+            await UnsubscribeAsync(OperationNames.LogcatUnsubscribe, live, TimeSpan.FromSeconds(10))
+                .ConfigureAwait(true);
             return;
         }
 
-        var subscription = _logcatSubscription;
-        Volatile.Write(ref _logcatSubscription, null);
-        try
-        {
-            await RequestAsync(
-                OperationNames.LogcatUnsubscribe,
-                new JsonObject { ["subscription"] = subscription },
-                TimeSpan.FromSeconds(10)).ConfigureAwait(true);
-        }
-        catch (Exception)
-        {
-        }
-        finally
-        {
-            NotifyLogFilterState();
-        }
+        ApplyLogcatEvent(new SubEvent.PipeLost());
     }
 
     private void OnSupervisorEvent(EventEnvelope envelope)
@@ -3551,7 +3658,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         switch (envelope.Event)
         {
             case EventNames.Frame:
-                if ((envelope.Subscription == Volatile.Read(ref _frameSubscription) || Volatile.Read(ref _frameSubscribePending))
+                if (AcceptsFrames(envelope.Subscription)
                     && envelope.Data is JsonObject frame && frame["path"]?.GetValue<string>() is { } path)
                 {
                     var format = frame["format"]?.GetValue<string>() ?? "png";
@@ -3571,7 +3678,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 break;
 
             case EventNames.Logcat:
-                if (envelope.Subscription == Volatile.Read(ref _logcatSubscription)
+                if (envelope.Subscription == Volatile.Read(ref _logSub).Id
                     && envelope.Data is JsonObject entry)
                 {
                     if (LogPaused)
@@ -3602,22 +3709,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     // or a session is reset; the window used to keep the closed
                     // id, so the status poll saw "already subscribed" and never
                     // opened a new one - the viewport stayed dead for the rest of
-                    // the session. Clearing the field lets the poll re-attach
-                    // as soon as the guest is up again.
+                    // the session. EV-05: the close is the Closed(id) event, and
+                    // the state machine ignores an id it does not hold, so a
+                    // close for a replaced subscription cannot cancel the live
+                    // one.
                     var kind = SubscriptionClose.Which(
                         envelope.Subscription,
-                        Volatile.Read(ref _frameSubscription),
-                        Volatile.Read(ref _logcatSubscription));
+                        Volatile.Read(ref _frameSub).Id,
+                        Volatile.Read(ref _logSub).Id);
 
                     switch (kind)
                     {
                         case SubscriptionKind.Frames:
-                            Volatile.Write(ref _frameSubscription, null);
+                            ApplyFrameEvent(new SubEvent.Closed(envelope.Subscription));
+                            DesktopLog.Write($"frames closed id={envelope.Subscription} reason={reason}");
                             StatusMessage = "Frame stream closed: " + reason;
                             break;
 
                         case SubscriptionKind.Logcat:
-                            Volatile.Write(ref _logcatSubscription, null);
+                            ApplyLogcatEvent(new SubEvent.Closed(envelope.Subscription));
+                            DesktopLog.Write($"logcat closed id={envelope.Subscription} reason={reason}");
                             NotifyLogFilterState();
                             StatusMessage = "Log stream closed: " + reason;
                             break;
@@ -3640,6 +3751,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 break;
         }
     }
+
+    /// <summary>
+    /// EV-05: whether a frame event can belong to the stream this window is
+    /// opening or following. While the state is
+    /// <see cref="SubPhase.Subscribing"/> the granted id is not known yet - the
+    /// reply and the first frames travel the same pipe and the handler can run
+    /// before the request's continuation - so those frames are queued and
+    /// <see cref="PresentFrame"/> drops them unless the id matches by the time
+    /// they are shown. That is exactly what the old "subscribe pending" flag
+    /// did, without the second field.
+    /// </summary>
+    private bool AcceptsFrames(string subscription) =>
+        Volatile.Read(ref _frameSub).Phase != SubPhase.None && !string.IsNullOrEmpty(subscription);
 
     private void StartFrameLoop()
     {
@@ -3720,7 +3844,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void PresentFrame(BitmapSource bitmap, PendingFrame source, DateTimeOffset received)
     {
-        if (source.Subscription != _frameSubscription)
+        if (source.Subscription != Volatile.Read(ref _frameSub).Id)
         {
             return;
         }
@@ -4939,11 +5063,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             IsConnected = false;
             // UX-08: a dead pipe also ends the log subscription, so the drawer
             // stops saying "Following" when nothing is streaming any more.
-            if (Volatile.Read(ref _logcatSubscription) is not null)
-            {
-                Volatile.Write(ref _logcatSubscription, null);
-                NotifyLogFilterState();
-            }
+            // EV-05: that is PipeLost on both streams.
+            ForgetSubscriptions();
 
             if (dead is not null)
             {

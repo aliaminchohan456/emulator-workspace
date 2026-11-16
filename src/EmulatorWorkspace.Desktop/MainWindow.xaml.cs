@@ -485,8 +485,12 @@ public partial class MainWindow : Window, IOverlayAnchor
         // lane while the guest has no frame; with a frame the cards are hidden
         // and the lane collapses to 0 so nothing else moves. igr-feedback-ux12
         // item 10: with no device selected there is no pill at all, so the lane
-        // is 0 too and the first-run card centres in the stage.
-        var lane = canvasWidth <= 0 && _viewModel.HasSelection ? Math.Max(0, stage - left + 12) : 0;
+        // is 0 too and the first-run card centres in the stage. EV-05 nit: the
+        // pill is hidden while a stage card is visible, so the card takes the
+        // whole stage instead of leaving the pill's slot empty.
+        var lane = canvasWidth <= 0 && _viewModel.HasSelection && !_viewModel.StageVisible
+            ? Math.Max(0, stage - left + 12)
+            : 0;
         if (StageCardLane is not null && StageCardLane.Margin.Right != lane)
         {
             StageCardLane.Margin = new Thickness(0, 0, lane, 0);
