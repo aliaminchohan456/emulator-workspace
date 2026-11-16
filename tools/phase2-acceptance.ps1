@@ -302,8 +302,15 @@ try {
     CliStep "input.text" '{"text":"cli-user","selector":{"contentDescription":"login_user"}}' | Out-Null
     CliStep "input.text" '{"text":"cli-pass","selector":{"contentDescription":"login_password"}}' | Out-Null
     CliStep "input.tap" '{"selector":{"contentDescription":"login_button"}}' | Out-Null
-    Start-Sleep -Seconds 3
-    $assert = CliStep "ui.assert" '{"selector":{"contentDescription":"login_status","text":"WELCOME"}}'
+    # The sign-in is a real HTTP round trip to the local fixture, so the guest
+    # needs a moment to answer it. The assertion is retried for a bounded
+    # time; it still has to reach WELCOME.
+    $assert = $null
+    for ($attempt = 0; $attempt -lt 10; $attempt++) {
+        if ($attempt -gt 0) { Start-Sleep -Seconds 2 }
+        $assert = CliStep "ui.assert" '{"selector":{"contentDescription":"login_status","text":"WELCOME"}}'
+        if ($assert.Json.pass -eq $true) { break }
+    }
     Add-Check "cli.login" ($assert.Json.pass -eq $true) $assert.Text
     $logs = CliStep "logs.read" '{"lines":2000,"contains":"LOGIN_RESULT"}'
     Add-Check "cli.logs" ($logs.Json.lines -gt 0) "lines=$($logs.Json.lines)"
@@ -482,8 +489,19 @@ try {
 
     # The sample exposes two controls with contentDescription "dup_action", so
     # the ambiguous-selector path is deterministic and the exact count is known.
-    $duplicateTree = Call "observation.tree" "{}"
-    $duplicateCount = @($duplicateTree.Json.nodes | Where-Object { $_.contentDescription -eq "dup_action" }).Count
+    # The MCP workflow ends with a snapshot restore, and a guest that is still
+    # settling after a restore answers the tree with what it has drawn so far
+    # (one root node instead of the app's tree). The fixture is therefore
+    # waited for, the same way the CLI section waits for it after its own
+    # restore, so the count is the fixture's and not the guest's timing.
+    $duplicateTree = $null
+    $duplicateCount = 0
+    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+        if ($attempt -gt 0) { Start-Sleep -Seconds 3 }
+        $duplicateTree = Call "observation.tree" "{}"
+        $duplicateCount = @($duplicateTree.Json.nodes | Where-Object { $_.contentDescription -eq "dup_action" }).Count
+        if ($duplicateCount -gt 0) { break }
+    }
     Add-Check "fixture.duplicate-selectors" ($duplicateCount -eq 2) "dup_action matches=$duplicateCount"
     $ambiguous = Call "ui.assert" '{"selector":{"contentDescription":"dup_action"}}'
     Add-Check "deny.ambiguous" ($ambiguous.Text -match "ambiguous_selector" -and $ambiguous.Text -match "2 nodes matched") $ambiguous.Text
