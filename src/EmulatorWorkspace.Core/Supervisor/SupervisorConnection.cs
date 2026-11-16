@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipes;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -168,19 +169,25 @@ public sealed class SupervisorConnection : IAsyncDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var message = await PipeFraming.ReadAsync(_pipe, SupervisorProtocol.MaxResponseBytes, cancellationToken)
+                // EV-09: the frame is read once into a pooled buffer, its head is
+                // peeked in place and the envelope is deserialised once with the
+                // shared reader options. The old path built a JsonNode document,
+                // wrote it back to a string (ToJsonString) and parsed that string
+                // with a fresh JsonSerializerOptions for every message.
+                using var frame = await PipeFraming.ReadAsync(
+                        _pipe, SupervisorProtocol.MaxResponseBytes, ArrayPool<byte>.Shared, cancellationToken)
                     .ConfigureAwait(false);
-                if (message is null)
+                if (frame is null)
                 {
                     break;
                 }
 
-                var type = JsonArgs.String(message, "type") ?? "response";
+                var (peekedType, _) = PipeFraming.PeekHead(frame.Span);
+                var type = peekedType ?? "response";
                 if (type == "response")
                 {
                     var response = JsonSerializer.Deserialize<ResponseEnvelope>(
-                        message.ToJsonString(),
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        frame.Span, PipeFraming.ReadJsonOptions);
                     if (response is not null && _pending.TryRemove(response.Id, out var completion))
                     {
                         completion.TrySetResult(response);
@@ -192,8 +199,7 @@ public sealed class SupervisorConnection : IAsyncDisposable
                 if (type == "event")
                 {
                     var envelope = JsonSerializer.Deserialize<EventEnvelope>(
-                        message.ToJsonString(),
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        frame.Span, PipeFraming.ReadJsonOptions);
                     if (envelope is not null)
                     {
                         if (envelope.Event is not (EventNames.Frame or EventNames.Logcat))

@@ -1,7 +1,7 @@
-﻿using System.Collections.Concurrent;
+using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipes;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using EmulatorWorkspace.Contracts;
 using EmulatorWorkspace.Core.Supervisor;
 
@@ -128,27 +128,29 @@ public sealed class SupervisorPipeServer
             {
                 while (!cancellationToken.IsCancellationRequested && _pipe.IsConnected)
                 {
-                    JsonObject? message;
+                    PipeFrame? frame;
                     try
                     {
-                        message = await PipeFraming.ReadAsync(
-                            _pipe, SupervisorProtocol.MaxRequestBytes, cancellationToken).ConfigureAwait(false);
+                        // EV-09: one pooled read, one head peek, one deserialize.
+                        frame = await PipeFraming.ReadAsync(
+                            _pipe, SupervisorProtocol.MaxRequestBytes, ArrayPool<byte>.Shared, cancellationToken)
+                            .ConfigureAwait(false);
                     }
                     catch (IOException)
                     {
                         break;
                     }
 
-                    if (message is null)
+                    if (frame is null)
                     {
                         break;
                     }
 
-                    var type = JsonArgs.String(message, "type") ?? "request";
-                    if (type == "cancel")
+                    using var lease = frame;
+                    var (peekedType, peekedId) = PipeFraming.PeekHead(lease.Span);
+                    if ((peekedType ?? "request") == "cancel")
                     {
-                        var cancelId = JsonArgs.String(message, "id");
-                        if (cancelId is not null && _inFlight.TryGetValue(cancelId, out var source))
+                        if (peekedId is not null && _inFlight.TryGetValue(peekedId, out var source))
                         {
                             source.Cancel();
                         }
@@ -156,9 +158,11 @@ public sealed class SupervisorPipeServer
                         continue;
                     }
 
+                    // Args and every string are copied out of the pooled buffer by
+                    // the deserialize, so the lease can go back before HandleAsync
+                    // (which is not awaited) reads the request.
                     var request = JsonSerializer.Deserialize<RequestEnvelope>(
-                        message.ToJsonString(),
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        lease.Span, PipeFraming.ReadJsonOptions);
                     if (request is null || string.IsNullOrWhiteSpace(request.Id))
                     {
                         await WriteAsync(new ResponseEnvelope

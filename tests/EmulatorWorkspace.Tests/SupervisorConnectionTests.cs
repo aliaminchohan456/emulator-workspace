@@ -176,6 +176,36 @@ public class SupervisorConnectionTests
         Assert.Equal(expectedJson, actual[4..]);
     }
 
+    [Fact]
+    public async Task MalformedFrame_EndsTheReaderWithTheSameErrorHandling()
+    {
+        var pair = await PipePair.CreateAsync();
+        await using var _ = pair;
+        var server = pair.Server;
+        var connection = pair.Connection;
+
+        var trace = new ConcurrentQueue<string>();
+        connection.Trace = line => trace.Enqueue(line);
+        var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.Closed += () => closed.TrySetResult();
+
+        // A frame whose length prefix is valid and whose payload is not JSON.
+        var json = "{\"type\":\"event\",\"event\":"u8.ToArray();
+        var frame = new byte[4 + json.Length];
+        BinaryPrimitives.WriteInt32LittleEndian(frame, json.Length);
+        json.CopyTo(frame.AsSpan(4));
+        await server.WriteAsync(frame);
+        await server.FlushAsync();
+
+        await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.False(connection.IsOpen);
+        Assert.Contains(trace, line => line.StartsWith("reader error:", StringComparison.Ordinal));
+
+        await Assert.ThrowsAsync<SupervisorUnavailableException>(
+            () => connection.RequestAsync("test.op", new JsonObject()));
+    }
+
     private static async Task WriteResponseAsync(Stream stream, string id)
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(
