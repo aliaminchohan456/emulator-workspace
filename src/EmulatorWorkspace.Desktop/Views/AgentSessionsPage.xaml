@@ -136,8 +136,13 @@
 
         <!-- One table row: hover through the shared 120 ms fade, selection in the
              shared tint. The mockup keeps the tables quiet, so there is no zebra
-             striping and no grid line between rows, only the card's own edges. -->
+             striping and no grid line between rows, only the card's own edges.
+             EV-02: the container itself carries the human name UI Automation
+             reads, because a ListBoxItem without one reports its item type
+             ("AgentSessionsPage+SessionRow") to a screen reader. Extending this
+             style leaves the hover, selection and template untouched. -->
         <Style x:Key="AgentRowItem" TargetType="ListBoxItem">
+            <Setter Property="AutomationProperties.Name" Value="{Binding AutomationName}" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
@@ -171,8 +176,10 @@
         </Style>
 
         <!-- A pairing request row in the approval card: client plus the request id
-             on two lines, with the status chip on the right. -->
+             on two lines, with the status chip on the right. EV-02: the container
+             name is the row's human name, for the same reason as AgentRowItem. -->
         <Style x:Key="PairingRowItem" TargetType="ListBoxItem">
+            <Setter Property="AutomationProperties.Name" Value="{Binding AutomationName}" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0,1" />

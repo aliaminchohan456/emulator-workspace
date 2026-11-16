@@ -341,6 +341,49 @@ public static class AgentSessionsPresentation
         return (live, past);
     }
 
+    /// <summary>
+    /// EV-02: the one-line name UI Automation reads for a pairing-request row.
+    /// A ListBoxItem without a name falls back to its item's type name, so a
+    /// screen reader used to hear "AgentSessionsPage+PairingRow". The format is
+    /// built here, from the same words the row prints, so the name carries the
+    /// chip label and the live countdown instead of a raw enum.
+    /// </summary>
+    public static string PairingRowName(string? client, string? statusLabel, string? countdown) =>
+        string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}, pairing {1}, expires {2}",
+            NamePart(client, "Unknown client"),
+            NamePart(statusLabel, "Unknown"),
+            NamePart(countdown, "unknown"));
+
+    /// <summary>EV-02: the same one-line name for a paired-session row.</summary>
+    public static string SessionRowName(string? client, string? stateLabel, string? guest) =>
+        string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}, session {1}, guest {2}",
+            NamePart(client, "Unknown client"),
+            NamePart(stateLabel, "Unknown"),
+            NamePart(guest, "unknown guest"));
+
+    /// <summary>EV-02: the same one-line name for a recent-agent-operation row.</summary>
+    public static string OperationRowName(string? operation, string? outcomeLabel) =>
+        string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}, {1}",
+            NamePart(operation, "unknown operation"),
+            NamePart(outcomeLabel, "Unknown"));
+
+    /// <summary>
+    /// A value as it appears inside a row name: trimmed, and a missing value
+    /// reads as the given words. The em dash the table prints for "no value" is
+    /// spoken badly, so it counts as missing here.
+    /// </summary>
+    private static string NamePart(string? value, string fallback)
+    {
+        var trimmed = (value ?? "").Trim();
+        return trimmed.Length == 0 || trimmed == "—" ? fallback : trimmed;
+    }
+
     /// <summary>"3 sessions · 1 pairing" for the window's status line.</summary>
     public static string Summary(int sessions, int pairings) =>
         string.Format(

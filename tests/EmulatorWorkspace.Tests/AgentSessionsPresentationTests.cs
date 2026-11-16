@@ -237,6 +237,34 @@ public class AgentSessionsPresentationTests
         Assert.Empty(noneLive);
         Assert.Equal(2, allPast.Count);
     }
+
+    // EV-02: the names UI Automation reads for the three tables. The words come
+    // from the same rules the rows print, and a missing value reads as words
+    // instead of the em dash the table shows.
+    [Fact]
+    public void RowNames_ReadAsSentencesWithThePrintedWords()
+    {
+        Assert.Equal(
+            "opencode-cli, pairing Pending, expires in 1m 58s",
+            AgentSessionsPresentation.PairingRowName("opencode-cli", "Pending", "in 1m 58s"));
+        Assert.Equal(
+            "opencode-cli, pairing Expired, expires unknown",
+            AgentSessionsPresentation.PairingRowName("opencode-cli", "Expired", "—"));
+
+        Assert.Equal(
+            "opencode-cli, session Active, guest ag-1a2b3c",
+            AgentSessionsPresentation.SessionRowName("opencode-cli", "Active", "ag-1a2b3c"));
+        Assert.Equal(
+            "Unknown client, session Revoked, guest unknown guest",
+            AgentSessionsPresentation.SessionRowName("", "Revoked", ""));
+
+        Assert.Equal(
+            "instance.start, OK",
+            AgentSessionsPresentation.OperationRowName("instance.start", "OK"));
+        Assert.Equal(
+            "unknown operation, Unknown",
+            AgentSessionsPresentation.OperationRowName(null, "—"));
+    }
 }
 
 /// <summary>

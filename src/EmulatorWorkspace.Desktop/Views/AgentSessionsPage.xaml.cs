@@ -882,6 +882,7 @@ public partial class AgentSessionsPage : UserControl
         private string _stateLabel = "";
         private string _tone = "neutral";
         private bool _canRevoke;
+        private string _automationName = "";
 
         public SessionRow(
             string client, string session, string instance, string guestName, string scopes,
@@ -971,6 +972,20 @@ public partial class AgentSessionsPage : UserControl
 
         public string AccessibleName => $"{StateLabel} session {Session} for {Client} on {Instance}";
 
+        /// <summary>
+        /// EV-02: the human name UI Automation reads for this row ("opencode-cli,
+        /// session Active, guest ag-1a2b3c"). The session table's ListBoxItem binds
+        /// this through its container style; ToString is the backstop for a
+        /// container that is asked for a name before the binding runs.
+        /// </summary>
+        public string AutomationName
+        {
+            get => _automationName;
+            private set => SetProperty(ref _automationName, value);
+        }
+
+        public override string ToString() => AutomationName;
+
         public void Tick(DateTimeOffset now)
         {
             Countdown = AgentSessionsPresentation.Countdown(ExpiresUtc, now);
@@ -987,6 +1002,11 @@ public partial class AgentSessionsPage : UserControl
             }
 
             CanRevoke = State == "active" && (ExpiresUtc is null || ExpiresUtc > now);
+
+            // The state word is part of the row's name, so the name is refreshed
+            // on the same second as the chip. SetProperty only raises when the
+            // word really changed, so a steady row stays silent.
+            AutomationName = AgentSessionsPresentation.SessionRowName(Client, StateLabel, GuestName);
         }
     }
 
@@ -998,6 +1018,7 @@ public partial class AgentSessionsPage : UserControl
         private bool _expiring;
         private bool _isPending;
         private bool _isFirstPast;
+        private string _automationName = "";
 
         public PairingRow(
             string client, string pairing, string status, string template,
@@ -1079,6 +1100,19 @@ public partial class AgentSessionsPage : UserControl
             ? $"{StatusLabel} pairing request from {Client}, past"
             : $"{StatusLabel} pairing request from {Client}";
 
+        /// <summary>
+        /// EV-02: the human name UI Automation reads for this row ("opencode-cli,
+        /// pairing Pending, expires in 1m 58s"). The countdown is part of the name,
+        /// so the property is refreshed in Tick; ToString is the backstop.
+        /// </summary>
+        public string AutomationName
+        {
+            get => _automationName;
+            private set => SetProperty(ref _automationName, value);
+        }
+
+        public override string ToString() => AutomationName;
+
         public void Tick(DateTimeOffset now)
         {
             Countdown = AgentSessionsPresentation.Countdown(ExpiresUtc, now);
@@ -1097,6 +1131,10 @@ public partial class AgentSessionsPage : UserControl
                          && (ExpiresUtc is null || ExpiresUtc > now);
             Expiring = IsPending && ExpiresUtc is { } expiry
                        && expiry - now <= AgentSessionsPresentation.PairingWarningWindow;
+
+            // The countdown changes every second, so the name does too; the
+            // setter only raises when the string really moved.
+            AutomationName = AgentSessionsPresentation.PairingRowName(Client, StatusLabel, Countdown);
         }
     }
 
@@ -1134,6 +1172,15 @@ public partial class AgentSessionsPage : UserControl
         public string Tone => AgentSessionsPresentation.OutcomeTone(Outcome);
 
         public string AccessibleName => $"{OutcomeChipText}: {Operation} by {CallerLabel} at {Time}";
+
+        /// <summary>
+        /// EV-02: the human name UI Automation reads for this row
+        /// ("instance.start, OK"). The operation log never changes after it is
+        /// built, so the name is read-only; ToString is the container backstop.
+        /// </summary>
+        public string AutomationName => AgentSessionsPresentation.OperationRowName(Operation, OutcomeLabel);
+
+        public override string ToString() => AutomationName;
     }
 
     public sealed record TemplateRow(string Name, string State)
