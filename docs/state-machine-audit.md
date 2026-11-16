@@ -22,7 +22,7 @@ happens). The product decides what happens:
 | --- | --- | --- | --- | --- |
 | SM-1 | Managed instance lifecycle | `InstanceRecord.State` (`InstanceState`), sent as a string | The supervisor (2 writers), the Studio, the device library, two converters, the agent table, the command palette | **Explicit now** (UX-18) |
 | SM-2 | Guest readiness / boot stepper | Three `BootStageViewModel` steps (`done`/`active`/`pending`/`unknown`) | The Studio's status poll | Evidence-driven; now reads SM-1 |
-| SM-3 | Frame stream | `_frameWaitSince`, `IsFrameStale`, `_captureRestricted`, `HasFrame` | The Studio | Untouched (one owner) |
+| SM-3 | Frame stream | `_frameWaitSince`, `IsFrameStale`, `_captureRestricted`, `HasFrame` | The Studio | **Explicit now** (UX-18, continued) |
 | SM-4 | Logcat stream | `_logcatSubscription`, `LogPaused`, `_logcatError`, the level chips | The Studio + `LogcatPresentation` | Already explicit and pure |
 | SM-5 | Magisk lab transaction | 14 phase strings in the lab journal | `MagiskLabService`, the Studio's stage, the Root Lab card | **Explicit now** (UX-18) |
 | SM-6 | Agent session / pairing / operation outcome | Session state, pairing status, outcome codes | `AgentStore`, `AgentSessionsPresentation` | Already explicit and pure |
@@ -74,6 +74,7 @@ places:
 | 11 | **The device library's "Needs attention" counter only counted `Failed`**, so a guest that lost its engine was not counted. | 4 | 1 | **4** | **Fixed** (the counter now reads the same two states the card's chip does) |
 | 12 | **A guest in the `Unknown` state offered a "Start"** that the supervisor refuses with `already_running` (the process is alive, it just could not be verified). | 2 | 3 | **6** | **Fixed** (the state now offers no mutation and says "Unknown state") |
 | 13 | **The `Stopping` state left the primary action enabled** - the operator could press it and get a typed refusal while the guest was shutting down. | 3 | 2 | **6** | **Fixed** |
+| 22 | **A guest that outlived its engine process held the instance's ports.** The engine is a wrapper around the real emulator process. When the wrapper dies on its own, the guest it started keeps running and keeps the console, ADB and controller ports. The supervisor saw an instance that was gone while the ports it needs were still busy, and the next start refused with "Port 5554 is already in use. Another emulator or process owns it" - a message that named a stranger, and the operator had to find the leftover guest by hand. | 3 | 4 | **12** | **Fixed** |
 
 ### What changed
 
@@ -92,6 +93,11 @@ places:
 - `InstanceManager.List` reconciles the liveness of every record, so
   `instance.list` and `wsctl list` no longer print "Running" for a guest whose
   engine is gone.
+- `Core/Instances/OrphanedGuest.cs` (new, pure): the guest that outlived the
+  engine process. The console on the instance's serial says whose guest it
+  is, and it is only ever addressed when it answers as *this* instance's AVD.
+  `StartAsync` then names the instance instead of pointing at a stranger, and
+  `StopAsync` ends the leftover guest and waits for the ports to be released.
 
 **Desktop**
 
@@ -117,6 +123,65 @@ places:
 - The supervisor's authorization policy, scopes, leases and journal.
 - The engine, the image, the ADB targeting and the viewport geometry.
 
+## SM-3 - the frame stream
+
+### What the state machine actually was
+
+The Studio's viewport had no stream state at all. It kept four unrelated
+facts - `_frameWaitSince` (the first-frame wait), `IsFrameStale` (a five
+second budget), `_captureRestricted` (a supervised operation holding the
+guest's ADB channel) and `HasFrame` - and the chip, the input gate and the
+stage each read a different one of them. The supervisor's side was worse: the
+frame subscription lived in the hub's in-memory dictionary, and the window
+kept the id it was given. Nothing ever said "that subscription is over".
+
+### The findings
+
+| # | Finding | Frequency | Severity | Product | Decision |
+| --- | --- | --- | --- | --- | --- |
+| 17 | **An idle guest was reported as a broken stream.** The viewport read "no new frame for five seconds" as a fault: it showed an amber "Stalled 16 s" chip over a perfectly current picture and dropped every tap and swipe. The emulator's image stream is *change driven* - a guest whose screen does not change sends no frames at all. The whole idle guest looked broken and unusable. | 7 | 6 | **42** | **Fixed** |
+| 18 | **A closed subscription was never forgotten.** When the guest's engine died, the supervisor closed the frame subscription, but the window kept the closed id: the status poll read "already subscribed" and never opened a new one. The viewport stayed dead for the rest of the session, even after the guest came back. | 5 | 6 | **30** | **Fixed** |
+| 19 | **A dead capture left its subscriptions counted as live.** The hub kept the subscriber after the pump died, so `instance.status` counted a stream that was closed, and the capture of a guest nobody watched any more kept running (the unsubscribe only stops a capture when no subscriber is left). | 4 | 4 | **16** | **Fixed** |
+| 20 | **A lost supervisor left the subscription id pointing at nothing.** A subscription lives in the supervisor's in-memory hub. When the pipe closed (a supervisor restart), the window kept the id, so after the supervisor came back the viewport never re-attached and the operator was left with a dead picture and a "Running" guest. | 4 | 6 | **24** | **Fixed** |
+
+### What changed
+
+**Supervisor (`Core`)**
+
+- `FramePump` publishes its own health: `PublishedFrames` (how many frames it
+  delivered) and `LastFrameUtc` (when it delivered the last one).
+- `instance.status` reports it in an additive `frameStream` object
+  (`running`, `subscribers`, `lastFrameUtc`, `frames`). The existing fields are
+  untouched.
+- A capture that dies now closes the subscriptions it owned: they leave the
+  hub and the unsubscribe bookkeeping, so the count is honest and the next
+  subscriber starts from a clean slate. A pump that was already replaced never
+  closes the stream that replaced it.
+
+**Desktop**
+
+- `Desktop/ViewModels/FrameStreamHealth.cs` (new, pure): the stream's four
+  states - **Live**, **Idle** (the screen did not change, so no frame came;
+  the picture is current and the operator keeps the input), **Stalled** (the
+  capture is not running or the guest stopped answering; the input waits) and
+  **Held** (a supervised operation owns the guest's ADB channel; the input
+  waits). Only a stalled stream and a held channel pause the input.
+- The Studio reads the capture's health from `instance.status` and the
+  guest's own transport answer, and the chip says "Stalled <age>" only when
+  the stream really is broken.
+- A closed subscription is recognised (`Desktop/ViewModels/SubscriptionClose.cs`,
+  pure): the window clears the id, so the status poll re-attaches as soon as
+  the guest is up again. The log stream is re-attached the same way.
+- A lost supervisor drops both subscription ids: the ids belonged to a hub
+  that no longer exists.
+
+### What did not change
+
+- The wire contract: `instance.status` gained one additive object
+  (`frameStream`); every other field is unchanged.
+- The viewport geometry, the capture format and the supervisor's
+  authorization policy.
+
 ## SM-5 - the Magisk lab transaction
 
 ### The finding
@@ -126,6 +191,7 @@ places:
 | 14 | **`recoveryRequired` was true through the whole successful install.** The lab journal reported "recovery required" for every phase that was not `prepared`, `verified` or `recovered` - so `staging`, `baseline_boot`, `activating`, `provisioned` and `verifying_boot_N` all claimed that the guest needed a stock recovery. The Studio turned that into a "Lab recovery required" stage over the viewport, and told the operator to recover stock while the install was doing exactly what it was asked to do. | 6 | 5 | **30** | **Fixed** |
 | 15 | **An interrupted install was indistinguishable from a running one.** The phase was the only signal, so a transaction that died mid-`activating` looked like a transaction that was still running. | 4 | 4 | **16** | **Fixed** (a journal that has not moved for 10 minutes is an interrupted transaction, and it needs a stock recovery) |
 | 16 | **The lab's phase word was printed raw** ("verifying_boot_1") in the inspector and in the rail dot's tooltip. | 4 | 1 | **4** | Filed (issue 2) |
+| 21 | **"prepared" counted as an install in flight.** `InProgress` listed `prepared`, so a lab with the patch staged and nothing running claimed that an install was in progress - the chip said "install in progress" between two operator actions. | 4 | 2 | **8** | **Fixed** (the phase is a stable state between two operator actions) |
 
 ### What changed
 
@@ -143,12 +209,15 @@ places:
 
 ## Verification
 
-- `dotnet build -c Release`: 0 errors, 22 warnings (the recorded baseline).
-- `dotnet test -c Release --no-build`: **604/604** (577 before this slice,
-  27 new).
+- `dotnet build -c Release --no-incremental`: 0 errors, 22 warnings (the
+  recorded baseline).
+- `dotnet test -c Release --no-build`: **617/617** (577 before this slice,
+  40 new).
 - New unit tests: `DeviceLifecycleTests` (14), `InstanceLifecycleTests` (10),
-  `MagiskLabPhaseTests` (8). They cover the transition table, the capability
-  table and the phase classification.
+  `MagiskLabPhaseTests` (8, one rewritten), `FrameStreamHealthTests` (8),
+  `SubscriptionCloseTests` (5). They cover the transition table, the capability
+  table, the phase classification, the stream's four states and the closed
+  subscription.
 - `git diff --check`: clean.
 
 ### Runtime evidence (a disposable workspace root, no guest)
@@ -174,7 +243,48 @@ through the normal entries:
 Two surfaces, one word and one set of capabilities - which is the point of the
 slice.
 
-Hardware-dependent behaviour that still needs a real WHPX guest (a guest
-booting while nobody waits, a Magisk install in flight) is listed as pending
-evidence in [the issue file](issues/state-machine-issues.md) and in
-`task.md`.
+### Runtime evidence (a real guest, `D:\EmulatorWorkspace`, API 35 x86_64)
+
+The rest of the proofs need a guest that really boots, so they were run
+against one (`ux18`, `system-images;android-35;default;x86_64`, engine
+37.2.12.0, GPU `host`, 1080 x 2400).
+
+- **A guest started without a waiter reaches Running in durable state.**
+  `wsctl start --name ux18` with no `wait` and then `wsctl status` alone
+  drove `Starting` -> `Running` in about 90 s; the SQLite record persisted
+  `Running` and `wsctl list` printed it.
+- **The Studio attaches to it and shows the live guest**
+  (`artifacts/ui/ux18-attaches-without-waiter.png`): the picture, the boot
+  stepper's three reconciled stages ("Boot 93.2 s") and the nav cluster.
+- **An idle guest is not a stalled stream.** With the guest up and its screen
+  unchanged, the chip reads "Guest display - 1080 x 2400" and *no* "Stalled
+  Ns" suffix (`artifacts/ui/ux18-idle-guest-2.png`).
+- **A tap in the viewport reaches the guest.** A click on the Gallery icon in
+  the viewport opened the Gallery app in the guest
+  (`foreground: com.android.gallery3d/...GalleryActivity`), and the Studio's
+  own Recents command showed the guest's recents screen
+  (`artifacts/ui/ux18-recover-9-gallery.png`).
+- **An engine that dies is reported, not pretended away.** The engine process
+  was killed: `wsctl status` printed `state=Stopped engineAlive=false`, the
+  Studio's pill read **"Engine gone"** and the stage read "The guest's engine
+  is gone" (`artifacts/ui/ux18-recover-1-engine-gone.png`).
+- **The viewport re-attaches by itself when the guest comes back.** After the
+  guest was started again, the desktop opened a new subscription on its own
+  (`frameSubscription` 0 -> 1, `frameStream.running` true, frames flowing)
+  with no operator action (`artifacts/ui/ux18-recover-2-reattached.png`).
+- **A supervisor that dies is survived.** The supervisor process was killed:
+  the watchdog restarted it, the Studio reconnected ("supervisor pipe closed"
+  -> "supervisor connected") and re-attached to the guest
+  (`artifacts/ui/ux18-supervisor-restart-reattached.png`).
+- **A guest that outlived its engine process is named, then cleared.** The
+  engine wrapper was killed while its guest stayed alive. The next start
+  refused with "Port 5554 is held by the previous guest of instance 'ux18':
+  it still answers on emulator-5554 as this instance's AVD, although its
+  engine process is gone. Stop the instance first - that clears the leftover
+  guest: wsctl stop --name ux18 --force." The stop answered
+  `{"stopped":true,"forced":false,"orphanStopped":true}`, the leftover guest
+  was gone, and the next start worked.
+
+The remaining hardware proofs (a Magisk install in flight, the Phase 2 agent
+acceptance re-run) are listed in
+[the issue file](issues/state-machine-issues.md) and in `task.md`.

@@ -405,6 +405,38 @@ chip with a Start button and "Needs attention 1 · guest to review"
 (`artifacts/ui/ux18-engine-gone-library.png`). The remaining hardware proofs
 (a guest booting without a waiter, a Magisk install in flight) are listed in
 the issue file.
+UX-18 continued (2026-11-16, commits `c6518df` and `f2ad5e1`, base HEAD
+`33665fb`): the frame stream became the third explicit machine, and the
+remaining lifecycle gap (the guest that outlives its engine) was closed.
+The emulator's image stream is change driven - a guest whose screen does not
+change sends no frames at all - so the viewport's "no frame for five seconds"
+rule called an idle guest a stalled stream, showed an amber "Stalled 16 s"
+chip over a current picture and dropped every tap and swipe.
+`Desktop/ViewModels/FrameStreamHealth.cs` (pure, tested) separates Live,
+Idle, Stalled and Held: only a stalled stream (the supervisor says the
+capture is not running, or the guest stopped answering) and a held ADB
+channel pause the input. The supervisor reports the capture's own health
+(`instance.status` gained the additive `frameStream` object: running,
+subscribers, lastFrameUtc, frames). The subscription itself is now honest:
+a closed subscription is recognised (`Desktop/ViewModels/SubscriptionClose.cs`,
+pure, tested) and the window re-attaches when the guest comes back; a dead
+capture closes the subscriptions it owned instead of leaving them counted as
+live in the hub; a lost supervisor drops both ids, because a subscription
+lives in the supervisor's in-memory hub and the id would point at nothing.
+`Core/Instances/OrphanedGuest.cs` (pure, tested) covers the guest that
+outlives the engine process: the console says whose guest it is, the start
+path then names the instance instead of pointing at a stranger, and the stop
+path ends the leftover guest and waits for the ports. "prepared" is no longer
+an in-progress Magisk phase, because nothing runs between those two operator
+actions. No engine, image, scope, policy, lease, journal, viewport geometry
+or wire-field removal; the wire contract gained one object and one boolean.
+Build 0 errors / 22 warnings, 624/624 tests (47 new), `git diff --check`
+clean. Runtime evidence on a real guest (API 35 x86_64): a guest started
+without a waiter reaches Running in durable state and the Studio attaches; an
+idle guest shows no "Stalled" chip; a tap in the viewport opens the Gallery
+app in the guest; a killed engine reads "Engine gone"; the viewport
+re-attaches by itself after the guest comes back and after the supervisor is
+restarted; the leftover guest is named and then cleared.
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.
