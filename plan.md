@@ -450,6 +450,48 @@ instead of the app's tree - measured on the same guest, the same operation
 and the same session a minute later), so the harness waits the way its CLI
 section already did. The only proof still open is a Magisk install in flight,
 which needs the patched lab ramdisk.
+UX-18 closed (2026-11-16, commits `52f68b6` and `92070d1`): the last proof
+of the audit - a Magisk install in flight - was run on a real lab and it
+exposed two more defects, both fixed. The lab needs a patched ramdisk, the
+pinned Magisk manager and the pinned root probe, and all three are on this
+host, so the whole transaction was run against a disposable guest ("lab", root
+`D:\WS-Magisk-UX18`, engine 37.2.12.0, WHPX, SwiftShader) under the
+owner-approved lab exception in `agents.md`: the journaled provisioning asks
+for ADB root once and verifies adbd back at UID 2000.
+
+- The Studio read the lab state once, when the guest was selected, so the
+  window kept saying "Prepared" through a whole install and the stage never
+  said that a lab was running (5 x 6 = 30, fixed). The status poll now reads
+  the lab state too - a journal read the supervisor answers in about 0.2 s
+  even while the transaction holds the mutation lease - and the stage follows
+  it: "Magisk lab in progress" while it runs, "Lab recovery required" when a
+  recovery is really due.
+- A guest that goes away raised an error band for something the window did
+  on its own (4 x 3 = 12, fixed). A lab transaction reboots its guest
+  several times, and the window's own automatic subscription was raising
+  "Instance 'lab' is not running. Start the device, then repeat the action."
+  for an action the operator never took.
+- A transaction that nobody was driving still said "install in progress"
+  (4 x 5 = 20, fixed). The journal keeps the last phase it wrote, so a
+  transaction whose supervisor died still said "activating". The transaction
+  now counts as running only while the supervisor that owns it is driving it
+  (it holds the lab's lease) and its journal still moves; a transaction whose
+  supervisor died is reported as interrupted at once, and a stock recovery is
+  due when the guest had already booted with the patched ramdisk.
+
+Runtime evidence: prepared reads "Magisk lab: prepared"; the live install
+reads `installInProgress=true, recoveryRequired=false` through
+`baseline_boot -> activating -> verifying_boot_2` and the Studio's stage says
+"Magisk lab in progress"; the install finished at `verified` with two
+cold-boot app-root proofs (uid 10149 -> `uid=0(root)` in `u:r:magisk:s0`,
+Magisk 30700, Zygisk off); the stock recovery finished at `recovered` with
+the app probe denied (`error=13`); and a second run with the supervisor
+killed in the `provisioned` phase reported `installInProgress=false,
+recoveryRequired=true` with the stage saying "Lab recovery required". The
+evidence is in `artifacts/ui/magisk-ux18-*.png` and
+`artifacts/magisk-lab/ux18-20261116{,-crash}/`; both lab roots, their guests
+and their supervisors were removed afterwards. Release build 0 errors / 22
+warnings, 628/628 tests (51 new).
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

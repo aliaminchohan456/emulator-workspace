@@ -192,6 +192,9 @@ kept the id it was given. Nothing ever said "that subscription is over".
 | 15 | **An interrupted install was indistinguishable from a running one.** The phase was the only signal, so a transaction that died mid-`activating` looked like a transaction that was still running. | 4 | 4 | **16** | **Fixed** (a journal that has not moved for 10 minutes is an interrupted transaction, and it needs a stock recovery) |
 | 16 | **The lab's phase word was printed raw** ("verifying_boot_1") in the inspector and in the rail dot's tooltip. | 4 | 1 | **4** | Filed (issue 2) |
 | 21 | **"prepared" counted as an install in flight.** `InProgress` listed `prepared`, so a lab with the patch staged and nothing running claimed that an install was in progress - the chip said "install in progress" between two operator actions. | 4 | 2 | **8** | **Fixed** (the phase is a stable state between two operator actions) |
+| 23 | **The Studio's lab state was frozen at selection time.** `magisk.status` was read once, when the guest was selected, so the window kept saying "Prepared" through a whole install and the stage never said that a lab was running. The operator had no live view of the transaction in the product at all. | 5 | 6 | **30** | **Fixed** |
+| 24 | **A guest that went away raised an error band for something the window did on its own.** A lab transaction reboots its guest several times; the desktop's automatic frame subscription was refused with `instance_not_running` and showed the operator "Instance 'lab' is not running. Start the device, then repeat the action." for an action the operator never took. | 4 | 3 | **12** | **Fixed** (the window waits in the status line and attaches again when the guest is up) |
+| 25 | **A transaction that nobody was driving still said "install in progress".** The journal keeps the last phase it wrote, so a transaction whose supervisor died still said "activating" - and the phase word was read as work in progress. The window waited for an install that was dead, and the stage did not say that a stock recovery was due. | 4 | 5 | **20** | **Fixed** (the transaction is running only while the supervisor that owns it is driving it and its journal still moves) |
 
 ### What changed
 
@@ -199,13 +202,22 @@ kept the id it was given. Nothing ever said "that subscription is over".
   failed, running, or interrupted. `RequiresRecovery` is true for a failed
   transaction and for a transaction that was interrupted after the guest had
   already booted with the patched ramdisk; `InProgress` is true while the
-  transaction is still moving.
+  transaction is really being driven. **A phase word alone proves nothing**:
+  the journal keeps the last phase it wrote, so a transaction whose supervisor
+  died still says "activating". Two facts decide it - whether this supervisor
+  is driving the transaction (it holds the lab's lease while the operation
+  runs) and whether the journal still moves.
 - `magisk.status` reports `recoveryRequired` (now honest) and the new
   `installInProgress`.
 - The Studio shows "Magisk lab in progress" while the transaction runs, and
   keeps "Lab recovery required" for the case that really needs a stock
-  recovery. The agent fence in the supervisor (`Guard`) is unchanged: an
-  active lab still permits observation only until the guest is back on stock.
+  recovery. **The state follows the transaction**: it is read by the status
+  poll, not once at selection, so the window says what the lab is doing while
+  it is doing it. A subscription that is refused because the guest is not
+  running (a lab reboots its guest) waits in the status line instead of
+  raising an error band for an action the operator never took.
+  The agent fence in the supervisor (`Guard`) is unchanged: an active lab
+  still permits observation only until the guest is back on stock.
 
 ## Verification
 
@@ -285,6 +297,54 @@ against one (`ux18`, `system-images;android-35;default;x86_64`, engine
   `{"stopped":true,"forced":false,"orphanStopped":true}`, the leftover guest
   was gone, and the next start worked.
 
-The remaining hardware proofs (a Magisk install in flight, the Phase 2 agent
-acceptance re-run) are listed in
-[the issue file](issues/state-machine-issues.md) and in `task.md`.
+### Runtime evidence (a real Magisk lab, `D:\WS-Magisk-UX18`)
+
+The lab transaction needs a patched ramdisk, the pinned Magisk manager and
+the pinned root probe. All three are on this host
+(`artifacts/magisk-lab/linux-20261113-110018` and
+`.../linux-20261114-124924-baseonly`), so the whole transaction was run
+against a disposable guest ("lab") on the API 35 x86_64 image, engine
+37.2.12.0, WHPX, SwiftShader - under the owner-approved lab exception in
+`agents.md` (the journaled provisioning asks for ADB root once and verifies
+adbd back at UID 2000).
+
+- **Prepared is not an install.** `magisk.prepare` reported
+  `phase=prepared, installInProgress=false, recoveryRequired=false`, and the
+  Studio showed "Magisk lab: prepared" with the guest's own stage - not
+  "Lab recovery required" (`artifacts/ui/magisk-ux18-1-prepared.png`).
+- **An install in flight says so.** The phases ran
+  `baseline_boot -> activating -> verifying_boot_2`, and every read reported
+  `installInProgress=true, recoveryRequired=false`. The Studio's stage read
+  **"Magisk lab in progress"** with "Magisk lab: verifying_boot_2 (install in
+  progress)", and the inspector read **"Install in progress"**
+  (`artifacts/ui/magisk-ux18-3-install-in-progress-live.png`).
+- **The install really worked.** The transaction finished at `verified` with
+  two cold-boot app-root proofs: the probe app (uid 10149, context
+  `u:r:untrusted_app:s0`) reached `uid=0(root)` in `u:r:magisk:s0`; Magisk
+  reported 30700, Zygisk off, no modules; and the journaled provisioning
+  recorded the root request (UID 2000 -> 0) and the unroot (0 -> 2000) with
+  `adbdUid2000Verified`.
+- **Stock recovery removed it.** The recovery finished at `recovered` and the
+  stock app probe was denied `su` with `error=13` (permission denied); the
+  inspector read "Recovered"
+  (`artifacts/ui/magisk-ux18-6-recovered-diagnostics.png`).
+- **An interrupted install says a recovery is due.** A second run
+  (`D:\WS-Magisk-UX18b`) had the supervisor killed in the `provisioned` phase
+  - the guest had already booted with the patched ramdisk. The next read
+  reported `phase=verifying_boot_1, installInProgress=false,
+  recoveryRequired=true`, and the Studio's stage read **"Lab recovery
+  required"** with the inspector row "Stock recovery required"
+  (`artifacts/ui/magisk-ux18-7-interrupted-recovery-required.png`). The
+  approved stock recovery then completed (the app probe denied `su` with
+  `error=13`, Magisk absent, adbd back at UID 2000). Before this, the same
+  state said "install in progress" and the operator waited for a dead
+  transaction.
+
+The local evidence (the lab journals with their provisioning records, the
+install and recover results) is under `artifacts/magisk-lab/ux18-20261116`
+and `artifacts/magisk-lab/ux18-20261116-crash`; both lab roots, their guests
+and their supervisors were removed afterwards.
+
+Every hardware proof this audit asked for is now closed: the guest that boots
+without a waiter, the engine that dies, the guest that outlives its engine,
+the Magisk install in flight and the Phase 2 agent acceptance.
