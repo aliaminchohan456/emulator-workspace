@@ -117,6 +117,12 @@
     <Geometry x:Key="IconRefresh">M 12.6,5.6 A 4.8,4.8 0 1 0 13,9.8 M 12.6,2.6 L 12.6,5.9 L 9.3,5.9</Geometry>
     <Geometry x:Key="IconInfo">M 3.4,8 A 4.6,4.6 0 1 1 12.6,8 A 4.6,4.6 0 1 1 3.4,8 M 8,7.4 L 8,11 M 8,5.1 L 8,5.11</Geometry>
     <Geometry x:Key="IconClose">M 4.2,4.2 L 11.8,11.8 M 11.8,4.2 L 4.2,11.8</Geometry>
+    <!-- UX-12 caption glyphs, drawn in a 10 x 10 box so the title bar can render
+         them at their real size with Stretch=None (no pen thickening). -->
+    <Geometry x:Key="IconWindowMinimize">M 1,5 L 9,5</Geometry>
+    <Geometry x:Key="IconWindowMaximize">M 1.5,1.5 L 8.5,1.5 L 8.5,8.5 L 1.5,8.5 Z</Geometry>
+    <Geometry x:Key="IconWindowRestore">M 3,1 L 9,1 L 9,7 M 1,3 L 7,3 L 7,9 L 1,9 Z</Geometry>
+    <Geometry x:Key="IconWindowClose">M 1.5,1.5 L 8.5,8.5 M 8.5,1.5 L 1.5,8.5</Geometry>
     <Geometry x:Key="IconMonitor">M 3,3.6 L 13,3.6 L 13,11.4 L 3,11.4 Z M 6.2,13.6 L 9.8,13.6 M 8,11.4 L 8,13.6</Geometry>
     <Geometry x:Key="IconGrid">M 3,3.6 L 7.2,3.6 L 7.2,7.6 L 3,7.6 Z M 8.8,3.6 L 13,3.6 L 13,7.6 L 8.8,7.6 Z M 3,8.8 L 7.2,8.8 L 7.2,12.8 L 3,12.8 Z M 8.8,8.8 L 13,8.8 L 13,12.8 L 8.8,12.8 Z</Geometry>
     <Geometry x:Key="IconPower">M 8,2.8 L 8,7.8 M 5.4,4.4 A 4.6,4.6 0 1 0 10.6,4.4</Geometry>

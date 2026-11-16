@@ -9,6 +9,16 @@
         Drop="OnFileDrop" DragOver="OnDragOver" DragEnter="OnDragEnter" DragLeave="OnDragLeave"
         Closing="OnClosing" KeyDown="OnKeyDown" SizeChanged="OnWindowSizeChanged">
 
+    <!-- UX-12: the native caption is replaced by the Graphite title bar inside the
+         client area. WindowChrome keeps the real window: the strip is an NC
+         caption (drag, double-click maximise, Snap, Alt+Space, system menu) and
+         the 6 DIP resize border is the window edge, so nothing about window
+         management is re-implemented here. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0"
+                      CornerRadius="12" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
     <Window.Resources>
         <views:BoolToVisibilityConverter x:Key="BoolToVis" />
         <views:BoolToVisibilityConverter x:Key="InverseBoolToVis" Invert="True" />
@@ -130,7 +140,13 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
 
-        <Style x:Key="RowValueNumeric" TargetType="TextBlock" BasedOn="{StaticResource RowValueMono}">
+        <Style x:Key="RowValueNumeric" TargetType="TextBlock" BasedOn="{StaticResource RowValue}">
+            <!-- igr-feedback-ux12 item 6: fps, seconds and resolutions are human
+                 values, so they take the UI face with tabular figures rather than
+                 the mono face that identifiers (serial, ports, ABI, package) keep.
+                 The fixed minimum width still stops a ticking number from
+                 shifting the row. -->
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
             <Setter Property="MinWidth" Value="72" />
         </Style>
 
@@ -1161,7 +1177,38 @@
         </Style>
     </Window.Resources>
 
-    <Grid x:Name="RootGrid">
+    <!-- UX-12 shell: the title bar is row 0 of the window and the rail starts
+         under it, exactly as the mockups draw the strip across the full width.
+         Everything below keeps its previous row/column indices inside RootGrid,
+         so the 1024 layout, the viewport geometry and every handler are
+         untouched; the body is simply 44 DIP shorter. -->
+    <Border x:Name="ShellFrame" Background="{DynamicResource WindowBg}"
+            CornerRadius="12" ClipToBounds="True">
+        <Grid x:Name="ShellContent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <views:TitleBar x:Name="WindowTitleBar" Grid.Row="0"
+                            CommandRequested="OnTitleCommand"
+                            ContextName="{Binding SelectedDevice.Name, FallbackValue=''}"
+                            ContextDetail="{Binding SelectedDevice.ApiLabel, FallbackValue=''}">
+                <views:TitleBar.Style>
+                    <Style TargetType="views:TitleBar">
+                        <Setter Property="PageName" Value="Studio" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLogcatPage}" Value="True">
+                                <Setter Property="PageName" Value="Logcat" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </views:TitleBar.Style>
+            </views:TitleBar>
+
+    <!-- UX-12: the shell body below keeps its existing indentation so this
+         slice's diff stays readable; only its row inside ShellContent is new. -->
+    <Grid x:Name="RootGrid" Grid.Row="1">
         <Grid.ColumnDefinitions>
             <!-- UX-04b: the 48 DIP destination rail replaces the permanent
                  device column. It spans every row, so the rail is the window's
@@ -1225,8 +1272,10 @@
                          carries the active treatment, and Studio becomes the way back. -->
                     <Grid Style="{StaticResource NavRailCurrent}"
                           Visibility="{Binding IsStudioVisible, Converter={StaticResource BoolToVis}}"
-                          ToolTip="Studio: the running guest view"
                           AutomationProperties.Name="Studio (current view)">
+                        <Grid.ToolTip>
+                            <TextBlock><Run Text="Studio" /><Run Text="  Ctrl+1" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Grid.ToolTip>
                         <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
                         <Border Width="2" Height="18" HorizontalAlignment="Left" Margin="-6,0,0,0"
                                 Background="{DynamicResource Accent}" CornerRadius="1" />
@@ -1238,15 +1287,19 @@
                     <Button Style="{StaticResource NavRailItem}" Margin="0,0,0,4"
                             Command="{Binding CloseLogcatPageCommand}"
                             Visibility="{Binding IsLogcatPage, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Studio: the running guest view"
                             AutomationProperties.Name="Back to Studio">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Studio" /><Run Text="  Ctrl+1" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconMonitor}" Style="{StaticResource Glyph}" />
                     </Button>
 
                     <Grid Margin="0,0,0,4">
                         <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnDevices"
-                                ToolTip="Devices"
                                 AutomationProperties.Name="Device library">
+                            <Button.ToolTip>
+                                <TextBlock><Run Text="Devices" /><Run Text="  Ctrl+2" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                            </Button.ToolTip>
                             <Path Data="{StaticResource IconGrid}" Style="{StaticResource Glyph}" />
                         </Button>
                         <!-- Count badge from the live instance list. -->
@@ -1263,21 +1316,27 @@
 
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding OpenLogcatPageCommand}"
                             Tag="{Binding LogcatRailActive}"
-                            ToolTip="Logcat"
                             AutomationProperties.Name="Logcat page">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Logcat" /><Run Text="  Ctrl+3" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconLogs}" Style="{StaticResource Glyph}" />
                     </Button>
 
                     <Button Style="{StaticResource NavRailItem}" Click="OnAgents"
-                            ToolTip="Agents"
                             AutomationProperties.Name="Agent sessions">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Agents" /><Run Text="  Ctrl+4" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconAgents}" Style="{StaticResource Glyph}" />
                     </Button>
 
                     <Grid Margin="0,0,0,4">
                         <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnRootLab"
-                                ToolTip="Root Lab"
                                 AutomationProperties.Name="Root Lab">
+                            <Button.ToolTip>
+                                <TextBlock><Run Text="Root Lab" /><Run Text="  Ctrl+5" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                            </Button.ToolTip>
                             <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}" />
                         </Button>
                         <!-- Status dot only when the supervisor reports a real lab
@@ -1511,12 +1570,14 @@
                                           StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                           VerticalAlignment="Center" Margin="0,0,6,0" />
                                     <TextBlock Text="Install APK" VerticalAlignment="Center">
-                                        <!-- UX-11: icon-only at 1024, with the
-                                             name and the tooltip kept intact. -->
+                                        <!-- igr-feedback-ux12 item 2: the label stays
+                                             down to 960 DIP and only then becomes
+                                             icon-only, with the name and the tooltip
+                                             kept intact. Stop/power may be icon-only. -->
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    <DataTrigger Binding="{Binding CompactActions, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                  Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
@@ -1951,13 +2012,14 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- UX-03 stale frame, UX-05 chip pass, igr-feedback-ux11 item 2:
-                         the last frame stays visible and is stamped. One line,
-                         top-centre UNDER the top chips, so it never covers guest
-                         pixels: "Frame stalled · 17s · input paused" with the real
-                         age of the last delivered frame. A supervised operation
-                         that holds the ADB channel keeps the same chip with its
-                         own words ("Frames paused ..."). -->
+                    <!-- UX-03 stale frame, UX-05 chip pass, igr-feedback-ux11 item 2,
+                         igr-feedback-ux12 item 4: the last frame stays visible and is
+                         stamped in the stage's top strip, horizontally centred between
+                         the two corner chips and ABOVE the bezel, so it never touches
+                         the guest: "Frame stalled · 17s · input paused" with the real
+                         age of the last delivered frame. A real header row would cost
+                         the guest 34 DIP of height, which this slice's scope forbids,
+                         so the chip keeps the strip rather than the row. -->
                     <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,4,16,0"
                             MaxWidth="640" Background="{DynamicResource WarningBg}"
                             BorderBrush="{DynamicResource WarningBorder}" BorderThickness="1"
@@ -2068,6 +2130,7 @@
                          reported prints an em dash. -->
                     <Border Style="{StaticResource StageChip}" HorizontalAlignment="Left"
                             VerticalAlignment="Top" Margin="14"
+                            Visibility="{Binding HasFrame, Converter={StaticResource BoolToVis}}"
                             ToolTip="{Binding StageGuestChipTooltip}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconMonitor}" Width="12" Height="12" Stretch="Uniform"
@@ -2080,6 +2143,7 @@
 
                     <Border Style="{StaticResource StageChip}" HorizontalAlignment="Right"
                             VerticalAlignment="Top" Margin="14"
+                            Visibility="{Binding HasFrame, Converter={StaticResource BoolToVis}}"
                             ToolTip="{Binding StageOrientationChipTooltip}">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconRotate}" Width="12" Height="12" Stretch="Uniform"
@@ -2131,8 +2195,12 @@
                          the guest is interactive, from existing state only.
                          Item 3: the shadow host is NOT clipped, so the light
                          theme's soft shadow keeps its rounded corner. -->
+                    <!-- igr-feedback-ux12 item 10: with no device selected there are
+                         no guest controls to offer, so the pill stands down and the
+                         setup card uses the whole stage. -->
                     <Grid x:Name="ToolbarPillHost" HorizontalAlignment="Left" VerticalAlignment="Center"
                           Panel.ZIndex="20" Margin="0"
+                          Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}"
                           MouseEnter="OnPillEnter" MouseLeave="OnPillLeave"
                           GotKeyboardFocus="OnPillFocus">
                         <views:FloatingSurface x:Name="ToolbarPill" Style="{StaticResource FloatingPill}"
@@ -2187,11 +2255,15 @@
                          under it so the panel reads as a floating surface. It is
                          the last child of the stage, so it covers the chips, the
                          pill and the guest alike, and it never exists at wide
-                         sizes or while the panel is collapsed. -->
+                         sizes or while the panel is collapsed. UX-12 fold-in: the
+                         scrim now takes the pointer, so a click beside the panel
+                         dismisses it instead of tapping the guest through the dim,
+                         and the stage's own tools stay behind the overlay. -->
                     <Border x:Name="InspectorOverlayScrim" Panel.ZIndex="60"
                             Background="{DynamicResource InspectorScrimBg}"
                             Visibility="{Binding InspectorOverlay, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
-                            IsHitTestVisible="False" />
+                            IsHitTestVisible="True"
+                            MouseLeftButtonDown="OnInspectorScrimClick" />
                 </Grid>
             </Border>
 
@@ -2223,7 +2295,8 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <TabControl x:Name="InspectorTabs" Background="Transparent" BorderThickness="0" Padding="0">
+                <TabControl x:Name="InspectorTabs" Background="Transparent" BorderThickness="0" Padding="0"
+                            SelectionChanged="OnInspectorTabChanged">
                     <TabItem Header="Device">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
@@ -2233,9 +2306,23 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="44" Height="44" CornerRadius="8"
-                                            Background="{DynamicResource DeviceBodyBg}"
-                                            BorderBrush="{DynamicResource DeviceBodyBorder}" BorderThickness="1">
+                                    <!-- igr-feedback-ux12 item 5: the thumbnail takes
+                                         the token media tint instead of the drawn-device
+                                         body, so it is never a black square on a light
+                                         panel; a running guest reads ok-soft. -->
+                                    <Border Width="44" Height="44" CornerRadius="8" BorderThickness="1">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource CardStroke}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDevice.IsRunning}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource SuccessBg}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorder}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Path Data="{StaticResource IconDevice}" Width="20" Height="20" Stretch="Uniform"
                                               Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.5"
                                               StrokeStartLineCap="Round" StrokeEndLineCap="Round"
@@ -2437,9 +2524,22 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="ADB daemon" Style="{StaticResource RowLabel}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding AdbUidValue}"
-                                               Style="{StaticResource RowValueMono}"
-                                               ToolTip="{Binding AdbUidTooltip}" />
+                                    <!-- igr-feedback-ux12 item 6: an unreported
+                                         daemon UID reads "Not checked" in text3
+                                         instead of a bare dash. -->
+                                    <TextBlock Grid.Column="1" Text="{Binding AdbDaemonValue}"
+                                               ToolTip="{Binding AdbUidTooltip}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RowValueMono}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAdbUid}" Value="False">
+                                                        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Grid>
                                 <Grid Margin="0,3">
                                     <Grid.ColumnDefinitions>
@@ -2448,7 +2548,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Boot" Style="{StaticResource RowLabel}" />
                                     <TextBlock Grid.Column="1" Text="{Binding BootValueText}"
-                                               Style="{StaticResource RowValueMono}"
+                                               Style="{StaticResource RowValueNumeric}"
                                                ToolTip="{Binding BootTooltip}" />
                                 </Grid>
                                 <Grid Margin="0,3">
@@ -2769,28 +2869,36 @@
                 </TabControl>
             </Border>
 
-            <!-- UX-11 reviewer refinement: below 1120 DIP the collapsed inspector
-                 leaves this 48 DIP strip at the window edge. Three 36 DIP glyphs
-                 reopen the panel on the tab they name; the strip hides while the
-                 panel is open or the focus view is on. It is a strip, not a second
-                 panel: no command, source or data is duplicated. -->
+            <!-- UX-11 reviewer refinement, igr-feedback-ux12 item 3: below the
+                 inspector breakpoint the strip is a permanent 48 DIP edge column -
+                 it sits under the command bar with 40 DIP targets and 4 DIP gaps
+                 like the rail, and the icon of the tab that is open carries the
+                 rail active state (raised fill plus a 2 px accent bar) while the
+                 panel floats to its left. It is a strip, not a second panel: no
+                 command, source or data is duplicated. -->
             <Border Grid.Column="5" Width="48" Background="{DynamicResource NavBg}"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
                     Visibility="{Binding ShowInspectorStrip, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
                     AutomationProperties.Name="Inspector strip">
-                <StackPanel VerticalAlignment="Center" Margin="0,8">
-                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Device"
+                <StackPanel VerticalAlignment="Top" Margin="0,8,0,0">
+                    <Button x:Name="StripDevice" Style="{StaticResource NavRailItem}"
+                            Width="40" Height="40" Margin="0,0,0,4"
+                            Click="OnInspectorStripOpen" CommandParameter="Device"
                             ToolTip="Device details"
                             AutomationProperties.Name="Open device details">
                         <Path Data="{StaticResource IconDevice}" Style="{StaticResource Glyph}" />
                     </Button>
-                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Capture"
+                    <Button x:Name="StripCapture" Style="{StaticResource NavRailItem}"
+                            Width="40" Height="40" Margin="0,0,0,4"
+                            Click="OnInspectorStripOpen" CommandParameter="Capture"
                             ToolTip="Capture details"
                             AutomationProperties.Name="Open capture details">
                         <Path Data="{StaticResource IconScreenshot}" Style="{StaticResource Glyph}" />
                     </Button>
-                    <Button Style="{StaticResource NavRailItem}" Click="OnInspectorStripOpen" Tag="Diagnostics"
-                            Margin="0" ToolTip="Diagnostics and Root Lab"
+                    <Button x:Name="StripDiagnostics" Style="{StaticResource NavRailItem}"
+                            Width="40" Height="40" Margin="0"
+                            Click="OnInspectorStripOpen" CommandParameter="Diagnostics"
+                            ToolTip="Diagnostics and Root Lab"
                             AutomationProperties.Name="Open diagnostics details">
                         <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}" />
                     </Button>
@@ -4302,4 +4410,6 @@
             </Grid>
         </Grid>
     </Grid>
+        </Grid>
+    </Border>
 </Window>

@@ -8,6 +8,14 @@
         Background="{DynamicResource WindowBg}"
         KeyDown="OnKeyDown">
 
+    <!-- UX-12: the same Graphite title bar as the Studio, on the same native
+         WindowChrome contract (44 DIP caption, 6 DIP resize border, Snap and the
+         system menu untouched). -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0"
+                      CornerRadius="12" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
     <Window.Resources>
         <views:BoolToVisibilityConverter x:Key="BoolToVis" />
         <views:BoolToVisibilityConverter x:Key="InverseBoolToVis" Invert="True" />
@@ -380,34 +388,77 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <!-- UX-12 shell: the title bar spans the window above the rail, exactly as
+         mockup 03 draws it. The body keeps its previous indices inside
+         LibraryRoot, so the 1024 grid, the drawers and every handler are
+         unchanged. -->
+    <Border x:Name="ShellFrame" Background="{DynamicResource WindowBg}"
+            CornerRadius="12" ClipToBounds="True">
+        <Grid x:Name="ShellContent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <views:TitleBar x:Name="WindowTitleBar" Grid.Row="0" PageName="Devices"
+                            CommandRequested="OnTitleCommand" />
+
+    <Grid x:Name="LibraryRoot" Grid.Row="1">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="56" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Navigation rail. Only the two destinations this window can reach are
-             present: the Studio window and this Devices view. -->
+        <!-- Navigation rail (igr-feedback-ux12 item 7). One rail on every page:
+             the same five destinations in the same order, the same search, theme,
+             refresh and settings at the bottom; only the active item changes. A
+             destination the Studio owns closes this page and lands the Studio on
+             it, so two windows never disagree about where the operator is. -->
         <Border x:Name="NavRail" Grid.Column="0" Background="{DynamicResource NavBg}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
             <DockPanel Margin="0,12">
                 <StackPanel DockPanel.Dock="Bottom">
-                    <Button Style="{StaticResource RailItem}" Command="{Binding RefreshCommand}"
+                    <Button Style="{StaticResource RailItem}" Click="OnTitleCommand"
                             views:RailHover.IsEnabled="True"
+                            AutomationProperties.Name="Search commands">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Search commands" /><Run Text="  Ctrl+K" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
+                        <Path Data="{StaticResource IconSearch}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource RailItem}" Click="OnRailTheme"
+                            views:RailHover.IsEnabled="True"
+                            ToolTip="Theme"
+                            AutomationProperties.Name="Switch theme">
+                        <Path Data="{StaticResource IconTheme}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource RailItem}" Command="{Binding RefreshCommand}"
+                            views:RailHover.IsEnabled="True" Margin="0,0,0,4"
                             ToolTip="Refresh"
                             AutomationProperties.Name="Refresh the device library">
                         <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                     </Button>
+                    <Button Style="{StaticResource RailItem}" Margin="0" Click="OnRailSettings"
+                            views:RailHover.IsEnabled="True"
+                            ToolTip="Settings (Esc)"
+                            AutomationProperties.Name="Settings">
+                        <Path Data="{StaticResource IconSettings}" Style="{StaticResource Glyph}" />
+                    </Button>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Top">
                     <Button Style="{StaticResource RailItem}" Command="{Binding OpenStudioCommand}"
-                            views:RailHover.IsEnabled="True"
-                            ToolTip="Studio"
+                            views:RailHover.IsEnabled="True" Margin="0,0,0,4"
                             AutomationProperties.Name="Studio">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Studio" /><Run Text="  Ctrl+1" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconMonitor}" Style="{StaticResource Glyph}" />
                     </Button>
-                    <Grid Width="44" Height="40" Margin="6,0,0,0" ToolTip="Devices"
+                    <Grid Width="44" Height="40" Margin="6,0,0,4"
                           AutomationProperties.Name="Devices (current view)">
+                        <Grid.ToolTip>
+                            <TextBlock><Run Text="Devices" /><Run Text="  Ctrl+2" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Grid.ToolTip>
                         <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
                         <Border Width="2" Height="18" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}" CornerRadius="1" />
@@ -416,6 +467,30 @@
                               StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
+                    <Button Style="{StaticResource RailItem}" Click="OnRailLogcat"
+                            views:RailHover.IsEnabled="True"
+                            AutomationProperties.Name="Logcat page">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Logcat" /><Run Text="  Ctrl+3" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
+                        <Path Data="{StaticResource IconLogs}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource RailItem}" Click="OnRailAgents"
+                            views:RailHover.IsEnabled="True"
+                            AutomationProperties.Name="Agent sessions">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Agents" /><Run Text="  Ctrl+4" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
+                        <Path Data="{StaticResource IconAgents}" Style="{StaticResource Glyph}" />
+                    </Button>
+                    <Button Style="{StaticResource RailItem}" Click="OnRailRootLab"
+                            views:RailHover.IsEnabled="True"
+                            AutomationProperties.Name="Root Lab">
+                        <Button.ToolTip>
+                            <TextBlock><Run Text="Root Lab" /><Run Text="  Ctrl+5" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Button.ToolTip>
+                        <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}" />
+                    </Button>
                 </StackPanel>
                 <Grid />
             </DockPanel>
@@ -1067,18 +1142,33 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Ellipse Grid.Column="0" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,8,0">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="{DynamicResource Danger}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                        <Setter Property="Fill" Value="{DynamicResource Success}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
+                    <!-- igr-feedback-ux12 item 8: the bare green dot becomes a real
+                         "ADB <serial>" segment for the device the Studio has
+                         selected; with no device the whole segment is absent rather
+                         than an orphan indicator. -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
+                                Margin="0,0,16,0"
+                                Visibility="{Binding AdbSerial, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource TextToVis}}">
+                        <Ellipse Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,7,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource Danger}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource Success}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="ADB" Style="{StaticResource Caption}"
+                                   Foreground="{DynamicResource TextTertiary}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding AdbSerial, RelativeSource={RelativeSource AncestorType=Window}}"
+                                   Style="{StaticResource Mono}" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"
+                                   ToolTip="{Binding AdbSerial, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    </StackPanel>
                     <!-- igr-feedback-ux11 new nit 3: the count sentence is gone;
                          the paragraph is the transient message channel only (start,
                          stop, delete, copy) and the bar carries a real "Instances N"
@@ -1618,4 +1708,6 @@
             </views:FloatingSurface>
         </Grid>
     </Grid>
+        </Grid>
+    </Border>
 </Window>

@@ -14,7 +14,7 @@ using EmulatorWorkspace.Desktop.ViewModels;
 
 namespace EmulatorWorkspace.Desktop;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IOverlayAnchor
 {
     private readonly MainViewModel _viewModel;
     private Point? _dragStart;
@@ -96,6 +96,22 @@ public partial class MainWindow : Window
     private const double NarrowWidthLimit = 1120;
 
     /// <summary>
+    /// igr-feedback-ux12 item 2: the Install APK label holds on down to 960 DIP and
+    /// only then becomes icon-only. It is a second, lower threshold because the
+    /// overflow menu already frees the room the label used to need.
+    /// </summary>
+    private const double CompactActionsLimit = 960;
+
+    public static readonly DependencyProperty CompactActionsProperty = DependencyProperty.Register(
+        nameof(CompactActions), typeof(bool), typeof(MainWindow), new PropertyMetadata(false));
+
+    public bool CompactActions
+    {
+        get => (bool)GetValue(CompactActionsProperty);
+        set => SetValue(CompactActionsProperty, value);
+    }
+
+    /// <summary>
     /// The inspector's own breakpoint. igr-feedback-ux11 asks for the 48 DIP
     /// strip below 1180 DIP, which is a wider trigger than the command bar's
     /// 1120, so the panel leaves room for the stage a step earlier than the bar
@@ -163,12 +179,19 @@ public partial class MainWindow : Window
     /// <summary>The view model behind the window, for the automation modes.</summary>
     public MainViewModel ViewModel => _viewModel;
 
+    /// <summary>
+    /// UX-12: the palette dims the shell body and leaves the title bar, so its
+    /// scrim lines up with the same rectangle the mockups use.
+    /// </summary>
+    public FrameworkElement OverlayAnchor => RootGrid;
+
     public MainWindow(bool halfCapture = false)
     {
         InitializeComponent();
         ThemeManager.Initialize();
         Chrome.Initialize();
         Chrome.Apply(this);
+        Views.ChromeShell.Attach(this, ShellFrame, ShellContent);
         MotionAllowed = SystemParameters.ClientAreaAnimation;
         _viewModel = new MainViewModel(halfCapture);
         DataContext = _viewModel;
@@ -310,6 +333,13 @@ public partial class MainWindow : Window
         {
             UpdateViewportSize();
         }
+        else if (args.PropertyName == nameof(MainViewModel.SelectedDevice))
+        {
+            // igr-feedback-ux12 item 10: the pill and the card lane follow the
+            // selection, so the first-run card re-centres the moment a device is
+            // chosen (and the pill's lane comes back with it).
+            UpdateViewportSize();
+        }
         else if (args.PropertyName == nameof(MainViewModel.IsLogcatOpen))
         {
             AnimateLogcatDrawer();
@@ -439,8 +469,10 @@ public partial class MainWindow : Window
         ToolbarPillHost.Margin = new Thickness(left, 0, 0, 0);
         // Keep the stage cards (boot stepper, first-run setup) out of the pill's
         // lane while the guest has no frame; with a frame the cards are hidden
-        // and the lane collapses to 0 so nothing else moves.
-        var lane = canvasWidth <= 0 ? Math.Max(0, stage - left + 12) : 0;
+        // and the lane collapses to 0 so nothing else moves. igr-feedback-ux12
+        // item 10: with no device selected there is no pill at all, so the lane
+        // is 0 too and the first-run card centres in the stage.
+        var lane = canvasWidth <= 0 && _viewModel.HasSelection ? Math.Max(0, stage - left + 12) : 0;
         if (StageCardLane is not null && StageCardLane.Margin.Right != lane)
         {
             StageCardLane.Margin = new Thickness(0, 0, lane, 0);
@@ -488,6 +520,7 @@ public partial class MainWindow : Window
         // drop hint sat on the frame's lower-left corner at 1024.
         CompactStage = narrow;
         NarrowLayout = narrow;
+        CompactActions = ActualWidth < CompactActionsLimit;
 
         // UX-11: the inspector has its own, wider breakpoint (1180 DIP). Entering
         // it collapses the panel so the stage keeps the hero width both responsive
@@ -1290,6 +1323,19 @@ public partial class MainWindow : Window
 
     private DeviceLibraryWindow? _library;
 
+    /// <summary>
+    /// UX-12: the Device Manager's rail addresses the same destinations the Studio
+    /// rail does, so it comes forward and runs the destination's own handler.
+    /// </summary>
+    public void ActivateRailDestination(int destination)
+    {
+        Activate();
+        OnRailShortcut(destination);
+    }
+
+    /// <summary>UX-12: the Device Manager's settings item opens the Studio drawer.</summary>
+    public void ShowSettingsDrawer() => OpenSettings();
+
     private void OnDevices(object sender, RoutedEventArgs e) => OpenDeviceLibrary();
 
     /// <summary>Opens (or re-activates) the device library window.</summary>
@@ -1302,6 +1348,7 @@ public partial class MainWindow : Window
         }
 
         var library = new DeviceLibraryWindow { Owner = this };
+        library.AttachShell(_viewModel);
         library.DeviceChosen += name =>
         {
             if (_viewModel.SelectDevice(name))
@@ -1440,6 +1487,55 @@ public partial class MainWindow : Window
     private void OnOpenPalette(object sender, RoutedEventArgs e) => OpenPalette();
 
     /// <summary>
+    /// UX-12: the title bar's Ctrl+K pill is the same entry point as the rail
+    /// search icon and the chord - one palette, one command source.
+    /// </summary>
+    private void OnTitleCommand(object? sender, EventArgs e) => OpenPalette();
+
+    /// <summary>
+    /// UX-12: Ctrl+1..5 address the five destinations the rail already carries,
+    /// in rail order. Each one runs the handler its rail item already runs, so a
+    /// shortcut cannot reach a destination the mouse cannot: Studio closes the
+    /// Logcat page (or stays), Devices opens the library, Logcat opens the page,
+    /// Agents opens the sessions window and Root Lab selects the inspector's
+    /// Diagnostics tab.
+    /// </summary>
+    private void OnRailShortcut(int destination)
+    {
+        if (IsSettingsOpen)
+        {
+            CloseSettings();
+        }
+
+        switch (destination)
+        {
+            case 1:
+                if (_viewModel.IsLogcatPage && _viewModel.CloseLogcatPageCommand.CanExecute(null))
+                {
+                    _viewModel.CloseLogcatPageCommand.Execute(null);
+                }
+
+                break;
+            case 2:
+                OpenDeviceLibrary();
+                break;
+            case 3:
+                if (_viewModel.OpenLogcatPageCommand.CanExecute(null))
+                {
+                    _viewModel.OpenLogcatPageCommand.Execute(null);
+                }
+
+                break;
+            case 4:
+                OnAgents(this, new RoutedEventArgs());
+                break;
+            case 5:
+                OnRootLab(this, new RoutedEventArgs());
+                break;
+        }
+    }
+
+    /// <summary>
     /// True while the palette's modal loop is running. WPF disables the owner of
     /// a ShowDialog window, but a second Ctrl+K (or a rail click delivered
     /// through UI Automation) can still arrive before that takes effect, and two
@@ -1541,15 +1637,69 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The strip and the overlay are narrow-layout affordances only: the strip
-    /// appears when the panel is collapsed, the overlay flag when it is open, and
-    /// neither exists while the focus view owns the panes.
+    /// The strip is a permanent narrow-layout column: it stays visible while the
+    /// panel is open (igr-feedback-ux12 item 3), and the icon of the open tab
+    /// carries the rail active state. Neither exists while the focus view owns the
+    /// panes.
     /// </summary>
     private void UpdateInspectorStrip()
     {
         var narrow = InspectorNarrow && !_focusView;
-        ShowInspectorStrip = narrow && _detailsCollapsed;
+        ShowInspectorStrip = narrow;
         InspectorOverlay = narrow && !_detailsCollapsed;
+        RefreshStripSelection();
+    }
+
+    /// <summary>
+    /// Marks the strip icon that matches the inspector's current tab while the
+    /// panel is open. The active flag is the same <c>Tag</c> the rail items use, so
+    /// the strip gets the identical raised fill and 2 px accent bar.
+    /// </summary>
+    private void RefreshStripSelection()
+    {
+        if (StripDevice is null)
+        {
+            return;
+        }
+
+        var index = InspectorTabs?.SelectedIndex ?? 0;
+        var open = InspectorOverlay;
+        StripDevice.Tag = open && index == 0;
+        StripCapture.Tag = open && index == 1;
+        StripDiagnostics.Tag = open && index == 2;
+    }
+
+    private void OnInspectorTabChanged(object sender, SelectionChangedEventArgs e) => RefreshStripSelection();
+
+    /// <summary>
+    /// Collapses the narrow inspector overlay and hands focus back to the strip
+    /// icon for the tab that was open, the same way the settings drawer returns
+    /// focus to the control that opened it (igr-feedback-ux12 item 1).
+    /// </summary>
+    private void CollapseInspectorOverlay()
+    {
+        if (!InspectorOverlay)
+        {
+            return;
+        }
+
+        _detailsAutoCollapsed = false;
+        var index = InspectorTabs.SelectedIndex;
+        SetDetailsCollapsed(true);
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+        {
+            var button = index switch
+            {
+                1 => StripCapture,
+                2 => StripDiagnostics,
+                _ => StripDevice,
+            };
+
+            if (button is { IsVisible: true })
+            {
+                button.Focus();
+            }
+        }));
     }
 
     /// <summary>
@@ -1560,7 +1710,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnInspectorStripOpen(object sender, RoutedEventArgs e)
     {
-        var tab = ((sender as FrameworkElement)?.Tag as string) switch
+        var tab = ((sender as Button)?.CommandParameter as string) switch
         {
             "Capture" => 1,
             "Diagnostics" => 2,
@@ -1571,6 +1721,21 @@ public partial class MainWindow : Window
         SetDetailsCollapsed(false);
         InspectorTabs.SelectedIndex = tab;
         InspectorTabs.Focus();
+    }
+
+    /// <summary>
+    /// UX-12 fold-in (Design Guider): the narrow inspector opens as an overlay,
+    /// so a click on the dimmed stage beside it dismisses it instead of reaching
+    /// the guest through the scrim. It is the same collapse path the toggle and
+    /// the strip use.
+    /// </summary>
+    private void OnInspectorScrimClick(object sender, MouseButtonEventArgs e)
+    {
+        if (InspectorOverlay)
+        {
+            CollapseInspectorOverlay();
+            e.Handled = true;
+        }
     }
 
     /// <summary>Opens the command bar's narrow-layout overflow menu under its button.</summary>
@@ -1804,6 +1969,10 @@ public partial class MainWindow : Window
             ResizeMode = ResizeMode.CanResize;
             WindowState = WindowState.Normal;
         }
+
+        // UX-12: fullscreen means no title bar, and no invisible 44 DIP caption
+        // band either - the strip leaves with its caption height.
+        WindowTitleBar.SetFullscreen(_fullscreen);
     }
 
     private void OnKeyDown(object sender, KeyEventArgs e)
@@ -1825,9 +1994,25 @@ public partial class MainWindow : Window
             ToggleFullscreen();
             e.Handled = true;
         }
+        // UX-12 fold-in: Esc dismisses the narrow inspector overlay, the same
+        // way it closes the settings drawer above it, and focus returns to the
+        // strip icon that opened it.
+        else if (e.Key == Key.Escape && InspectorOverlay)
+        {
+            CollapseInspectorOverlay();
+            e.Handled = true;
+        }
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
         {
             OpenPalette();
+            e.Handled = true;
+        }
+        // UX-12: the rail's five destinations on the number row (and numpad).
+        // Exact modifiers only, so Ctrl+Shift+1 and friends stay free.
+        else if (Keyboard.Modifiers == ModifierKeys.Control
+                 && RailShortcutFor(e.Key) is { } destination)
+        {
+            OnRailShortcut(destination);
             e.Handled = true;
         }
         // UX-08: the Logcat chords. They are scoped to a Logcat surface being
@@ -1904,6 +2089,17 @@ public partial class MainWindow : Window
 
     /// <summary>A Logcat surface is on screen: the dock, the page, or both.</summary>
     private bool LogcatVisible => _viewModel.IsLogcatOpen || _viewModel.IsLogcatPage;
+
+    /// <summary>Ctrl+1..5 map to the rail's five destinations, in rail order.</summary>
+    private static int? RailShortcutFor(Key key) => key switch
+    {
+        Key.D1 or Key.NumPad1 => 1,
+        Key.D2 or Key.NumPad2 => 2,
+        Key.D3 or Key.NumPad3 => 3,
+        Key.D4 or Key.NumPad4 => 4,
+        Key.D5 or Key.NumPad5 => 5,
+        _ => null,
+    };
 
     private void OnCopySelectedLog(object sender, RoutedEventArgs e)
     {

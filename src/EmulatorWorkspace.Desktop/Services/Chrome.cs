@@ -6,7 +6,9 @@ namespace EmulatorWorkspace.Desktop.Services;
 
 /// <summary>
 /// Applies the native dark title-bar treatment (DWM immersive dark mode) with
-/// the documented pre-20H1 attribute fallback. High Contrast keeps the system
+/// the documented pre-20H1 attribute fallback, and asks DWM for the rounded
+/// window silhouette the custom title bar is designed around (Windows 11
+/// 22H2+; older builds ignore the attribute). High Contrast keeps the system
 /// title-bar colors, and a failed DWM call degrades to the default chrome so
 /// window controls, Snap and the system menu remain untouched.
 /// </summary>
@@ -14,6 +16,8 @@ public static class Chrome
 {
     private const int DwmwaUseImmersiveDarkMode = 20;
     private const int DwmwaUseImmersiveDarkModePre2004 = 19;
+    private const int DwmwaWindowCornerPreference = 33;
+    private const int DwmWindowCornerRound = 2;
 
     private static bool _initialized;
 
@@ -83,6 +87,12 @@ public static class Chrome
             {
                 SetAttribute(handle, DwmwaUseImmersiveDarkModePre2004, value);
             }
+
+            // UX-12: the window is a real top-level window with a custom caption,
+            // so DWM still owns the outer silhouette, the shadow and the Snap
+            // preview. Rounding it keeps the 12 DIP shell radius (ChromeShell)
+            // from sitting inside a square frame.
+            SetAttribute(handle, DwmwaWindowCornerPreference, DwmWindowCornerRound);
         }
         catch (Exception)
         {

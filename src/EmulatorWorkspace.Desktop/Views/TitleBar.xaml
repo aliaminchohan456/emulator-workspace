@@ -1,0 +1,320 @@
+<UserControl x:Class="EmulatorWorkspace.Desktop.Views.TitleBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:EmulatorWorkspace.Desktop.Views"
+             xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+             x:Name="Root"
+             Height="44"
+             Focusable="False">
+
+    <!-- UX-12 Graphite title bar. One 44 DIP strip on the navigation surface,
+         separated from the body by a single 1 px stroke-soft line: the app mark,
+         the workspace name, the real page > device breadcrumbs, the centred
+         Ctrl+K command pill and the three system buttons. Everything that is a
+         control carries WindowChrome.IsHitTestVisibleInChrome, so the rest of
+         the strip is the native caption: drag, double-click maximize, Snap,
+         Alt+Space and the system menu all stay the window manager's job. -->
+    <UserControl.Resources>
+        <!-- 36 DIP caption button: hover fades a ChipBg layer at 120 ms, press an
+             80 ms PressedBg layer, and the glyph takes the text colour on hover.
+             The focus ring is the shared 2 px accent ring, keyboard-only. -->
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="Cursor" Value="Arrow" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="B" Background="{TemplateBinding Background}"
+                                    CornerRadius="{StaticResource RadiusControl}" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource ChipBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <Border x:Name="PART_Press" Background="{DynamicResource PressedBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Close keeps the same geometry and takes err-soft on hover; the press
+             step is the same error at 35 % so the feedback never turns into a
+             saturated red slab. The glyph is the error colour in both states. -->
+        <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="B" Background="{TemplateBinding Background}"
+                                    CornerRadius="{StaticResource RadiusControl}" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource DangerBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <Border x:Name="PART_Press" Background="{DynamicResource DangerBorder}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- The command pill: the mockup's centred search field as a real button.
+             Panel surface, one stroke-soft edge, the magnifier and the placeholder
+             in text3, and two mono keycaps. Hover raises the surface through the
+             shared 120 ms layer; the whole pill is one click target. -->
+        <Style x:Key="CommandPill" TargetType="Button">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="Padding" Value="10,0,8,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="views:Motion.HoverFade" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRingVisual}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusControl}" />
+                            <Border x:Name="PART_Hover" Background="{DynamicResource ChipBg}"
+                                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"
+                                    IsHitTestVisible="False" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="KeyCap" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="MinWidth" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Padding" Value="5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="KeyCapText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Breadcrumbs are read-only chrome: 13 DIP UI text, the page in text3
+             and the live device in text2, separated by a thin chevron in text3. -->
+        <Style x:Key="Crumb" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style x:Key="CrumbSeparator" TargetType="TextBlock">
+            <Setter Property="Text" Value="&#x203A;" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="9,0,9,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource NavBg}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <!-- Two equal star columns keep the pill exactly centred in the
+                     window whatever the breadcrumbs or the caption buttons
+                     measure; the left block clips instead of running under it. -->
+                <ColumnDefinition Width="*" MinWidth="0" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="0" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
+                        Margin="14,0,10,0" ClipToBounds="True">
+                <Border Width="22" Height="22" CornerRadius="6" VerticalAlignment="Center"
+                        Background="{DynamicResource PanelBg}"
+                        BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
+                    <Path Data="{StaticResource IconMonitor}" Width="13" Height="13" Stretch="Uniform"
+                          Stroke="{DynamicResource Accent}" StrokeThickness="1.4"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <!-- The workspace name is the first thing to go at 1024, where the
+                     breadcrumbs are the useful half of this strip. -->
+                <TextBlock x:Name="WorkspaceName" Text="Emulator Workspace"
+                           FontFamily="{StaticResource UiFont}" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimary}"
+                           VerticalAlignment="Center" Margin="9,0,0,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <!-- The separator belongs to the workspace name: at 1024 the name
+                     leaves (NarrowLayout) and the crumbs start under the mark
+                     instead of hanging off a chevron with nothing before it. -->
+                <TextBlock x:Name="PageSeparator" Style="{StaticResource CrumbSeparator}"
+                           Visibility="{Binding Visibility, ElementName=WorkspaceName}" />
+                <TextBlock x:Name="PageCrumb" MaxWidth="160">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Crumb}">
+                            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                            <Style.Triggers>
+                                <!-- With the name and its chevron gone at 1024, the
+                                     page crumb keeps a 10 DIP gap from the mark. -->
+                                <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Value="True">
+                                    <Setter Property="Margin" Value="10,0,0,0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <StackPanel x:Name="ContextGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource CrumbSeparator}" />
+                    <TextBlock x:Name="ContextNameText" Style="{StaticResource Crumb}"
+                               Foreground="{DynamicResource TextSecondary}" MaxWidth="200" />
+                    <TextBlock x:Name="ContextDot" Text="&#x00B7;" FontSize="13"
+                               Foreground="{DynamicResource TextTertiary}" Margin="6,0,0,0"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="ContextDetailText" Style="{StaticResource Crumb}"
+                               Foreground="{DynamicResource TextSecondary}" Margin="6,0,0,0"
+                               MaxWidth="90" />
+                </StackPanel>
+            </StackPanel>
+
+            <Button x:Name="CommandPill" Grid.Column="1"
+                    Click="OnCommand"
+                    shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                    ToolTip="Search and run a command (Ctrl+K)"
+                    AutomationProperties.Name="Search commands"
+                    AutomationProperties.HelpText="Ctrl+K">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource CommandPill}">
+                        <Setter Property="Width" Value="380" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Value="True">
+                                <Setter Property="Width" Value="300" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Path Grid.Column="0" Data="{StaticResource IconSearch}" Width="15" Height="15"
+                          Stretch="None" Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="Search commands&#x2026;"
+                               FontFamily="{StaticResource UiFont}" FontSize="13"
+                               Foreground="{DynamicResource TextTertiary}"
+                               VerticalAlignment="Center" Margin="9,0,8,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource KeyCap}">
+                            <TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" />
+                        </Border>
+                        <Border Style="{StaticResource KeyCap}" Margin="4,0,0,0">
+                            <TextBlock Text="K" Style="{StaticResource KeyCapText}" />
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
+                        VerticalAlignment="Center" Margin="0,0,6,0"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="OnMinimize"
+                        ToolTip="Minimize" AutomationProperties.Name="Minimize">
+                    <Path Data="{StaticResource IconWindowMinimize}" Style="{StaticResource Glyph}"
+                          Width="10" Height="10" StrokeThickness="1.1" Stretch="None" />
+                </Button>
+                <Button x:Name="MaximizeButton" Click="OnMaximize">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+                            <Setter Property="ToolTip" Value="Maximize" />
+                            <Setter Property="AutomationProperties.Name" Value="Maximize" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                                             Value="Maximized">
+                                    <Setter Property="ToolTip" Value="Restore" />
+                                    <Setter Property="AutomationProperties.Name" Value="Restore" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Path Width="10" Height="10" StrokeThickness="1.1" Stretch="None">
+                        <Path.Style>
+                            <Style TargetType="Path" BasedOn="{StaticResource Glyph}">
+                                <Setter Property="Data" Value="{StaticResource IconWindowMaximize}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                 Value="Maximized">
+                                        <Setter Property="Data" Value="{StaticResource IconWindowRestore}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Path.Style>
+                    </Path>
+                </Button>
+                <Button x:Name="CloseButton" Style="{StaticResource CloseCaptionButton}" Click="OnClose"
+                        ToolTip="Close" AutomationProperties.Name="Close">
+                    <Path Data="{StaticResource IconWindowClose}" Style="{StaticResource Glyph}"
+                          Width="10" Height="10" StrokeThickness="1.1" Stretch="None" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

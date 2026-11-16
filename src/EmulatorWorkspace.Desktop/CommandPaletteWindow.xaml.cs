@@ -107,12 +107,13 @@ public partial class CommandPaletteWindow : Window
     }
 
     /// <summary>
-    /// Puts the overlay exactly over the owner's client area, in device pixels
+    /// Puts the overlay exactly over the owner's shell body, in device pixels
     /// converted back to DIPs so a 125 % desktop lands on the same rectangle.
-    /// The owner's content element is the client area: using the Window instead
-    /// would include the title bar and push the panel's bottom inset off screen.
-    /// Without an owner (never the case from the studio) it stays where the
-    /// window manager put it.
+    /// UX-12: a shell window (Studio, Device Manager) exposes the body below its
+    /// title bar as the anchor, so the scrim dims the page and leaves the strip
+    /// legible, as the mockup draws it. Any other owner falls back to its content
+    /// element, which is its client area. Without an owner (never the case from
+    /// the shell) it stays where the window manager put it.
     /// </summary>
     private void PlaceOverOwner()
     {
@@ -121,7 +122,9 @@ public partial class CommandPaletteWindow : Window
             return;
         }
 
-        var anchor = owner.Content as FrameworkElement ?? owner;
+        var anchor = (owner as IOverlayAnchor)?.OverlayAnchor
+                     ?? owner.Content as FrameworkElement
+                     ?? owner;
         var origin = anchor.PointToScreen(new Point(0, 0));
         if (PresentationSource.FromVisual(anchor)?.CompositionTarget is { } target)
         {

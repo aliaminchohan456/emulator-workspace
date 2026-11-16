@@ -271,6 +271,48 @@ here). Evidence at 1024 DIP (`1280x1000` physical, host 125 % scaling: 1024 x
 `git diff --check` clean; theme keys 66/66/66. Also deferred: theme persistence,
 Follow Windows, and a true 1024 physical-pixel capture (would require changing the
 host display scale).
+UX-12 custom title bar and Ctrl+1..5 (2026-11-16, same uncommitted tree, base HEAD
+`21636f8` = UX-11): both shell windows drop the native caption. `WindowChrome`
+keeps the real window (44 DIP caption, 6 DIP resize border, Aero Snap, Alt+Space,
+the system menu and the three `SystemCommands`) and the shared `Views/TitleBar`
+draws the strip: 22 DIP app mark, 13 DIP workspace name, breadcrumbs built from
+live state (`Studio` / `Logcat` / `Devices` plus the selected guest and its real
+API level), the centred Ctrl+K pill with mono keycaps, and 36 DIP min/max/close
+buttons (120/80 ms hover-press through `Views/Motion`, the 2 px accent focus ring,
+err-soft close hover, the maximize glyph switching to restore). DWM rounds the
+HWND (`DWMWA_WINDOW_CORNER_PREFERENCE`), the shell clips to the 12 DIP radius and
+squares it when maximized; a WindowChrome window is maximized 7 DIP larger than
+the work area on every side (measured 1938x1038 at -9,-9 for a 1920x1020 work
+area) and WPF hands that whole rectangle to the client, so `Views/ChromeShell`
+insets the shell by exactly the measured overhang - which is itself off screen, so
+nothing is cropped and no frame ring appears. Ctrl+1..5 run the handlers the five
+rail destinations already run, in rail order (Studio, Devices, Logcat, Agents,
+Root Lab), exact modifiers only, numpad included; each rail tooltip prints its
+chord in Cascadia Mono. The command palette is anchored to the shell body instead
+of the client area, so its scrim dims the page and leaves the strip legible, and
+the Device Manager hosts the same palette over itself on the Studio's view model
+(its title bar shows that window's live selection). At 1024 the workspace name and
+its chevron leave, the crumbs keep a 10 DIP gap and the pill narrows to 300.
+Fold-in from igr-feedback-ux12.md (03:11): the narrow inspector overlay closes on a
+scrim click and on Esc and returns focus to the strip icon; the strip is a permanent
+top-aligned column with 40 DIP targets and the open tab's icon in the rail active
+state; Install APK keeps its label down to 960 DIP; inspector human values (fps,
+seconds, resolutions) use the UI face with tabular figures while serial, ports, ABI
+and package stay mono, an unknown ADB daemon reads 'Not checked'; the header
+thumbnail takes the token media tint; the Device Manager rail carries all five
+destinations plus the four bottom utilities (a Studio-owned destination closes the
+page and lands the Studio on it) and its status bar names the ADB serial instead of
+an orphan dot; first run hides the pill and the two top chips and centres the setup
+card. The stall chip stays centred above the bezel rather than on a header row:
+a real row would cost the guest 34 DIP, which this slice's scope forbids.
+Deferred: theme persistence and Follow Windows (no preference store), the Windows
+11 Snap Layouts hover flyout (the caption buttons live in the client area, so
+hover/press and the focus ring win; drag-Snap, Win+Arrow and double-click still
+work), and a High Contrast / 150-200 % DPI render (owner-side, as before).
+Evidence in `artifacts/ui/ux12-*.png`: Studio, command palette and Device Manager
+at 1200 DIP and 1024 DIP in both themes, plus the rail tooltip, the close hover,
+the maximized window and the 1024 inspector overlay. Build 0 errors / 22 warnings,
+526/526 tests, `git diff --check` clean, theme keys 66/66/66.
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

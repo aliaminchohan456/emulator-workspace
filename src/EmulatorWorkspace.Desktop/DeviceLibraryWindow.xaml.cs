@@ -17,7 +17,7 @@ namespace EmulatorWorkspace.Desktop;
 /// client, and the window owns its own connection so a failed browse never
 /// disturbs the running guest.
 /// </summary>
-public partial class DeviceLibraryWindow : Window
+public partial class DeviceLibraryWindow : Window, IOverlayAnchor
 {
     /// <summary>The design's drawer width, and the margin a squeezed window keeps.</summary>
     private const double DrawerMaxWidth = 460;
@@ -63,12 +63,27 @@ public partial class DeviceLibraryWindow : Window
 
     private const double NarrowWidthLimit = 1120;
 
+    /// <summary>
+    /// igr-feedback-ux12 item 8: the status bar names the ADB transport of the
+    /// device the Studio has selected, so the old bare connection dot becomes a
+    /// real segment. Empty when nothing is selected, which hides the segment.
+    /// </summary>
+    public static readonly DependencyProperty AdbSerialProperty = DependencyProperty.Register(
+        nameof(AdbSerial), typeof(string), typeof(DeviceLibraryWindow), new PropertyMetadata(""));
+
+    public string AdbSerial
+    {
+        get => (string)GetValue(AdbSerialProperty);
+        set => SetValue(AdbSerialProperty, value);
+    }
+
     public DeviceLibraryWindow()
     {
         InitializeComponent();
         ThemeManager.Initialize();
         Chrome.Initialize();
         Chrome.Apply(this);
+        Views.ChromeShell.Attach(this, ShellFrame, ShellContent);
 
         _viewModel = new DeviceLibraryViewModel();
         DataContext = _viewModel;
@@ -96,6 +111,147 @@ public partial class DeviceLibraryWindow : Window
     }
 
     public DeviceLibraryViewModel ViewModel => _viewModel;
+
+    /// <summary>
+    /// UX-12: the palette dims this window's page and leaves its title bar, the
+    /// same contract the Studio's overlay uses.
+    /// </summary>
+    public FrameworkElement OverlayAnchor => LibraryRoot;
+
+    private MainViewModel? _shell;
+    private MainWindow? _studio;
+    private DeviceItemViewModel? _crumbDevice;
+    private bool _paletteOpen;
+
+    /// <summary>
+    /// UX-12: the title bar shows the Studio's live device context and its pill
+    /// opens the same command palette the Studio opens. The library owns no
+    /// devices of its own - the palette's commands address whichever guest the
+    /// Studio has selected - so it reads that selection from the Studio's view
+    /// model instead of inventing a second one.
+    ///
+    /// igr-feedback-ux12 item 7: the rail now carries every destination, so the
+    /// library also keeps the Studio window it came from: choosing another
+    /// destination closes this page and lands the Studio on it, which is what
+    /// "the rail is identical on every page" means for a window that is itself a
+    /// destination.
+    /// </summary>
+    public void AttachShell(MainViewModel shell)
+    {
+        if (_shell is not null)
+        {
+            _shell.PropertyChanged -= OnShellPropertyChanged;
+        }
+
+        _shell = shell;
+        _studio = Owner as MainWindow;
+        _shell.PropertyChanged += OnShellPropertyChanged;
+        SyncTitleContext();
+    }
+
+    private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(MainViewModel.SelectedDevice))
+        {
+            SyncTitleContext();
+        }
+    }
+
+    private void OnCrumbDeviceChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(DeviceItemViewModel.ApiLabel))
+        {
+            WindowTitleBar.ContextDetail = _crumbDevice?.ApiLabel ?? "";
+        }
+    }
+
+    /// <summary>
+    /// Copies the selected device into the two crumb slots. The API half arrives
+    /// on a later status tick, so the item's own change notifications are
+    /// followed as well; an empty selection hides the crumb instead of printing
+    /// a placeholder.
+    /// </summary>
+    private void SyncTitleContext()
+    {
+        var device = _shell?.SelectedDevice;
+        if (!ReferenceEquals(_crumbDevice, device))
+        {
+            if (_crumbDevice is not null)
+            {
+                _crumbDevice.PropertyChanged -= OnCrumbDeviceChanged;
+            }
+
+            _crumbDevice = device;
+            if (_crumbDevice is not null)
+            {
+                _crumbDevice.PropertyChanged += OnCrumbDeviceChanged;
+            }
+        }
+
+        WindowTitleBar.ContextName = device?.Name ?? "";
+        WindowTitleBar.ContextDetail = device?.ApiLabel ?? "";
+        AdbSerial = device?.Serial ?? "";
+    }
+
+    private void OnTitleCommand(object? sender, EventArgs e) => OpenPalette();
+
+    /// <summary>
+    /// igr-feedback-ux12 item 7: one rail on every page. Picking a destination the
+    /// Studio owns leaves this page first, then lands the Studio on it, so the
+    /// operator never ends up with two windows showing two different answers.
+    /// </summary>
+    private void OnRailLogcat(object sender, RoutedEventArgs e) => LeaveFor(3);
+
+    private void OnRailAgents(object sender, RoutedEventArgs e) => LeaveFor(4);
+
+    private void OnRailRootLab(object sender, RoutedEventArgs e) => LeaveFor(5);
+
+    private void OnRailSettings(object sender, RoutedEventArgs e)
+    {
+        var studio = _studio;
+        Close();
+        studio?.ShowSettingsDrawer();
+    }
+
+    private void OnRailTheme(object sender, RoutedEventArgs e)
+    {
+        if (_shell?.ToggleThemeCommand.CanExecute(null) == true)
+        {
+            _shell.ToggleThemeCommand.Execute(null);
+        }
+    }
+
+    private void LeaveFor(int destination)
+    {
+        var studio = _studio;
+        Close();
+        studio?.ActivateRailDestination(destination);
+    }
+
+    /// <summary>
+    /// Opens the shell palette over this window. It is the Studio's palette (its
+    /// commands and its view model), so a second request while its modal loop
+    /// runs is a no-op, exactly like the Studio's own guard.
+    /// </summary>
+    private void OpenPalette()
+    {
+        if (_shell is null || _paletteOpen)
+        {
+            return;
+        }
+
+        _paletteOpen = true;
+        try
+        {
+            var invoker = Keyboard.FocusedElement;
+            var palette = new CommandPaletteWindow(_shell, invoker) { Owner = this };
+            palette.ShowDialog();
+        }
+        finally
+        {
+            _paletteOpen = false;
+        }
+    }
 
     /// <summary>Raised when the operator chose "Open in Studio" for a guest.</summary>
     public event Action<string>? DeviceChosen;
@@ -166,6 +322,16 @@ public partial class DeviceLibraryWindow : Window
         _viewModel.OpenInStudioRequested -= OnOpenInStudio;
         _viewModel.CloseRequested -= OnCloseRequested;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        if (_shell is not null)
+        {
+            _shell.PropertyChanged -= OnShellPropertyChanged;
+        }
+
+        if (_crumbDevice is not null)
+        {
+            _crumbDevice.PropertyChanged -= OnCrumbDeviceChanged;
+        }
+
         _ = _viewModel.DisposeAsync().AsTask();
         base.OnClosed(e);
     }
@@ -411,6 +577,26 @@ public partial class DeviceLibraryWindow : Window
     /// <summary>Escape closes the topmost overlay without touching the guest.</summary>
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
+        // UX-12: Ctrl+K and the title bar's pill are one entry point, and Ctrl+1
+        // is the Studio, the only other destination this window's rail carries.
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.K)
+        {
+            OpenPalette();
+            e.Handled = true;
+            return;
+        }
+
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is (Key.D1 or Key.NumPad1))
+        {
+            if (_viewModel.OpenStudioCommand.CanExecute(null))
+            {
+                _viewModel.OpenStudioCommand.Execute(null);
+            }
+
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key != Key.Escape)
         {
             return;

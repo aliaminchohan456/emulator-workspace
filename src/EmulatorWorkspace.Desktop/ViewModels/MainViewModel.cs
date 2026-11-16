@@ -1271,7 +1271,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// the daemon UID was not reported; the full sentence (build, transport, root
     /// capability) is the tooltip.
     /// </summary>
-    public string AdbUidValue => AdbUid is "" or "n/a" ? "—" : $"uid {AdbUid}";
+    public string AdbUidValue => AdbUid is "" or "n/a" ? "-" : $"uid {AdbUid}";
+
+    /// <summary>
+    /// igr-feedback-ux12 item 6: the inspector prints "Not checked" for an
+    /// unreported daemon UID instead of a dash, in text3.
+    /// </summary>
+    public string AdbDaemonValue => AdbUid is "" or "n/a" ? "Not checked" : $"uid {AdbUid}";
 
     public string AdbUidTooltip => AdbUid is "" or "n/a"
         ? "The ADB daemon UID was not reported for the selected guest."
@@ -4181,6 +4187,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         OnPropertyChanged(nameof(AdbUid));
         OnPropertyChanged(nameof(AdbUidValue));
+        OnPropertyChanged(nameof(AdbDaemonValue));
         OnPropertyChanged(nameof(AdbUidTooltip));
         OnPropertyChanged(nameof(AdbRootCapable));
         OnPropertyChanged(nameof(AdbBuildType));
@@ -4737,9 +4744,17 @@ public sealed class DeviceItemViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(Subtitle));
                 OnPropertyChanged(nameof(AbiApi));
+                OnPropertyChanged(nameof(ApiLabel));
             }
         }
     }
+
+    /// <summary>
+    /// UX-12: the title-bar crumb's second half ("API 35"). Built from the
+    /// reported SDK level only; empty until the supervisor reports one, so the
+    /// crumb never prints a stale or invented API number.
+    /// </summary>
+    public string ApiLabel => string.IsNullOrWhiteSpace(SdkLevel) ? "" : $"API {SdkLevel}";
 
     /// <summary>
     /// UX-04b: "x86_64 · 35" for the inspector's ABI / API row. Built from the
