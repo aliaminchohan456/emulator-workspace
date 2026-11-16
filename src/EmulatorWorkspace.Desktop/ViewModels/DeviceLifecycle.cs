@@ -38,6 +38,27 @@ public enum DevicePhase
 }
 
 /// <summary>
+/// EV-03: the device commands whose enablement is decided by the lifecycle.
+///
+/// Start and Stop were already gated by UX-18; this names every other command
+/// that used to be enabled from "a device is selected", so a control is offered
+/// exactly when the supervisor would accept it. AdbUnroot and RefreshAdbState
+/// share <see cref="DeviceLifecycle.CanChangeAdbRoot"/>: both need a guest whose
+/// ADB daemon is really up.
+/// </summary>
+public enum DeviceAction
+{
+    Start,
+    Stop,
+    Restart,
+    ColdBoot,
+    AdbRoot,
+    AdbUnroot,
+    RefreshAdbState,
+    Screenshot,
+}
+
+/// <summary>
 /// UX-18: one guest's lifecycle, derived from the supervisor's record and the
 /// evidence that came with it.
 ///
@@ -79,6 +100,78 @@ public sealed record DeviceLifecycle(
     /// interactive, which is what the supervisor's install path needs.
     /// </summary>
     public bool CanInstall => IsRunning;
+
+    /// <summary>
+    /// EV-03: restart is offered while the guest runs and while it boots. The
+    /// supervisor accepts both: restarting a booting guest is a clean way to
+    /// abandon a boot that is not going anywhere.
+    /// </summary>
+    public bool CanRestart => Phase is DevicePhase.Running or DevicePhase.Starting;
+
+    /// <summary>
+    /// EV-03: a cold boot starts the engine from a clean disk. It is the one
+    /// action that is also offered for a guest that is already running (the
+    /// supervisor stops it first), and it is the way back from a failed or dead
+    /// guest.
+    /// </summary>
+    public bool CanColdBoot => Phase is DevicePhase.Stopped or DevicePhase.Failed
+        or DevicePhase.EngineGone or DevicePhase.Running;
+
+    /// <summary>
+    /// EV-03: changing the ADB daemon's user needs a guest whose daemon is
+    /// answering, so it is offered only while the guest is really running.
+    /// </summary>
+    public bool CanChangeAdbRoot => Phase == DevicePhase.Running;
+
+    /// <summary>EV-03: a screenshot needs the same live, booted guest.</summary>
+    public bool CanScreenshot => Phase == DevicePhase.Running;
+
+    /// <summary>
+    /// EV-03: whether this lifecycle allows the named command. It is the one
+    /// predicate every surface uses, so a button, a menu item and a palette row
+    /// cannot disagree about the same guest.
+    /// </summary>
+    public bool Allows(DeviceAction action) => action switch
+    {
+        DeviceAction.Start => CanStart,
+        DeviceAction.Stop => CanStop,
+        DeviceAction.Restart => CanRestart,
+        DeviceAction.ColdBoot => CanColdBoot,
+        DeviceAction.AdbRoot or DeviceAction.AdbUnroot
+            or DeviceAction.RefreshAdbState => CanChangeAdbRoot,
+        DeviceAction.Screenshot => CanScreenshot,
+        _ => false,
+    };
+
+    /// <summary>
+    /// EV-03: why the named command is refused right now, in the operator's
+    /// words, or null when the command is allowed. The reason names the state
+    /// the guest is in, never a raw enum, so a disabled control and its tooltip
+    /// say the same true thing.
+    /// </summary>
+    public string? DisabledReason(DeviceAction action)
+    {
+        if (Allows(action))
+        {
+            return null;
+        }
+
+        // Start is the one command whose refusal is not "the guest is not
+        // running": the guest is running and that is exactly why it is refused.
+        if (action == DeviceAction.Start && Phase == DevicePhase.Running)
+        {
+            return "Already running";
+        }
+
+        return Phase switch
+        {
+            DevicePhase.Stopped or DevicePhase.Failed => "Not running",
+            DevicePhase.Starting => "Starting…",
+            DevicePhase.Stopping => "Stopping…",
+            DevicePhase.EngineGone => "Engine gone",
+            _ => "Unknown state",
+        };
+    }
 
     /// <summary>
     /// The guest's state as the supervisor's own word, normalised for a chip.

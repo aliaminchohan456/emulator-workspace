@@ -248,6 +248,9 @@ public class AgentSessionsPresentationTests
             "opencode-cli, pairing Pending, expires in 1m 58s",
             AgentSessionsPresentation.PairingRowName("opencode-cli", "Pending", "in 1m 58s"));
         Assert.Equal(
+            "opencode-cli, pairing Expired, expired",
+            AgentSessionsPresentation.PairingRowName("opencode-cli", "Expired", "expired"));
+        Assert.Equal(
             "opencode-cli, pairing Expired, expires unknown",
             AgentSessionsPresentation.PairingRowName("opencode-cli", "Expired", "—"));
 

@@ -347,14 +347,22 @@ public static class AgentSessionsPresentation
     /// screen reader used to hear "AgentSessionsPage+PairingRow". The format is
     /// built here, from the same words the row prints, so the name carries the
     /// chip label and the live countdown instead of a raw enum.
+    ///
+    /// EV-03 nit: a countdown that has already run out reads "expired", not
+    /// "expires expired", because there is no longer an expiry to count down to.
     /// </summary>
-    public static string PairingRowName(string? client, string? statusLabel, string? countdown) =>
-        string.Format(
+    public static string PairingRowName(string? client, string? statusLabel, string? countdown)
+    {
+        var time = NamePart(countdown, "unknown");
+        return string.Format(
             CultureInfo.InvariantCulture,
-            "{0}, pairing {1}, expires {2}",
+            string.Equals(time, "expired", StringComparison.OrdinalIgnoreCase)
+                ? "{0}, pairing {1}, expired"
+                : "{0}, pairing {1}, expires {2}",
             NamePart(client, "Unknown client"),
             NamePart(statusLabel, "Unknown"),
-            NamePart(countdown, "unknown"));
+            time);
+    }
 
     /// <summary>EV-02: the same one-line name for a paired-session row.</summary>
     public static string SessionRowName(string? client, string? stateLabel, string? guest) =>

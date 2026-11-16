@@ -79,6 +79,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _labRecoveryRequired;
     private string _labRecoveryDetail = "";
     private bool _labInstallInProgress;
+    // EV-03: whether the lab journal says this guest's boot image is no longer
+    // stock (prepared is still stock; recovered is stock again). EV-04 owns the
+    // full lab-phase model; this is the one bit the two lab commands need.
+    private bool _labNotStock;
     private bool _statusPollInFlight;
     private bool _frameStale;
     private FrameStreamState _frameState = FrameStreamState.Live;
@@ -142,19 +146,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StopCommand = new AsyncRelayCommand(
             () => StopDeviceAsync(),
             () => SelectedDevice?.Lifecycle.CanStop == true && !IsBusy);
-        RestartCommand = new AsyncRelayCommand(RestartAsync, () => SelectedDevice is not null && !IsBusy);
-        ColdBootCommand = new AsyncRelayCommand(ColdBootAsync, () => SelectedDevice is not null && !IsBusy);
+        RestartCommand = new AsyncRelayCommand(
+            RestartAsync,
+            () => SelectedDevice?.Lifecycle.CanRestart == true && !IsBusy);
+        ColdBootCommand = new AsyncRelayCommand(
+            ColdBootAsync,
+            () => SelectedDevice?.Lifecycle.CanColdBoot == true && !IsBusy);
         BackCommand = new AsyncRelayCommand(() => KeyAsync("BACK"), () => CanSendInput);
         HomeCommand = new AsyncRelayCommand(() => KeyAsync("HOME"), () => CanSendInput);
         RecentsCommand = new AsyncRelayCommand(() => KeyAsync("RECENTS"), () => CanSendInput);
-        ScreenshotCommand = new AsyncRelayCommand(ScreenshotAsync, () => SelectedDevice?.Lifecycle.EngineAlive == true);
+        ScreenshotCommand = new AsyncRelayCommand(
+            ScreenshotAsync,
+            () => SelectedDevice?.Lifecycle.CanScreenshot == true && !IsBusy);
         InstallApkCommand = new AsyncRelayCommand(
             InstallApkDialogAsync,
             () => SelectedDevice?.Lifecycle.CanInstall == true && !IsBusy);
         BuildApkSetCommand = new AsyncRelayCommand(BuildApkSetDialogAsync, () => IsConnected && !IsBusy);
         LaunchSampleCommand = new AsyncRelayCommand(
             () => LaunchAsync("dev.emulatorworkspace.sample"),
-            () => SelectedDevice?.Lifecycle.CanInstall == true);
+            () => SelectedDevice?.Lifecycle.CanInstall == true && !IsBusy);
         RotateCommand = new AsyncRelayCommand(ToggleRotationAsync, () => CanSendInput);
         RefreshCommand = new AsyncRelayCommand(InitializeAsync);
         ToggleLogcatCommand = new RelayCommand(() => IsLogcatOpen = !IsLogcatOpen);
@@ -173,11 +183,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ToggleLogPauseCommand = new RelayCommand(() => LogPaused = !LogPaused);
         CopyDiagnosticsCommand = new AsyncRelayCommand(CopyDiagnosticsAsync);
         ToggleThemeCommand = new RelayCommand(ToggleTheme);
-        AdbRootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(true), () => SelectedDevice is not null && !IsBusy);
-        AdbUnrootCommand = new AsyncRelayCommand(() => SetAdbRootAsync(false), () => SelectedDevice is not null && !IsBusy);
-        RefreshAdbStateCommand = new AsyncRelayCommand(RefreshAdbStateAsync, () => SelectedDevice is not null && !IsBusy);
-        MagiskInstallCommand = new AsyncRelayCommand(InstallMagiskAsync, () => SelectedDevice is not null && !IsBusy);
-        MagiskRecoverCommand = new AsyncRelayCommand(RecoverMagiskAsync, () => SelectedDevice is not null && !IsBusy);
+        AdbRootCommand = new AsyncRelayCommand(
+            () => SetAdbRootAsync(true),
+            () => SelectedDevice?.Lifecycle.CanChangeAdbRoot == true && !IsBusy);
+        AdbUnrootCommand = new AsyncRelayCommand(
+            () => SetAdbRootAsync(false),
+            () => SelectedDevice?.Lifecycle.CanChangeAdbRoot == true && !IsBusy);
+        RefreshAdbStateCommand = new AsyncRelayCommand(
+            RefreshAdbStateAsync,
+            () => SelectedDevice?.Lifecycle.CanChangeAdbRoot == true && !IsBusy);
+        // EV-03: the lab's own phase gates its two actions. An install is not
+        // offered while a transaction is being driven, and recovery is offered
+        // only when it is required or when the lab is no longer stock.
+        MagiskInstallCommand = new AsyncRelayCommand(
+            InstallMagiskAsync,
+            () => SelectedDevice is not null && !IsBusy && !_labInstallInProgress);
+        MagiskRecoverCommand = new AsyncRelayCommand(
+            RecoverMagiskAsync,
+            () => SelectedDevice is not null && !IsBusy
+                && (_labRecoveryRequired || (_labNotStock && !_labInstallInProgress)));
 
         // UX-03 presentation state: the error bar, the drag affordance and the
         // capture toast. All three are driven by the outcome of a real
@@ -210,29 +234,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Palette.Add(new PaletteEntryViewModel(
             "Start device", "Start the selected guest", StartCommand,
             PaletteGroups.Device, "IconPlay",
-            () => SelectedDevice is null ? "No device selected"
-                : IsBusy ? "Busy"
-                : "Already running"));
+            () => PaletteDisabledReason(DeviceAction.Start)));
         Palette.Add(new PaletteEntryViewModel(
             "Stop device", "Stop the selected guest", StopCommand,
             PaletteGroups.Device, "IconStop",
-            () => SelectedDevice is null ? "No device selected"
-                : IsBusy ? "Busy"
-                : "Not running"));
+            () => PaletteDisabledReason(DeviceAction.Stop)));
         Palette.Add(new PaletteEntryViewModel(
             "Restart device", "Restart the selected guest", RestartCommand,
             PaletteGroups.Device, "IconRestart",
-            PaletteDisabledReason));
+            () => PaletteDisabledReason(DeviceAction.Restart)));
         Palette.Add(new PaletteEntryViewModel(
             "Cold boot", "Cold boot the selected guest", ColdBootCommand,
             PaletteGroups.Device, "IconBolt",
-            PaletteDisabledReason));
+            () => PaletteDisabledReason(DeviceAction.ColdBoot)));
         Palette.Add(new PaletteEntryViewModel(
             "Install APK", "Install an APK on the selected guest", InstallApkCommand,
             PaletteGroups.AppsAndCapture, "IconPackage",
-            () => SelectedDevice is null ? "No device selected"
-                : IsBusy ? "Busy"
-                : "Guest not running"));
+            () => PaletteDisabledReason(DeviceAction.Screenshot)));
         Palette.Add(new PaletteEntryViewModel(
             "Build APK set", "Convert an Android App Bundle using test signing", BuildApkSetCommand,
             PaletteGroups.AppsAndCapture, "IconStack",
@@ -240,31 +258,29 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Palette.Add(new PaletteEntryViewModel(
             "Launch sample", "Launch the sample application", LaunchSampleCommand,
             PaletteGroups.AppsAndCapture, "IconLaunch",
-            () => SelectedDevice is null ? "No device selected"
-                : IsBusy ? "Busy"
-                : "Guest not running"));
+            () => PaletteDisabledReason(DeviceAction.Screenshot)));
         Palette.Add(new PaletteEntryViewModel(
             "Screenshot", "Capture a PNG of the selected guest", ScreenshotCommand,
             PaletteGroups.AppsAndCapture, "IconScreenshot",
-            () => SelectedDevice is null ? "No device selected" : "Guest not running"));
+            () => PaletteDisabledReason(DeviceAction.Screenshot)));
         Palette.Add(new PaletteEntryViewModel(
             "Toggle Logcat", "Show or hide the Logcat drawer", ToggleLogcatCommand,
             PaletteGroups.Diagnostics, "IconLogs"));
         Palette.Add(new PaletteEntryViewModel(
             "Refresh ADB state", "Re-read the ADB daemon identity", RefreshAdbStateCommand,
             PaletteGroups.Diagnostics, "IconRefresh",
-            PaletteDisabledReason));
+            () => PaletteDisabledReason(DeviceAction.RefreshAdbState)));
         Palette.Add(new PaletteEntryViewModel(
             "Export diagnostics", "Write the diagnostic bundle", CopyDiagnosticsCommand,
             PaletteGroups.Diagnostics, "IconDownload"));
         Palette.Add(new PaletteEntryViewModel(
             "ADB root", "Run the guest ADB daemon as root", AdbRootCommand,
             PaletteGroups.Privileged, "IconKey",
-            PaletteDisabledReason));
+            () => PaletteDisabledReason(DeviceAction.AdbRoot)));
         Palette.Add(new PaletteEntryViewModel(
             "ADB unroot", "Return the guest ADB daemon to the shell user", AdbUnrootCommand,
             PaletteGroups.Privileged, "IconUndo",
-            PaletteDisabledReason));
+            () => PaletteDisabledReason(DeviceAction.AdbUnroot)));
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatusAsync(), _dispatcher);
         _logTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => DrainLog(), _dispatcher);
@@ -2115,18 +2131,70 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string LogsFolder => Path.Combine(_paths.Root, "logs");
 
     /// <summary>
+    /// EV-03: the one reason a palette row is refused. Nothing selected and a
+    /// supervised operation that owns the channel come first; after that the
+    /// guest's own lifecycle answers, in its own words. The palette prints this
+    /// only when the command's CanExecute is already false, so a row can never
+    /// claim "Already running" for a guest that is stopping or unknown.
+    /// </summary>
+    private string PaletteDisabledReason(DeviceAction action) =>
+        SelectedDevice is null ? "No device selected"
+        : IsBusy ? "Busy"
+        : SelectedDevice.Lifecycle.DisabledReason(action) ?? "Not available";
+
+    /// <summary>
+    /// EV-03: a command button's tooltip. While the command can run it is the
+    /// action's own sentence; while it cannot, it is the reason the lifecycle
+    /// gives, so a disabled control explains itself instead of going quiet.
+    /// </summary>
+    private string ActionTooltip(DeviceAction action, string allowed)
+    {
+        if (SelectedDevice is null)
+        {
+            return "No device selected";
+        }
+
+        return IsBusy
+            ? "Busy"
+            : SelectedDevice.Lifecycle.DisabledReason(action) ?? allowed;
+    }
+
+    public string RestartTooltip => ActionTooltip(DeviceAction.Restart, "Restart the selected guest");
+
+    public string ColdBootTooltip => ActionTooltip(DeviceAction.ColdBoot, "Cold boot the selected guest");
+
+    public string AdbRootTooltip => ActionTooltip(
+        DeviceAction.AdbRoot,
+        "Run adb root on the selected guest (confirmation is the supervisor's approval)");
+
+    public string AdbUnrootTooltip => ActionTooltip(
+        DeviceAction.AdbUnroot,
+        "Return the guest ADB daemon to the shell user");
+
+    public string RefreshAdbStateTooltip => ActionTooltip(
+        DeviceAction.RefreshAdbState,
+        "Re-read the ADB daemon identity");
+
+    public string ScreenshotTooltip => ActionTooltip(
+        DeviceAction.Screenshot,
+        "Capture a PNG of the selected guest");
+
+    public string MagiskInstallTooltip => SelectedDevice is null ? "No device selected"
+        : IsBusy ? "Busy"
+        : _labInstallInProgress ? "Lab install in progress"
+        : "Patch this guest's boot image with a verified Magisk build (asks for consent)";
+
+    public string MagiskRecoverTooltip => SelectedDevice is null ? "No device selected"
+        : IsBusy ? "Busy"
+        : !_labRecoveryRequired && _labInstallInProgress ? "Lab install in progress"
+        : _labRecoveryRequired || _labNotStock
+            ? "Restore the stock boot image from the verified recovery point (asks for consent)"
+            : "Lab is stock";
+
+    /// <summary>
     /// Re-raises the derived settings facts. The drawer calls this when it opens,
     /// because motion and high contrast can change while the window is running.
     /// </summary>
-    /// <summary>
-    /// The one reason a device command is refused before the guest is even
-    /// consulted: nothing selected, or a supervised operation owns the channel.
-    /// The palette prints it as the row's reason chip only when the command's own
-    /// CanExecute is already false.
-    /// </summary>
-    private string PaletteDisabledReason() =>
-        SelectedDevice is null ? "No device selected" : "Busy";
-
     public void RefreshSettingsFacts()
     {
         OnPropertyChanged(nameof(IsDarkTheme));
@@ -2566,6 +2634,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _labRecoveryRequired = false;
         _labRecoveryDetail = "";
         _labInstallInProgress = false;
+        _labNotStock = false;
         IsFrameStale = false;
         ClearError();
         ResetBootStages();
@@ -4620,6 +4689,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + ex.Message;
             _labRecoveryRequired = false;
             _labRecoveryDetail = "";
+            _labInstallInProgress = false;
+            _labNotStock = false;
+            RaiseCommandStates();
         }
         OnPropertyChanged(nameof(AdbUid));
         OnPropertyChanged(nameof(AdbUidValue));
@@ -4687,9 +4759,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             + (recoveryRequired ? " (recovery required)" : installInProgress ? " (install in progress)" : "");
         _labRecoveryRequired = recoveryRequired;
         _labInstallInProgress = installInProgress;
+        _labNotStock = phase.Trim().ToLowerInvariant() is not ("not_configured" or "prepared" or "recovered" or "unknown" or "");
         _labRecoveryDetail = recoveryRequired
             ? $"The Magisk lab transaction is in phase '{phase}'. Use Recover stock in Root Lab before starting or changing this guest."
             : "";
+        RaiseCommandStates();
     }
 
     private async Task SetAdbRootAsync(bool root)
@@ -5077,6 +5151,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         RefreshAdbStateCommand.RaiseCanExecuteChanged();
         MagiskInstallCommand.RaiseCanExecuteChanged();
         MagiskRecoverCommand.RaiseCanExecuteChanged();
+        // EV-03: a disabled control's tooltip is the reason the command is
+        // refused, so it is re-read whenever the command states are.
+        OnPropertyChanged(nameof(RestartTooltip));
+        OnPropertyChanged(nameof(ColdBootTooltip));
+        OnPropertyChanged(nameof(AdbRootTooltip));
+        OnPropertyChanged(nameof(AdbUnrootTooltip));
+        OnPropertyChanged(nameof(RefreshAdbStateTooltip));
+        OnPropertyChanged(nameof(ScreenshotTooltip));
+        OnPropertyChanged(nameof(MagiskInstallTooltip));
+        OnPropertyChanged(nameof(MagiskRecoverTooltip));
     }
 
     private static double Percentile(List<double> values, double fraction)

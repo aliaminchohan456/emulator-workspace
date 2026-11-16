@@ -1639,7 +1639,8 @@
                     <Border Style="{StaticResource SegmentGroup}">
                         <StackPanel Orientation="Horizontal">
                             <Button Style="{StaticResource SegmentButton}" Command="{Binding RestartCommand}"
-                                    ToolTip="Restart the selected guest" AutomationProperties.Name="Restart device">
+                                    ToolTip="{Binding RestartTooltip}" ToolTipService.ShowOnDisabled="True"
+                                    AutomationProperties.Name="Restart device">
                                 <Path Data="{StaticResource IconRestart}" Style="{StaticResource Glyph}" />
                             </Button>
                             <Border Style="{StaticResource SegmentDivider}" />
@@ -1682,8 +1683,8 @@
                             </Button>
                             <Border Style="{StaticResource SegmentDivider}" />
                             <Button Style="{StaticResource SegmentButton}" Command="{Binding ScreenshotCommand}"
-                                    IsEnabled="{Binding IsGuestInteractive}"
-                                    ToolTip="Capture a PNG of the selected guest" AutomationProperties.Name="Screenshot">
+                                    ToolTip="{Binding ScreenshotTooltip}" ToolTipService.ShowOnDisabled="True"
+                                    AutomationProperties.Name="Screenshot">
                                 <Path Data="{StaticResource IconScreenshot}" Style="{StaticResource Glyph}" />
                             </Button>
                         </StackPanel>
@@ -2849,6 +2850,7 @@
                                             AutomationProperties.Name="Copy diagnostics" />
                                     <Button Content="Cold boot" Style="{StaticResource ToolButton}"
                                             Command="{Binding ColdBootCommand}"
+                                            ToolTip="{Binding ColdBootTooltip}" ToolTipService.ShowOnDisabled="True"
                                             AutomationProperties.Name="Cold boot the guest" />
                                 </StackPanel>
 
@@ -2908,7 +2910,8 @@
                                                 <Button Style="{StaticResource SettingsIconButton}"
                                                         Margin="0,0,6,0"
                                                         Command="{Binding RefreshAdbStateCommand}"
-                                                        ToolTip="Re-read the ADB daemon identity"
+                                                        ToolTip="{Binding RefreshAdbStateTooltip}"
+                                                        ToolTipService.ShowOnDisabled="True"
                                                         AutomationProperties.Name="Refresh ADB daemon state">
                                                     <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
                                                 </Button>
@@ -2942,11 +2945,11 @@
                                             <Button Content="ADB root" Style="{StaticResource WarnButton}"
                                                     Height="32" Padding="10,0"
                                                     Command="{Binding AdbRootCommand}" Margin="0,0,6,0"
-                                                    ToolTip="Run adb root on the selected guest (confirmation is the supervisor's approval)"
+                                                    ToolTip="{Binding AdbRootTooltip}" ToolTipService.ShowOnDisabled="True"
                                                     AutomationProperties.Name="ADB root" />
                                             <Button Content="ADB unroot" Style="{StaticResource GhostButton}"
                                                     Command="{Binding AdbUnrootCommand}" Margin="0"
-                                                    ToolTip="Return the guest ADB daemon to the shell user"
+                                                    ToolTip="{Binding AdbUnrootTooltip}" ToolTipService.ShowOnDisabled="True"
                                                     AutomationProperties.Name="ADB unroot" />
                                         </StackPanel>
                                     </StackPanel>
@@ -3001,12 +3004,12 @@
                                             <Button Content="Install Magisk lab…" Style="{StaticResource DangerButton}"
                                                     Height="32" Padding="10,0"
                                                     Command="{Binding MagiskInstallCommand}" Margin="0,0,6,4"
-                                                    ToolTip="Patch this guest's boot image with a verified Magisk build (asks for consent)"
+                                                    ToolTip="{Binding MagiskInstallTooltip}" ToolTipService.ShowOnDisabled="True"
                                                     AutomationProperties.Name="Install Magisk lab" />
                                             <Button Content="Recover stock…" Style="{StaticResource WarnButton}"
                                                     Height="32" Padding="10,0"
                                                     Command="{Binding MagiskRecoverCommand}" Margin="0,0,0,4"
-                                                    ToolTip="Restore the stock boot image from the verified recovery point (asks for consent)"
+                                                    ToolTip="{Binding MagiskRecoverTooltip}" ToolTipService.ShowOnDisabled="True"
                                                     AutomationProperties.Name="Recover stock boot" />
                                         </WrapPanel>
                                     </StackPanel>
