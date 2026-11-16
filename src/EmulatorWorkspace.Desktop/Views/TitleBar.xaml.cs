@@ -1,5 +1,8 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Shell;
 
 namespace EmulatorWorkspace.Desktop.Views;
@@ -14,11 +17,49 @@ namespace EmulatorWorkspace.Desktop.Views;
 /// and the system menu stay with the window manager. Only the pill and the three
 /// caption buttons opt back into hit testing, which is why the breadcrumbs are a
 /// drag surface rather than text you cannot grab.
+///
+/// UX-14: the maximize button is the one exception. Its rectangle answers
+/// HTMAXBUTTON from WM_NCHITTEST so Windows 11 recognises it as the real maximize
+/// button and shows the Snap Layouts flyout on hover; the window manager then
+/// owns the mouse there, so the hot and pressed visuals are driven from
+/// WM_NCMOUSEMOVE / WM_NCMOUSELEAVE / WM_NCLBUTTONDOWN / WM_NCLBUTTONUP and the
+/// toggle runs on the non-client button up. The button is still a WPF button:
+/// Tab, Enter and Space, its focus ring and its automation name are untouched.
+/// The hook lives on this control, so every window that hosts the shared strip
+/// (the Studio and the Devices window) gets the same behaviour.
 /// </summary>
 public partial class TitleBar : UserControl
 {
     /// <summary>The visible height of the strip; also the window's caption height.</summary>
     public const double BarHeight = 44;
+
+    private const int WmMove = 0x0003;
+    private const int WmSize = 0x0005;
+    private const int WmNcHitTest = 0x0084;
+    private const int WmNcMouseMove = 0x00A0;
+    private const int WmNcLButtonDown = 0x00A1;
+    private const int WmNcLButtonUp = 0x00A2;
+    private const int WmNcMouseLeave = 0x02A2;
+    private const int WmDpiChanged = 0x02E0;
+
+    private const int HtMaxButton = 9;
+
+    private const int TmeLeave = 0x0002;
+    private const int TmeNonClient = 0x0010;
+
+    /// <summary>
+    /// The HTMAXBUTTON contract and its flyout are Windows 11 features. Older
+    /// hosts keep the UX-13 client-area button instead of a caption button
+    /// nothing would draw a flyout for.
+    /// </summary>
+    private static readonly bool SnapLayoutsAvailable = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000);
+
+    private HwndSource? _source;
+    private Rect _maxButtonBounds;
+    private bool _maxButtonBoundsValid;
+    private bool _maxHot;
+    private bool _maxPressed;
+    private bool _trackingLeave;
 
     /// <summary>The current page or destination, e.g. "Studio", "Logcat", "Devices".</summary>
     public static readonly DependencyProperty PageNameProperty = DependencyProperty.Register(
@@ -50,6 +91,9 @@ public partial class TitleBar : UserControl
     {
         InitializeComponent();
         SyncCrumbs();
+
+        Loaded += (_, _) => AttachWindowProc();
+        Unloaded += (_, _) => DetachWindowProc();
     }
 
     public string PageName
@@ -110,6 +154,223 @@ public partial class TitleBar : UserControl
         ContextDetailText.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// UX-14: the non-client hook is per window, so both shell windows get their
+    /// own copy of the same hit test and state machine.
+    /// </summary>
+    private void AttachWindowProc()
+    {
+        if (!SnapLayoutsAvailable || _source is not null)
+        {
+            return;
+        }
+
+        if (Window.GetWindow(this) is not { } window)
+        {
+            return;
+        }
+
+        var handle = new WindowInteropHelper(window).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        _source = HwndSource.FromHwnd(handle);
+        _source?.AddHook(OnWindowMessage);
+    }
+
+    private void DetachWindowProc()
+    {
+        if (_source is null)
+        {
+            return;
+        }
+
+        _source.RemoveHook(OnWindowMessage);
+        _source = null;
+        _trackingLeave = false;
+        SetMaxHot(false);
+        SetMaxPressed(false);
+    }
+
+    /// <summary>
+    /// WM_NCHITTEST answers HTMAXBUTTON for the maximize button's rectangle in
+    /// physical screen pixels, which is what makes Windows 11 draw the Snap
+    /// Layouts flyout over this custom caption. Everything else falls through to
+    /// WindowChrome and the window manager, so drag, double-click, Snap and the
+    /// system menu keep working.
+    ///
+    /// Because the mouse is then the window manager's, WPF raises neither
+    /// IsMouseOver nor IsPressed here: the four non-client mouse messages stand in
+    /// for them, and the button up over the rectangle is the click.
+    /// </summary>
+    private IntPtr OnWindowMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        switch (message)
+        {
+            case WmNcHitTest:
+                if (IsOverMaxButton(lParam))
+                {
+                    handled = true;
+                    return new IntPtr(HtMaxButton);
+                }
+
+                break;
+
+            case WmMove:
+            case WmSize:
+            case WmDpiChanged:
+                // The strip moves with the frame, the DPI and the maximize inset.
+                _maxButtonBoundsValid = false;
+                break;
+
+            case WmNcMouseMove:
+                if (wParam.ToInt32() == HtMaxButton)
+                {
+                    TrackLeave(hwnd);
+                    SetMaxHot(true);
+                }
+                else
+                {
+                    SetMaxHot(false);
+                    SetMaxPressed(false);
+                }
+
+                break;
+
+            case WmNcMouseLeave:
+                _trackingLeave = false;
+                SetMaxHot(false);
+                SetMaxPressed(false);
+                break;
+
+            case WmNcLButtonDown:
+                if (wParam.ToInt32() == HtMaxButton)
+                {
+                    // Swallowing the caption button's own press also swallows the
+                    // activation it would have done, so do that here.
+                    if (Window.GetWindow(this) is { IsActive: false } inactive)
+                    {
+                        inactive.Activate();
+                    }
+
+                    SetMaxHot(true);
+                    SetMaxPressed(true);
+                    handled = true;
+                }
+
+                break;
+
+            case WmNcLButtonUp:
+                if (wParam.ToInt32() == HtMaxButton)
+                {
+                    var wasPressed = _maxPressed;
+                    SetMaxPressed(false);
+                    handled = true;
+                    if (wasPressed)
+                    {
+                        ToggleMaximize();
+                    }
+                }
+                else
+                {
+                    SetMaxPressed(false);
+                }
+
+                break;
+        }
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// The maximize button's rectangle in physical screen pixels. PointToScreen
+    /// already answers in device pixels; only the DIP size needs the window's own
+    /// transform, so a 125 % or 200 % host still hit-tests the real rectangle.
+    /// </summary>
+    private bool IsOverMaxButton(IntPtr lParam)
+    {
+        if (!MaximizeButton.IsVisible || MaximizeButton.ActualWidth <= 0 || MaximizeButton.ActualHeight <= 0)
+        {
+            return false;
+        }
+
+        var packed = lParam.ToInt64();
+        var x = unchecked((short)(packed & 0xFFFF));
+        var y = unchecked((short)((packed >> 16) & 0xFFFF));
+
+        return MaxButtonBounds().Contains(x, y);
+    }
+
+    private Rect MaxButtonBounds()
+    {
+        if (_maxButtonBoundsValid)
+        {
+            return _maxButtonBounds;
+        }
+
+        _maxButtonBounds = Rect.Empty;
+        _maxButtonBoundsValid = true;
+
+        if (PresentationSource.FromVisual(MaximizeButton) is not { CompositionTarget: { } target })
+        {
+            _maxButtonBoundsValid = false;
+            return Rect.Empty;
+        }
+
+        var origin = MaximizeButton.PointToScreen(new Point(0, 0));
+        var size = target.TransformToDevice.Transform(
+            new Point(MaximizeButton.ActualWidth, MaximizeButton.ActualHeight));
+
+        if (size.X <= 0 || size.Y <= 0)
+        {
+            return Rect.Empty;
+        }
+
+        _maxButtonBounds = new Rect(origin.X, origin.Y, size.X, size.Y);
+        return _maxButtonBounds;
+    }
+
+    private void TrackLeave(IntPtr hwnd)
+    {
+        if (_trackingLeave)
+        {
+            return;
+        }
+
+        var track = new TrackMouseEventData
+        {
+            Size = Marshal.SizeOf<TrackMouseEventData>(),
+            Flags = TmeLeave | TmeNonClient,
+            HwndTrack = hwnd,
+        };
+
+        _trackingLeave = TrackMouseEvent(ref track);
+    }
+
+    private void SetMaxHot(bool hot)
+    {
+        if (_maxHot == hot)
+        {
+            return;
+        }
+
+        _maxHot = hot;
+        Motion.SetCaptionHot(MaximizeButton, hot);
+    }
+
+    private void SetMaxPressed(bool pressed)
+    {
+        if (_maxPressed == pressed)
+        {
+            return;
+        }
+
+        _maxPressed = pressed;
+        Motion.SetCaptionPressed(MaximizeButton, pressed);
+    }
+
     private void OnMinimize(object sender, RoutedEventArgs e)
     {
         if (Window.GetWindow(this) is { } window)
@@ -118,7 +379,14 @@ public partial class TitleBar : UserControl
         }
     }
 
-    private void OnMaximize(object sender, RoutedEventArgs e)
+    private void OnMaximize(object sender, RoutedEventArgs e) => ToggleMaximize();
+
+    /// <summary>
+    /// The one maximize/restore path: the keyboard's Click and the non-client
+    /// button up over the HTMAXBUTTON rectangle both land here, so a click can
+    /// never toggle twice.
+    /// </summary>
+    private void ToggleMaximize()
     {
         if (Window.GetWindow(this) is not { } window)
         {
@@ -145,4 +413,17 @@ public partial class TitleBar : UserControl
 
     private void OnCommand(object sender, RoutedEventArgs e) =>
         CommandRequested?.Invoke(this, EventArgs.Empty);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TrackMouseEventData
+    {
+        public int Size;
+        public int Flags;
+        public IntPtr HwndTrack;
+        public int HoverTime;
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool TrackMouseEvent(ref TrackMouseEventData data);
 }

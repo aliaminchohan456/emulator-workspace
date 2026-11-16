@@ -39,6 +39,37 @@ public static class Motion
         typeof(Motion),
         new PropertyMetadata(false, OnHoverFadeChanged));
 
+    /// <summary>
+    /// UX-14: the maximize button hands its rectangle to the window manager
+    /// (HTMAXBUTTON) so Windows 11 can show the Snap Layouts flyout, and WPF then
+    /// never raises IsMouseOver or IsPressed for it. The title bar feeds these two
+    /// flags from the non-client messages instead, and the layers fade with the
+    /// same 120/80 ms curves and the same reduced-motion rule.
+    /// </summary>
+    public static readonly DependencyProperty CaptionHotProperty = DependencyProperty.RegisterAttached(
+        "CaptionHot",
+        typeof(bool),
+        typeof(Motion),
+        new PropertyMetadata(false, OnCaptionStateChanged));
+
+    public static readonly DependencyProperty CaptionPressedProperty = DependencyProperty.RegisterAttached(
+        "CaptionPressed",
+        typeof(bool),
+        typeof(Motion),
+        new PropertyMetadata(false, OnCaptionStateChanged));
+
+    public static void SetCaptionHot(DependencyObject element, bool value) =>
+        element.SetValue(CaptionHotProperty, value);
+
+    public static bool GetCaptionHot(DependencyObject element) =>
+        (bool)element.GetValue(CaptionHotProperty);
+
+    public static void SetCaptionPressed(DependencyObject element, bool value) =>
+        element.SetValue(CaptionPressedProperty, value);
+
+    public static bool GetCaptionPressed(DependencyObject element) =>
+        (bool)element.GetValue(CaptionPressedProperty);
+
     public static void SetHoverFade(DependencyObject element, bool value) =>
         element.SetValue(HoverFadeProperty, value);
 
@@ -99,10 +130,10 @@ public static class Motion
                 ButtonBase.IsPressedProperty, typeof(ButtonBase));
             pressed?.RemoveValueChanged(element, OnPressedChanged);
             pressed?.AddValueChanged(element, OnPressedChanged);
-            SetLayer(element, PressPart, button.IsPressed ? 1d : 0d, animate: false);
+            SetLayer(element, PressPart, IsPressed(button) ? 1d : 0d, animate: false);
         }
 
-        SetLayer(element, HoverPart, element.IsMouseOver ? 1d : 0d, animate: false);
+        SetLayer(element, HoverPart, IsHot(element) ? 1d : 0d, animate: false);
     }
 
     private static void Detach(FrameworkElement element)
@@ -119,7 +150,7 @@ public static class Motion
     {
         if (sender is FrameworkElement element)
         {
-            SetLayer(element, HoverPart, element.IsMouseOver ? 1d : 0d, animate: true);
+            SetLayer(element, HoverPart, IsHot(element) ? 1d : 0d, animate: true);
         }
     }
 
@@ -127,9 +158,33 @@ public static class Motion
     {
         if (sender is ButtonBase button)
         {
-            SetLayer(button, PressPart, button.IsPressed ? 1d : 0d, animate: true);
+            SetLayer(button, PressPart, IsPressed(button) ? 1d : 0d, animate: true);
         }
     }
+
+    private static void OnCaptionStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not FrameworkElement element)
+        {
+            return;
+        }
+
+        SetLayer(element, HoverPart, IsHot(element) ? 1d : 0d, animate: true);
+        if (element is ButtonBase button)
+        {
+            SetLayer(element, PressPart, IsPressed(button) ? 1d : 0d, animate: true);
+        }
+    }
+
+    /// <summary>
+    /// Hover is the pointer on the control or the non-client hot flag the title
+    /// bar sets while the window manager owns the mouse over a caption button.
+    /// </summary>
+    private static bool IsHot(FrameworkElement element) =>
+        element.IsMouseOver || GetCaptionHot(element);
+
+    private static bool IsPressed(ButtonBase button) =>
+        button.IsPressed || GetCaptionPressed(button);
 
     private static void SetLayer(FrameworkElement element, string part, double opacity, bool animate)
     {

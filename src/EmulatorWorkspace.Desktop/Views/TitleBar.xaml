@@ -49,6 +49,12 @@
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                 </Trigger>
+                <!-- UX-14: while Windows owns the mouse over the maximize button
+                     there is no IsMouseOver, so the non-client hot flag takes its
+                     place and the glyph still lifts to text1. -->
+                <Trigger Property="views:Motion.CaptionHot" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                </Trigger>
             </Style.Triggers>
         </Style>
 
