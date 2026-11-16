@@ -2655,6 +2655,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             ApplyBootEvidence(status);
             UpdateFrameWait(device);
             UpdateFrameHealth();
+
+            // UX-18: the Magisk lab state follows its transaction. It used to
+            // be read once, when the guest was selected, so the window kept
+            // saying "Prepared" through the whole install and the stage never
+            // said that a lab was running. The read is a journal read (the
+            // supervisor answers it in ~0.2 s even while the transaction
+            // holds the mutation lease).
+            await RefreshMagiskStatusAsync(device).ConfigureAwait(true);
+
             UpdateStage();
             OnPropertyChanged(nameof(PrimaryActionText));
             OnPropertyChanged(nameof(ReadinessText));
@@ -3410,7 +3419,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // A frame subscription that fails while Android is still starting is
             // a normal part of boot; it is reported in the status line and the
             // frame-wait stage, not as a persistent error the operator must clear.
-            if (device.Lifecycle.Phase == DevicePhase.Starting)
+            //
+            // UX-18: the same is true when the guest goes away between the poll
+            // and the subscribe - which is what a Magisk lab transaction does to
+            // its guest, over and over. That refusal is not an error the
+            // operator has to clear: the poll subscribes again as soon as the
+            // guest is up.
+            if (device.Lifecycle.Phase == DevicePhase.Starting
+                || ex is SupervisorRequestException { Code: ErrorCodes.NotRunning })
             {
                 StatusMessage = "Frame stream waits for the guest display: " + ex.Message;
             }
@@ -3477,7 +3493,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // drawer was closed, the guest changed), not a refusal, so it leaves
             // the band empty and lets the chip and the empty state say "not
             // attached" without claiming something failed.
-            if (ex is not OperationCanceledException)
+            //
+            // UX-18: a guest that is not running is the same case - the stream
+            // attaches again by itself when the guest is up, so it is not a
+            // refusal the operator has to act on either.
+            if (ex is OperationCanceledException
+                || ex is SupervisorRequestException { Code: ErrorCodes.NotRunning })
+            {
+                SetLogcatError("");
+            }
+            else
             {
                 SetLogcatError(ex.Message);
             }
@@ -4635,8 +4660,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ApplyMagiskStatus(device, lab);
             }
         }
-        catch (SupervisorRequestException ex)
+        catch (Exception ex)
         {
+            // A lab state that cannot be read must not take the instance
+            // status poll with it: the poll keeps the boot stages and the
+            // frame state current, and the lab row simply keeps its last
+            // value.
             DesktopLog.Write($"Magisk lab state unavailable: {ex.Message}");
         }
     }
