@@ -279,4 +279,198 @@ public sealed class ViewportFramePipelineTests
         Assert.Equal(ViewportSurfaceAction.Reallocate,
             ViewportSurfacePolicy.Decide(null, ViewportSurfacePolicy.For(540, 1200)));
     }
+
+    [Fact]
+    public void FrameStageSlot_PostReplacesTheWaitingFrameAndReturnsIt()
+    {
+        var slot = new FrameStageSlot<string>();
+
+        Assert.Null(slot.Post("a"));
+        Assert.Equal("a", slot.Post("b"));
+        Assert.Equal("b", slot.Post("c"));
+        Assert.Equal(2L, slot.Replaced);
+
+        Assert.True(slot.TryTake(out var newest));
+        Assert.Equal("c", newest);
+        Assert.False(slot.TryTake(out _));
+        Assert.Equal(2L, slot.Replaced);
+    }
+
+    [Fact]
+    public void FrameStageSlot_PutBackKeepsTheSameFrameOnATryLockRetry()
+    {
+        var slot = new FrameStageSlot<string>();
+        slot.Post("a");
+        Assert.True(slot.TryTake(out var held));
+
+        // The first TryLock failed: the frame goes back and waits for the next
+        // render tick. That is a retry, not a drop.
+        Assert.Null(slot.PutBack(held));
+        Assert.Equal(0L, slot.Replaced);
+        Assert.True(slot.HasPending);
+
+        Assert.True(slot.TryTake(out var retried));
+        Assert.Same(held, retried);
+        Assert.Equal(0L, slot.Replaced);
+    }
+
+    [Fact]
+    public void FrameStageSlot_PutBackDropsTheOlderFrameWhenANewerOneArrived()
+    {
+        var slot = new FrameStageSlot<string>();
+        slot.Post("old");
+        Assert.True(slot.TryTake(out var held));
+
+        // While the old frame waited for the lock a new one was staged.
+        Assert.Null(slot.Post("new"));
+
+        // The held frame is now the one the policy drops, exactly once.
+        Assert.Same(held, slot.PutBack(held));
+        Assert.Equal(1L, slot.Replaced);
+        Assert.True(slot.TryTake(out var newest));
+        Assert.Equal("new", newest);
+    }
+
+    [Fact]
+    public void FrameStageSlot_ManyRetriesOfOneFrameAreNeverDrops()
+    {
+        var slot = new FrameStageSlot<string>();
+        slot.Post("a");
+        Assert.True(slot.TryTake(out var held));
+
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            Assert.Null(slot.PutBack(held));
+            Assert.True(slot.TryTake(out var again));
+            Assert.Same(held, again);
+        }
+
+        Assert.Equal(0L, slot.Replaced);
+    }
+
+    [Fact]
+    public void ViewportPixelPolicy_NativeCopyKeepsEveryWpfNativeLayout()
+    {
+        Assert.Equal("Rgb24", ViewportPixelPolicy.SurfaceFormatFor(
+            FramePixelFormat.Rgb24, ViewportStageMode.NativeCopy));
+        Assert.Equal("Bgr24", ViewportPixelPolicy.SurfaceFormatFor(
+            FramePixelFormat.Bgr24, ViewportStageMode.NativeCopy));
+        Assert.Equal("Bgra32", ViewportPixelPolicy.SurfaceFormatFor(
+            FramePixelFormat.Bgra32, ViewportStageMode.NativeCopy));
+
+        // Rgba32 has no direct WPF layout; alpha survives the BGRA expansion.
+        Assert.Equal("Bgra32", ViewportPixelPolicy.SurfaceFormatFor(
+            FramePixelFormat.Rgba32, ViewportStageMode.NativeCopy));
+        Assert.False(ViewportPixelPolicy.NeedsConversion(FramePixelFormat.Rgb24, "Rgb24"));
+        Assert.True(ViewportPixelPolicy.NeedsConversion(FramePixelFormat.Rgba32, "Bgra32"));
+    }
+
+    [Fact]
+    public void ViewportPixelPolicy_ShuffleAlwaysTargetsBgra()
+    {
+        foreach (var format in Enum.GetValues<FramePixelFormat>())
+        {
+            Assert.Equal("Bgra32", ViewportPixelPolicy.SurfaceFormatFor(
+                format, ViewportStageMode.ShuffleToBgra));
+        }
+
+        Assert.True(ViewportPixelPolicy.NeedsConversion(FramePixelFormat.Rgb24, "Bgra32"));
+        Assert.False(ViewportPixelPolicy.NeedsConversion(FramePixelFormat.Bgra32, "Bgra32"));
+    }
+
+    [Theory]
+    [InlineData(null, ViewportStageMode.NativeCopy)]
+    [InlineData("", ViewportStageMode.NativeCopy)]
+    [InlineData("bgra", ViewportStageMode.ShuffleToBgra)]
+    [InlineData("BGRA", ViewportStageMode.ShuffleToBgra)]
+    [InlineData("native", ViewportStageMode.NativeCopy)]
+    [InlineData("copy", ViewportStageMode.NativeCopy)]
+    [InlineData("unknown", ViewportStageMode.NativeCopy)]
+    public void ViewportPixelPolicy_ParsesTheFormatOverride(string? value, ViewportStageMode expected)
+    {
+        Assert.Equal(expected, ViewportPixelPolicy.ParseMode(value));
+    }
+
+    [Theory]
+    [InlineData(null, true, true)]
+    [InlineData("0", true, false)]
+    [InlineData("false", true, false)]
+    [InlineData("1", false, true)]
+    [InlineData("true", false, true)]
+    [InlineData(null, false, false)]
+    [InlineData("off", false, false)]
+    public void ViewportPathSelection_HonoursTheOverrideInBothDefaults(
+        string? value, bool legacyByDefault, bool expected)
+    {
+        Assert.Equal(expected, ViewportPathSelection.LegacyEnabled(value, legacyByDefault));
+    }
+
+    [Fact]
+    public void FrameCopier_CopiesRowsAndLeavesPaddingAlone()
+    {
+        byte[] source = [1, 2, 3, 4, 5, 6, 99, 99, 7, 8, 9, 10, 11, 12, 99, 99];
+        var destination = new byte[20];
+
+        // Two 6-byte rows, source stride 8, destination stride 10.
+        FrameCopier.CopyRows(source, 8, 6, 2, destination, 10);
+
+        Assert.Equal([1, 2, 3, 4, 5, 6, 0, 0, 0, 0], destination[..10]);
+        Assert.Equal([7, 8, 9, 10, 11, 12, 0, 0, 0, 0], destination[10..]);
+    }
+
+    [Fact]
+    public void FrameCopier_UsesOneBlockCopyWhenTheStridesMatch()
+    {
+        var source = new byte[4 * 3 * 2];
+        for (var index = 0; index < source.Length; index++)
+        {
+            source[index] = (byte)(index + 1);
+        }
+
+        var destination = new byte[source.Length];
+        FrameCopier.CopyRows(source, 12, 12, 2, destination, 12);
+
+        Assert.Equal(source, destination);
+    }
+
+    [Fact]
+    public void FrameCopier_BlockCopyAcceptsAShortFinalRow()
+    {
+        // Two 6-byte rows at stride 10; the file ends after the last row's six
+        // data bytes, without the four padding bytes.
+        byte[] source = [1, 2, 3, 4, 5, 6, 99, 99, 99, 99, 7, 8, 9, 10, 11, 12];
+        var destination = new byte[20];
+
+        FrameCopier.CopyRows(source, 10, 6, 2, destination, 10);
+
+        Assert.Equal([1, 2, 3, 4, 5, 6], destination[..6]);
+        Assert.Equal([7, 8, 9, 10, 11, 12], destination[10..16]);
+        Assert.All(destination[16..], value => Assert.Equal(0, value));
+    }
+
+    [Fact]
+    public void FrameCopier_RejectsShortBuffersAndNarrowStrides()
+    {
+        var destination = new byte[16];
+
+        Assert.Throws<ArgumentException>(() =>
+            FrameCopier.CopyRows(new byte[11], 8, 6, 2, destination, 8));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            FrameCopier.CopyRows(new byte[16], 5, 6, 2, destination, 8));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            FrameCopier.CopyRows(new byte[16], 8, 6, 2, destination, 5));
+        Assert.Throws<ArgumentException>(() =>
+            FrameCopier.CopyRows(new byte[16], 8, 6, 2, new byte[11], 8));
+    }
+
+    [Fact]
+    public void SurfacePolicy_ReusesASurfaceOfTheSameSizeAndNativeFormat()
+    {
+        var held = ViewportSurfacePolicy.For(540, 1200, "Rgb24");
+
+        Assert.Equal(ViewportSurfaceAction.Reuse,
+            ViewportSurfacePolicy.Decide(held, ViewportSurfacePolicy.For(540, 1200, "Rgb24")));
+        Assert.Equal(ViewportSurfaceAction.Reallocate,
+            ViewportSurfacePolicy.Decide(held, ViewportSurfacePolicy.For(540, 1200, "Bgra32")));
+    }
 }

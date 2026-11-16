@@ -229,6 +229,7 @@ public partial class MainWindow : Window, IOverlayAnchor
                 $"layout window={ActualWidth:N0} body={BodyGrid.ActualWidth:N0} viewport={ViewportScroll.ActualWidth:N0} inspector={InspectorPanel.ActualWidth:N0} dpi={VisualTreeHelper.GetDpi(this).DpiScaleX}");
         };
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.FrameStaged += OnFrameStaged;
         _viewModel.OpenLibraryRequested += OnOpenLibraryRequested;
         _viewModel.LogEntries.CollectionChanged += OnLogEntriesChanged;
         LogDockList.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(OnLogDockScrollChanged));
@@ -338,6 +339,17 @@ public partial class MainWindow : Window, IOverlayAnchor
         await File.WriteAllTextAsync(outPath, summary.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         return 0;
     }
+
+    /// <summary>
+    /// EV-10b: a staged frame asks for one composition so CompositionTarget.
+    /// Rendering raises the tick that presents it. The present itself still
+    /// happens only in the view model's Rendering handler.
+    /// </summary>
+    private void OnFrameStaged()
+    {
+        ViewportImage.InvalidateVisual();
+    }
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName is nameof(MainViewModel.FrameWidth)

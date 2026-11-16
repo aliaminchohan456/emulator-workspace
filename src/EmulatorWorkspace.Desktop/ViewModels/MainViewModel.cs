@@ -48,20 +48,40 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // replaces (and counts) the older frame, so presentation latency has one
     // decode's bound instead of a growing queue's.
     private readonly FrameSlot<PendingFrame> _frameSlot = new();
+    // EV-10b: the background task owns read + conversion; this one-deep mailbox
+    // hands the newest staged frame to the render tick. A frame held after a
+    // failed TryLock goes back here and is retried, without being a drop.
+    private readonly FrameStageSlot<StagedFrame> _stageSlot = new();
     private readonly ViewportSurfaceCache _surfaceCache = new();
-    private readonly bool _legacyViewport =
-        Environment.GetEnvironmentVariable("EW_VIEWPORT_LEGACY") is "1";
+    private readonly bool _legacyViewport = ViewportPathSelection.LegacyEnabled(
+        Environment.GetEnvironmentVariable("EW_VIEWPORT_LEGACY"),
+        ViewportPathSelection.LegacyByDefault);
+    private readonly ViewportStageMode _stageMode = ViewportPixelPolicy.ParseMode(
+        Environment.GetEnvironmentVariable("EW_VIEWPORT_FORMAT"));
+    private readonly bool _writePixelsCopy =
+        Environment.GetEnvironmentVariable("EW_VIEWPORT_COPY") is "write";
+    private bool _renderingHooked;
 
-    // EV-10: opt-in per-frame timing split (queue wait, file read, dispatcher
-    // wait, back-buffer copy). One line per 20 frames, so a measurement run can
-    // say where the hot path's time goes without flooding the log.
+    // EV-10b: opt-in per-frame timing split (queue, file read, staging,
+    // TryLock, row copy, AddDirtyRect+Unlock, unlock to next render tick). One
+    // line per 20 frames, so a measurement run can say where the hot path's
+    // time goes without flooding the log.
     private readonly bool _viewportTrace =
         Environment.GetEnvironmentVariable("EW_VIEWPORT_TRACE") is "1";
     private int _viewportTraceCounter;
-    private double _lockMs;
-    private double _convertMs;
-    private double _unlockMs;
-    private double _notifyMs;
+    private int _lockBusy;
+    private long _renderTicks;
+    private long _traceTicksAtLastLine;
+    private PendingPresentTrace? _pendingTrace;
+
+    /// <summary>
+    /// EV-10b: raised on the UI thread after a frame is staged. The window
+    /// invalidates the viewport so WPF schedules a composition; the frame is
+    /// still presented only from <see cref="OnFrameRendering"/>. Without this
+    /// WPF stops raising Rendering on an otherwise idle window, and a staged
+    /// frame waits for an unrelated repaint.
+    /// </summary>
+    public event Action? FrameStaged;
 
     // The Shared pool tops out at 1 MiB, and a 540x1200 RGB24 frame is 1.86 MiB,
     // so a dedicated pool is what actually reuses the buffer instead of
@@ -3259,7 +3279,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public double DeliveredFps => FramesPerSecond;
 
-    public int DroppedFrames => _droppedFrames + checked((int)_frameSlot.Dropped);
+    public int DroppedFrames => _droppedFrames;
 
     public async Task SendTapAsync(int x, int y)
     {
@@ -3873,8 +3893,34 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        // EV-10b: presentation is driven by the render tick, at most one frame
+        // per tick. The subscription is made on the UI thread; the view model is
+        // created there and every frame-subscription reply continues there.
+        if (!_renderingHooked)
+        {
+            if (_dispatcher.CheckAccess())
+            {
+                HookFrameRendering();
+            }
+            else
+            {
+                _ = _dispatcher.BeginInvoke(HookFrameRendering, DispatcherPriority.Normal);
+            }
+        }
+
         _frameLoopRunning = true;
         _ = Task.Run(FrameLoopAsync);
+    }
+
+    private void HookFrameRendering()
+    {
+        if (_renderingHooked)
+        {
+            return;
+        }
+
+        CompositionTarget.Rendering += OnFrameRendering;
+        _renderingHooked = true;
     }
 
     private async Task FrameLoopAsync()
@@ -3940,15 +3986,47 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 }
 
                 var inline = Elapsed(inlineStart, Stopwatch.GetTimestamp());
-                DesktopLog.Write(
-                    $"convert bench 540x1200: {wall / 100:N2} ms/frame wall, {cpu / 100:N2} ms/frame cpu, " +
-                    $"first={firstMs:N2} ms, last10={lastTenMs / 10:N2} ms, memfill={fill / 100:N2} ms, " +
-                    $"inline={inline / 100:N2} ms " +
-                    $"(Ssse3={System.Runtime.Intrinsics.X86.Ssse3.IsSupported}, " +
-                    $"priority={process.PriorityClass}, cores={Environment.ProcessorCount}, " +
-                    $"thread={Thread.CurrentThread.Priority}, pool={Thread.CurrentThread.IsThreadPoolThread}, " +
-                    $"arch={System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}, " +
-                    $"x64={Environment.Is64BitProcess}, vec={Vector128<byte>.Count})");
+
+                // EV-10b: the two UI-thread copies the A/B compares. Both are
+                // plain block moves; the only difference is 1.86 MB vs 2.59 MB.
+                var nativeCopyStart = Stopwatch.GetTimestamp();
+                var nativeLength = 540 * 1200 * 3;
+                for (var iteration = 0; iteration < 100; iteration++)
+                {
+                    FrameCopier.CopyRows(
+                        benchSource.AsSpan(0, nativeLength), 540 * 3, 540 * 3, 1200,
+                        benchDestination.AsSpan(0, nativeLength), 540 * 3);
+                }
+
+                var nativeCopy = Elapsed(nativeCopyStart, Stopwatch.GetTimestamp());
+                var bgraLength = 540 * 1200 * 4;
+                var benchBgra = FrameBuffers.Rent(bgraLength);
+                try
+                {
+                    var bgraCopyStart = Stopwatch.GetTimestamp();
+                    for (var iteration = 0; iteration < 100; iteration++)
+                    {
+                        FrameCopier.CopyRows(
+                            benchDestination.AsSpan(0, bgraLength), 540 * 4, 540 * 4, 1200,
+                            benchBgra.AsSpan(0, bgraLength), 540 * 4);
+                    }
+
+                    var bgraCopy = Elapsed(bgraCopyStart, Stopwatch.GetTimestamp());
+                    DesktopLog.Write(
+                        $"convert bench 540x1200: {wall / 100:N2} ms/frame wall, {cpu / 100:N2} ms/frame cpu, " +
+                        $"first={firstMs:N2} ms, last10={lastTenMs / 10:N2} ms, memfill={fill / 100:N2} ms, " +
+                        $"inline={inline / 100:N2} ms, nativeCopy={nativeCopy / 100:N2} ms, " +
+                        $"bgraCopy={bgraCopy / 100:N2} ms " +
+                        $"(Ssse3={System.Runtime.Intrinsics.X86.Ssse3.IsSupported}, " +
+                        $"priority={process.PriorityClass}, cores={Environment.ProcessorCount}, " +
+                        $"thread={Thread.CurrentThread.Priority}, pool={Thread.CurrentThread.IsThreadPoolThread}, " +
+                        $"arch={System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}, " +
+                        $"x64={Environment.Is64BitProcess}, vec={Vector128<byte>.Count})");
+                }
+                finally
+                {
+                    FrameBuffers.Return(benchBgra);
+                }
             }
             finally
             {
@@ -4008,42 +4086,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 continue;
             }
 
-            FrameRead? read = null;
+            // EV-10b: read and stage on this background task. The UI thread
+            // never converts a frame; it only copies the staged buffer into the
+            // surface when the render tick gets the lock.
             try
             {
-                read = ReadFrame(pending);
-                if (read is null)
+                var staged = StageFrame(pending, takenAt);
+                if (staged is not null && _stageSlot.Post(staged) is { } replaced)
                 {
-                    continue;
+                    replaced.Dispose();
                 }
 
-                var readDoneAt = Stopwatch.GetTimestamp();
-                var payload = read;
-                await _dispatcher.InvokeAsync(
-                    () =>
-                    {
-                        var presentAt = Stopwatch.GetTimestamp();
-                        try
-                        {
-                            PresentFrameSurface(payload, pending, DateTimeOffset.UtcNow);
-                        }
-                        finally
-                        {
-                            if (_viewportTrace && (++_viewportTraceCounter % 20) == 0)
-                            {
-                                DesktopLog.Write(
-                                    $"frame trace seq={pending.Sequence} waitedMs={Elapsed(pending.EventTimestamp, takenAt):N1} " +
-                                    $"readMs={Elapsed(takenAt, readDoneAt):N1} uiWaitMs={Elapsed(readDoneAt, presentAt):N1} " +
-                                    $"lockMs={_lockMs:N1} convertMs={_convertMs:N1} unlockMs={_unlockMs:N1} " +
-                                    $"notifyMs={_notifyMs:N1} totalMs={Elapsed(pending.EventTimestamp, Stopwatch.GetTimestamp()):N1} " +
-                                    $"slotDropped={_frameSlot.Dropped}");
-                            }
-
-                            payload.Dispose();
-                        }
-                    },
-                    DispatcherPriority.Render);
-                read = null;
+                if (staged is not null)
+                {
+                    // Ask the window for one composition so the render tick
+                    // that presents this frame actually happens.
+                    _ = _dispatcher.BeginInvoke(
+                        () => FrameStaged?.Invoke(),
+                        DispatcherPriority.Render);
+                }
             }
             catch (Exception ex)
             {
@@ -4051,11 +4112,235 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 // A replaced file or a transient decode failure must not stop the
                 // pipeline; the next frame is already on its way.
             }
-            finally
+        }
+    }
+
+    /// <summary>
+    /// EV-10b: one file read plus one staging conversion, all on the frame-loop
+    /// task. A source layout WPF renders directly is staged as-is (the read
+    /// buffer is handed over, no second copy); anything else is expanded into a
+    /// pooled BGRA buffer. The staged frame carries the three background
+    /// timings so the trace can attribute every millisecond.
+    /// </summary>
+    private StagedFrame? StageFrame(PendingFrame pending, long takenAt)
+    {
+        var readStart = Stopwatch.GetTimestamp();
+        var read = ReadFrame(pending);
+        if (read is null)
+        {
+            return null;
+        }
+
+        var readAt = Stopwatch.GetTimestamp();
+        try
+        {
+            var surfaceFormat = ViewportPixelPolicy.SurfaceFormatFor(read.Format, _stageMode);
+            if (ViewportPixelPolicy.NeedsConversion(read.Format, surfaceFormat))
             {
-                read?.Dispose();
+                var rowBytes = checked(read.Width * FramePixelConverter.Bgra32BytesPerPixel);
+                var length = checked(rowBytes * read.Height);
+                var buffer = FrameBuffers.Rent(length);
+                try
+                {
+                    FramePixelConverter.Convert(
+                        read.Pixels.Span,
+                        read.Width,
+                        read.Height,
+                        read.Stride,
+                        read.Format,
+                        buffer.AsSpan(0, length),
+                        rowBytes);
+                }
+                catch
+                {
+                    FrameBuffers.Return(buffer);
+                    throw;
+                }
+
+                var stagedAt = Stopwatch.GetTimestamp();
+                return new StagedFrame(buffer, read.Width, read.Height, rowBytes, surfaceFormat, pending,
+                    Elapsed(pending.EventTimestamp, takenAt), Elapsed(takenAt, readAt), Elapsed(readAt, stagedAt));
+            }
+
+            // Native copy: the read buffer already has the layout the surface
+            // wants, so it is the staged buffer. Reusing it saves a full-frame
+            // copy on the background task (and one pooled rent per frame).
+            var rowBytesNative = checked(read.Width * ViewportPixelPolicy.BytesPerPixel(surfaceFormat));
+            var owned = read.Detach();
+            return new StagedFrame(owned, read.Width, read.Height, rowBytesNative, surfaceFormat, pending,
+                Elapsed(pending.EventTimestamp, takenAt), Elapsed(takenAt, readAt), 0);
+        }
+        finally
+        {
+            read.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// EV-10b: one present attempt per CompositionTarget.Rendering tick. It takes
+    /// at most one staged frame; a frame whose TryLock fails is put back and
+    /// retried on the next tick, and only a replacement by a newer frame counts
+    /// as a drop.
+    /// </summary>
+    private void OnFrameRendering(object? sender, EventArgs e)
+    {
+        var tickAt = Stopwatch.GetTimestamp();
+        _renderTicks++;
+        FlushPresentTrace(tickAt);
+        if (_legacyViewport)
+        {
+            return;
+        }
+
+        if (!_stageSlot.TryTake(out var staged))
+        {
+            return;
+        }
+
+        if (staged.Source.Subscription != Volatile.Read(ref _frameSub).Id)
+        {
+            staged.Dispose();
+            return;
+        }
+
+        if (!TryPresentStaged(staged))
+        {
+            if (_stageSlot.PutBack(staged) is { } discarded)
+            {
+                // A newer frame is already waiting: this older one is the one
+                // drop the policy allows.
+                discarded.Dispose();
             }
         }
+    }
+
+    /// <summary>
+    /// EV-10b: the UI-thread half. <c>TryLock(TimeSpan.Zero)</c> never blocks;
+    /// when the render thread still holds the back buffer the frame stays
+    /// staged. The copy is a plain row copy because the buffer already has the
+    /// surface layout. EW_VIEWPORT_COPY=write measures WPF's WritePixels instead.
+    /// </summary>
+    private bool TryPresentStaged(StagedFrame staged)
+    {
+        var bitmap = _surfaceCache.Get(staged.Width, staged.Height, staged.SurfaceFormat);
+        var lockStart = Stopwatch.GetTimestamp();
+        long lockedAt;
+        long copiedAt;
+        long unlockedAt;
+
+        if (_writePixelsCopy)
+        {
+            lockedAt = lockStart;
+            bitmap.WritePixels(
+                new Int32Rect(0, 0, staged.Width, staged.Height),
+                staged.Buffer,
+                staged.Stride,
+                0);
+            copiedAt = Stopwatch.GetTimestamp();
+            unlockedAt = copiedAt;
+        }
+        else
+        {
+            if (!bitmap.TryLock(TimeSpan.Zero))
+            {
+                staged.LockRetries++;
+                Interlocked.Increment(ref _lockBusy);
+                return false;
+            }
+
+            lockedAt = Stopwatch.GetTimestamp();
+            try
+            {
+                unsafe
+                {
+                    var backBuffer = new Span<byte>(
+                        (void*)bitmap.BackBuffer, bitmap.BackBufferStride * staged.Height);
+                    FrameCopier.CopyRows(
+                        staged.Pixels,
+                        staged.Stride,
+                        staged.RowBytes,
+                        staged.Height,
+                        backBuffer,
+                        bitmap.BackBufferStride);
+                }
+
+                copiedAt = Stopwatch.GetTimestamp();
+                bitmap.AddDirtyRect(new Int32Rect(0, 0, staged.Width, staged.Height));
+            }
+            finally
+            {
+                bitmap.Unlock();
+                unlockedAt = Stopwatch.GetTimestamp();
+            }
+        }
+
+        PresentFrame(bitmap, staged.Source, DateTimeOffset.UtcNow);
+        if (_viewportTrace)
+        {
+            _pendingTrace = new PendingPresentTrace(
+                staged.Source.Sequence,
+                staged.QueueMs,
+                staged.ReadMs,
+                staged.StageMs,
+                Elapsed(lockStart, lockedAt),
+                Elapsed(lockedAt, copiedAt),
+                Elapsed(copiedAt, unlockedAt),
+                unlockedAt,
+                Stopwatch.GetTimestamp(),
+                staged.LockRetries,
+                staged.SurfaceFormat,
+                staged.Source.EventTimestamp);
+        }
+
+        staged.Dispose();
+        return true;
+    }
+
+    /// <summary>
+    /// EV-10b: completes the previous frame's split with the one segment that
+    /// can only be read on the next tick: Unlock to the next
+    /// CompositionTarget.Rendering.
+    /// </summary>
+    private void FlushPresentTrace(long tickAt)
+    {
+        if (_pendingTrace is not { } trace)
+        {
+            return;
+        }
+
+        _pendingTrace = null;
+        if (!_viewportTrace || (++_viewportTraceCounter % 20) != 0)
+        {
+            return;
+        }
+
+        var ticks = _renderTicks - _traceTicksAtLastLine;
+        _traceTicksAtLastLine = _renderTicks;
+        DesktopLog.Write(
+            $"frame trace seq={trace.Sequence} readMs={trace.ReadMs:N1} stageMs={trace.StageMs:N1} " +
+            $"queueMs={trace.QueueMs:N1} lockMs={trace.LockMs:N1} copyMs={trace.CopyMs:N1} " +
+            $"dirtyMs={trace.DirtyMs:N1} toRenderingMs={Elapsed(trace.UnlockedAt, tickAt):N1} " +
+            $"uiMs={trace.UiMs:N1} totalMs={Elapsed(trace.EventTimestamp, trace.PresentedAt):N1} " +
+            $"retries={trace.Retries} ticks={ticks} copy={(_writePixelsCopy ? "write" : "lock")} " +
+            $"format={trace.SurfaceFormat} stageMode={_stageMode} busy={Volatile.Read(ref _lockBusy)} " +
+            $"slotDropped={_frameSlot.Dropped} stageReplaced={_stageSlot.Replaced}");
+    }
+
+    private readonly record struct PendingPresentTrace(
+        int Sequence,
+        double QueueMs,
+        double ReadMs,
+        double StageMs,
+        double LockMs,
+        double CopyMs,
+        double DirtyMs,
+        long UnlockedAt,
+        long PresentedAt,
+        int Retries,
+        string SurfaceFormat,
+        long EventTimestamp)
+    {
+        public double UiMs => LockMs + CopyMs + DirtyMs;
     }
 
     private static double Elapsed(long from, long to) =>
@@ -4130,60 +4415,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             FrameBuffers.Return(pngBuffer);
             throw;
-        }
-    }
-
-    /// <summary>
-    /// EV-10: the UI-thread half. One WriteableBitmap per (width, height,
-    /// Bgra32) is written in place; the image's Source only changes when that
-    /// surface is replaced, which is exactly when the size (or format) changes.
-    /// </summary>
-    private void PresentFrameSurface(FrameRead read, PendingFrame source, DateTimeOffset received)
-    {
-        if (source.Subscription != Volatile.Read(ref _frameSub).Id)
-        {
-            return;
-        }
-
-        var bitmap = _surfaceCache.Get(read.Width, read.Height);
-        var lockStart = Stopwatch.GetTimestamp();
-        bitmap.Lock();
-        var lockedAt = Stopwatch.GetTimestamp();
-        var copiedAt = lockedAt;
-        var unlockedAt = lockedAt;
-        try
-        {
-            unsafe
-            {
-                var backBuffer = new Span<byte>(
-                    (void*)bitmap.BackBuffer, bitmap.BackBufferStride * read.Height);
-                FramePixelConverter.Convert(
-                    read.Pixels.Span,
-                    read.Width,
-                    read.Height,
-                    read.Stride,
-                    read.Format,
-                    backBuffer,
-                    bitmap.BackBufferStride);
-            }
-
-            copiedAt = Stopwatch.GetTimestamp();
-            bitmap.AddDirtyRect(new Int32Rect(0, 0, read.Width, read.Height));
-        }
-        finally
-        {
-            bitmap.Unlock();
-            unlockedAt = Stopwatch.GetTimestamp();
-        }
-
-        var notifyStart = Stopwatch.GetTimestamp();
-        PresentFrame(bitmap, source, received);
-        if (_viewportTrace)
-        {
-            _lockMs = Elapsed(lockStart, lockedAt);
-            _convertMs = Elapsed(lockedAt, copiedAt);
-            _unlockMs = Elapsed(copiedAt, unlockedAt);
-            _notifyMs = Elapsed(notifyStart, Stopwatch.GetTimestamp());
         }
     }
 
@@ -5560,6 +5791,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _statusTimer.Stop();
         _logTimer.Stop();
         _lifetime.Cancel();
+        try
+        {
+            _ = _dispatcher.BeginInvoke(() =>
+            {
+                if (_renderingHooked)
+                {
+                    CompositionTarget.Rendering -= OnFrameRendering;
+                    _renderingHooked = false;
+                }
+
+                while (_stageSlot.TryTake(out var staged))
+                {
+                    staged.Dispose();
+                }
+            });
+        }
+        catch (InvalidOperationException)
+        {
+            // The dispatcher has already shut down; the pooled buffers are
+            // reclaimed with the process.
+        }
+
         await UnsubscribeFramesAsync().ConfigureAwait(false);
         await StopLogcatAsync().ConfigureAwait(false);
         if (_connection is not null)
@@ -5622,6 +5875,78 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public FramePixelFormat Format { get; }
 
         public ReadOnlyMemory<byte> Pixels => _buffer ?? throw new ObjectDisposedException(nameof(FrameRead));
+
+        /// <summary>Hands the read buffer to a staged frame; Dispose then no-ops.</summary>
+        public byte[] Detach() => Interlocked.Exchange(ref _buffer, null)
+            ?? throw new ObjectDisposedException(nameof(FrameRead));
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _buffer, null) is { } buffer)
+            {
+                FrameBuffers.Return(buffer);
+            }
+        }
+    }
+
+    /// <summary>
+    /// EV-10b: one frame in the layout its surface renders, ready for a plain
+    /// copy. It is produced entirely on the frame-loop task (read included) and
+    /// owns a pooled buffer until the UI thread has copied it or a newer frame
+    /// replaced it.
+    /// </summary>
+    private sealed class StagedFrame : IDisposable
+    {
+        private byte[]? _buffer;
+
+        public StagedFrame(
+            byte[] buffer,
+            int width,
+            int height,
+            int stride,
+            string surfaceFormat,
+            PendingFrame source,
+            double queueMs,
+            double readMs,
+            double stageMs)
+        {
+            _buffer = buffer;
+            Width = width;
+            Height = height;
+            Stride = stride;
+            SurfaceFormat = surfaceFormat;
+            Source = source;
+            QueueMs = queueMs;
+            ReadMs = readMs;
+            StageMs = stageMs;
+            RowBytes = checked(width * ViewportPixelPolicy.BytesPerPixel(surfaceFormat));
+        }
+
+        public int Width { get; }
+
+        public int Height { get; }
+
+        /// <summary>The staged row stride (equals the producer's row length).</summary>
+        public int Stride { get; }
+
+        public int RowBytes { get; }
+
+        public string SurfaceFormat { get; }
+
+        public PendingFrame Source { get; }
+
+        public double QueueMs { get; }
+
+        public double ReadMs { get; }
+
+        public double StageMs { get; }
+
+        /// <summary>UI-thread TryLock retries before this frame was presented.</summary>
+        public int LockRetries { get; set; }
+
+        public byte[] Buffer => _buffer ?? throw new ObjectDisposedException(nameof(StagedFrame));
+
+        public ReadOnlySpan<byte> Pixels => _buffer ?? throw new ObjectDisposedException(nameof(StagedFrame));
 
         public void Dispose()
         {
