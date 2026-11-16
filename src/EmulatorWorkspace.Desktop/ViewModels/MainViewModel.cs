@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -5,8 +6,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Intrinsics;
 using System.Text.Json.Nodes;
-using System.Threading.Channels;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -43,11 +44,31 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly List<double> _fpsSamples = new();
     private PointCollection _sparkPoints = new();
     private PointCollection _sparkAreaPoints = new();
-    private readonly Channel<PendingFrame> _frames = Channel.CreateBounded<PendingFrame>(new BoundedChannelOptions(1)
-    {
-        FullMode = BoundedChannelFullMode.DropOldest,
-        SingleReader = true,
-    });
+    // EV-10: the frame path keeps one surface and one waiting frame. The slot
+    // replaces (and counts) the older frame, so presentation latency has one
+    // decode's bound instead of a growing queue's.
+    private readonly FrameSlot<PendingFrame> _frameSlot = new();
+    private readonly ViewportSurfaceCache _surfaceCache = new();
+    private readonly bool _legacyViewport =
+        Environment.GetEnvironmentVariable("EW_VIEWPORT_LEGACY") is "1";
+
+    // EV-10: opt-in per-frame timing split (queue wait, file read, dispatcher
+    // wait, back-buffer copy). One line per 20 frames, so a measurement run can
+    // say where the hot path's time goes without flooding the log.
+    private readonly bool _viewportTrace =
+        Environment.GetEnvironmentVariable("EW_VIEWPORT_TRACE") is "1";
+    private int _viewportTraceCounter;
+    private double _lockMs;
+    private double _convertMs;
+    private double _unlockMs;
+    private double _notifyMs;
+
+    // The Shared pool tops out at 1 MiB, and a 540x1200 RGB24 frame is 1.86 MiB,
+    // so a dedicated pool is what actually reuses the buffer instead of
+    // allocating a new LOH array per frame. 4 MiB covers the decoded 540x1200
+    // BGRA fallback (2.59 MiB) with headroom.
+    private static readonly ArrayPool<byte> FrameBuffers =
+        ArrayPool<byte>.Create(4 * 1024 * 1024, maxArraysPerBucket: 8);
     private readonly SemaphoreSlim _subscribeGate = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
 
@@ -1668,7 +1689,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public string FrameInfo => Frame is null
         ? "no frame"
-        : $"{FrameWidth}x{FrameHeight}  -  {FramesPerSecond:N1} fps  -  {_droppedFrames} dropped";
+        : $"{FrameWidth}x{FrameHeight}  -  {FramesPerSecond:N1} fps  -  {DroppedFrames} dropped";
 
     // UX-04b: the inspector's RESOURCES rows need the same live numbers as one
     // value each (tabular mono, fixed width). They are raised on the same 250 ms
@@ -1690,7 +1711,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         InspectorSessionRows.FrameRate(SelectedPhase, Frame is not null, FramesPerSecond);
 
     public string DroppedFramesText =>
-        InspectorSessionRows.Dropped(SelectedPhase, Frame is not null, _droppedFrames);
+        InspectorSessionRows.Dropped(SelectedPhase, Frame is not null, DroppedFrames);
 
     private double _lastInputLatency = double.NaN;
 
@@ -2697,6 +2718,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             GuestHeight = 0;
             _frameSequence = 0;
             _droppedFrames = 0;
+            _frameSlot.ResetDropped();
             _lastFramePresented = default;
             _lastFrameInfoUpdated = default;
             FramesPerSecond = 0;
@@ -3237,7 +3259,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public double DeliveredFps => FramesPerSecond;
 
-    public int DroppedFrames => _droppedFrames;
+    public int DroppedFrames => _droppedFrames + checked((int)_frameSlot.Dropped);
 
     public async Task SendTapAsync(int x, int y)
     {
@@ -3750,7 +3772,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     var sequence = frame["seq"]?.GetValue<int>() ?? 0;
                     var receivedUtc = frame["receivedUtc"]?.GetValue<DateTimeOffset>();
                     var writtenUtc = frame["writtenUtc"]?.GetValue<DateTimeOffset>();
-                    _frames.Writer.TryWrite(new PendingFrame(envelope.Subscription, path, format, frameWidth, frameHeight,
+                    _frameSlot.Post(new PendingFrame(envelope.Subscription, path, format, frameWidth, frameHeight,
                         stride, guestWidth, guestHeight, sequence, dropped, receivedUtc, writtenUtc, Stopwatch.GetTimestamp()));
                 }
 
@@ -3857,16 +3879,171 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task FrameLoopAsync()
     {
-        await foreach (var pending in _frames.Reader.ReadAllAsync(_lifetime.Token).ConfigureAwait(false))
+        if (_viewportTrace)
         {
+            // One quiet-host reading of the same conversion the live path runs,
+            // taken before the frame loop starts. The per-frame trace line shows
+            // the live cost; the difference is host scheduling, not the code.
+            var benchSource = FrameBuffers.Rent(540 * 1200 * 3);
+            var benchDestination = FrameBuffers.Rent(540 * 1200 * 4);
             try
             {
-                var bitmap = LoadFrame(pending);
-                if (bitmap is not null)
+                var process = Process.GetCurrentProcess();
+                var cpuStart = process.TotalProcessorTime;
+                var benchStart = Stopwatch.GetTimestamp();
+                double firstMs = 0;
+                double lastTenMs = 0;
+                for (var iteration = 0; iteration < 100; iteration++)
                 {
-                    var now = DateTimeOffset.UtcNow;
-                    await _dispatcher.InvokeAsync(() => PresentFrame(bitmap, pending, now), DispatcherPriority.Render);
+                    var lap = Stopwatch.GetTimestamp();
+                    FramePixelConverter.Convert(
+                        benchSource.AsSpan(0, 540 * 1200 * 3), 540, 1200, 540 * 3,
+                        FramePixelFormat.Rgb24,
+                        benchDestination.AsSpan(0, 540 * 1200 * 4), 540 * 4);
+                    var lapMs = Elapsed(lap, Stopwatch.GetTimestamp());
+                    if (iteration == 0)
+                    {
+                        firstMs = lapMs;
+                    }
+
+                    if (iteration >= 90)
+                    {
+                        lastTenMs += lapMs;
+                    }
                 }
+
+                var wall = Elapsed(benchStart, Stopwatch.GetTimestamp());
+                var cpu = (process.TotalProcessorTime - cpuStart).TotalMilliseconds;
+                var fillStart = Stopwatch.GetTimestamp();
+                for (var iteration = 0; iteration < 100; iteration++)
+                {
+                    benchDestination.AsSpan(0, 540 * 1200 * 4).Fill(0x5A);
+                }
+
+                var fill = Elapsed(fillStart, Stopwatch.GetTimestamp());
+                var inlineStart = Stopwatch.GetTimestamp();
+                var benchSourceSpan = benchSource.AsSpan(0, 540 * 1200 * 3);
+                var benchDestinationSpan = benchDestination.AsSpan(0, 540 * 1200 * 4);
+                for (var iteration = 0; iteration < 100; iteration++)
+                {
+                    var s = 0;
+                    var d = 0;
+                    for (var pixel = 0; pixel < 540 * 1200; pixel++)
+                    {
+                        benchDestinationSpan[d] = benchSourceSpan[s + 2];
+                        benchDestinationSpan[d + 1] = benchSourceSpan[s + 1];
+                        benchDestinationSpan[d + 2] = benchSourceSpan[s];
+                        benchDestinationSpan[d + 3] = 255;
+                        s += 3;
+                        d += 4;
+                    }
+                }
+
+                var inline = Elapsed(inlineStart, Stopwatch.GetTimestamp());
+                DesktopLog.Write(
+                    $"convert bench 540x1200: {wall / 100:N2} ms/frame wall, {cpu / 100:N2} ms/frame cpu, " +
+                    $"first={firstMs:N2} ms, last10={lastTenMs / 10:N2} ms, memfill={fill / 100:N2} ms, " +
+                    $"inline={inline / 100:N2} ms " +
+                    $"(Ssse3={System.Runtime.Intrinsics.X86.Ssse3.IsSupported}, " +
+                    $"priority={process.PriorityClass}, cores={Environment.ProcessorCount}, " +
+                    $"thread={Thread.CurrentThread.Priority}, pool={Thread.CurrentThread.IsThreadPoolThread}, " +
+                    $"arch={System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}, " +
+                    $"x64={Environment.Is64BitProcess}, vec={Vector128<byte>.Count})");
+            }
+            finally
+            {
+                FrameBuffers.Return(benchSource);
+                FrameBuffers.Return(benchDestination);
+            }
+        }
+
+        while (!_lifetime.IsCancellationRequested)
+        {
+            PendingFrame pending;
+            try
+            {
+                pending = await _frameSlot.TakeAsync(_lifetime.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            var takenAt = Stopwatch.GetTimestamp();
+            if (_legacyViewport)
+            {
+                // EV-10 comparison path: the pre-change bitmap, one frozen
+                // BitmapSource per frame, kept for one slice behind
+                // EW_VIEWPORT_LEGACY=1.
+                try
+                {
+                    var loadStart = Stopwatch.GetTimestamp();
+                    var bitmap = LoadFrame(pending);
+                    var loadedAt = Stopwatch.GetTimestamp();
+                    if (bitmap is not null)
+                    {
+                        await _dispatcher.InvokeAsync(
+                            () =>
+                            {
+                                var presentAt = Stopwatch.GetTimestamp();
+                                PresentFrame(bitmap, pending, DateTimeOffset.UtcNow);
+                                if (_viewportTrace && (++_viewportTraceCounter % 20) == 0)
+                                {
+                                    DesktopLog.Write(
+                                        $"legacy frame trace seq={pending.Sequence} " +
+                                        $"waitedMs={Elapsed(pending.EventTimestamp, takenAt):N1} " +
+                                        $"loadMs={Elapsed(loadStart, loadedAt):N1} " +
+                                        $"uiWaitMs={Elapsed(loadedAt, presentAt):N1} " +
+                                        $"totalMs={Elapsed(pending.EventTimestamp, Stopwatch.GetTimestamp()):N1}");
+                                }
+                            },
+                            DispatcherPriority.Render);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DesktopLog.Write("decode failed: " + ex.GetType().Name + ": " + ex.Message);
+                }
+
+                continue;
+            }
+
+            FrameRead? read = null;
+            try
+            {
+                read = ReadFrame(pending);
+                if (read is null)
+                {
+                    continue;
+                }
+
+                var readDoneAt = Stopwatch.GetTimestamp();
+                var payload = read;
+                await _dispatcher.InvokeAsync(
+                    () =>
+                    {
+                        var presentAt = Stopwatch.GetTimestamp();
+                        try
+                        {
+                            PresentFrameSurface(payload, pending, DateTimeOffset.UtcNow);
+                        }
+                        finally
+                        {
+                            if (_viewportTrace && (++_viewportTraceCounter % 20) == 0)
+                            {
+                                DesktopLog.Write(
+                                    $"frame trace seq={pending.Sequence} waitedMs={Elapsed(pending.EventTimestamp, takenAt):N1} " +
+                                    $"readMs={Elapsed(takenAt, readDoneAt):N1} uiWaitMs={Elapsed(readDoneAt, presentAt):N1} " +
+                                    $"lockMs={_lockMs:N1} convertMs={_convertMs:N1} unlockMs={_unlockMs:N1} " +
+                                    $"notifyMs={_notifyMs:N1} totalMs={Elapsed(pending.EventTimestamp, Stopwatch.GetTimestamp()):N1} " +
+                                    $"slotDropped={_frameSlot.Dropped}");
+                            }
+
+                            payload.Dispose();
+                        }
+                    },
+                    DispatcherPriority.Render);
+                read = null;
             }
             catch (Exception ex)
             {
@@ -3874,6 +4051,139 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 // A replaced file or a transient decode failure must not stop the
                 // pipeline; the next frame is already on its way.
             }
+            finally
+            {
+                read?.Dispose();
+            }
+        }
+    }
+
+    private static double Elapsed(long from, long to) =>
+        Stopwatch.GetElapsedTime(from, to).TotalMilliseconds;
+
+    /// <summary>
+    /// EV-10: reads one frame into a pooled buffer on this background task. Raw
+    /// frames are read straight into the pool; a PNG (the fallback transport) is
+    /// decoded to BGRA into the same kind of buffer, so the UI thread only ever
+    /// converts and copies.
+    /// </summary>
+    private static FrameRead? ReadFrame(PendingFrame frame)
+    {
+        if (FramePixelConverter.TryParse(frame.Format, out var format))
+        {
+            var bytesPerPixel = FramePixelConverter.BytesPerPixel(format);
+            if (frame.Width <= 0 || frame.Height <= 0
+                || frame.Width > 16384 || frame.Height > 16384)
+            {
+                return null;
+            }
+
+            var stride = checked(frame.Width * bytesPerPixel);
+            if (frame.Stride != 0 && frame.Stride != stride)
+            {
+                // The producer writes exactly width*bytesPerPixel per row; a
+                // padded stride would not match the file length the pump
+                // validates, so such a frame is not readable.
+                return null;
+            }
+
+            var length = checked(stride * frame.Height);
+            var buffer = FrameBuffers.Rent(length);
+            try
+            {
+                using var stream = new FileStream(frame.Path, FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
+                stream.ReadExactly(buffer.AsSpan(0, length));
+                return new FrameRead(buffer, frame.Width, frame.Height, stride, format);
+            }
+            catch
+            {
+                FrameBuffers.Return(buffer);
+                throw;
+            }
+        }
+
+        if (!string.Equals(frame.Format, "png", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var image = LoadBitmap(frame.Path);
+        var converted = new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0);
+        converted.Freeze();
+        var width = converted.PixelWidth;
+        var height = converted.PixelHeight;
+        if (width <= 0 || height <= 0)
+        {
+            return null;
+        }
+
+        var pngStride = checked(width * FramePixelConverter.Bgra32BytesPerPixel);
+        var pngLength = checked(pngStride * height);
+        var pngBuffer = FrameBuffers.Rent(pngLength);
+        try
+        {
+            converted.CopyPixels(pngBuffer, pngStride, 0);
+            return new FrameRead(pngBuffer, width, height, pngStride, FramePixelFormat.Bgra32);
+        }
+        catch
+        {
+            FrameBuffers.Return(pngBuffer);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// EV-10: the UI-thread half. One WriteableBitmap per (width, height,
+    /// Bgra32) is written in place; the image's Source only changes when that
+    /// surface is replaced, which is exactly when the size (or format) changes.
+    /// </summary>
+    private void PresentFrameSurface(FrameRead read, PendingFrame source, DateTimeOffset received)
+    {
+        if (source.Subscription != Volatile.Read(ref _frameSub).Id)
+        {
+            return;
+        }
+
+        var bitmap = _surfaceCache.Get(read.Width, read.Height);
+        var lockStart = Stopwatch.GetTimestamp();
+        bitmap.Lock();
+        var lockedAt = Stopwatch.GetTimestamp();
+        var copiedAt = lockedAt;
+        var unlockedAt = lockedAt;
+        try
+        {
+            unsafe
+            {
+                var backBuffer = new Span<byte>(
+                    (void*)bitmap.BackBuffer, bitmap.BackBufferStride * read.Height);
+                FramePixelConverter.Convert(
+                    read.Pixels.Span,
+                    read.Width,
+                    read.Height,
+                    read.Stride,
+                    read.Format,
+                    backBuffer,
+                    bitmap.BackBufferStride);
+            }
+
+            copiedAt = Stopwatch.GetTimestamp();
+            bitmap.AddDirtyRect(new Int32Rect(0, 0, read.Width, read.Height));
+        }
+        finally
+        {
+            bitmap.Unlock();
+            unlockedAt = Stopwatch.GetTimestamp();
+        }
+
+        var notifyStart = Stopwatch.GetTimestamp();
+        PresentFrame(bitmap, source, received);
+        if (_viewportTrace)
+        {
+            _lockMs = Elapsed(lockStart, lockedAt);
+            _convertMs = Elapsed(lockedAt, copiedAt);
+            _unlockMs = Elapsed(copiedAt, unlockedAt);
+            _notifyMs = Elapsed(notifyStart, Stopwatch.GetTimestamp());
         }
     }
 
@@ -5284,6 +5594,43 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private sealed record PendingFrame(string Subscription, string Path, string Format, int Width, int Height, int Stride,
         int GuestWidth, int GuestHeight, int Sequence, int Dropped, DateTimeOffset? ReceivedUtc, DateTimeOffset? WrittenUtc,
         long EventTimestamp);
+
+    /// <summary>
+    /// EV-10: one frame read into a rented buffer, disposed back to the pool
+    /// exactly once. It only ever exists between the background read and the
+    /// UI-thread copy.
+    /// </summary>
+    private sealed class FrameRead : IDisposable
+    {
+        private byte[]? _buffer;
+
+        public FrameRead(byte[] buffer, int width, int height, int stride, FramePixelFormat format)
+        {
+            _buffer = buffer;
+            Width = width;
+            Height = height;
+            Stride = stride;
+            Format = format;
+        }
+
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public int Stride { get; }
+
+        public FramePixelFormat Format { get; }
+
+        public ReadOnlyMemory<byte> Pixels => _buffer ?? throw new ObjectDisposedException(nameof(FrameRead));
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _buffer, null) is { } buffer)
+            {
+                FrameBuffers.Return(buffer);
+            }
+        }
+    }
 }
 
 public sealed class SupervisorRequestException(string code, string message) : Exception(message)

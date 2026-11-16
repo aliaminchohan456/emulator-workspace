@@ -49,6 +49,10 @@
          pure rule, so the races (late grant, close while subscribing, lost
          pipe, double request) are pinned here instead of needing a guest. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/StreamSubscription.cs" Link="Desktop/StreamSubscription.cs" />
+    <!-- EV-10: the viewport's pixel conversion, one-deep frame mailbox and
+         bitmap-reuse rule are pure, so they are pinned here instead of needing a
+         window, a guest or a WPF bitmap. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ViewportFramePipeline.cs" Link="Desktop/ViewportFramePipeline.cs" />
     <!-- EV-06: the shell's one page and the inspector's five session-only rows
          are pure rules too, so they are pinned here instead of through a WPF
          window. -->
