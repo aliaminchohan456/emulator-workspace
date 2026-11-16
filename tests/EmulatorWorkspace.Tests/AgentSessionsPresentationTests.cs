@@ -238,6 +238,186 @@ public class AgentSessionsPresentationTests
         Assert.Equal(2, allPast.Count);
     }
 
+    [Fact]
+    public void PartitionPairings_MovesARequestOnTheSecondItExpires()
+    {
+        var expiry = new DateTimeOffset(2026, 11, 16, 6, 0, 0, TimeSpan.Zero);
+        var rows = new[]
+        {
+            (Client: "opencode-cli", Status: "pending", Expires: (DateTimeOffset?)expiry),
+            (Client: "studio-bot", Status: "completed", Expires: (DateTimeOffset?)expiry.AddMinutes(-5)),
+        };
+
+        // Just before the boundary the request is still waiting.
+        var before = AgentSessionsPresentation.PartitionPairings(
+            rows, row => row.Status, row => row.Expires, expiry.AddSeconds(-1));
+        Assert.Single(before.Live);
+        Assert.Equal("opencode-cli", before.Live[0].Client);
+        Assert.Single(before.Past);
+
+        // The boundary itself answers the request: at expiresUtc it is past.
+        var at = AgentSessionsPresentation.PartitionPairings(
+            rows, row => row.Status, row => row.Expires, expiry);
+        Assert.Empty(at.Live);
+        Assert.Equal(new[] { "opencode-cli", "studio-bot" }, at.Past.Select(row => row.Client));
+
+        // And it stays past one second later, with no refresh involved.
+        var after = AgentSessionsPresentation.PartitionPairings(
+            rows, row => row.Status, row => row.Expires, expiry.AddSeconds(1));
+        Assert.Empty(after.Live);
+        Assert.Equal(2, after.Past.Count);
+    }
+
+    [Theory]
+    [InlineData("pending", 30, null)]
+    [InlineData("pending", -1, "Request expired")]
+    [InlineData("approved", 300, "Request already answered")]
+    [InlineData("expired", -300, "Request already answered")]
+    [InlineData("", 300, "Request already answered")]
+    public void ApproveDisabledReason_NamesTheReasonThePrimaryIsOff(
+        string status, int expiresInSeconds, string? expected)
+    {
+        var now = new DateTimeOffset(2026, 11, 16, 6, 0, 0, TimeSpan.Zero);
+        Assert.Equal(
+            expected,
+            AgentSessionsPresentation.ApproveDisabledReason(status, now.AddSeconds(expiresInSeconds), now));
+    }
+
+    [Fact]
+    public void ApproveDisabledReason_APendingRequestWithoutAnExpiryCanBeApproved()
+    {
+        var now = new DateTimeOffset(2026, 11, 16, 6, 0, 0, TimeSpan.Zero);
+        Assert.Null(AgentSessionsPresentation.ApproveDisabledReason("PENDING", null, now));
+    }
+
+    private sealed record DiffRow(string Key, string Value);
+
+    // EV-08 item 1: the keyed diff behind the three tables. A surviving key keeps
+    // its instance (so the ListBox keeps the selection), a changed payload is an
+    // in-place update, a new key is an insert and a missing key is a removal.
+    [Fact]
+    public void DiffRows_KeepsUpdatesInsertsAndRemovesWithoutRebuilding()
+    {
+        var a = new DiffRow("ses-a", "1");
+        var b = new DiffRow("ses-b", "1");
+        var c = new DiffRow("ses-c", "1");
+        var bChanged = new DiffRow("ses-b", "2");
+        var d = new DiffRow("ses-d", "1");
+
+        var diff = AgentSessionsPresentation.DiffRows(
+            new[] { a, b, c },
+            new[] { a, bChanged, d },
+            row => row.Key,
+            row => row.Value,
+            selectedKey: "ses-b");
+
+        Assert.Equal(
+            new[] { RowDiffKind.Keep, RowDiffKind.Update, RowDiffKind.Insert },
+            diff.Rows.Select(row => row.Kind));
+        Assert.Same(a, diff.Rows[0].Row);
+        Assert.Same(b, diff.Rows[1].Row);
+        Assert.Same(d, diff.Rows[2].Row);
+        Assert.Equal(1, diff.Kept);
+        Assert.Equal(1, diff.Updated);
+        Assert.Equal(1, diff.Inserted);
+
+        var removed = Assert.Single(diff.Removed);
+        Assert.Equal(RowDiffKind.Remove, removed.Kind);
+        Assert.Equal("ses-c", removed.Key);
+        Assert.Same(c, removed.Row);
+
+        Assert.Equal("ses-b", diff.SelectedKey);
+        Assert.Equal(1, diff.SelectedIndex);
+    }
+
+    [Fact]
+    public void DiffRows_KeepsTheSelectionWhenTheRowSurvivesAndDropsItWhenItIsGone()
+    {
+        var a = new DiffRow("ses-a", "1");
+        var b = new DiffRow("ses-b", "1");
+        var c = new DiffRow("ses-c", "1");
+
+        var survives = AgentSessionsPresentation.DiffRows(
+            new[] { a, b }, new[] { b, a }, row => row.Key, row => row.Value, "ses-a");
+        Assert.Equal(1, survives.SelectedIndex);
+        Assert.Equal("ses-a", survives.Rows[survives.SelectedIndex].Key);
+
+        var gone = AgentSessionsPresentation.DiffRows(
+            new[] { a, b }, new[] { c }, row => row.Key, row => row.Value, "ses-b");
+        Assert.Equal("ses-b", gone.SelectedKey);
+        Assert.Equal(-1, gone.SelectedIndex);
+        Assert.Equal(2, gone.RemovedCount);
+    }
+
+    [Fact]
+    public void DiffRows_ASteadyPollTouchesNothing()
+    {
+        var rows = new[] { new DiffRow("a", "1"), new DiffRow("b", "1") };
+        var diff = AgentSessionsPresentation.DiffRows(rows, rows, row => row.Key, row => row.Value);
+
+        Assert.All(diff.Rows, row => Assert.Equal(RowDiffKind.Keep, row.Kind));
+        Assert.Empty(diff.Removed);
+        Assert.Equal(-1, diff.SelectedIndex);
+    }
+
+    [Fact]
+    public void DiffRows_BindsAnExistingRowOnceSoADuplicateCannotReuseIt()
+    {
+        var a = new DiffRow("dup", "1");
+        var first = new DiffRow("dup", "1");
+        var second = new DiffRow("dup", "1");
+
+        var diff = AgentSessionsPresentation.DiffRows(
+            new[] { a }, new[] { first, second }, row => row.Key, row => row.Value);
+
+        Assert.Equal(RowDiffKind.Keep, diff.Rows[0].Kind);
+        Assert.Equal(RowDiffKind.Insert, diff.Rows[1].Kind);
+        Assert.Same(a, diff.Rows[0].Row);
+        Assert.Same(second, diff.Rows[1].Row);
+    }
+
+    [Fact]
+    public void DiffRows_ARowWithoutAnIdIsAlwaysNew()
+    {
+        var unnamed = new DiffRow("", "1");
+        var diff = AgentSessionsPresentation.DiffRows(
+            new[] { unnamed }, new[] { new DiffRow("", "1") }, row => row.Key, row => row.Value);
+
+        Assert.Equal(RowDiffKind.Insert, diff.Rows[0].Kind);
+        Assert.Single(diff.Removed);
+    }
+
+    // EV-08 item 3: one writer for the rail badge. The newest completed read
+    // wins, and a stale read can never put an older count back.
+    [Fact]
+    public void PendingBadge_KeepsTheNewestReadAndRefusesAStaleOne()
+    {
+        var badge = new PendingPairingBadge();
+        Assert.Equal(0, badge.Count);
+
+        Assert.True(badge.Publish("poll", 1, 3));
+        Assert.Equal(3, badge.Count);
+
+        Assert.True(badge.Publish("refresh", 2, 1));
+        Assert.Equal(1, badge.Count);
+        Assert.Equal("refresh", badge.Source);
+        Assert.Equal(2, badge.Sequence);
+
+        // A poll that finished earlier offers its own sequence again: refused.
+        Assert.False(badge.Publish("poll", 1, 3));
+        Assert.False(badge.Publish("poll", 2, 3));
+        Assert.Equal(1, badge.Count);
+        Assert.Equal("refresh", badge.Source);
+    }
+
+    [Fact]
+    public void PendingBadge_CountsNeverGoNegative()
+    {
+        var badge = new PendingPairingBadge();
+        Assert.True(badge.Publish("poll", 1, -2));
+        Assert.Equal(0, badge.Count);
+    }
+
     // EV-02: the names UI Automation reads for the three tables. The words come
     // from the same rules the rows print, and a missing value reads as words
     // instead of the em dash the table shows.

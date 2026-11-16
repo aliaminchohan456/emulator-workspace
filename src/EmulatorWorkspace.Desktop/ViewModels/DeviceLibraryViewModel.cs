@@ -63,6 +63,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _createNameError = "";
     private string _createBlockedReason = "";
     private string _createImageText = "not reported";
+    private string _createImageTooltip = "";
     private string _createImageTone = "info";
     private string _createWhpxText = "not reported";
     private string _createWhpxTone = "info";
@@ -74,6 +75,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     private string _cloneSource = "";
     private string _cloneSourceState = "";
     private string _cloneSourceImage = "";
+    private string _cloneSourceImageTip = "";
     private string _cloneName = "";
     private string _cloneNameError = "";
     private string _cloneBlockedReason = "";
@@ -478,6 +480,13 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         private set => SetProperty(ref _createImageText, value);
     }
 
+    /// <summary>EV-08 nit: the raw package id behind the friendly image name.</summary>
+    public string CreateImageTooltip
+    {
+        get => _createImageTooltip;
+        private set => SetProperty(ref _createImageTooltip, value);
+    }
+
     public string CreateImageTone
     {
         get => _createImageTone;
@@ -619,6 +628,13 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     {
         get => _cloneSourceImage;
         private set => SetProperty(ref _cloneSourceImage, value);
+    }
+
+    /// <summary>EV-08 nit: the raw package id stays in the tooltip only.</summary>
+    public string CloneSourceImageTip
+    {
+        get => _cloneSourceImageTip;
+        private set => SetProperty(ref _cloneSourceImageTip, value);
     }
 
     public string CloneName
@@ -1090,6 +1106,12 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             .FirstOrDefault(image => image["packageId"]?.GetValue<string>() == pinned);
         var revision = installed?["revision"]?.GetValue<string>();
 
+        // EV-08 nit: the drawer prints the same readable image name the cards,
+        // the Inspector and the consent dialog use. The raw package id
+        // ("system-images;android-35;default;x86_64") stays in the tooltip.
+        var friendly = ImageNaming.Describe(pinned);
+        CreateImageTooltip = pinned.Length == 0 ? "" : $"{pinned} · revision {revision ?? requiredRevision}";
+
         if (pinned.Length == 0)
         {
             CreateImageText = "The supervisor reported no pinned image.";
@@ -1097,20 +1119,20 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         }
         else if (installed is null)
         {
-            CreateImageText = $"{pinned} is not installed.";
+            CreateImageText = $"{friendly} is not installed.";
             CreateImageTone = "error";
         }
         else if (revision != requiredRevision)
         {
-            CreateImageText = $"{pinned} revision {revision} is installed; {requiredRevision} is required.";
+            CreateImageText = $"{friendly} revision {revision} is installed; {requiredRevision} is required.";
             CreateImageTone = "warning";
         }
         else
         {
             var bytes = installed["systemImageBytes"]?.GetValue<long>() ?? 0;
             CreateImageText = bytes > 0
-                ? $"{pinned} · revision {revision} · {FormatBytes(bytes)} image"
-                : $"{pinned} · revision {revision}";
+                ? $"{friendly} · revision {revision} · {FormatBytes(bytes)} image"
+                : $"{friendly} · revision {revision}";
             CreateImageTone = "ok";
         }
 
@@ -1276,7 +1298,10 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         _cloneSourceName = card.Name;
         CloneSource = card.Name;
         CloneSourceState = card.DisplayState;
-        CloneSourceImage = card.ImagePackage;
+        // EV-08 nit: the same readable image name the card and the Inspector
+        // print; the package id itself is only the tooltip.
+        CloneSourceImage = ImageNaming.Describe(card.ImagePackage);
+        CloneSourceImageTip = card.ImagePackage;
         CloneName = NextCloneName(card.Name);
         CloneNameError = "";
         CloneBlockedReason = card.CanManage
@@ -1284,8 +1309,8 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             : $"{card.Name} is {card.DisplayState}. The supervisor copies the writable disk, so the source must be stopped.";
         CloneNote =
             "The copy gets its own AVD directory, a new port pair and a new disk lineage whose parent is the source "
-            + "lineage. The source AVD is only read; the supervisor verifies it afterwards. The copied byte count is "
-            + "reported by instance.duplicate when it finishes.";
+            + "lineage. The source AVD is only read; its fingerprint is verified afterwards. "
+            + "The copied size is shown when it finishes.";
         OpenSheet(LibrarySheet.Clone);
         await Task.CompletedTask.ConfigureAwait(true);
     }

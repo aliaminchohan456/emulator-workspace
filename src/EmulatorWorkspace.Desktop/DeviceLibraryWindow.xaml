@@ -1282,8 +1282,10 @@
                                      the tooltip. -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Image" Style="{StaticResource DrawerRowLabel}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CreateImageText}"
-                                           ToolTip="{Binding CreateImageText}" Margin="0,0,0,2">
-                                    <!-- The identifier stays in text; only a real
+                                           ToolTip="{Binding CreateImageTooltip}" Margin="0,0,0,2">
+                                    <!-- EV-08: the row prints the readable image
+                                         name ("Android 15 · AOSP · x86_64"); the raw
+                                         package id is only the tooltip. A real
                                          problem (missing or wrong revision) tints
                                          it, so a healthy image is not green ink. -->
                                     <TextBlock.Style>
@@ -1501,7 +1503,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="CLONE" Style="{StaticResource Eyebrow}" />
                                 <TextBlock Text="Clone device" Style="{StaticResource DialogTitle}" Margin="0,2,0,0" />
-                                <TextBlock Text="instance.duplicate copies a stopped guest into an independent instance."
+                                <TextBlock Text="Copies a stopped guest into an independent instance."
                                            Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource IconButton}" Margin="0"
@@ -1535,7 +1537,7 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Image" Style="{StaticResource DrawerRowLabel}" />
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CloneSourceImage}"
                                        Style="{StaticResource DrawerRowValue}"
-                                       ToolTip="{Binding CloneSourceImage}" />
+                                       ToolTip="{Binding CloneSourceImageTip}" />
                         </Grid>
                     </Border>
 

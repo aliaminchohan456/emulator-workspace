@@ -593,7 +593,7 @@
                                                          Value="False">
                                                 <Setter Property="IsEnabled" Value="False" />
                                                 <Setter Property="ToolTip"
-                                                        Value="Only a pending request can be approved; this request is already answered" />
+                                                        Value="{Binding SelectedItem.ApproveDisabledReason, ElementName=PairingsGrid}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding SelectedItem, ElementName=PairingsGrid}"
                                                          Value="{x:Null}">

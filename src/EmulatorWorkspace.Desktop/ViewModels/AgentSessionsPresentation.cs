@@ -342,6 +342,100 @@ public static class AgentSessionsPresentation
     }
 
     /// <summary>
+    /// EV-08: why the approval primary cannot run for the request a row prints,
+    /// or null when it can. The button is offered only for a request that is
+    /// still waiting, so an expired window and an already answered request read
+    /// as two different sentences - a request that merely ran out of time is not
+    /// the same thing as one an operator approved.
+    /// </summary>
+    public static string? ApproveDisabledReason(string? status, DateTimeOffset? expiresUtc, DateTimeOffset now)
+    {
+        if (IsPendingPairing(status, expiresUtc, now))
+        {
+            return null;
+        }
+
+        return Normalize(status) == "pending" ? "Request expired" : "Request already answered";
+    }
+
+    /// <summary>
+    /// EV-08: the keyed diff a poll applies instead of clearing and rebuilding
+    /// the three tables. A row whose key is still present keeps its instance, so
+    /// the list box keeps the operator's selection and its scroll offset; a row
+    /// whose payload changed is marked <see cref="RowDiffKind.Update"/> and the
+    /// caller writes the new values into that existing instance; a key that is
+    /// new becomes <see cref="RowDiffKind.Insert"/>; a key that is gone lands in
+    /// <see cref="RowDiff{T}.Removed"/>.
+    ///
+    /// The desired list decides the order. Each existing row is consumed at most
+    /// once, so a repeated key can never bind two desired rows to one instance,
+    /// and an empty key never matches (a row without an id is always new).
+    /// </summary>
+    public static RowDiff<T> DiffRows<T>(
+        IEnumerable<T> existing,
+        IEnumerable<T> desired,
+        Func<T, string> key,
+        Func<T, string>? payload = null,
+        string? selectedKey = null)
+    {
+        payload ??= key;
+
+        var available = new Dictionary<string, Queue<T>>(StringComparer.Ordinal);
+        foreach (var row in existing)
+        {
+            var k = key(row) ?? "";
+            if (!available.TryGetValue(k, out var queue))
+            {
+                queue = new Queue<T>();
+                available[k] = queue;
+            }
+
+            queue.Enqueue(row);
+        }
+
+        var rows = new List<DiffedRow<T>>();
+        foreach (var row in desired)
+        {
+            var k = key(row) ?? "";
+            if (k.Length > 0 && available.TryGetValue(k, out var queue) && queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                var kind = string.Equals(payload(current), payload(row), StringComparison.Ordinal)
+                    ? RowDiffKind.Keep
+                    : RowDiffKind.Update;
+                rows.Add(new DiffedRow<T>(kind, k, current));
+                continue;
+            }
+
+            rows.Add(new DiffedRow<T>(RowDiffKind.Insert, k, row));
+        }
+
+        var removed = new List<DiffedRow<T>>();
+        foreach (var (k, queue) in available)
+        {
+            while (queue.Count > 0)
+            {
+                removed.Add(new DiffedRow<T>(RowDiffKind.Remove, k, queue.Dequeue()));
+            }
+        }
+
+        var selectedIndex = -1;
+        if (!string.IsNullOrEmpty(selectedKey))
+        {
+            for (var i = 0; i < rows.Count; i++)
+            {
+                if (string.Equals(rows[i].Key, selectedKey, StringComparison.Ordinal))
+                {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        return new RowDiff<T>(rows, removed, selectedKey, selectedIndex);
+    }
+
+    /// <summary>
     /// EV-02: the one-line name UI Automation reads for a pairing-request row.
     /// A ListBoxItem without a name falls back to its item's type name, so a
     /// screen reader used to hear "AgentSessionsPage+PairingRow". The format is
@@ -408,6 +502,89 @@ public static class AgentSessionsPresentation
 
     private static string Capitalize(string value) =>
         char.ToUpperInvariant(value[0]) + value[1..];
+}
+
+/// <summary>
+/// EV-08: what a keyed diff decides for one row. <see cref="Keep"/> and
+/// <see cref="Update"/> carry the row that is already in the list, so the
+/// collection keeps the very instance the operator selected; <see cref="Insert"/>
+/// carries the new row; <see cref="Remove"/> only appears in the removed list.
+/// </summary>
+public enum RowDiffKind
+{
+    Keep,
+    Update,
+    Insert,
+    Remove,
+}
+
+/// <summary>EV-08: one row of a keyed diff, with the key it matched on.</summary>
+public readonly record struct DiffedRow<T>(RowDiffKind Kind, string Key, T Row);
+
+/// <summary>
+/// EV-08: the result of comparing the rows a table shows with the rows the
+/// supervisor just returned. <see cref="Rows"/> is the desired order using the
+/// existing instances wherever a key survived, <see cref="Removed"/> is what
+/// must leave the collection, and <see cref="SelectedIndex"/> locates the
+/// operator's selection in the new order (-1 when the selected row is gone).
+/// </summary>
+public sealed record RowDiff<T>(
+    IReadOnlyList<DiffedRow<T>> Rows,
+    IReadOnlyList<DiffedRow<T>> Removed,
+    string? SelectedKey,
+    int SelectedIndex)
+{
+    public int Kept => Rows.Count(row => row.Kind == RowDiffKind.Keep);
+
+    public int Updated => Rows.Count(row => row.Kind == RowDiffKind.Update);
+
+    public int Inserted => Rows.Count(row => row.Kind == RowDiffKind.Insert);
+
+    public int RemovedCount => Removed.Count;
+}
+
+/// <summary>
+/// EV-08: the one writer of the rail's pending-pairing badge.
+///
+/// Before this, three places assigned the count: the ten-second badge poll, the
+/// full refresh, and the page's one-second ticker (through PublishCounts). A
+/// tick that ran while a poll was in flight could put the older, full-list count
+/// back on the rail after the poll had already published the true one.
+///
+/// Every completed read now carries a sequence number and only the newest one
+/// is taken, so the badge always shows the freshest supervisor answer and no
+/// second author can overwrite it with rows that were read earlier.
+/// </summary>
+public sealed class PendingPairingBadge
+{
+    private long _newestSequence = long.MinValue;
+
+    /// <summary>The count the rail should print; 0 until the first read.</summary>
+    public int Count { get; private set; }
+
+    /// <summary>Which read published the current value ("poll", "refresh"...).</summary>
+    public string Source { get; private set; } = "";
+
+    /// <summary>The sequence of the value the badge holds.</summary>
+    public long Sequence => _newestSequence == long.MinValue ? 0 : _newestSequence;
+
+    /// <summary>
+    /// Offers one read's count. Returns true when it is newer than the value the
+    /// badge holds and was therefore taken; a stale or repeated sequence is
+    /// refused and changes nothing.
+    /// </summary>
+    public bool Publish(string source, long sequence, int count)
+    {
+        if (sequence <= _newestSequence)
+        {
+            return false;
+        }
+
+        _newestSequence = sequence;
+        Count = Math.Max(0, count);
+        Source = source ?? "";
+        return true;
+    }
 }
 
 /// <summary>

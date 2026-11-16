@@ -72,7 +72,10 @@ public partial class AgentSessionsPage : UserControl
     private bool _busy;
     private bool _pollBusy;
     private bool _loadedOnce;
-    private int _lastPolledPending = -1;
+    private readonly PendingPairingBadge _badge = new();
+    private long _readSequence;
+    private int _publishedPending = -1;
+    private bool? _lastStacked;
 
     public AgentSessionsPage()
     {
@@ -231,6 +234,19 @@ public partial class AgentSessionsPage : UserControl
         }
 
         var stacked = width < 1180;
+
+        // EV-08 item 4: the layout is only rearranged when the breakpoint really
+        // changes. Resizing inside one side of 1180 DIP used to reassign five
+        // GridLengths and three Grid positions on every SizeChanged event, which
+        // re-measured the whole page for nothing. One line per actual change.
+        if (_lastStacked == stacked)
+        {
+            return;
+        }
+
+        _lastStacked = stacked;
+        DesktopLog.Write($"agents layout: stacked={(stacked ? "true" : "false")}");
+
         if (stacked)
         {
             LeftColumn.Width = new GridLength(1, GridUnitType.Star);
@@ -297,7 +313,14 @@ public partial class AgentSessionsPage : UserControl
         }
     }
 
-    /// <summary>Refreshes every live value once a second without rebuilding rows.</summary>
+    /// <summary>
+    /// Refreshes every live value once a second without rebuilding rows.
+    /// EV-08 item 2: a request that crosses expiresUtc while the page is open is
+    /// re-partitioned on the same tick that turns its chip "Expired", so it
+    /// moves under the "Past" rule with no refresh, and the approval primary
+    /// disables itself with "Request expired" (item 3's badge writer is
+    /// untouched here - the count comes from a real read, never from these rows).
+    /// </summary>
     private void Tick()
     {
         var now = DateTimeOffset.Now;
@@ -311,7 +334,129 @@ public partial class AgentSessionsPage : UserControl
             row.Tick(now);
         }
 
+        RepartitionPairings(now);
         PublishCounts();
+    }
+
+    /// <summary>
+    /// EV-08 item 2: the pairing list keeps waiting requests above the divider
+    /// and answered ones below it. When the clock moves a request from one group
+    /// to the other the list is re-ordered in place: the same row instances are
+    /// moved, so the selection and the ListBox's scroll offset stay where the
+    /// operator left them, and exactly one row carries the "Past" rule.
+    /// </summary>
+    private void RepartitionPairings(DateTimeOffset now)
+    {
+        if (_pairings.Count == 0)
+        {
+            return;
+        }
+
+        var (live, past) = AgentSessionsPresentation.PartitionPairings(
+            _pairings, row => row.Status, row => row.ExpiresUtc, now);
+        var desired = live.Concat(past).ToList();
+        var ordered = true;
+        for (var i = 0; i < desired.Count; i++)
+        {
+            if (!ReferenceEquals(_pairings[i], desired[i]))
+            {
+                ordered = false;
+                break;
+            }
+        }
+
+        if (!ordered)
+        {
+            var selected = PairingsGrid.SelectedItem;
+            var diff = AgentSessionsPresentation.DiffRows(
+                _pairings, desired, row => row.Pairing, selectedKey: SelectedPairingKey());
+            SyncRows(_pairings, diff, row => row.Pairing, update: null);
+
+            // A move keeps the item in the list, but the selector is re-asserted
+            // anyway so the selection can never fall to the first row because a
+            // container was rebuilt while the request crossed its expiry.
+            if (selected is PairingRow row && !ReferenceEquals(PairingsGrid.SelectedItem, row))
+            {
+                PairingsGrid.SelectedItem = _pairings.FirstOrDefault(item => ReferenceEquals(item, row));
+            }
+        }
+
+        // The rule follows the list: the first answered request draws the divider
+        // and every other one drops it, so a request that just expired takes the
+        // mark from the row that used to carry it.
+        var seenPast = false;
+        foreach (var row in _pairings)
+        {
+            var first = row.IsPast && !seenPast;
+            if (first)
+            {
+                seenPast = true;
+            }
+
+            row.SetFirstPast(first);
+        }
+    }
+
+    private string? SelectedPairingKey() => (PairingsGrid.SelectedItem as PairingRow)?.Pairing;
+
+    /// <summary>
+    /// EV-08 item 1: applies a keyed diff to a table without clearing it. Rows
+    /// that survived keep their instance (and their place); a changed row is
+    /// written in place through <paramref name="update"/>; a new row is inserted
+    /// at its own index; rows the supervisor no longer returns are removed.
+    /// </summary>
+    private static void SyncRows<T>(
+        ObservableCollection<T> target,
+        RowDiff<T> diff,
+        Func<T, string> key,
+        Action<DiffedRow<T>>? update)
+    {
+        for (var i = 0; i < diff.Rows.Count; i++)
+        {
+            var step = diff.Rows[i];
+            if (step.Kind == RowDiffKind.Update)
+            {
+                update?.Invoke(step);
+            }
+
+            if (i < target.Count && ReferenceEquals(target[i], step.Row))
+            {
+                continue;
+            }
+
+            var index = FindRow(target, key, step.Key, i + 1);
+            if (index >= 0)
+            {
+                target.Move(index, i);
+            }
+            else
+            {
+                target.Insert(i, step.Row);
+            }
+        }
+
+        while (target.Count > diff.Rows.Count)
+        {
+            target.RemoveAt(target.Count - 1);
+        }
+    }
+
+    private static int FindRow<T>(ObservableCollection<T> rows, Func<T, string> key, string wanted, int from)
+    {
+        if (wanted.Length == 0)
+        {
+            return -1;
+        }
+
+        for (var i = from; i < rows.Count; i++)
+        {
+            if (string.Equals(key(rows[i]), wanted, StringComparison.Ordinal))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
@@ -484,12 +629,10 @@ public partial class AgentSessionsPage : UserControl
                 .Count(node => AgentSessionsPresentation.IsPendingPairing(
                     Text(node, "status"), Time(node, "expiresUtc"), now));
 
-            PendingPairingCount = pending;
-            if (pending != _lastPolledPending)
-            {
-                _lastPolledPending = pending;
-                DesktopLog.Write($"badge poll: {pending} pending pairing(s)");
-            }
+            // EV-08 item 3: the poll offers its count to the badge's one writer;
+            // the writer keeps whichever of the poll and the refresh finished
+            // last, so a poll that started earlier cannot undo a refresh.
+            PublishPendingCount("poll", pending);
         }
         catch (SupervisorUnavailableException ex)
         {
@@ -539,16 +682,17 @@ public partial class AgentSessionsPage : UserControl
             var operations = data["recentOperations"] as JsonArray ?? new JsonArray();
             var now = DateTimeOffset.Now;
 
-            // The approval card prints the selected request, so the choice is read
-            // before the collections are repopulated (clearing them drops the
-            // ListBox selection). A refresh then keeps the operator's request; a
-            // first load shows the first pending one.
+            // EV-08 item 1: the three tables are updated by key, not cleared.
+            // The operator's selection is remembered as an id before the diff and
+            // resolved again in the new order afterwards; rows that survived keep
+            // their instance, so the ListBox keeps its scroll offset too.
+            var previousSession = (SessionsGrid.SelectedItem as SessionRow)?.Session;
             var previousPairing = (PairingsGrid.SelectedItem as PairingRow)?.Pairing;
+            var previousOperation = (OperationsGrid.SelectedItem as OperationRow)?.Id;
 
-            _sessions.Clear();
-            foreach (var node in sessions.OfType<JsonObject>())
-            {
-                _sessions.Add(new SessionRow(
+            var builtSessions = sessions
+                .OfType<JsonObject>()
+                .Select(node => new SessionRow(
                     Text(node, "clientName"),
                     Text(node, "session"),
                     Text(node, "instance"),
@@ -556,8 +700,21 @@ public partial class AgentSessionsPage : UserControl
                     Text(node, "scopes"),
                     Time(node, "expiresUtc"),
                     Bool(node, "revoked") ? "revoked" : Bool(node, "expired") ? "expired" : "active",
-                    now));
-            }
+                    now))
+                .ToList();
+            var freshSessions = IndexByKey(builtSessions, row => row.Session);
+            var sessionDiff = AgentSessionsPresentation.DiffRows(
+                _sessions, builtSessions, row => row.Session, row => row.Fingerprint, previousSession);
+            SyncRows(_sessions, sessionDiff, row => row.Session, step =>
+            {
+                if (freshSessions.TryGetValue(step.Key, out var fresh))
+                {
+                    step.Row.CopyFrom(fresh);
+                }
+            });
+            SessionsGrid.SelectedItem = sessionDiff.SelectedIndex >= 0
+                ? _sessions[sessionDiff.SelectedIndex]
+                : null;
 
             // UX-15 item 1: waiting requests first, answered ones under the
             // "Past" rule, each group in the supervisor's own newest-first order.
@@ -576,44 +733,61 @@ public partial class AgentSessionsPage : UserControl
                 .ToList();
             var (livePairings, pastPairings) = AgentSessionsPresentation.PartitionPairings(
                 built, row => row.Status, row => row.ExpiresUtc, now);
-
-            _pairings.Clear();
-            foreach (var row in livePairings)
+            var desiredPairings = livePairings.Concat(pastPairings).ToList();
+            var freshPairings = IndexByKey(desiredPairings, row => row.Pairing);
+            var pairingDiff = AgentSessionsPresentation.DiffRows(
+                _pairings, desiredPairings, row => row.Pairing, row => row.Fingerprint, previousPairing);
+            SyncRows(_pairings, pairingDiff, row => row.Pairing, step =>
             {
-                _pairings.Add(row);
-            }
-
-            if (pastPairings.Count > 0)
-            {
-                pastPairings[0].MarkFirstPast();
-                foreach (var row in pastPairings)
+                if (freshPairings.TryGetValue(step.Key, out var fresh))
                 {
-                    _pairings.Add(row);
+                    step.Row.CopyFrom(fresh);
                 }
+            });
+
+            var seenPast = false;
+            foreach (var row in _pairings)
+            {
+                var first = row.IsPast && !seenPast;
+                if (first)
+                {
+                    seenPast = true;
+                }
+
+                row.SetFirstPast(first);
             }
 
             // The approval card prints the selected request, so it keeps the
             // operator's choice when that request still exists and otherwise
             // falls back to the first pending one so the card is never blank.
-            PairingsGrid.SelectedItem =
-                _pairings.FirstOrDefault(row => row.Pairing == previousPairing)
-                ?? _pairings.FirstOrDefault(row => row.IsPending)
-                ?? _pairings.FirstOrDefault();
+            PairingsGrid.SelectedItem = pairingDiff.SelectedIndex >= 0
+                ? _pairings[pairingDiff.SelectedIndex]
+                : _pairings.FirstOrDefault(row => row.IsPending) ?? _pairings.FirstOrDefault();
 
-            _operations.Clear();
-            foreach (var node in operations.OfType<JsonObject>())
-            {
-                _operations.Add(new OperationRow(
+            var builtOperations = operations
+                .OfType<JsonObject>()
+                .Select(node => new OperationRow(
+                    Text(node, "id"),
                     FormatClock(node, "startedUtc"),
                     Text(node, "operation"),
                     Text(node, "caller"),
                     Text(node, "outcome"),
                     Text(node, "code"),
-                    node["durationMs"]?.GetValue<long>().ToString(CultureInfo.InvariantCulture) ?? ""));
-            }
+                    node["durationMs"]?.GetValue<long>().ToString(CultureInfo.InvariantCulture) ?? ""))
+                .ToList();
+            var operationDiff = AgentSessionsPresentation.DiffRows(
+                _operations, builtOperations, row => row.Id, row => row.Fingerprint, previousOperation);
+            SyncRows(_operations, operationDiff, row => row.Id, update: null);
+            OperationsGrid.SelectedItem = operationDiff.SelectedIndex >= 0
+                ? _operations[operationDiff.SelectedIndex]
+                : null;
 
             await LoadTemplatesAsync(connection);
             PublishCounts();
+
+            // EV-08 item 3: the refresh is one of the two reads allowed to move
+            // the rail badge, and only while it is the newest read.
+            PublishPendingCount("refresh", _pairings.Count(row => row.IsPending));
             HasError = false;
             ErrorText = "";
 
@@ -635,18 +809,64 @@ public partial class AgentSessionsPage : UserControl
         }
     }
 
-    /// <summary>Publishes the real counts to the header, status bar and rail badge.</summary>
+    /// <summary>
+    /// Publishes the counts that follow the collections. EV-08 item 3:
+    /// PendingPairingCount is deliberately absent - the rail badge has exactly
+    /// one writer, <see cref="PublishPendingCount"/>, fed by a real read.
+    /// </summary>
     private void PublishCounts()
     {
         SessionCount = _sessions.Count;
         PairingCount = _pairings.Count;
-        PendingPairingCount = _pairings.Count(row => row.IsPending);
         ActiveSessionCount = _sessions.Count(row => row.CanRevoke);
         SummaryText = AgentSessionsPresentation.Summary(SessionCount, PairingCount);
         HasSessions = SessionCount > 0;
         TakeoverTip = HasSessions
             ? "Revoke every agent session on the selected guest and cancel new agent input"
             : "No paired sessions; there is nothing to take over";
+    }
+
+    /// <summary>
+    /// EV-08 item 3: the only writer of PendingPairingCount. Both reads - the
+    /// ten-second badge poll and the full refresh - offer their count here with
+    /// the sequence of the moment they finished, and the badge keeps the newest
+    /// one. The one-second ticker never calls this, so it cannot put the count
+    /// from rows read earlier back on the rail after a fresher read has landed.
+    /// </summary>
+    private void PublishPendingCount(string source, int pending)
+    {
+        var sequence = Interlocked.Increment(ref _readSequence);
+        if (!_badge.Publish(source, sequence, pending))
+        {
+            return;
+        }
+
+        PendingPairingCount = _badge.Count;
+        if (_badge.Count != _publishedPending)
+        {
+            _publishedPending = _badge.Count;
+            DesktopLog.Write($"badge: {_badge.Count} pending pairing(s) from {source}");
+        }
+    }
+
+    /// <summary>
+    /// EV-08: the fresh row for each key a diff may update. A repeated key keeps
+    /// the last report, because the diff binds each existing instance once and a
+    /// duplicate can only feed the row that was just inserted.
+    /// </summary>
+    private static Dictionary<string, T> IndexByKey<T>(IEnumerable<T> rows, Func<T, string> key)
+    {
+        var map = new Dictionary<string, T>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            var k = key(row);
+            if (k.Length > 0)
+            {
+                map[k] = row;
+            }
+        }
+
+        return map;
     }
 
     private async Task LoadTemplatesAsync(SupervisorConnection connection)
@@ -671,13 +891,15 @@ public partial class AgentSessionsPage : UserControl
     }
 
     /// <summary>
-    /// UX-18: a template is a guest that is not up. The state word is the
-    /// supervisor's own, read through the one lifecycle, so "Defined" (the
-    /// record's word for a guest that was created and never started) and
-    /// "Stopped" mean the same thing here as everywhere else.
+    /// UX-18: a template is a guest the supervisor can start. The state word is
+    /// read through the one lifecycle, so "Defined" (the record's word for a
+    /// guest that was created and never started) and "Stopped" mean the same
+    /// thing here as everywhere else, and a state the supervisor does not offer
+    /// (Starting, Running) is not a template. EV-08 item 5: the question is the
+    /// capability, not a list of words.
     /// </summary>
     private static bool IsTemplate(TemplateRow row) =>
-        DeviceLifecycle.From(row.State, null, false, false).Phase == DevicePhase.Stopped;
+        DeviceLifecycle.From(row.State, null, false, false).CanStart;
 
     /// <summary>The supervisor's own name for a guest an approval cloned.</summary>
     private static bool IsAgentClone(TemplateRow row) =>
@@ -875,9 +1097,28 @@ public partial class AgentSessionsPage : UserControl
     /// A paired session as the table prints it. The display members are the pure
     /// rules of <see cref="AgentSessionsPresentation"/>; the countdown and the
     /// derived "Expiring" chip are refreshed once a second by the page.
+    ///
+    /// EV-08: the row's data is writable so a poll can update the row the list is
+    /// already showing instead of replacing it. The session id is the key, and
+    /// <see cref="Fingerprint"/> is what the diff compares to decide whether the
+    /// instance even needs touching.
     /// </summary>
     public sealed class SessionRow : ObservableObject
     {
+        private string _client = "";
+        private string _session = "";
+        private string _instance = "";
+        private string _guestName = "";
+        private bool _hasGuestName;
+        private string _guestTip = "";
+        private string _scopes = "";
+        private string _expiresText = "";
+        private DateTimeOffset? _expiresUtc;
+        private string _state = "";
+        private IReadOnlyList<string> _scopeChips = Array.Empty<string>();
+        private int _hiddenScopes;
+        private string _hiddenScopeText = "";
+        private string _scopeTip = "";
         private string _countdown = "";
         private string _stateLabel = "";
         private string _tone = "neutral";
@@ -888,58 +1129,111 @@ public partial class AgentSessionsPage : UserControl
             string client, string session, string instance, string guestName, string scopes,
             DateTimeOffset? expiresUtc, string state, DateTimeOffset now)
         {
-            Client = client;
-            Session = session;
-            Instance = instance;
-            // UX-15 item 6: the supervisor reports the guest's own id, not a
-            // friendly alias. Only a value that really arrived is printed as a
-            // name; otherwise the raw id stands alone in mono text3.
-            GuestName = guestName.Length > 0 ? guestName : instance;
-            HasGuestName = guestName.Length > 0;
-            Scopes = scopes;
-            ExpiresUtc = expiresUtc;
-            State = state;
-            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm", CultureInfo.CurrentCulture) ?? "—";
-            var (visible, hidden) = AgentSessionsPresentation.VisibleScopes(scopes);
-            ScopeChips = visible;
-            HiddenScopes = hidden;
-            HiddenScopeText = hidden > 0 ? $"+{hidden}" : "";
-            ScopeTip = scopes.Length == 0 ? "No scopes granted" : scopes;
-            Tick(now);
+            Update(client, session, instance, guestName, scopes, expiresUtc, state, now);
         }
 
-        public string Client { get; }
+        /// <summary>EV-08: the session id every poll matches this row by.</summary>
+        public string Key => Session;
 
-        public string Session { get; }
+        /// <summary>EV-08: the data a poll compares; equal means nothing to write.</summary>
+        public string Fingerprint => string.Join(
+            '\u001f',
+            _client,
+            _session,
+            _instance,
+            _guestName,
+            _scopes,
+            _expiresUtc?.UtcTicks.ToString(CultureInfo.InvariantCulture) ?? "",
+            _state);
 
-        public string Instance { get; }
+        public string Client
+        {
+            get => _client;
+            private set => SetProperty(ref _client, value);
+        }
+
+        public string Session
+        {
+            get => _session;
+            private set => SetProperty(ref _session, value);
+        }
+
+        public string Instance
+        {
+            get => _instance;
+            private set => SetProperty(ref _instance, value);
+        }
 
         /// <summary>The friendly guest name when the supervisor reports one, else the raw id.</summary>
-        public string GuestName { get; }
+        public string GuestName
+        {
+            get => _guestName;
+            private set => SetProperty(ref _guestName, value);
+        }
 
         /// <summary>True only when <see cref="GuestName"/> came from the supervisor, not from the id.</summary>
-        public bool HasGuestName { get; }
+        public bool HasGuestName
+        {
+            get => _hasGuestName;
+            private set => SetProperty(ref _hasGuestName, value);
+        }
 
         /// <summary>The guest's raw id, printed in mono text3 under a friendly name.</summary>
         public string GuestId => Instance;
 
-        public string GuestTip => HasGuestName ? $"{GuestName} · {Instance}" : Instance;
+        public string GuestTip
+        {
+            get => _guestTip;
+            private set => SetProperty(ref _guestTip, value);
+        }
 
-        public string Scopes { get; }
+        public string Scopes
+        {
+            get => _scopes;
+            private set => SetProperty(ref _scopes, value);
+        }
 
-        public string ExpiresText { get; }
+        public string ExpiresText
+        {
+            get => _expiresText;
+            private set => SetProperty(ref _expiresText, value);
+        }
 
-        public DateTimeOffset? ExpiresUtc { get; }
+        public DateTimeOffset? ExpiresUtc
+        {
+            get => _expiresUtc;
+            private set => SetProperty(ref _expiresUtc, value);
+        }
 
-        public string State { get; }
+        public string State
+        {
+            get => _state;
+            private set => SetProperty(ref _state, value);
+        }
 
-        public IReadOnlyList<string> ScopeChips { get; }
+        public IReadOnlyList<string> ScopeChips
+        {
+            get => _scopeChips;
+            private set => SetProperty(ref _scopeChips, value);
+        }
 
-        public int HiddenScopes { get; }
+        public int HiddenScopes
+        {
+            get => _hiddenScopes;
+            private set => SetProperty(ref _hiddenScopes, value);
+        }
 
-        public string HiddenScopeText { get; }
+        public string HiddenScopeText
+        {
+            get => _hiddenScopeText;
+            private set => SetProperty(ref _hiddenScopeText, value);
+        }
 
-        public string ScopeTip { get; }
+        public string ScopeTip
+        {
+            get => _scopeTip;
+            private set => SetProperty(ref _scopeTip, value);
+        }
 
         public string Countdown
         {
@@ -986,6 +1280,49 @@ public partial class AgentSessionsPage : UserControl
 
         public override string ToString() => AutomationName;
 
+        /// <summary>
+        /// EV-08: writes a re-read row's values into this instance. Only values
+        /// that really changed raise a notification, so a steady poll leaves the
+        /// row and its container untouched.
+        /// </summary>
+        public void CopyFrom(SessionRow source)
+        {
+            Update(
+                source.Client, source.Session, source.Instance, source.HasGuestName ? source.GuestName : "",
+                source.Scopes, source.ExpiresUtc, source.State, DateTimeOffset.Now);
+        }
+
+        private void Update(
+            string client, string session, string instance, string guestName, string scopes,
+            DateTimeOffset? expiresUtc, string state, DateTimeOffset now)
+        {
+            Client = client;
+            Session = session;
+            Instance = instance;
+
+            // UX-15 item 6: the supervisor reports the guest's own id, not a
+            // friendly alias. Only a value that really arrived is printed as a
+            // name; otherwise the raw id stands alone in mono text3.
+            HasGuestName = guestName.Length > 0;
+            GuestName = guestName.Length > 0 ? guestName : instance;
+            GuestTip = HasGuestName ? $"{GuestName} · {instance}" : instance;
+
+            ExpiresUtc = expiresUtc;
+            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm", CultureInfo.CurrentCulture) ?? "—";
+            State = state;
+
+            if (SetProperty(ref _scopes, scopes, nameof(Scopes)))
+            {
+                var (visible, hidden) = AgentSessionsPresentation.VisibleScopes(scopes);
+                ScopeChips = visible;
+                HiddenScopes = hidden;
+                HiddenScopeText = hidden > 0 ? $"+{hidden}" : "";
+                ScopeTip = scopes.Length == 0 ? "No scopes granted" : scopes;
+            }
+
+            Tick(now);
+        }
+
         public void Tick(DateTimeOffset now)
         {
             Countdown = AgentSessionsPresentation.Countdown(ExpiresUtc, now);
@@ -994,6 +1331,7 @@ public partial class AgentSessionsPage : UserControl
             {
                 StateLabel = label;
                 OnPropertyChanged(nameof(RevokeTip));
+                OnPropertyChanged(nameof(AccessibleName));
             }
 
             if (tone != Tone)
@@ -1012,42 +1350,79 @@ public partial class AgentSessionsPage : UserControl
 
     public sealed class PairingRow : ObservableObject
     {
+        private string _client = "";
+        private string _pairing = "";
+        private string _status = "";
+        private string _template = "";
+        private string _instance = "";
+        private string _expiresText = "";
+        private DateTimeOffset? _expiresUtc;
         private string _countdown = "";
         private string _statusLabel = "";
         private string _tone = "neutral";
         private bool _expiring;
         private bool _isPending;
+        private bool _isPast;
         private bool _isFirstPast;
+        private string? _approveDisabledReason;
         private string _automationName = "";
 
         public PairingRow(
             string client, string pairing, string status, string template,
             string instance, DateTimeOffset? expiresUtc, DateTimeOffset now)
         {
-            Client = client;
-            Pairing = pairing;
-            Status = status;
-            Template = template;
-            Instance = instance;
-            ExpiresUtc = expiresUtc;
-            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm:ss", CultureInfo.CurrentCulture) ?? "—";
-            IsPast = AgentSessionsPresentation.IsPastPairing(status, expiresUtc, now);
-            Tick(now);
+            Update(client, pairing, status, template, instance, expiresUtc, now);
         }
 
-        public string Client { get; }
+        /// <summary>EV-08: the pairing id every poll matches this row by.</summary>
+        public string Key => Pairing;
 
-        public string Pairing { get; }
+        /// <summary>EV-08: the data a poll compares; equal means nothing to write.</summary>
+        public string Fingerprint => string.Join(
+            '\u001f', _client, _pairing, _status, _template, _instance,
+            _expiresUtc?.UtcTicks.ToString(CultureInfo.InvariantCulture) ?? "");
 
-        public string Status { get; }
+        public string Client
+        {
+            get => _client;
+            private set => SetProperty(ref _client, value);
+        }
 
-        public string Template { get; }
+        public string Pairing
+        {
+            get => _pairing;
+            private set => SetProperty(ref _pairing, value);
+        }
 
-        public string Instance { get; }
+        public string Status
+        {
+            get => _status;
+            private set => SetProperty(ref _status, value);
+        }
 
-        public DateTimeOffset? ExpiresUtc { get; }
+        public string Template
+        {
+            get => _template;
+            private set => SetProperty(ref _template, value);
+        }
 
-        public string ExpiresText { get; }
+        public string Instance
+        {
+            get => _instance;
+            private set => SetProperty(ref _instance, value);
+        }
+
+        public DateTimeOffset? ExpiresUtc
+        {
+            get => _expiresUtc;
+            private set => SetProperty(ref _expiresUtc, value);
+        }
+
+        public string ExpiresText
+        {
+            get => _expiresText;
+            private set => SetProperty(ref _expiresText, value);
+        }
 
         /// <summary>The card draws its accent edge only while a real request waits.</summary>
         public bool IsPending
@@ -1081,8 +1456,16 @@ public partial class AgentSessionsPage : UserControl
             private set => SetProperty(ref _expiring, value);
         }
 
-        /// <summary>True when the request sits in the Past group at 85 % opacity.</summary>
-        public bool IsPast { get; }
+        /// <summary>
+        /// True when the request sits in the Past group at 85 % opacity. EV-08:
+        /// the value follows the clock, so a request that expires while the page
+        /// is open dims and moves on the same tick - no refresh needed.
+        /// </summary>
+        public bool IsPast
+        {
+            get => _isPast;
+            private set => SetProperty(ref _isPast, value);
+        }
 
         /// <summary>Row opacity: past requests read quieter than the live one.</summary>
         public double RowOpacity => IsPast ? 0.85 : 1.0;
@@ -1094,7 +1477,19 @@ public partial class AgentSessionsPage : UserControl
             private set => SetProperty(ref _isFirstPast, value);
         }
 
-        public void MarkFirstPast() => IsFirstPast = true;
+        /// <summary>EV-08: re-marks the divider after a row moved between the groups.</summary>
+        public void SetFirstPast(bool value) => IsFirstPast = value;
+
+        /// <summary>
+        /// EV-08 item 2: why the approval primary is disabled for this row, or
+        /// null while the request can be approved. An expired request says
+        /// "Request expired"; an answered one says it is already answered.
+        /// </summary>
+        public string? ApproveDisabledReason
+        {
+            get => _approveDisabledReason;
+            private set => SetProperty(ref _approveDisabledReason, value);
+        }
 
         public string AccessibleName => IsPast
             ? $"{StatusLabel} pairing request from {Client}, past"
@@ -1113,11 +1508,39 @@ public partial class AgentSessionsPage : UserControl
 
         public override string ToString() => AutomationName;
 
+        /// <summary>
+        /// EV-08: writes a re-read row's values into this instance. The status is
+        /// the supervisor's word, so a request the store already answered stops
+        /// looking pending here too.
+        /// </summary>
+        public void CopyFrom(PairingRow source)
+        {
+            Update(
+                source.Client, source.Pairing, source.Status, source.Template,
+                source.Instance, source.ExpiresUtc, DateTimeOffset.Now);
+        }
+
+        private void Update(
+            string client, string pairing, string status, string template,
+            string instance, DateTimeOffset? expiresUtc, DateTimeOffset now)
+        {
+            Client = client;
+            Pairing = pairing;
+            Status = status;
+            Template = template;
+            Instance = instance;
+            ExpiresUtc = expiresUtc;
+            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm:ss", CultureInfo.CurrentCulture) ?? "—";
+            IsPast = AgentSessionsPresentation.IsPastPairing(status, expiresUtc, now);
+            Tick(now);
+        }
+
         public void Tick(DateTimeOffset now)
         {
             Countdown = AgentSessionsPresentation.Countdown(ExpiresUtc, now);
             var (label, tone) = AgentSessionsPresentation.PairingChip(Status, ExpiresUtc, now);
-            if (label != StatusLabel)
+            var relabel = label != StatusLabel;
+            if (relabel)
             {
                 StatusLabel = label;
             }
@@ -1127,10 +1550,26 @@ public partial class AgentSessionsPage : UserControl
                 Tone = tone;
             }
 
-            IsPending = string.Equals(Status, "pending", StringComparison.OrdinalIgnoreCase)
-                         && (ExpiresUtc is null || ExpiresUtc > now);
+            IsPending = AgentSessionsPresentation.IsPendingPairing(Status, ExpiresUtc, now);
             Expiring = IsPending && ExpiresUtc is { } expiry
                        && expiry - now <= AgentSessionsPresentation.PairingWarningWindow;
+
+            // EV-08 item 2: past is not a fact the row learned once at build
+            // time; it is the same clock rule the chip and the list use.
+            if (IsPast != !IsPending)
+            {
+                IsPast = !IsPending;
+                OnPropertyChanged(nameof(RowOpacity));
+                OnPropertyChanged(nameof(AccessibleName));
+            }
+
+            ApproveDisabledReason =
+                AgentSessionsPresentation.ApproveDisabledReason(Status, ExpiresUtc, now);
+
+            if (relabel)
+            {
+                OnPropertyChanged(nameof(AccessibleName));
+            }
 
             // The countdown changes every second, so the name does too; the
             // setter only raises when the string really moved.
@@ -1140,8 +1579,9 @@ public partial class AgentSessionsPage : UserControl
 
     public sealed class OperationRow
     {
-        public OperationRow(string time, string operation, string caller, string outcome, string code, string duration)
+        public OperationRow(string id, string time, string operation, string caller, string outcome, string code, string duration)
         {
+            Id = id;
             Time = time;
             Operation = operation;
             Caller = caller;
@@ -1149,6 +1589,12 @@ public partial class AgentSessionsPage : UserControl
             Code = code;
             Duration = duration;
         }
+
+        /// <summary>EV-08: the store's operation id, the key a poll matches by.</summary>
+        public string Id { get; }
+
+        /// <summary>EV-08: a finished operation never changes, so its key is its payload.</summary>
+        public string Fingerprint => Id;
 
         public string Time { get; }
 
