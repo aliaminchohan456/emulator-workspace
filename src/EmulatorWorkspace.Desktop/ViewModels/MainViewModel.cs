@@ -76,15 +76,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private DateTimeOffset? _launchedUtc;
     private bool _captureRestricted;
     private string _captureRestrictedReason = "";
-    private bool _labRecoveryRequired;
-    private string _labRecoveryDetail = "";
-    private bool _labInstallInProgress;
-    // EV-03: whether the lab journal says this guest's boot image is no longer
-    // stock (prepared is still stock; recovered is stock again). EV-04 owns the
-    // full lab-phase model; this is the one bit the two lab commands need.
-    private bool _labNotStock;
+    // EV-04: the lab's one reading. The phase word, the two supervisor flags
+    // and the journal are classified once, here, so the inspector row, the rail
+    // dot, the stage and both lab commands cannot disagree.
+    private LabUiState _lab = LabUiState.NotChecked;
     private bool _statusPollInFlight;
-    private bool _frameStale;
     private FrameStreamState _frameState = FrameStreamState.Live;
 
     /// <summary>
@@ -192,16 +188,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         RefreshAdbStateCommand = new AsyncRelayCommand(
             RefreshAdbStateAsync,
             () => SelectedDevice?.Lifecycle.CanChangeAdbRoot == true && !IsBusy);
-        // EV-03: the lab's own phase gates its two actions. An install is not
-        // offered while a transaction is being driven, and recovery is offered
-        // only when it is required or when the lab is no longer stock.
+        // EV-04: the lab's own reading gates its two actions. A journal on disk
+        // makes magisk.prepare refuse, so install is offered only when there is
+        // none; recovery is offered only when it is due or the guest is no
+        // longer stock, and never while an install is being driven.
         MagiskInstallCommand = new AsyncRelayCommand(
             InstallMagiskAsync,
-            () => SelectedDevice is not null && !IsBusy && !_labInstallInProgress);
+            () => SelectedDevice is not null && !IsBusy && _lab.CanInstall);
         MagiskRecoverCommand = new AsyncRelayCommand(
             RecoverMagiskAsync,
-            () => SelectedDevice is not null && !IsBusy
-                && (_labRecoveryRequired || (_labNotStock && !_labInstallInProgress)));
+            () => SelectedDevice is not null && !IsBusy && _lab.CanRecover);
 
         // UX-03 presentation state: the error bar, the drag affordance and the
         // capture toast. All three are driven by the outcome of a real
@@ -490,20 +486,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     public bool IsGuestInteractive => _guestInteractive || Frame is not null;
 
-    /// <summary>True when the last delivered frame is older than the stale budget.</summary>
-    public bool IsFrameStale
-    {
-        get => _frameStale;
-        private set
-        {
-            if (SetProperty(ref _frameStale, value))
-            {
-                OnPropertyChanged(nameof(StaleFrameTitle));
-                OnPropertyChanged(nameof(StaleFrameDetail));
-                OnPropertyChanged(nameof(StaleFrameTone));
-            }
-        }
-    }
+    /// <summary>
+    /// EV-04: true while the stream is stalled. It is derived from the one frame
+    /// state, so the chip, the input gate and this flag cannot disagree.
+    /// </summary>
+    public bool IsFrameStale => FrameStreamHealth.IsStalled(_frameState);
 
     /// <summary>
     /// UX-18: the input waits while the stream is stalled (the picture may be
@@ -593,7 +580,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return $"{StageGuestChip} · Paused";
             }
 
-            if (!_frameStale)
+            if (!IsFrameStale)
             {
                 return StageGuestChip;
             }
@@ -1304,74 +1291,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
-    /// UX-04b fix pass (B2): the Session row prints the lab state as a short
-    /// human value ("Not configured", no repeated label) and keeps the
-    /// supervisor's own sentence in the tooltip. Mapping only — every word comes
-    /// from <see cref="MagiskState"/>.
+    /// EV-04: the Session row and the Root Lab chip print the classified label
+    /// ("Not configured", "Install in progress", "Stock recovery required").
+    /// The raw phase word lives in <see cref="MagiskLabTooltip"/> only, which
+    /// fixes filed issue 1.
     /// </summary>
-    public string MagiskLabValue
-    {
-        get
-        {
-            var text = (MagiskState ?? "").Trim();
-            const string prefix = "Magisk lab:";
-            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                text = text[prefix.Length..].Trim();
-            }
+    public string MagiskLabValue => _lab.Label;
 
-            if (text.Length == 0)
-            {
-                return "—";
-            }
-
-            if (text.Contains("recovery required", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Stock recovery required";
-            }
-
-            if (text.Contains("install in progress", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Install in progress";
-            }
-
-            text = text.Replace('_', ' ');
-            return char.ToUpperInvariant(text[0]) + text[1..];
-        }
-    }
-
-    public string MagiskLabTooltip => MagiskState;
+    public string MagiskLabTooltip => _lab.Tooltip;
 
     /// <summary>
     /// UX-04b: the rail's Root Lab dot is painted only from a lab state the
     /// supervisor actually reported — ok when the lab is prepared, warn when
-    /// stock recovery is due, nothing while the state is unchecked or absent.
+    /// stock recovery is due or an install runs, nothing while the state is
+    /// unchecked or absent.
     /// </summary>
-    public string LabDotTone
+    public string LabDotTone => _lab.Phase switch
     {
-        get
-        {
-            var text = MagiskState ?? "";
-            if (text.Contains("recovery required", StringComparison.OrdinalIgnoreCase)
-                || text.Contains("recovery due", StringComparison.OrdinalIgnoreCase))
-            {
-                return "warn";
-            }
-
-            if (text.Contains("install in progress", StringComparison.OrdinalIgnoreCase))
-            {
-                return "warn";
-            }
-
-            if (text.Contains("prepared", StringComparison.OrdinalIgnoreCase)
-                || text.Contains("installed", StringComparison.OrdinalIgnoreCase))
-            {
-                return "ok";
-            }
-
-            return "";
-        }
-    }
+        LabUiPhase.RecoveryRequired => "warn",
+        LabUiPhase.Installing => "warn",
+        LabUiPhase.Prepared => "ok",
+        _ => "",
+    };
 
     /// <summary>Effective ADB daemon user of the selected guest ("n/a" when unknown).</summary>
     public string AdbUid { get; private set; } = "n/a";
@@ -2181,15 +2122,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public string MagiskInstallTooltip => SelectedDevice is null ? "No device selected"
         : IsBusy ? "Busy"
-        : _labInstallInProgress ? "Lab install in progress"
-        : "Patch this guest's boot image with a verified Magisk build (asks for consent)";
+        : _lab.InstallDisabledReason
+            ?? "Patch this guest's boot image with a verified Magisk build (asks for consent)";
 
     public string MagiskRecoverTooltip => SelectedDevice is null ? "No device selected"
         : IsBusy ? "Busy"
-        : !_labRecoveryRequired && _labInstallInProgress ? "Lab install in progress"
-        : _labRecoveryRequired || _labNotStock
+        : _lab.CanRecover
             ? "Restore the stock boot image from the verified recovery point (asks for consent)"
-            : "Lab is stock";
+            : _lab.RecoverDisabledReason ?? "Lab is stock";
 
     /// <summary>
     /// Re-raises the derived settings facts. The drawer calls this when it opens,
@@ -2631,11 +2571,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _launchedUtc = null;
         _captureRestricted = false;
         _captureRestrictedReason = "";
-        _labRecoveryRequired = false;
-        _labRecoveryDetail = "";
-        _labInstallInProgress = false;
-        _labNotStock = false;
-        IsFrameStale = false;
+        _lab = LabUiState.NotChecked;
+        MagiskState = _lab.Tooltip;
+        UpdateFrameHealth();
         ClearError();
         ResetBootStages();
         UpdateStage();
@@ -2955,7 +2893,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             await RefreshDevicesAsync().ConfigureAwait(true);
             Frame = null;
             _frameWaitSince = null;
-            IsFrameStale = false;
+            UpdateFrameHealth();
             ResetBootStages();
         }).ConfigureAwait(true);
         UpdateStage();
@@ -3799,12 +3737,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         FrameHeight = bitmap.PixelHeight;
 
         // UX-03: a delivered frame is the only thing that clears the frame-wait
-        // and stale stages; no timer does it.
+        // and stale stages; no timer does it. EV-04: the frame state is
+        // recomputed from the same evidence the chip reads.
         _frameWaitSince = null;
-        if (IsFrameStale)
-        {
-            IsFrameStale = false;
-        }
+        UpdateFrameHealth();
 
         if (!hadFrame)
         {
@@ -3989,153 +3925,43 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // ---- UX-03 state mapping ---------------------------------------------
 
     /// <summary>
-    /// Chooses the viewport stage from the supervisor's reported state. Every
-    /// branch is evidence: instance.status fields, the readiness timestamps or
-    /// the presence of a delivered frame. No timer decides that a guest is ready.
+    /// EV-04: the stage is one resolution and one assignment. Every branch is
+    /// still evidence - the lifecycle, the lab reading, the frame snapshot and
+    /// the supervisor's own error text - but the order and the words live in
+    /// <see cref="StudioStage"/> where they are tested without a window.
     /// </summary>
     private void UpdateStage()
     {
-        UpdateStageCore();
-        // UX-05: the stage chips, the boot elapsed figure and the status bar all
-        // re-read the same evidence after every stage decision.
+        ApplyStage(ShowSetup ? StudioStage.Hidden : StudioStage.Resolve(BuildStageContext()));
         NotifyLiveSurfaces();
     }
 
-    private void UpdateStageCore()
+    private StudioStageContext BuildStageContext()
     {
-        if (ShowSetup)
-        {
-            StageVisible = false;
-            ShowBootStages = false;
-            return;
-        }
-
         var device = SelectedDevice;
-        if (device is null)
-        {
-            SetStage("info", "No device selected",
-                "Create or select a managed device to stream its Android display.",
-                "Guests are isolated per instance; nothing boots until you start one.");
-            ShowBootStages = false;
-            return;
-        }
-
-        // UX-18: the stage reads the one lifecycle, so the Studio says the same
-        // thing about a guest as the device library and the command palette do.
-        var lifecycle = device.Lifecycle;
-
-        if (lifecycle.Phase == DevicePhase.Failed)
-        {
-            SetStage("error", "Guest failed",
-                string.IsNullOrWhiteSpace(device.LastError)
-                    ? "The supervisor reported a failed state for this guest."
-                    : device.LastError,
-                "Inspect Diagnostics and the instance log, then retry. A cold boot is only safe once the cause is known.");
-            ShowBootStages = true;
-            return;
-        }
-
-        if (lifecycle.Phase == DevicePhase.EngineGone)
-        {
-            SetStage("error", "The guest's engine is gone",
-                string.IsNullOrWhiteSpace(device.LastError)
-                    ? $"The engine process for {device.Name} is no longer running."
-                    : device.LastError,
-                "The guest stopped outside the supervisor. Start it again to bring it back.");
-            ShowBootStages = false;
-            return;
-        }
-
-        if (_labRecoveryRequired)
-        {
-            SetStage("warning", "Lab recovery required",
-                string.IsNullOrWhiteSpace(_labRecoveryDetail) ? MagiskState : _labRecoveryDetail,
-                "Agents are fenced while a lab needs recovery. Use Recover stock in Root Lab first.");
-            ShowBootStages = false;
-            return;
-        }
-
-        if (_labInstallInProgress)
-        {
-            // UX-18: a transaction that is still running is not a failure. The
-            // guest is rebooted while the patch is installed, so the stage says
-            // what is happening instead of claiming that recovery is due.
-            SetStage("info", "Magisk lab in progress",
-                string.IsNullOrWhiteSpace(MagiskState)
-                    ? "The lab transaction is running."
-                    : MagiskState,
-                "The guest reboots while the patch is installed. The lab journal keeps every step.");
-            ShowBootStages = false;
-            return;
-        }
-
-        if (lifecycle.IsRunning && HasFrame)
-        {
-            StageVisible = false;
-            ShowBootStages = false;
-            return;
-        }
-
-        if (_captureRestricted)
-        {
-            SetStage("warning", "Capture restricted",
-                string.IsNullOrWhiteSpace(_captureRestrictedReason)
-                    ? "The guest refused the last capture."
-                    : _captureRestrictedReason,
-                "A FLAG_SECURE window blocks pixels. Close the protected app or window in the guest, then capture again.");
-            ShowBootStages = false;
-            return;
-        }
-
-        if (lifecycle.Phase == DevicePhase.Starting)
-        {
-            // igr-feedback-ux05 item 2: the elapsed figure lives only in the
-            // stepper card's mono line (BootElapsedText); "Elapsed since launch:
-            // 48s" here was the same number twice in one card.
-            SetStage("info", "Starting Android",
-                "The engine is running and the supervisor reports each boot stage as it lands.",
-                "");
-            ShowBootStages = true;
-            return;
-        }
-
-        if (lifecycle.Phase == DevicePhase.Stopping)
-        {
-            SetStage("info", "Stopping the guest",
-                "The supervisor is shutting the engine down. The window can stay open; the guest is not tied to it.",
-                "");
-            ShowBootStages = false;
-            return;
-        }
-
-        if (lifecycle.IsRunning)
-        {
-            var waited = _frameWaitSince is { } since
+        return new StudioStageContext(
+            device?.Lifecycle,
+            _frameState,
+            _lab,
+            Connected: device is not null,
+            HasFrame: HasFrame,
+            DeviceName: device?.Name ?? "",
+            LastError: device?.LastError ?? "",
+            CaptureRestricted: _captureRestricted,
+            CaptureRestrictedReason: _captureRestrictedReason,
+            FrameWaitSeconds: _frameWaitSince is { } since
                 ? Math.Max(0, (DateTimeOffset.UtcNow - since).TotalSeconds)
-                : 0;
-            SetStage("info", "Waiting for the first frame",
-                $"Android reports running. The frame stream has not delivered a frame yet — {waited:N0}s.",
-                waited >= 10
-                    ? "If the guest stays dark, open Logcat or Diagnostics and check the instance log for the frame pump."
-                    : "");
-            ShowBootStages = true;
-            return;
-        }
-
-        SetStage("info", "Guest stopped",
-            $"{device.Name} is stopped. Start it to stream the guest display.",
-            "Stopped guests keep their profile, disks and snapshots.");
-        ShowBootStages = false;
+                : 0);
     }
 
-    private void SetStage(string tone, string title, string detail, string hint)
+    private void ApplyStage(StudioStage.Value stage)
     {
-        StageTone = tone;
-        StageTitle = title;
-        StageDetail = detail;
-        StageHint = hint;
-        StageVisible = true;
-        NotifyLiveSurfaces();
+        StageTone = stage.Tone;
+        StageTitle = stage.Title;
+        StageDetail = stage.Detail;
+        StageHint = stage.Hint;
+        StageVisible = stage.Visible;
+        ShowBootStages = stage.ShowBootStages;
     }
 
     /// <summary>
@@ -4268,6 +4094,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             guestResponsive: _guestResponsive,
             held: _frameHold.Length > 0);
 
+        var wasStale = IsFrameStale;
         if (_frameState != state)
         {
             _frameState = state;
@@ -4277,7 +4104,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(IsInputPaused));
         }
 
-        IsFrameStale = FrameStreamHealth.IsStalled(state);
+        if (wasStale != IsFrameStale)
+        {
+            OnPropertyChanged(nameof(IsFrameStale));
+        }
 
         // The age is part of the sentence, so refresh it while it holds.
         OnPropertyChanged(nameof(StageGuestChipLive));
@@ -4686,12 +4516,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (SupervisorRequestException ex)
         {
-            if (SelectedDevice?.Name == device.Name) MagiskState = "Magisk lab: " + ex.Message;
-            _labRecoveryRequired = false;
-            _labRecoveryDetail = "";
-            _labInstallInProgress = false;
-            _labNotStock = false;
-            RaiseCommandStates();
+            if (SelectedDevice?.Name == device.Name)
+            {
+                SetLab(LabUiState.From(
+                    ex.Message,
+                    installInProgress: false,
+                    recoveryRequired: false,
+                    LabJournalState.None));
+            }
         }
         OnPropertyChanged(nameof(AdbUid));
         OnPropertyChanged(nameof(AdbUidValue));
@@ -4749,20 +4581,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        // UX-18: the supervisor classifies the lab phase. A transaction that is
-        // still running is reported as running, so the stage never claims that
-        // a healthy install needs a stock recovery.
+        // UX-18: the supervisor classifies the lab phase. EV-04: that reading,
+        // the journal and the guest's stock state become one LabUiState, so the
+        // row, the dot, the stage and both commands read the same value.
         var phase = lab["phase"]?.GetValue<string>() ?? "unknown";
         var recoveryRequired = lab["recoveryRequired"]?.GetValue<bool>() == true;
         var installInProgress = lab["installInProgress"]?.GetValue<bool>() == true;
-        MagiskState = "Magisk lab: " + phase
-            + (recoveryRequired ? " (recovery required)" : installInProgress ? " (install in progress)" : "");
-        _labRecoveryRequired = recoveryRequired;
-        _labInstallInProgress = installInProgress;
-        _labNotStock = phase.Trim().ToLowerInvariant() is not ("not_configured" or "prepared" or "recovered" or "unknown" or "");
-        _labRecoveryDetail = recoveryRequired
-            ? $"The Magisk lab transaction is in phase '{phase}'. Use Recover stock in Root Lab before starting or changing this guest."
-            : "";
+        SetLab(LabUiState.From(
+            phase,
+            installInProgress,
+            recoveryRequired,
+            LabUiState.JournalFor(phase, lab["transaction"] is not null)));
+    }
+
+    private void SetLab(LabUiState lab)
+    {
+        _lab = lab;
+        MagiskState = lab.Tooltip;
+        OnPropertyChanged(nameof(MagiskLabValue));
+        OnPropertyChanged(nameof(MagiskLabTooltip));
+        OnPropertyChanged(nameof(LabDotTone));
         RaiseCommandStates();
     }
 
@@ -4843,7 +4681,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ["probe"] = resolved.ProbeApk,
                 ["allowProvisioningAdbRoot"] = true,
             }, TimeSpan.FromMinutes(3));
-            MagiskState = "Magisk lab: prepared";
+            SetLab(LabUiState.From("prepared", installInProgress: false, recoveryRequired: false, LabJournalState.Prepared));
             await ApprovedMagiskAction(device.Name, prepared, "install");
         });
     }
@@ -4935,7 +4773,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         await RunBusyAsync("Checking stock recovery...", async () =>
         {
             var state = await RequestAsync("magisk.status", new JsonObject { ["name"] = device.Name }, TimeSpan.FromSeconds(30));
-            if (state["transaction"] is null) { MagiskState = "Magisk lab: not configured"; return; }
+            if (state["transaction"] is null)
+            {
+                SetLab(LabUiState.From("not configured", installInProgress: false,
+                    recoveryRequired: false, LabJournalState.None));
+                return;
+            }
             if (!AskConsent(RecoverStockConsent(device))) return;
             await ApprovedMagiskAction(device.Name, state, "recover");
         });
@@ -5060,7 +4903,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             ["name"] = name, ["transaction"] = state["transaction"]!.DeepClone(),
             ["approval"] = approval["approval"]!.DeepClone(),
         }, TimeSpan.FromMinutes(60));
-        MagiskState = "Magisk lab: " + result["phase"];
+        var phase = result["phase"]?.GetValue<string>() ?? "unknown";
+        SetLab(LabUiState.From(
+            phase,
+            installInProgress: false,
+            recoveryRequired: false,
+            LabUiState.JournalFor(phase, hasTransaction: true)));
         StatusMessage = MagiskState;
         await RefreshDevicesAsync();
     }
