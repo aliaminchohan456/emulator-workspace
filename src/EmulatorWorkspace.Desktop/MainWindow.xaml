@@ -1201,6 +1201,10 @@
                             <DataTrigger Binding="{Binding IsLogcatPage}" Value="True">
                                 <Setter Property="PageName" Value="Logcat" />
                             </DataTrigger>
+                            <!-- UX-13: the agents page prints its own crumb. -->
+                            <DataTrigger Binding="{Binding IsAgentsPage}" Value="True">
+                                <Setter Property="PageName" Value="Agents" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </views:TitleBar.Style>
@@ -1285,8 +1289,8 @@
                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
                     <Button Style="{StaticResource NavRailItem}" Margin="0,0,0,4"
-                            Command="{Binding CloseLogcatPageCommand}"
-                            Visibility="{Binding IsLogcatPage, Converter={StaticResource BoolToVis}}"
+                            Click="OnStudio"
+                            Visibility="{Binding IsStudioVisible, Converter={StaticResource InverseBoolToVis}}"
                             AutomationProperties.Name="Back to Studio">
                         <Button.ToolTip>
                             <TextBlock><Run Text="Studio" /><Run Text="  Ctrl+1" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
@@ -1314,8 +1318,25 @@
                         </Border>
                     </Grid>
 
+                    <!-- UX-13: the current destination paints the rail active state
+                         (the Studio grid above uses the same treatment), and the
+                         item is a button only when it can actually navigate. -->
+                    <Grid Style="{StaticResource NavRailCurrent}"
+                          Visibility="{Binding IsLogcatPage, Converter={StaticResource BoolToVis}}"
+                          AutomationProperties.Name="Logcat (current view)">
+                        <Grid.ToolTip>
+                            <TextBlock><Run Text="Logcat" /><Run Text="  Ctrl+3" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                        </Grid.ToolTip>
+                        <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
+                        <Border Width="2" Height="18" HorizontalAlignment="Left" Margin="-6,0,0,0"
+                                Background="{DynamicResource Accent}" CornerRadius="1" />
+                        <Path Data="{StaticResource IconLogs}" Stroke="{DynamicResource Accent}"
+                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
                     <Button Style="{StaticResource NavRailItem}" Command="{Binding OpenLogcatPageCommand}"
-                            Tag="{Binding LogcatRailActive}"
+                            Visibility="{Binding IsLogcatPage, Converter={StaticResource InverseBoolToVis}}"
                             AutomationProperties.Name="Logcat page">
                         <Button.ToolTip>
                             <TextBlock><Run Text="Logcat" /><Run Text="  Ctrl+3" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
@@ -1323,13 +1344,42 @@
                         <Path Data="{StaticResource IconLogs}" Style="{StaticResource Glyph}" />
                     </Button>
 
-                    <Button Style="{StaticResource NavRailItem}" Click="OnAgents"
-                            AutomationProperties.Name="Agent sessions">
-                        <Button.ToolTip>
-                            <TextBlock><Run Text="Agents" /><Run Text="  Ctrl+4" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
-                        </Button.ToolTip>
-                        <Path Data="{StaticResource IconAgents}" Style="{StaticResource Glyph}" />
-                    </Button>
+                    <Grid Margin="0,0,0,4">
+                        <Grid Style="{StaticResource NavRailCurrent}"
+                              Visibility="{Binding IsAgentsPage, Converter={StaticResource BoolToVis}}"
+                              AutomationProperties.Name="Agents (current view)">
+                            <Grid.ToolTip>
+                                <TextBlock><Run Text="Agents" /><Run Text="  Ctrl+4" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                            </Grid.ToolTip>
+                            <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="6" />
+                            <Border Width="2" Height="18" HorizontalAlignment="Left" Margin="-6,0,0,0"
+                                    Background="{DynamicResource Accent}" CornerRadius="1" />
+                            <Path Data="{StaticResource IconAgents}" Stroke="{DynamicResource Accent}"
+                                  StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Width="16" Height="16" Stretch="None"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnAgents"
+                                Visibility="{Binding IsAgentsPage, Converter={StaticResource InverseBoolToVis}}"
+                                AutomationProperties.Name="Agent sessions">
+                            <Button.ToolTip>
+                                <TextBlock><Run Text="Agents" /><Run Text="  Ctrl+4" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource TextTertiary}" /></TextBlock>
+                            </Button.ToolTip>
+                            <Path Data="{StaticResource IconAgents}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <!-- UX-13: real pending pairing requests only; hidden at 0. -->
+                        <Border Background="{DynamicResource Accent}" CornerRadius="999"
+                                MinWidth="15" Height="15" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,-3,-3,0" Padding="3,0" IsHitTestVisible="False"
+                                Visibility="{Binding PendingPairingCount, ElementName=AgentsPage, Converter={StaticResource CountVis}}"
+                                ToolTip="Pairing requests waiting for approval">
+                            <TextBlock Text="{Binding PendingPairingCount, ElementName=AgentsPage}"
+                                       FontFamily="{StaticResource MonoFont}"
+                                       FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource AccentText}" />
+                        </Border>
+                    </Grid>
 
                     <Grid Margin="0,0,0,4">
                         <Button Style="{StaticResource NavRailItem}" Margin="0" Click="OnRootLab"
@@ -1464,6 +1514,11 @@
                                              Value="True">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
+                                <!-- UX-13: no viewport on the Agents page, so no
+                                     frame telemetry either. -->
+                                <DataTrigger Binding="{Binding IsAgentsPage}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
@@ -1537,7 +1592,12 @@
                     </views:FloatingSurface>
                 </Popup>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Grid Grid.Column="2">
+                    <!-- UX-13: the Agents page's command bar keeps only the page's
+                         own actions. Install APK and the guest controls belong to
+                         the viewport, which is not on screen here. -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                Visibility="{Binding IsAgentsPage, Converter={StaticResource InverseBoolToVis}}">
                     <!-- restart | power (fix pass item 5): restart is the
                          rotate-ccw icon that used to be a text button, so the
                          segment reads restart | stop. Rotate itself lives in the
@@ -1704,7 +1764,39 @@
                             </Button.ContextMenu>
                         </Button>
                     </Border>
-                </StackPanel>
+                    </StackPanel>
+
+                    <!-- The page actions, aligned with where the device commands
+                         sit on Studio: a 36 DIP Refresh icon and the one destructive
+                         page action as a ghost-err button. Both run the page's
+                         existing handlers; Take over is live only with a session,
+                         exactly as the window had it. -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                Visibility="{Binding IsAgentsPage, Converter={StaticResource BoolToVis}}">
+                        <Button Style="{StaticResource IconButton}" Margin="0,0,8,0"
+                                Click="OnAgentsRefresh"
+                                ToolTip="Refresh sessions, pairings and recent operations"
+                                AutomationProperties.Name="Refresh agent sessions">
+                            <Path Data="{StaticResource IconRefresh}" Style="{StaticResource Glyph}" />
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Height="32" MinHeight="32"
+                                Padding="12,0" Margin="0"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource DangerBorder}"
+                                Foreground="{DynamicResource Danger}"
+                                IsEnabled="{Binding HasSessions, ElementName=AgentsPage}"
+                                ToolTip="{Binding TakeoverTip, ElementName=AgentsPage}"
+                                Click="OnAgentsTakeover"
+                                AutomationProperties.Name="Take over the selected agent guest">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconShield}" Style="{StaticResource Glyph}"
+                                      Width="14" Height="14" Margin="0,0,7,0" />
+                                <TextBlock Text="Take over · revoke all" FontSize="13" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 
@@ -2012,26 +2104,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- UX-03 stale frame, UX-05 chip pass, igr-feedback-ux11 item 2,
-                         igr-feedback-ux12 item 4: the last frame stays visible and is
-                         stamped in the stage's top strip, horizontally centred between
-                         the two corner chips and ABOVE the bezel, so it never touches
-                         the guest: "Frame stalled · 17s · input paused" with the real
-                         age of the last delivered frame. A real header row would cost
-                         the guest 34 DIP of height, which this slice's scope forbids,
-                         so the chip keeps the strip rather than the row. -->
-                    <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,4,16,0"
-                            MaxWidth="640" Background="{DynamicResource WarningBg}"
-                            BorderBrush="{DynamicResource WarningBorder}" BorderThickness="1"
-                            CornerRadius="6" Padding="10,2" IsHitTestVisible="False"
-                            Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}"
-                            AutomationProperties.Name="Frame stream paused">
-                        <TextBlock Width="Auto" MaxWidth="600" Text="{Binding StaleChipText}"
-                                   Style="{StaticResource Caption}" FontSize="11"
-                                   Foreground="{DynamicResource Warning}" TextWrapping="Wrap"
-                                   AutomationProperties.LiveSetting="Polite" />
-                    </Border>
-
                     <!-- UX-03 APK drag affordance, UX-05 full-viewport dropzone:
                          the whole viewport card is the target. A raised veil (92 %
                          so the ghost phone and the pill do not read through it), a
@@ -2127,17 +2199,45 @@
                          bottom-right (this chip replaces the "Capability:"
                          paragraph that used to live in the inspector). Every
                          value is live state; a value the supervisor has not
-                         reported prints an em dash. -->
-                    <Border Style="{StaticResource StageChip}" HorizontalAlignment="Left"
+                         reported prints an em dash.
+                         igr-feedback-ux13 item 3: the separate stall chip is
+                         folded in here — while frames are stale the chip takes a
+                         warn-soft surface, a warn dot and the real age as a
+                         suffix, and its tooltip says input is paused. Nothing
+                         sits over the bezel and no geometry moved. -->
+                    <Border HorizontalAlignment="Left"
                             VerticalAlignment="Top" Margin="14"
                             Visibility="{Binding HasFrame, Converter={StaticResource BoolToVis}}"
-                            ToolTip="{Binding StageGuestChipTooltip}">
+                            ToolTip="{Binding StageGuestChipTooltipLive}">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource StageChip}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFrameStale}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="5" Height="5" VerticalAlignment="Center"
+                                     Margin="0,0,6,0" Fill="{DynamicResource Warning}"
+                                     Visibility="{Binding IsFrameStale, Converter={StaticResource BoolToVis}}" />
                             <Path Data="{StaticResource IconMonitor}" Width="12" Height="12" Stretch="Uniform"
                                   Stroke="{DynamicResource TextTertiary}" StrokeThickness="1.5"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
-                            <TextBlock Text="{Binding StageGuestChip}" Style="{StaticResource StageChipText}"
-                                       Margin="6,0,0,0" />
+                            <TextBlock Text="{Binding StageGuestChipLive}"
+                                       Margin="6,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StageChipText}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFrameStale}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
 
@@ -2906,6 +3006,14 @@
             </Border>
         </Grid>
 
+        <!-- UX-13: the Agents page. It is a sibling over the same body cell as the
+             Studio content (and the Logcat page), shown only while IsAgentsPage,
+             so collapsing it keeps the page's ListBox selection and scroll
+             position exactly as the operator left them. The rail, command bar,
+             status bar, settings drawer and palette stay outside it. -->
+        <views:AgentSessionsPage x:Name="AgentsPage" Grid.Row="2" Grid.Column="1"
+                                 Visibility="{Binding IsAgentsPage, Converter={StaticResource BoolToVis}}" />
+
         <!-- Drawer tab bar: 36 DIP, one real destination (Logcat), the compact count
              line with warnings and errors in their own colours (only when above
              zero), a 28 DIP search that expands into the dock's only filter, the
@@ -3658,18 +3766,22 @@
                 </Grid>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- igr-feedback-ux11: the agents segment is the first to go at
-                         1024; the rail still reaches Agent Sessions. -->
+                    <!-- UX-13: "Agents N" carries the real number of live sessions
+                         (active and unexpired) and is absent at 0. It is also the
+                         status bar's way into the page. -->
                     <StackPanel Orientation="Horizontal"
-                                Visibility="{Binding NarrowLayout, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVis}}">
+                                Visibility="{Binding ActiveSessionCount, ElementName=AgentsPage, Converter={StaticResource CountVis}}">
                         <Button Style="{StaticResource StatusLink}" Click="OnAgents"
-                                ToolTip="Agent sessions: pairings, scopes and takeover"
+                                ToolTip="Agent sessions: N live sessions on this workspace"
                                 AutomationProperties.Name="Agent sessions">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconAgents}" Width="11" Height="11" Stretch="Uniform"
                                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                       StrokeThickness="1.4" VerticalAlignment="Center" Margin="0,0,5,0" />
                                 <TextBlock Text="Agents" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding ActiveSessionCount, ElementName=AgentsPage}"
+                                           Style="{StaticResource StatusValue}"
+                                           Margin="5,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 

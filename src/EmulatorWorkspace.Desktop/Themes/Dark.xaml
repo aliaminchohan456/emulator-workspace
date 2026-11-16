@@ -89,6 +89,12 @@
           saturated fill. Error text on DangerBg measures 8.0:1. -->
     <SolidColorBrush x:Key="DangerBg" Color="#2E2526" />
     <SolidColorBrush x:Key="DangerBorder" Color="#59FFA6A6" />
+    <!-- UX-13 fold-in (igr-feedback-ux13 item 2): the Windows caption close
+         hover, in both themes: #C42B1C behind a white glyph. High contrast maps
+         the pair to the system highlight instead. -->
+    <SolidColorBrush x:Key="CaptionCloseHover" Color="#C42B1C" />
+    <SolidColorBrush x:Key="CaptionCloseHoverText" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="CaptionClosePress" Color="#E6C42B1C" />
     <SolidColorBrush x:Key="Success" Color="#8ED8AF" />
     <SolidColorBrush x:Key="SuccessBg" Color="#1E2E26" />
     <!-- UX-04b fix pass: 1px tone edges for ok/warn chips so a soft chip keeps a

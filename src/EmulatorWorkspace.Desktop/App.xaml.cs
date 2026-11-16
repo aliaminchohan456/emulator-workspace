@@ -56,13 +56,16 @@ public partial class App : Application
                 }
             }
 
-            var probeWindow = new AgentSessionsWindow();
+            // UX-13: the separate window is gone, so the probe opens the page in
+            // the shell and reads the same collections the window published.
+            var probeWindow = new MainWindow();
             MainWindow = probeWindow;
             probeWindow.Loaded += async (_, _) =>
             {
+                probeWindow.ShowAgentsPage();
                 await Task.Delay(TimeSpan.FromSeconds(5));
                 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-                await File.WriteAllTextAsync(output, probeWindow.ProbeSummary());
+                await File.WriteAllTextAsync(output, probeWindow.AgentSessionsProbeSummary());
                 Shutdown(0);
             };
             probeWindow.Show();
@@ -228,6 +231,42 @@ public partial class App : Application
                 {
                     await Task.Delay(TimeSpan.FromSeconds(3));
                     await library.RunEvidenceHookAsync(libraryDialog);
+                }
+            };
+        }
+
+        // UX-13 evidence hook: opens the Agents page through the same handler the
+        // rail item and Ctrl+4 run, so a capture needs no synthetic click.
+        if (e.Args.Contains("--open-agents", StringComparer.OrdinalIgnoreCase))
+        {
+            window.Loaded += (_, _) => window.ShowAgentsPage();
+        }
+
+        // UX-13 evidence hook: selects a real managed guest by name once the
+        // supervisor's list has loaded, so a capture can show the page's device
+        // context without a synthetic library click. It never creates or starts
+        // anything.
+        var selectDevice = "";
+        for (var index = 0; index < e.Args.Length - 1; index++)
+        {
+            if (e.Args[index].Equals("--select-device", StringComparison.OrdinalIgnoreCase))
+            {
+                selectDevice = e.Args[index + 1];
+            }
+        }
+
+        if (selectDevice.Length > 0)
+        {
+            window.Loaded += async (_, _) =>
+            {
+                for (var attempt = 0; attempt < 60; attempt++)
+                {
+                    if (window.ViewModel.SelectDevice(selectDevice))
+                    {
+                        return;
+                    }
+
+                    await Task.Delay(500);
                 }
             };
         }

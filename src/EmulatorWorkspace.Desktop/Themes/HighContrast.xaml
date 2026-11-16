@@ -75,6 +75,11 @@
     <SolidColorBrush x:Key="OnDanger" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="DangerBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="DangerBorder" Color="{x:Static SystemColors.WindowTextColor}" />
+    <!-- UX-13 fold-in: high contrast keeps the system highlight for the caption
+         close hover, never a brand red. -->
+    <SolidColorBrush x:Key="CaptionCloseHover" Color="{x:Static SystemColors.HighlightColor}" />
+    <SolidColorBrush x:Key="CaptionCloseHoverText" Color="{x:Static SystemColors.HighlightTextColor}" />
+    <SolidColorBrush x:Key="CaptionClosePress" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="Success" Color="{x:Static SystemColors.WindowTextColor}" />
     <SolidColorBrush x:Key="SuccessBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="SuccessBorder" Color="{x:Static SystemColors.WindowTextColor}" />

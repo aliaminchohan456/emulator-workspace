@@ -180,6 +180,20 @@ public partial class MainWindow : Window, IOverlayAnchor
     public MainViewModel ViewModel => _viewModel;
 
     /// <summary>
+    /// UX-13: opens the Agents page through the same path the rail item and
+    /// Ctrl+4 use. The evidence and probe hooks call this instead of pressing a
+    /// synthetic button.
+    /// </summary>
+    public void ShowAgentsPage()
+    {
+        _viewModel.OpenAgentsPage();
+        AgentsPage.ActivatePage();
+    }
+
+    /// <summary>The Agents page's own probe summary, for --agent-sessions-probe.</summary>
+    public string AgentSessionsProbeSummary() => AgentsPage.ProbeSummary();
+
+    /// <summary>
     /// UX-12: the palette dims the shell body and leaves the title bar, so its
     /// scrim lines up with the same rectangle the mockups use.
     /// </summary>
@@ -1477,11 +1491,41 @@ public partial class MainWindow : Window, IOverlayAnchor
         }
     }
 
+    /// <summary>
+    /// Rail: Studio is the destination behind every full page (Logcat, Agents).
+    /// The same close path each page uses runs here, so the Logcat stream is
+    /// detached exactly when its own close would detach it.
+    /// </summary>
+    private void OnStudio(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsLogcatPage && _viewModel.CloseLogcatPageCommand.CanExecute(null))
+        {
+            _viewModel.CloseLogcatPageCommand.Execute(null);
+        }
+
+        _viewModel.IsAgentsPage = false;
+    }
+
+    /// <summary>
+    /// Rail / Ctrl+4 / status bar: Agent Sessions is a shell page beside Studio,
+    /// Devices, Logcat and Root Lab. Selecting it closes the full Logcat page and
+    /// activates the one page instance, so its selection and scroll survive a
+    /// switch back and forth.
+    /// </summary>
     private void OnAgents(object sender, RoutedEventArgs e)
     {
-        var window = new AgentSessionsWindow { Owner = this };
-        window.ShowDialog();
+        _viewModel.OpenAgentsPage();
+        AgentsPage.ActivatePage();
     }
+
+    /// <summary>The Agents page's command-bar Refresh: the page's own reload.</summary>
+    private void OnAgentsRefresh(object sender, RoutedEventArgs e) => AgentsPage.RefreshFromShell();
+
+    /// <summary>
+    /// The Agents page's command-bar takeover: the page's existing revoke-all
+    /// path, including its confirmation and its selected-session check.
+    /// </summary>
+    private void OnAgentsTakeover(object sender, RoutedEventArgs e) => AgentsPage.TakeOverFromShell();
 
     /// <summary>Rail: Search opens the same command palette as Ctrl+K.</summary>
     private void OnOpenPalette(object sender, RoutedEventArgs e) => OpenPalette();
@@ -1515,6 +1559,8 @@ public partial class MainWindow : Window, IOverlayAnchor
                     _viewModel.CloseLogcatPageCommand.Execute(null);
                 }
 
+                // UX-13: Studio is also behind the Agents page; Ctrl+1 lands on it.
+                _viewModel.IsAgentsPage = false;
                 break;
             case 2:
                 OpenDeviceLibrary();
@@ -1571,6 +1617,9 @@ public partial class MainWindow : Window, IOverlayAnchor
     /// </summary>
     private void OnRootLab(object sender, RoutedEventArgs e)
     {
+        // UX-13: Root Lab is the inspector's Diagnostics tab, so a full page
+        // covering the body has to give way first or the selection is invisible.
+        _viewModel.IsAgentsPage = false;
         SetDetailsCollapsed(false);
         var diagnostics = InspectorTabs.Items.OfType<TabItem>().FirstOrDefault(
             tab => string.Equals(tab.Header as string, "Diagnostics", StringComparison.Ordinal));

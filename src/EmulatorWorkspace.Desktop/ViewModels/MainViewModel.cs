@@ -526,6 +526,34 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string StageGuestChipTooltip =>
         "The guest display as the frame stream reports it. The window scales the frame; the guest resolution itself is never changed here.";
 
+    /// <summary>
+    /// igr-feedback-ux13 item 3: the stall state is a warn suffix on the guest
+    /// display chip ("Guest display · 1080 × 2400 · Stalled 11s") instead of a
+    /// second chip over the stage. The age is the real age of the last delivered
+    /// frame; frames resuming drop the suffix.
+    /// </summary>
+    public string StageGuestChipLive
+    {
+        get
+        {
+            if (!_frameStale)
+            {
+                return StageGuestChip;
+            }
+
+            var age = _lastFramePresented == default
+                ? 0
+                : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
+            return $"{StageGuestChip} · Stalled {age:N0}s";
+        }
+    }
+
+    public string StageGuestChipTooltipLive => _frameStale
+        ? _frameHold.Length > 0
+            ? $"Input paused until frames resume. The supervisor holds the ADB channel: {_frameHold}."
+            : "Input paused until frames resume."
+        : StageGuestChipTooltip;
+
     /// <summary>Top-right chip: orientation from the guest display, then the real zoom mode.</summary>
     public string StageOrientationChip
     {
@@ -567,32 +595,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             var seconds = Math.Max(0, (DateTimeOffset.UtcNow - launched).TotalSeconds);
             return $"Elapsed {seconds:N0}s";
-        }
-    }
-
-    /// <summary>
-    /// The one-line stale chip: "Frame stalled · 17s · input paused" with the real
-    /// age of the last delivered frame, or the supervised operation that holds
-    /// the ADB channel in the same shape.
-    /// </summary>
-    public string StaleChipText
-    {
-        get
-        {
-            if (!_frameStale)
-            {
-                return "";
-            }
-
-            if (_frameHold.Length > 0)
-            {
-                return $"Frames paused · {_frameHold} · input paused";
-            }
-
-            var age = _lastFramePresented == default
-                ? 0
-                : Math.Max(0, (DateTimeOffset.UtcNow - _lastFramePresented).TotalSeconds);
-            return $"Frame stalled · {age:N0}s · input paused";
         }
     }
 
@@ -930,17 +932,61 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    /// <summary>The Studio exercises are shown whenever the page is not.</summary>
-    public bool IsStudioVisible => !IsLogcatPage;
+    // ---- UX-13 Agents page --------------------------------------------------
+    //
+    // Agent Sessions is the fifth shell page: the same content the separate
+    // window hosted, shown in the body cell under the rail, command bar and
+    // status bar. The page and the Logcat page are mutually exclusive, and the
+    // Studio is visible only when neither page covers it.
+
+    private bool _isAgentsPage;
+
+    public bool IsAgentsPage
+    {
+        get => _isAgentsPage;
+        set
+        {
+            if (SetProperty(ref _isAgentsPage, value))
+            {
+                OnPropertyChanged(nameof(IsStudioVisible));
+                OnPropertyChanged(nameof(AgentsRailActive));
+            }
+        }
+    }
+
+    /// <summary>The Studio exercises are shown whenever no full page covers them.</summary>
+    public bool IsStudioVisible => !IsLogcatPage && !IsAgentsPage;
 
     /// <summary>The rail's Logcat destination is active for the dock or the page.</summary>
     public bool LogcatRailActive => IsLogcatOpen || IsLogcatPage;
+
+    /// <summary>The rail's Agents destination is active only while its page is.</summary>
+    public bool AgentsRailActive => IsAgentsPage;
+
+    /// <summary>
+    /// Rail / Ctrl+4: show the Agents page. Leaving the Logcat page detaches the
+    /// stream only when the dock is closed too, exactly like its own close.
+    /// </summary>
+    public void OpenAgentsPage()
+    {
+        if (IsLogcatPage)
+        {
+            IsLogcatPage = false;
+        }
+
+        IsAgentsPage = true;
+    }
 
     private void OpenLogcatPage()
     {
         // Page first, then close the dock: the attachment decision below then sees
         // one open log surface and never unsubscribes between the two.
         IsLogcatPage = true;
+        if (IsAgentsPage)
+        {
+            IsAgentsPage = false;
+        }
+
         if (IsLogcatOpen)
         {
             IsLogcatOpen = false;
@@ -1091,10 +1137,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private void NotifyLiveSurfaces()
     {
         OnPropertyChanged(nameof(StageGuestChip));
+        OnPropertyChanged(nameof(StageGuestChipLive));
+        OnPropertyChanged(nameof(StageGuestChipTooltipLive));
         OnPropertyChanged(nameof(StageOrientationChip));
         OnPropertyChanged(nameof(StageDropHint));
         OnPropertyChanged(nameof(BootElapsedText));
-        OnPropertyChanged(nameof(StaleChipText));
         OnPropertyChanged(nameof(TelemetryFpsValue));
         OnPropertyChanged(nameof(TelemetryTooltip));
         OnPropertyChanged(nameof(SparkPoints));
@@ -3770,11 +3817,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(StaleFrameTitle));
             OnPropertyChanged(nameof(StaleFrameDetail));
             OnPropertyChanged(nameof(StaleFrameTone));
-            OnPropertyChanged(nameof(StaleChipText));
+            OnPropertyChanged(nameof(StageGuestChipLive));
+            OnPropertyChanged(nameof(StageGuestChipTooltipLive));
         }
         else
         {
-            OnPropertyChanged(nameof(StaleChipText));
+            OnPropertyChanged(nameof(StageGuestChipLive));
+            OnPropertyChanged(nameof(StageGuestChipTooltipLive));
         }
     }
 
@@ -3793,7 +3842,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (IsFrameStale)
         {
             OnPropertyChanged(nameof(StaleFrameTitle));
-            OnPropertyChanged(nameof(StaleChipText));
         }
 
         // UX-05: "Elapsed 53s" is the only thing the one-second tick may touch

@@ -15,11 +15,12 @@
          the strip is the native caption: drag, double-click maximize, Snap,
          Alt+Space and the system menu all stay the window manager's job. -->
     <UserControl.Resources>
-        <!-- 36 DIP caption button: hover fades a ChipBg layer at 120 ms, press an
-             80 ms PressedBg layer, and the glyph takes the text colour on hover.
-             The focus ring is the shared 2 px accent ring, keyboard-only. -->
+        <!-- 46 DIP caption button (igr-feedback-ux13 item 1): hover fades a
+             ChipBg layer at 120 ms, press an 80 ms PressedBg layer, and the glyph
+             takes the text colour on hover. The focus ring is the shared 2 px
+             accent ring, keyboard-only. -->
         <Style x:Key="CaptionButton" TargetType="Button">
-            <Setter Property="Width" Value="36" />
+            <Setter Property="Width" Value="46" />
             <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
@@ -51,9 +52,10 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Close keeps the same geometry and takes err-soft on hover; the press
-             step is the same error at 35 % so the feedback never turns into a
-             saturated red slab. The glyph is the error colour in both states. -->
+        <!-- Close keeps the same geometry and takes the Windows close red on
+             hover (#C42B1C) with a white glyph, in both themes (igr-feedback-ux13
+             item 2); the press step is the same red at 90 %. Every other caption
+             button stays on the neutral Chip/Pressed layers. -->
         <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -61,10 +63,10 @@
                         <Grid Background="Transparent">
                             <Border x:Name="B" Background="{TemplateBinding Background}"
                                     CornerRadius="{StaticResource RadiusControl}" />
-                            <Border x:Name="PART_Hover" Background="{DynamicResource DangerBg}"
+                            <Border x:Name="PART_Hover" Background="{DynamicResource CaptionCloseHover}"
                                     CornerRadius="{StaticResource RadiusControl}" Opacity="0"
                                     IsHitTestVisible="False" />
-                            <Border x:Name="PART_Press" Background="{DynamicResource DangerBorder}"
+                            <Border x:Name="PART_Press" Background="{DynamicResource CaptionClosePress}"
                                     CornerRadius="{StaticResource RadiusControl}" Opacity="0"
                                     IsHitTestVisible="False" />
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -74,7 +76,10 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                    <Setter Property="Foreground" Value="{DynamicResource CaptionCloseHoverText}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource CaptionCloseHoverText}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -136,8 +141,10 @@
             <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
 
-        <!-- Breadcrumbs are read-only chrome: 13 DIP UI text, the page in text3
-             and the live device in text2, separated by a thin chevron in text3. -->
+        <!-- Breadcrumbs are read-only chrome: 13 DIP UI text. The page is the
+             location, so it reads in text1; the device and its API are context,
+             so they read in text3 (igr-feedback-ux13 item 4), separated by a thin
+             chevron in text3. -->
         <Style x:Key="Crumb" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
             <Setter Property="FontSize" Value="13" />
@@ -204,7 +211,7 @@
                 <TextBlock x:Name="PageCrumb" MaxWidth="160">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource Crumb}">
-                            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             <Style.Triggers>
                                 <!-- With the name and its chevron gone at 1024, the
                                      page crumb keeps a 10 DIP gap from the mark. -->
@@ -220,12 +227,12 @@
                 <StackPanel x:Name="ContextGroup" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource CrumbSeparator}" />
                     <TextBlock x:Name="ContextNameText" Style="{StaticResource Crumb}"
-                               Foreground="{DynamicResource TextSecondary}" MaxWidth="200" />
+                               Foreground="{DynamicResource TextTertiary}" MaxWidth="200" />
                     <TextBlock x:Name="ContextDot" Text="&#x00B7;" FontSize="13"
                                Foreground="{DynamicResource TextTertiary}" Margin="6,0,0,0"
                                VerticalAlignment="Center" />
                     <TextBlock x:Name="ContextDetailText" Style="{StaticResource Crumb}"
-                               Foreground="{DynamicResource TextSecondary}" Margin="6,0,0,0"
+                               Foreground="{DynamicResource TextTertiary}" Margin="6,0,0,0"
                                MaxWidth="90" />
                 </StackPanel>
             </StackPanel>

@@ -313,6 +313,32 @@ Evidence in `artifacts/ui/ux12-*.png`: Studio, command palette and Device Manage
 at 1200 DIP and 1024 DIP in both themes, plus the rail tooltip, the close hover,
 the maximized window and the 1024 inspector overlay. Build 0 errors / 22 warnings,
 526/526 tests, `git diff --check` clean, theme keys 66/66/66.
+UX-13 Agent Sessions as a shell page (2026-11-16, same uncommitted tree, base HEAD
+`c98d352` = UX-12): the separate `AgentSessionsWindow` is removed and its whole
+surface is a `UserControl` (`Views/AgentSessionsPage`) hosted in the shell body
+under the rail, title bar ("Agents" crumb), command bar and status bar. The
+collections, the supervisor calls, every handler and every display rule are the
+UX-09 ones; the page exposes its real counts (`SessionCount`, `PairingCount`,
+`PendingPairingCount`, `ActiveSessionCount`, `SummaryText`, `HasSessions`) so the
+header, the rail badge and the status bar read the same state. The command bar
+keeps the device context and only the page's own actions (Refresh, ghost-err
+"Take over · revoke all"); Install APK, the guest controls and the frame
+telemetry are hidden while the page is open. Shot 08 layout: 320 DIP pairing card
+beside Paired and Recent, stacked above them below 1180 DIP, content-sized cards
+with 120 DIP empty states, counts at the header's right. Pending pairing requests
+put a real count badge on the rail item (hidden at 0); the status bar gains
+"Agents N" for live sessions (hidden at 0). Selection and scroll position survive
+page switches because the page is collapsed, never rebuilt. `--agent-sessions-probe`
+now drives the page in the shell; `--open-agents` and `--select-device` are
+evidence hooks. No engine, csproj, root, backend or Studio viewport change.
+Deferred: polling for pending requests while the page is closed (counts are real
+but appear after the page's first refresh or an explicit Refresh), and a
+High Contrast render (theme keys unchanged, owner-side as before).
+Evidence in `artifacts/ui/ux13-*.png`: the page wide and at 1024 in both themes
+with a real pending request, two real sessions and real operations, plus the
+empty state on a fresh root. Build 0 errors / 22 warnings, 526/526 tests,
+`git diff --check` clean, theme keys 69/69/69 (the three caption-close tokens
+added to every dictionary).
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,92 +10,191 @@ using EmulatorWorkspace.Core.Supervisor;
 using EmulatorWorkspace.Core.Workspace;
 using EmulatorWorkspace.Desktop.ViewModels;
 
-namespace EmulatorWorkspace.Desktop;
+namespace EmulatorWorkspace.Desktop.Views;
 
 /// <summary>
-/// Operator surface for local agent sessions: pairings, scoped grants,
-/// revocation, human takeover and the latest agent operations. All calls go
-/// through the same supervisor pipe and policy as the CLI and MCP clients.
-/// UX-09 restyled the surface to mockup 08; the three collections, the supervisor
-/// calls and every decision are unchanged.
+/// UX-13: the Agent Sessions surface, hosted as a shell page instead of its own
+/// window. Every collection, supervisor call, handler and decision is the UX-09
+/// one; only the chrome moved into the surrounding shell. The page owns the
+/// one-second ticker for the countdowns and publishes the real counts the shell
+/// prints (status bar and the rail's pending badge).
 /// </summary>
-public partial class AgentSessionsWindow : Window
+public partial class AgentSessionsPage : UserControl
 {
+    /// <summary>Total paired sessions the last refresh returned.</summary>
+    public static readonly DependencyProperty SessionCountProperty = DependencyProperty.Register(
+        nameof(SessionCount), typeof(int), typeof(AgentSessionsPage), new PropertyMetadata(0));
+
+    /// <summary>Total pairing requests the last refresh returned.</summary>
+    public static readonly DependencyProperty PairingCountProperty = DependencyProperty.Register(
+        nameof(PairingCount), typeof(int), typeof(AgentSessionsPage), new PropertyMetadata(0));
+
+    /// <summary>Requests still inside their approval window: the rail badge.</summary>
+    public static readonly DependencyProperty PendingPairingCountProperty = DependencyProperty.Register(
+        nameof(PendingPairingCount), typeof(int), typeof(AgentSessionsPage), new PropertyMetadata(0));
+
+    /// <summary>Live sessions (active and unexpired): the status bar's "Agents N".</summary>
+    public static readonly DependencyProperty ActiveSessionCountProperty = DependencyProperty.Register(
+        nameof(ActiveSessionCount), typeof(int), typeof(AgentSessionsPage), new PropertyMetadata(0));
+
+    /// <summary>"3 sessions · 1 pairing", from the same presentation rule as before.</summary>
+    public static readonly DependencyProperty SummaryTextProperty = DependencyProperty.Register(
+        nameof(SummaryText), typeof(string), typeof(AgentSessionsPage),
+        new PropertyMetadata(AgentSessionsPresentation.Summary(0, 0)));
+
+    /// <summary>True while a session exists, so "Take over · revoke all" can run.</summary>
+    public static readonly DependencyProperty HasSessionsProperty = DependencyProperty.Register(
+        nameof(HasSessions), typeof(bool), typeof(AgentSessionsPage), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty TakeoverTipProperty = DependencyProperty.Register(
+        nameof(TakeoverTip), typeof(string), typeof(AgentSessionsPage),
+        new PropertyMetadata("Revoke every agent session on the selected guest and cancel new agent input"));
+
+    /// <summary>The refresh failed; the page shows the err-soft band with Retry.</summary>
+    public static readonly DependencyProperty HasErrorProperty = DependencyProperty.Register(
+        nameof(HasError), typeof(bool), typeof(AgentSessionsPage), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty ErrorTextProperty = DependencyProperty.Register(
+        nameof(ErrorText), typeof(string), typeof(AgentSessionsPage), new PropertyMetadata(""));
+
     private readonly ObservableCollection<SessionRow> _sessions = new();
     private readonly ObservableCollection<PairingRow> _pairings = new();
     private readonly ObservableCollection<OperationRow> _operations = new();
     private readonly DispatcherTimer _countdown;
     private SupervisorConnection? _connection;
     private bool _busy;
+    private bool _loadedOnce;
 
-    public AgentSessionsWindow()
+    public AgentSessionsPage()
     {
         InitializeComponent();
-        Services.ThemeManager.Initialize();
-        Services.Chrome.Initialize();
-        Services.Chrome.Apply(this);
         SessionsGrid.ItemsSource = _sessions;
         PairingsGrid.ItemsSource = _pairings;
         OperationsGrid.ItemsSource = _operations;
         ScopesBox.Text = string.Join(", ", AgentService.AllScopes);
-        TakeoverButton.IsEnabled = false;
+
         // One ticker for every live value on the surface (expiry countdowns and
-        // the Expiring chip); it only runs while the window is open.
+        // the Expiring chip); it only runs while the page is on screen.
         _countdown = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromSeconds(1),
         };
         _countdown.Tick += (_, _) => Tick();
-        Loaded += async (_, _) =>
+
+        Loaded += (_, _) =>
         {
             ApplyLayout(ActualWidth);
-            _countdown.Start();
-            await RefreshAsync();
+            if (IsVisible)
+            {
+                ActivatePage();
+            }
         };
-        Closed += (_, _) => _countdown.Stop();
+        IsVisibleChanged += (_, e) =>
+        {
+            if ((bool)e.NewValue)
+            {
+                ActivatePage();
+            }
+            else
+            {
+                _countdown.Stop();
+            }
+        };
         SizeChanged += (_, e) => ApplyLayout(e.NewSize.Width);
     }
 
-    public string ProbeSummary() => System.Text.Json.JsonSerializer.Serialize(new
+    public int SessionCount
     {
-        window = Title,
-        sessions = SessionsGrid.Items.Count,
-        pairings = PairingsGrid.Items.Count,
-        templates = TemplateBox.Items.Count,
-        operations = OperationsGrid.Items.Count,
-        status = StatusText.Text,
-    });
+        get => (int)GetValue(SessionCountProperty);
+        private set => SetValue(SessionCountProperty, value);
+    }
 
-    protected override void OnClosed(EventArgs e)
+    public int PairingCount
     {
-        var connection = _connection;
-        _connection = null;
-        if (connection is not null)
-        {
-            // Do not block the operator's window close on pipe shutdown.
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await connection.DisposeAsync();
-                }
-                catch (Exception)
-                {
-                }
-            });
-        }
+        get => (int)GetValue(PairingCountProperty);
+        private set => SetValue(PairingCountProperty, value);
+    }
 
-        base.OnClosed(e);
+    public int PendingPairingCount
+    {
+        get => (int)GetValue(PendingPairingCountProperty);
+        private set => SetValue(PendingPairingCountProperty, value);
+    }
+
+    public int ActiveSessionCount
+    {
+        get => (int)GetValue(ActiveSessionCountProperty);
+        private set => SetValue(ActiveSessionCountProperty, value);
+    }
+
+    public string SummaryText
+    {
+        get => (string)GetValue(SummaryTextProperty);
+        private set => SetValue(SummaryTextProperty, value);
+    }
+
+    public bool HasSessions
+    {
+        get => (bool)GetValue(HasSessionsProperty);
+        private set => SetValue(HasSessionsProperty, value);
+    }
+
+    public string TakeoverTip
+    {
+        get => (string)GetValue(TakeoverTipProperty);
+        private set => SetValue(TakeoverTipProperty, value);
+    }
+
+    public bool HasError
+    {
+        get => (bool)GetValue(HasErrorProperty);
+        private set => SetValue(HasErrorProperty, value);
+    }
+
+    public string ErrorText
+    {
+        get => (string)GetValue(ErrorTextProperty);
+        private set => SetValue(ErrorTextProperty, value);
     }
 
     /// <summary>
-    /// The mockup puts the approval card beside the tables and stacks it above
-    /// them once the window is 1024 DIP wide or narrower. The switch only moves
-    /// the three panels; no content changes.
+    /// The shell calls this when the page becomes the visible destination. The
+    /// first activation loads the three lists; later ones only restart the
+    /// ticker, so the operator's selection and scroll position survive a page
+    /// switch. A stale list is what the Refresh action is for.
+    /// </summary>
+    public void ActivatePage()
+    {
+        _countdown.Start();
+        if (!_loadedOnce)
+        {
+            _loadedOnce = true;
+            _ = RefreshAsync();
+        }
+    }
+
+    /// <summary>The command bar's Refresh action: the same reload as before.</summary>
+    public void RefreshFromShell() => _ = RefreshAsync();
+
+    /// <summary>The command bar's "Take over · revoke all": the same revocation.</summary>
+    public void TakeOverFromShell() => TakeOver();
+
+    /// <summary>
+    /// The mockup puts the approval card beside the tables at 1180 DIP and wider
+    /// and stacks it above them below that. The switch only moves the three
+    /// panels; no content changes.
     /// </summary>
     private void ApplyLayout(double width)
     {
-        var stacked = width <= 1024;
+        // The breakpoint is the shell window's width, the same 1180 DIP the
+        // inspector uses, not the narrower body cell. A hosted control can read
+        // its window before it is measured on first load.
+        if (Window.GetWindow(this) is { } window && window.ActualWidth > 0)
+        {
+            width = window.ActualWidth;
+        }
+
+        var stacked = width < 1180;
         if (stacked)
         {
             LeftColumn.Width = new GridLength(1, GridUnitType.Star);
@@ -103,24 +203,26 @@ public partial class AgentSessionsWindow : Window
             TopRow.Height = GridLength.Auto;
             GapRow.Height = new GridLength(12);
             BodyRow.Height = GridLength.Auto;
-            BodyScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             Grid.SetRow(PairingCard, 0);
-            Grid.SetRowSpan(PairingCard, 1);
+            Grid.SetColumn(PairingCard, 0);
+            Grid.SetColumnSpan(PairingCard, 3);
             Grid.SetColumn(TableStack, 0);
+            Grid.SetColumnSpan(TableStack, 3);
             Grid.SetRow(TableStack, 2);
         }
         else
         {
-            LeftColumn.Width = new GridLength(280);
-            GapColumn.Width = new GridLength(16);
+            LeftColumn.Width = new GridLength(320);
+            GapColumn.Width = new GridLength(12);
             RightColumn.Width = new GridLength(1, GridUnitType.Star);
-            TopRow.Height = new GridLength(1, GridUnitType.Star);
+            TopRow.Height = GridLength.Auto;
             GapRow.Height = new GridLength(0);
             BodyRow.Height = new GridLength(0);
-            BodyScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
             Grid.SetRow(PairingCard, 0);
-            Grid.SetRowSpan(PairingCard, 3);
+            Grid.SetColumn(PairingCard, 0);
+            Grid.SetColumnSpan(PairingCard, 1);
             Grid.SetColumn(TableStack, 2);
+            Grid.SetColumnSpan(TableStack, 1);
             Grid.SetRow(TableStack, 0);
         }
     }
@@ -138,9 +240,13 @@ public partial class AgentSessionsWindow : Window
         {
             row.Tick(now);
         }
+
+        PublishCounts();
     }
 
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
+
+    private async void OnRetry(object sender, RoutedEventArgs e) => await RefreshAsync();
 
     private async Task RefreshAsync()
     {
@@ -178,10 +284,6 @@ public partial class AgentSessionsWindow : Window
                     now));
             }
 
-            // igr-feedback-ux11: Take over is meaningless with no session; it is
-            // disabled rather than removed so its reason stays in the tooltip.
-            TakeoverButton.IsEnabled = _sessions.Count > 0;
-
             _pairings.Clear();
             foreach (var node in pairings.OfType<JsonObject>())
             {
@@ -216,17 +318,35 @@ public partial class AgentSessionsWindow : Window
             }
 
             await LoadTemplatesAsync(connection);
-            StatusText.Text = AgentSessionsPresentation.Summary(_sessions.Count, _pairings.Count);
+            PublishCounts();
+            HasError = false;
+            ErrorText = "";
         }
         catch (Exception ex)
         {
-            StatusText.Text = "refresh failed";
-            MessageBox.Show(this, ex.Message, "Agent sessions", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // A failed read keeps the last known rows and says so on the page,
+            // with the same Retry the shell's typed error surfaces offer.
+            HasError = true;
+            ErrorText = ex.Message;
         }
         finally
         {
             _busy = false;
         }
+    }
+
+    /// <summary>Publishes the real counts to the header, status bar and rail badge.</summary>
+    private void PublishCounts()
+    {
+        SessionCount = _sessions.Count;
+        PairingCount = _pairings.Count;
+        PendingPairingCount = _pairings.Count(row => row.IsPending);
+        ActiveSessionCount = _sessions.Count(row => row.CanRevoke);
+        SummaryText = AgentSessionsPresentation.Summary(SessionCount, PairingCount);
+        HasSessions = SessionCount > 0;
+        TakeoverTip = HasSessions
+            ? "Revoke every agent session on the selected guest and cancel new agent input"
+            : "No paired sessions; there is nothing to take over";
     }
 
     private async Task LoadTemplatesAsync(SupervisorConnection connection)
@@ -248,15 +368,13 @@ public partial class AgentSessionsWindow : Window
     {
         if (PairingsGrid.SelectedItem is not PairingRow pairing)
         {
-            MessageBox.Show(this, "Select a pairing request first.", "Agent sessions",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Warn("Select a pairing request first.", "Agent sessions");
             return;
         }
 
         if (TemplateBox.SelectedItem is not TemplateRow template)
         {
-            MessageBox.Show(this, "Select the stopped template guest.", "Agent sessions",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Warn("Select the stopped template guest.", "Agent sessions");
             return;
         }
 
@@ -268,8 +386,7 @@ public partial class AgentSessionsWindow : Window
             ScopesBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         if (scopes.Length == 0)
         {
-            MessageBox.Show(this, "Enter at least one scope.", "Agent sessions",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Warn("Enter at least one scope.", "Agent sessions");
             return;
         }
 
@@ -286,14 +403,14 @@ public partial class AgentSessionsWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Approve pairing", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Warn(ex.Message, "Approve pairing");
         }
     }
 
     private async void OnRevoke(object sender, RoutedEventArgs e)
     {
-        // The header action revokes the selected session; the row action selects
-        // its own row first, so both run the same code and the same confirmation.
+        // The row action selects its own row first, so the header action and the
+        // row action run the same code and the same confirmation.
         if (sender is FrameworkElement { DataContext: SessionRow row })
         {
             SessionsGrid.SelectedItem = row;
@@ -301,13 +418,11 @@ public partial class AgentSessionsWindow : Window
 
         if (SessionsGrid.SelectedItem is not SessionRow session)
         {
-            MessageBox.Show(this, "Select a session first.", "Agent sessions",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Warn("Select a session first.", "Agent sessions");
             return;
         }
 
-        if (MessageBox.Show(this, $"Revoke {session.Session} for {session.Client}?", "Revoke session",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (!Confirm($"Revoke {session.Session} for {session.Client}?", "Revoke session"))
         {
             return;
         }
@@ -323,21 +438,19 @@ public partial class AgentSessionsWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Revoke session", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Warn(ex.Message, "Revoke session");
         }
     }
 
-    private async void OnTakeover(object sender, RoutedEventArgs e)
+    private async void TakeOver()
     {
         if (SessionsGrid.SelectedItem is not SessionRow session)
         {
-            MessageBox.Show(this, "Select the agent guest first.", "Agent sessions",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Warn("Select the agent guest first.", "Agent sessions");
             return;
         }
 
-        if (MessageBox.Show(this, $"Take over {session.Instance} and revoke all agent sessions on it?",
-                "Human takeover", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (!Confirm($"Take over {session.Instance} and revoke all agent sessions on it?", "Human takeover"))
         {
             return;
         }
@@ -353,7 +466,7 @@ public partial class AgentSessionsWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Human takeover", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Warn(ex.Message, "Human takeover");
         }
     }
 
@@ -407,10 +520,42 @@ public partial class AgentSessionsWindow : Window
             : raw;
     }
 
+    /// <summary>An informational box, owned by the shell when the page is hosted.</summary>
+    private void Warn(string message, string caption)
+    {
+        if (Window.GetWindow(this) is { } owner)
+        {
+            MessageBox.Show(owner, message, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private bool Confirm(string message, string caption)
+    {
+        var result = Window.GetWindow(this) is { } owner
+            ? MessageBox.Show(owner, message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
+            : MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question);
+        return result == MessageBoxResult.Yes;
+    }
+
+    /// <summary>The automation probe's summary; the surface and counts it prints.</summary>
+    public string ProbeSummary() => JsonSerializer.Serialize(new
+    {
+        page = "Agent Sessions",
+        sessions = SessionsGrid.Items.Count,
+        pairings = PairingsGrid.Items.Count,
+        pendingPairings = PendingPairingCount,
+        templates = TemplateBox.Items.Count,
+        operations = OperationsGrid.Items.Count,
+        status = SummaryText,
+    });
+
     /// <summary>
     /// A paired session as the table prints it. The display members are the pure
     /// rules of <see cref="AgentSessionsPresentation"/>; the countdown and the
-    /// derived "Expiring" chip are refreshed once a second by the window.
+    /// derived "Expiring" chip are refreshed once a second by the page.
     /// </summary>
     public sealed class SessionRow : ObservableObject
     {
