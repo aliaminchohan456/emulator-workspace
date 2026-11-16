@@ -41,7 +41,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBg}" />
-            <Setter Property="SelectionTextBrush" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="SelectionTextBrush" Value="{DynamicResource SelectionText}" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Template">
@@ -212,6 +212,16 @@
                     <Setter TargetName="RowHint" Property="Foreground" Value="{DynamicResource TextTertiary}" />
                     <Setter TargetName="Tile" Property="Background" Value="{DynamicResource PanelAlt}" />
                     <Setter TargetName="TileGlyph" Property="Stroke" Value="{DynamicResource TextTertiary}" />
+                </DataTrigger>
+                <!-- UX-17: the selected row sits on the solid system highlight in
+                     High Contrast, so its title and hint switch to the highlight
+                     text colour. Declared after the disabled row so a refused
+                     command stays readable while it is selected, exactly like a
+                     system list row. -->
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter TargetName="RowLabel" Property="Foreground" Value="{DynamicResource SelectionText}" />
+                    <Setter TargetName="RowHint" Property="Foreground" Value="{DynamicResource SelectionTextMuted}" />
                 </DataTrigger>
                 <!-- Privileged rows stay in the amber family even while selected
                      or disabled, the design sheet's "amber means privileged" rule. -->

@@ -29,6 +29,11 @@
          rules too, so they compile here instead of linking the WPF desktop. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/OverlayStack.cs" Link="Desktop/OverlayStack.cs" />
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/SupervisorWatchdog.cs" Link="Desktop/SupervisorWatchdog.cs" />
+    <!-- UX-17: the theme store and the Windows build gates hold no WPF types,
+         so their thresholds and failure paths are unit-tested here. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/ThemeMode.cs" Link="Desktop/ThemeMode.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/ThemeSettingsStore.cs" Link="Desktop/ThemeSettingsStore.cs" />
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/Services/PlatformSupport.cs" Link="Desktop/PlatformSupport.cs" />
     <ProjectReference Include="..\..\src\EmulatorWorkspace.Core\EmulatorWorkspace.Core.csproj" />
     <ProjectReference Include="../EmulatorWorkspace.FakeAdb/EmulatorWorkspace.FakeAdb.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

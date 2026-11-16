@@ -138,6 +138,12 @@
     </LinearGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="#243441" />
     <SolidColorBrush x:Key="SelectionBorder" Color="#3D5266" />
+    <!-- UX-17: the text a selected row or a text selection paints on
+         SelectionBg. Dark and Light keep the colours those surfaces already
+         used; High Contrast switches to the system highlight-text colour so a
+         highlighted row stays readable on the system highlight fill. -->
+    <SolidColorBrush x:Key="SelectionText" Color="#F0F2F4" />
+    <SolidColorBrush x:Key="SelectionTextMuted" Color="#99A5B0" />
     <SolidColorBrush x:Key="FocusRing" Color="#B3D9FA" />
 
     <!-- Essential control boundaries (>=3:1 against the surfaces they sit on):

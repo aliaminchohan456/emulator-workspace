@@ -3,13 +3,6 @@ using Microsoft.Win32;
 
 namespace EmulatorWorkspace.Desktop.Services;
 
-public enum ThemeMode
-{
-    System,
-    Dark,
-    Light,
-}
-
 /// <summary>
 /// Swaps the brush dictionary at runtime. High contrast always wins over the
 /// user preference and uses system colors so custom accents never reduce
@@ -28,12 +21,18 @@ public static class ThemeManager
     public static event Action? Changed;
 
     /// <summary>
-    /// Applies the system theme and watches for High Contrast changes.
+    /// Applies the theme and watches for High Contrast changes.
     /// Idempotent so secondary windows (the Agent Sessions probe path opens
     /// one without a MainWindow) can call it again without resetting an
     /// explicit user theme choice or stacking system-state handlers.
+    ///
+    /// UX-17: <paramref name="initial"/> is the choice read from
+    /// settings.json before the first window exists, so the first frame is
+    /// already in the saved theme (no dark-to-light flash). The default stays
+    /// <see cref="ThemeMode.System"/>, which is what a missing settings file
+    /// resolves to.
     /// </summary>
-    public static void Initialize()
+    public static void Initialize(ThemeMode initial = ThemeMode.System)
     {
         if (_initialized)
         {
@@ -41,7 +40,7 @@ public static class ThemeManager
         }
 
         _initialized = true;
-        Apply(ThemeMode.System);
+        Apply(initial);
         SystemParameters.StaticPropertyChanged += (_, args) =>
         {
             if (args.PropertyName is nameof(SystemParameters.HighContrast)

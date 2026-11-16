@@ -52,6 +52,19 @@ public static class ChromeShell
             Clip(content, radius);
         };
 
+        // UX-17: WM_DPICHANGED resizes the window but not its state, so a
+        // maximized shell dragged to a monitor at another scale kept the old
+        // monitor's device-pixel overhang divided by the new scale. The inset is
+        // recomputed in the 125 % / 150 % / 200 % step, exactly like the state
+        // change path. Clip runs immediately so the radius follows the scale in
+        // the same frame.
+        window.DpiChanged += (_, _) =>
+        {
+            var radius = window.WindowState == WindowState.Maximized ? 0 : Radius;
+            Clip(content, radius);
+            window.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => Inset(window, frame)));
+        };
+
         Sync();
     }
 

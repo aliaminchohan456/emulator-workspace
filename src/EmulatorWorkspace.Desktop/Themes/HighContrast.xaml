@@ -9,9 +9,15 @@
     <SolidColorBrush x:Key="NavBg" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="PanelBg" Color="{x:Static SystemColors.WindowColor}" />
     <SolidColorBrush x:Key="PanelAlt" Color="{x:Static SystemColors.ControlColor}" />
-    <SolidColorBrush x:Key="ChipBg" Color="{x:Static SystemColors.ControlLightColor}" />
+    <SolidColorBrush x:Key="ChipBg" Color="{x:Static SystemColors.ControlColor}" />
     <SolidColorBrush x:Key="PressedBg" Color="{x:Static SystemColors.ControlDarkColor}" />
-    <SolidColorBrush x:Key="HoverBg" Color="{x:Static SystemColors.ControlLightColor}" />
+    <SolidColorBrush x:Key="HoverBg" Color="{x:Static SystemColors.ControlColor}" />
+    <!-- UX-17: ChipBg and HoverBg used ControlLight, which is pure white in a
+         dark contrast scheme ("Night sky"). A neutral state pill then painted
+         white text on a white fill: invisible. ControlColor is the surface
+         SystemColors.ControlText (here the window text colour) is defined
+         against, so chip and hover labels keep their contrast; the chip's own
+         1 px frame still separates it from the page. -->
     <SolidColorBrush x:Key="PopupBg" Color="{x:Static SystemColors.WindowColor}" />
     <!-- UX-10: high contrast keeps the window surface for the status bar; it is
          separated by the system frame colour, not by a tint. -->
@@ -112,6 +118,12 @@
     </LinearGradientBrush>
     <SolidColorBrush x:Key="SelectionBg" Color="{x:Static SystemColors.HighlightColor}" />
     <SolidColorBrush x:Key="SelectionBorder" Color="{x:Static SystemColors.WindowFrameColor}" />
+    <!-- UX-17: the system highlight is a solid fill, so every selected row and
+         text selection paints its words in the system highlight-text colour.
+         Without this, the Graphite text colours (near-white here) landed on the
+         highlight fill and the selected palette row / log row was unreadable. -->
+    <SolidColorBrush x:Key="SelectionText" Color="{x:Static SystemColors.HighlightTextColor}" />
+    <SolidColorBrush x:Key="SelectionTextMuted" Color="{x:Static SystemColors.HighlightTextColor}" />
     <SolidColorBrush x:Key="FocusRing" Color="{x:Static SystemColors.HighlightColor}" />
 
     <!-- High contrast input and scrollbar boundaries stay system-drawn: the

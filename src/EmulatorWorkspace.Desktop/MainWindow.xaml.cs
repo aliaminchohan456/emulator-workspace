@@ -1054,7 +1054,12 @@ public partial class MainWindow : Window, IOverlayAnchor
     private readonly OverlayStack _overlays = new();
     private readonly List<(UIElement Element, bool HitTest, bool Enabled, KeyboardNavigationMode Tab)> _inertChrome = new();
     private DispatcherTimer? _themeSavedTimer;
-    private bool _suppressThemeSaved;
+
+    // UX-17: the Appearance tab's radios are bound and checked while the window
+    // is built, long before anyone opens the drawer. That check is not a user
+    // choice, so saving is suppressed from construction until the first drawer
+    // pass clears the flag (see OpenSettings).
+    private bool _suppressThemeSaved = true;
 
     private void OnOpenSettings(object sender, RoutedEventArgs e) => OpenSettings();
 
@@ -1076,6 +1081,11 @@ public partial class MainWindow : Window, IOverlayAnchor
 
         _settingsFocusReturn = Keyboard.FocusedElement;
         IsSettingsOpen = true;
+        // UX-17: the radios are re-bound by RefreshSettingsFacts below (and are
+        // checked while the tab content is first built), and both raise Checked.
+        // Neither is a user choice, so the flag is raised before the refresh and
+        // dropped after the layout pass that follows.
+        _suppressThemeSaved = true;
         // The rail item paints the accent-soft active surface from its Tag, the
         // same flag the selection triggers in the shared rail style use.
         SettingsRailButton.Tag = true;
@@ -1116,11 +1126,9 @@ public partial class MainWindow : Window, IOverlayAnchor
 
         FocusSettingsDrawer();
 
-        // The theme radios are checked while the tab content is first built.
-        // That is not a user change, so the confirmation tick stays off until
-        // the layout pass that follows has finished (Background runs after the
-        // render pass that creates and binds the tab).
-        _suppressThemeSaved = true;
+        // The flag stays raised until the background pass that follows this
+        // handler: the tab content is created and bound during that layout pass,
+        // so any Checked it raises is infrastructure, not a choice.
         Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => _suppressThemeSaved = false));
     }
 
@@ -1354,11 +1362,17 @@ public partial class MainWindow : Window, IOverlayAnchor
             return;
         }
 
-        _viewModel.SetTheme(string.Equals(mode, "Dark", StringComparison.Ordinal));
-        if (!_suppressThemeSaved)
+        // Opening the drawer checks the matching radio while the tab content is
+        // first built. That is not a choice: applying it would be harmless, but
+        // UX-17 saves the theme, and saving here would turn a "follow Windows"
+        // default into a pinned Dark the operator never picked.
+        if (_suppressThemeSaved)
         {
-            ShowThemeSaved();
+            return;
         }
+
+        _viewModel.SetTheme(string.Equals(mode, "Dark", StringComparison.Ordinal));
+        ShowThemeSaved();
     }
 
     private void ShowThemeSaved()

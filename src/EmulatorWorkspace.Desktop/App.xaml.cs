@@ -21,6 +21,15 @@ public partial class App : Application
         }
 
         Services.DesktopLog.Write("startup");
+
+        // UX-17: the saved theme is applied before the first window is built, so
+        // the first frame is already in the operator's theme instead of flashing
+        // the dark default and then swapping dictionaries. A missing, corrupt or
+        // unknown file is one desktop.log line and the shipped default (follow
+        // Windows); it can never stop the app from starting.
+        var themePath = Services.ThemeSettingsStore.DefaultPath;
+        var themeMode = Services.ThemeSettingsStore.Load(themePath, Services.DesktopLog.Write);
+        Services.ThemeManager.Initialize(themeMode);
         // UX-16 item B: every exit path leaves one line that says why. The
         // notes are taken while the app still runs; OnExit writes the line.
         SessionEnding += (_, args) => Services.ExitBreadcrumb.Note(

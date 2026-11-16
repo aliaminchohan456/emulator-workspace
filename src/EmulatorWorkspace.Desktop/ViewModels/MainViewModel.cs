@@ -1955,8 +1955,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     //
     // Every value below already exists in the app; the drawer displays it. No
     // property decides anything, calls the supervisor or invents a preference.
-    // The theme is session-only (ThemeManager keeps no store), so the drawer says
-    // so rather than pretending to persist it.
+    // UX-17: the theme choice is the one real preference, and it is written to
+    // %LOCALAPPDATA%\EmulatorWorkspace\settings.json by SetTheme, so the drawer
+    // can promise that it survives a restart.
 
     /// <summary>
     /// The two theme modes this build really has. ThemeManager exposes System,
@@ -2079,13 +2080,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
-    /// Applies one of the two real theme modes. This is the same ThemeManager
-    /// call the rail's theme toggle makes; the drawer's segmented control names
-    /// the mode explicitly instead of flipping it.
+    /// Applies one of the two real theme modes and saves the choice. This is the
+    /// same ThemeManager call the rail's theme toggle makes; the drawer's
+    /// segmented control names the mode explicitly instead of flipping it. UX-17:
+    /// both entry points persist, so the next launch opens in the same theme. A
+    /// failed write is logged by the store and the choice still applies now.
     /// </summary>
     public void SetTheme(bool dark)
     {
-        ThemeManager.Apply(dark ? Services.ThemeMode.Dark : Services.ThemeMode.Light);
+        var mode = dark ? Services.ThemeMode.Dark : Services.ThemeMode.Light;
+        // UX-17: a Checked that repeats the mode already in force (the drawer's
+        // own refresh can raise one) is not a new choice, so it neither repaints
+        // nor rewrites the file.
+        if (ThemeManager.Mode != mode)
+        {
+            ThemeManager.Apply(mode);
+            Services.ThemeSettingsStore.Save(
+                Services.ThemeSettingsStore.DefaultPath, mode, Services.DesktopLog.Write);
+        }
+
         OnPropertyChanged(nameof(IsDarkTheme));
         OnPropertyChanged(nameof(IsLightTheme));
     }

@@ -373,7 +373,16 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
-                        <StackPanel Orientation="Horizontal">
+                        <!-- UX-17: a two-column grid, not a horizontal StackPanel.
+                             A StackPanel measures its children with infinite
+                             width, so the status caption could never wrap and was
+                             cut mid-word at the step's column edge at 150 %. The
+                             star column gives the text a real width to wrap in. -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <Grid Width="12" Height="12" VerticalAlignment="Top" Margin="0,2,0,0">
                                 <Ellipse x:Name="Ring" Width="12" Height="12" StrokeThickness="1"
                                          Stroke="{DynamicResource Accent}" Opacity="0" Visibility="Collapsed"
@@ -391,14 +400,14 @@
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
-                            <StackPanel Margin="8,0,0,0">
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="{Binding Label}" Style="{StaticResource SectionHeader}"
                                            FontSize="12" LineHeight="16" />
                                 <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}"
-                                           FontSize="11" LineHeight="15"
+                                           FontSize="11" LineHeight="15" TextWrapping="Wrap" TextTrimming="None"
                                            Foreground="{DynamicResource TextTertiary}" />
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding State}" Value="done">
                                 <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Success}" />
@@ -755,6 +764,21 @@
             </Style.Triggers>
         </Style>
 
+        <!-- UX-17: the row's timestamp keeps text3 at rest and switches to the
+             selection text colour while its row is selected, because High
+             Contrast fills the row with the solid system highlight. -->
+        <Style x:Key="LogTimeText" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource SelectionTextMuted}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- The page's message text: text1 at rest, err when the line is one, so a
              loud line is loud by its own words rather than a row fill.
              igr-feedback-ux11 new nit 9: a W line keeps its message in text1; only
@@ -774,6 +798,11 @@
                 <DataTrigger Binding="{Binding Level}" Value="A">
                     <Setter Property="Foreground" Value="{DynamicResource Danger}" />
                 </DataTrigger>
+                <!-- UX-17: a selected row sits on the system highlight fill. -->
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource SelectionText}" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -787,6 +816,10 @@
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Level}" Value="W">
                     <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource SelectionTextMuted}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -1957,19 +1990,34 @@
                                  under reduced motion), pending = text3 hollow.
                                  The connector takes the tone of the step it
                                  leaves, so progress reads as one line. -->
-                            <StackPanel x:Name="BootStepper" Orientation="Horizontal" Margin="18,16,0,0"
-                                        Visibility="{Binding ShowBootStages, Converter={StaticResource BoolToVis}}">
-                                <ContentControl Style="{StaticResource BootStep}" DataContext="{Binding BootStages[0]}"
+                            <Grid x:Name="BootStepper" Margin="18,16,0,0"
+                                  Visibility="{Binding ShowBootStages, Converter={StaticResource BoolToVis}}">
+                                <!-- UX-17: three equal star columns instead of a
+                                     content-sized StackPanel. The status captions
+                                     are supervisor words of varying length
+                                     ("waiting for the first frame"), and a
+                                     content-sized row pushed the third one past
+                                     the card edge where it was clipped mid-word.
+                                     A star column gives each step a real width, so
+                                     a long caption wraps instead. -->
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentControl Grid.Column="0" Style="{StaticResource BootStep}" DataContext="{Binding BootStages[0]}"
                                                 AutomationProperties.Name="Boot stage 1" />
-                                <Border Width="22" Height="1" Margin="8,7,8,0" VerticalAlignment="Top"
+                                <Border Grid.Column="1" Width="22" Height="1" Margin="8,7,8,0" VerticalAlignment="Top"
                                         Background="{Binding BootStages[0].State, Converter={StaticResource StepBrush}}" />
-                                <ContentControl Style="{StaticResource BootStep}" DataContext="{Binding BootStages[1]}"
+                                <ContentControl Grid.Column="2" Style="{StaticResource BootStep}" DataContext="{Binding BootStages[1]}"
                                                 AutomationProperties.Name="Boot stage 2" />
-                                <Border Width="22" Height="1" Margin="8,7,8,0" VerticalAlignment="Top"
+                                <Border Grid.Column="3" Width="22" Height="1" Margin="8,7,8,0" VerticalAlignment="Top"
                                         Background="{Binding BootStages[1].State, Converter={StaticResource StepBrush}}" />
-                                <ContentControl Style="{StaticResource BootStep}" DataContext="{Binding BootStages[2]}"
+                                <ContentControl Grid.Column="4" Style="{StaticResource BootStep}" DataContext="{Binding BootStages[2]}"
                                                 AutomationProperties.Name="Boot stage 3" />
-                            </StackPanel>
+                            </Grid>
 
                             <TextBlock Text="{Binding BootElapsedText}" Style="{StaticResource Mono}"
                                        Foreground="{DynamicResource TextTertiary}" Margin="18,12,0,0"
@@ -3228,9 +3276,8 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource Mono}"
-                                                       FontSize="12" Foreground="{DynamicResource TextTertiary}"
-                                                       VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource LogTimeText}"
+                                                       Margin="0,0,8,0" />
                                             <Border Grid.Column="1" Style="{StaticResource LogLevelGlyph}" HorizontalAlignment="Left" Margin="0,0,8,0">
                                                 <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
                                             </Border>
@@ -3637,9 +3684,7 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource Mono}"
-                                                   FontSize="12" Foreground="{DynamicResource TextTertiary}"
-                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="0" Text="{Binding Time}" Style="{StaticResource LogTimeText}" />
                                         <Border Grid.Column="1" Style="{StaticResource LogLevelGlyph}" HorizontalAlignment="Left" Margin="0,0,8,0">
                                             <TextBlock Text="{Binding Level}" Style="{StaticResource LogLevelGlyphText}" />
                                         </Border>
@@ -3893,9 +3938,11 @@
                                     AutomationProperties.Name="Settings sections">
 
                             <!-- 1. Appearance: the real theme switch plus the two
-                                 Windows policies the app actually honours. There
-                                 is no preference store, so the theme row says so
-                                 instead of promising persistence. -->
+                                 Windows policies the app actually honours. UX-17:
+                                 a choice is saved to
+                                 %LOCALAPPDATA%\EmulatorWorkspace\settings.json and
+                                 applied before the first window on the next launch,
+                                 and the row says so. -->
                             <TabItem Header="Appearance" AutomationProperties.Name="Settings Appearance">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel Margin="0,0,4,16">
@@ -3910,7 +3957,7 @@
                                                 <StackPanel VerticalAlignment="Center" Margin="0,10,12,10">
                                                     <TextBlock Text="Theme" Style="{StaticResource SettingsRowLabel}" />
                                                     <TextBlock Style="{StaticResource SettingsRowDescription}"
-                                                               Text="Applies now · resets on next launch" />
+                                                               Text="Applies now · saved for next launch" />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal"
                                                             VerticalAlignment="Center">

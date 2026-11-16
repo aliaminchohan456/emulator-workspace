@@ -763,7 +763,7 @@
         <Setter Property="FontSize" Value="14" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBg}" />
-        <Setter Property="SelectionTextBrush" Value="{DynamicResource TextPrimary}" />
+        <Setter Property="SelectionTextBrush" Value="{DynamicResource SelectionText}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -822,6 +822,8 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                            <!-- UX-17: a selected row paints its words on the fill. -->
+                            <Setter Property="Foreground" Value="{DynamicResource SelectionText}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
@@ -1003,6 +1005,9 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                            <!-- UX-17: the row's words move to the system
+                                 highlight-text colour in High Contrast. -->
+                            <Setter Property="Foreground" Value="{DynamicResource SelectionText}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />
@@ -1090,6 +1095,9 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="B" Property="Background" Value="{DynamicResource SelectionBg}" />
+                            <!-- UX-17: the row's words move to the system
+                                 highlight-text colour in High Contrast. -->
+                            <Setter Property="Foreground" Value="{DynamicResource SelectionText}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource FocusRing}" />

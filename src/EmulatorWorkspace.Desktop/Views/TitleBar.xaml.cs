@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
+using EmulatorWorkspace.Desktop.Services;
 
 namespace EmulatorWorkspace.Desktop.Views;
 
@@ -53,7 +54,7 @@ public partial class TitleBar : UserControl
     /// hosts keep the UX-13 client-area button instead of a caption button
     /// nothing would draw a flyout for.
     /// </summary>
-    private static readonly bool SnapLayoutsAvailable = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000);
+    private static readonly bool SnapLayoutsAvailable = PlatformSupport.SnapLayoutsSupported;
 
     private HwndSource? _source;
     private Rect _maxButtonBounds;

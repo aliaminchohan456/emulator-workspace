@@ -1034,3 +1034,85 @@ See [build provenance](docs/build-provenance.md) and
 [evidence](docs/evidence/magisk-review-build-20261114.json).
 Logs: artifacts/grok-clean-{build,tests}.log and
 artifacts/grok-linux-{build,tests}.log. Production code is unchanged.
+
+## UX-17 owner-PC checks and theme persistence (2026-11-16)
+
+Host: HP ProBook 430 G6, Windows 11 Pro 10.0.26300, Intel UHD 620,
+1920x1080 at 125 % (120 DPI). Guest: disposable lab root
+`D:\Emulator-Lab\UX17-Evidence`, instance `ux17lab`, API 35 AOSP x86_64
+(pixel_6), engine window headless, WHPX. Evidence: `artifacts/ui/ux17-*.png`
+(local, ignored by Git like the rest of `artifacts/`).
+
+High Contrast is a real host setting, not an app flag: enabled with
+`tools/ux17-highcontrast.ps1 -On` (SPI_SETHIGHCONTRAST), which applied the
+Night-sky palette (`Window #202020`, `WindowText #FFFFFF`,
+`Highlight #8EE3F0`, `HighlightText #263B50`, `ControlLight #FFFFFF`), and
+disabled again at the end (`-Off`, verified `High Contrast: off`). The app's
+`ThemeManager` reacts to the `SystemParameters.HighContrast` change and swaps
+to `Themes/HighContrast.xaml`.
+
+Contrast defects found by rendering and fixed:
+
+- Selected list rows used `SelectionBg = HighlightColor` while keeping the
+  Graphite text colours, so the selected palette row (proven) and the Logcat /
+  Agent Sessions rows (same construction) were white-on-cyan. New
+  `SelectionText` / `SelectionTextMuted` tokens (Dark `#F0F2F4` / `#99A5B0`,
+  Light `#1C2933` / `#5A6976`, High Contrast `HighlightTextColor`) are applied
+  to the shared TextBox selection, ComboBoxItem/ListBoxItem/ListViewItem
+  selection, the palette row title and hint, and the Logcat time/tag/message
+  styles. Dark and Light render exactly as before.
+- `ChipBg` and `HoverBg` mapped to `SystemColors.ControlLightColor`, which is
+  pure white in a dark contrast scheme; a neutral state pill painted white
+  text on a white fill (captured at 150 %). Both now use
+  `SystemColors.ControlColor`, the surface `ControlText` is defined against.
+  Trade-off: in High Contrast a neutral chip no longer draws a filled body;
+  its word and dot carry the state, which the theme already required.
+- The boot stepper was a content-sized horizontal StackPanel inside a clipped
+  card, so "waiting for the launcher" was cut mid-word. It is now a
+  five-column grid (step/connector/step/connector/step with star step
+  columns) and the step template is a two-column grid, so a long supervisor
+  word wraps inside its third instead of overflowing.
+
+DPI: 150 % (144 DPI) and 175 % (168 DPI). 200 % is not offered by this panel -
+Windows hides a scale whose effective resolution would drop below 1024x768,
+and 1920/2 = 960 - so 175 % is the highest executable step here; 200 % stays
+unverified. At 125/150/175 % the caption buttons measure 46 x 36 DIP, and
+`tools/ux17-caption-probe.ps1` sends a real WM_NCHITTEST and gets
+HTMAXBUTTON (9) at four inset corners and the centre of the maximize button
+and HTCLIENT (1) three pixels outside it. Fix on the way: `ChromeShell` only
+recomputed the maximized inset on `StateChanged`; it now also recomputes on
+`Window.DpiChanged`.
+
+Windows 10 (code review, no Win10 machine): the UX-14 HTMAXBUTTON hook was
+already gated on build 22000; `DWMWA_WINDOW_CORNER_PREFERENCE` was sent
+unconditionally and is now gated too; the immersive-dark attribute id is
+chosen per build (19 on 1809-1909, 20 from 2004) and skipped below 17763.
+The gates moved to a pure `Services/PlatformSupport` class with 16 boundary
+tests. Fonts already fall back (`Segoe UI Variable Text, Segoe UI`; all icons
+are path geometry, so no Segoe Fluent Icons dependency). Unverifiable here:
+caption repaint after a theme toggle, DWM's square Win10 frame, absence of
+the Snap flyout, and the Segoe UI metrics at 150 %.
+
+Theme persistence: `%LOCALAPPDATA%\EmulatorWorkspace\settings.json`,
+`{"theme":"Dark"}`, UTF-8 without BOM. `App.OnStartup` reads it and applies
+the mode before the first window is constructed, so there is no theme flash.
+Writes are atomic (temp file, then `File.Move(..., overwrite: true)` on the
+same volume). A missing, corrupt or unknown file logs one line to
+`logs/desktop.log` and falls back to Follow Windows; nothing throws. "Follow
+Windows" is the shipped default and is not a drawer control (the drawer only
+names the two concrete themes it had), so it is what an absent file means; a
+hand-written "HighContrast" is treated as the Windows policy and resolved to
+Follow Windows rather than pinning the app. 19 store tests cover round-trips,
+the three failure shapes, no-BOM, folder creation, atomic replace, a refused
+write and the path. Runtime checks: opening the drawer writes nothing; one
+click writes once; a restart opens Light although Windows is dark; a corrupt
+file starts Dark with one "unreadable (JsonReaderException)" line.
+
+Verification: Release build 0 errors / 22 warnings (baseline), 577/577
+tests, `git diff --check` clean, theme keys 71/71/71 with identical key sets.
+`artifacts/ux17-final-{build,tests}.log`. No engine, supervisor, root,
+csproj (except three test-source includes) or viewport geometry change.
+
+Remaining gates: 200 % scaling on a host that offers it; every Windows 10
+item above on real hardware; Agent Sessions and Logcat row selection is
+token-correct but has no rows to render on this evidence guest.
