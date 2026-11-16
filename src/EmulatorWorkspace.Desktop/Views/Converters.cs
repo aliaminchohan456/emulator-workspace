@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using EmulatorWorkspace.Desktop.ViewModels;
 
 namespace EmulatorWorkspace.Desktop.Views;
 
@@ -85,17 +86,21 @@ public sealed class StringEqualsToVisibilityConverter : IValueConverter
 /// <summary>
 /// UX-04: the soft tint behind a state chip or a card thumbnail. State is never
 /// carried by this colour alone; every chip prints its word.
+///
+/// UX-18: the tone comes from the one lifecycle, so a chip cannot disagree
+/// with the word printed beside it.
 /// </summary>
 public sealed class StateToSoftBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var chip = string.Equals(parameter?.ToString(), "chip", StringComparison.OrdinalIgnoreCase);
-        var key = (value?.ToString() ?? "") switch
+        var lifecycle = DeviceLifecycle.From(value?.ToString(), null, false, false);
+        var key = lifecycle.Tone switch
         {
-            "Running" => "SuccessBg",
-            "Starting" or "Stopping" => "WarningBg",
-            "Failed" => "DangerBg",
+            "ok" => "SuccessBg",
+            "warn" => "WarningBg",
+            "err" => "DangerBg",
             _ => chip ? "ChipBg" : "PanelAlt",
         };
 
@@ -152,11 +157,14 @@ public sealed class StateToBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = (value?.ToString() ?? "") switch
+        // UX-18: the same lifecycle the surfaces read, so a coloured state dot
+        // can never contradict the word next to it.
+        var lifecycle = DeviceLifecycle.From(value?.ToString(), null, false, false);
+        var key = lifecycle.Tone switch
         {
-            "Running" => "Success",
-            "Starting" or "Stopping" => "Warning",
-            "Failed" or "Unknown" => "Danger",
+            "ok" => "Success",
+            "warn" => "Warning",
+            "err" => "Danger",
             _ => "TextSecondary",
         };
 

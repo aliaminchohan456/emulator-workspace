@@ -71,7 +71,16 @@ public sealed class MagiskLabService
         if (state is null) return new JsonObject { ["name"] = name, ["phase"] = "not_configured" };
         var result = (JsonObject)state.DeepClone();
         result.Remove("approvalHash"); result.Remove("approvalActor");
-        result["recoveryRequired"] = state["phase"]?.GetValue<string>() is not ("prepared" or "verified" or "recovered");
+
+        // UX-18: "recovery required" means the guest really needs a stock
+        // recovery. A transaction that is still running is reported as running,
+        // so a healthy install never looks like a broken lab.
+        var phase = state["phase"]?.GetValue<string>();
+        var updated = DateTimeOffset.TryParse(state["updatedUtc"]?.GetValue<string>(), out var stamp)
+            ? stamp
+            : (DateTimeOffset?)null;
+        result["recoveryRequired"] = MagiskLabPhase.RequiresRecovery(phase, updated, DateTimeOffset.UtcNow);
+        result["installInProgress"] = MagiskLabPhase.InProgress(phase);
         return result;
     }
     public void ArchiveDeleted(string name)

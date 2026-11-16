@@ -294,17 +294,25 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// UX-18: the guests that need attention are the ones the lifecycle says
+    /// failed or lost their engine - the same two states the card's chip and
+    /// its sort order use.
+    /// </summary>
     public string AttentionCountText =>
-        _cards.Count(c => c.State == "Failed").ToString(CultureInfo.InvariantCulture);
+        _cards.Count(NeedsAttention).ToString(CultureInfo.InvariantCulture);
 
     public string AttentionText
     {
         get
         {
-            var failed = _cards.Count(c => c.State == "Failed");
-            return failed == 1 ? "failed guest" : "failed guests";
+            var failed = _cards.Count(NeedsAttention);
+            return failed == 1 ? "guest to review" : "guests to review";
         }
     }
+
+    private static bool NeedsAttention(LibraryCard card) =>
+        card.Lifecycle.Phase is DevicePhase.Failed or DevicePhase.EngineGone;
 
     /// <summary>
     /// Header count, printed inline after the page title as a mono text3 suffix
@@ -869,9 +877,10 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
     /// <summary>
     /// instance.list is the persisted record; only instance.status says whether
-    /// the engine process is alive. Cards that claim Running or Starting are
-    /// checked against that field so the chip never repeats a state the
-    /// supervisor cannot back with a live process.
+    /// the engine process is alive. Cards that claim Running or Starting, and
+    /// cards whose record still points at an engine process, are checked against
+    /// that field so the chip never repeats a state the supervisor cannot back
+    /// with a live process.
     /// </summary>
     private async Task VerifyLiveStatesAsync()
     {
@@ -881,7 +890,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         }
 
         var candidates = _cards
-            .Where(card => card.State is "Running" or "Starting")
+            .Where(card => card.State is "Running" or "Starting" || card.HasEnginePid)
             .Take(4)
             .ToList();
         if (candidates.Count == 0)
@@ -902,12 +911,14 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
                         TimeSpan.FromSeconds(20)).ConfigureAwait(true);
                     card.ApplyLive(
                         status["engineAlive"]?.GetValue<bool>(),
+                        status["pid"]?.GetValue<int>() is > 0,
+                        status["bootCompleted"]?.GetValue<string>()?.Trim() == "1",
                         status["lastError"]?.GetValue<string>() ?? "");
                 }
                 catch (Exception ex)
                 {
                     DesktopLog.Write($"library live check {card.Name} failed: {ex.Message}");
-                    card.ApplyLive(null, "");
+                    card.ApplyLive(null, false, false, "");
                 }
             }
         }
@@ -1919,6 +1930,8 @@ public sealed class LibraryCard : ObservableObject
 {
     private string _state = "Unknown";
     private bool? _engineAlive;
+    private bool _enginePidKnown;
+    private bool _bootCompleted;
     private string _lastErrorText = "";
     private int _ramMb;
     private int _width;
@@ -1951,6 +1964,14 @@ public sealed class LibraryCard : ObservableObject
             }
         }
     }
+
+    /// <summary>
+    /// UX-18: the one lifecycle every surface reads. The card resolves the same
+    /// guest through it as the Studio does, so the chip, the primary action and
+    /// the enabled commands can never disagree with each other.
+    /// </summary>
+    public DeviceLifecycle Lifecycle =>
+        DeviceLifecycle.From(_state, _engineAlive, _enginePidKnown, _bootCompleted);
 
     public int RamMb
     {
@@ -2013,28 +2034,20 @@ public sealed class LibraryCard : ObservableObject
     public string Subtitle => $"{ApiText} · {AbiChip} · {ResolutionText}";
 
     /// <summary>
-    /// instance.status added to instance.list: the record can say Running while
-    /// the engine process is gone, so the chip reports "Engine gone" instead of
-    /// repeating a state the supervisor cannot back with a live process.
+    /// The record points at an engine process. A guest that was started once
+    /// keeps that fact until it is stopped or deleted, so the card knows a
+    /// guest that "stopped" really lost its engine.
     /// </summary>
-    public string StateKey => State switch
-    {
-        "Running" => _engineAlive == false ? "dead" : "running",
-        "Starting" => _engineAlive == false ? "dead" : "starting",
-        "Stopping" => "stopping",
-        "Failed" => "failed",
-        _ => "stopped",
-    };
+    internal bool HasEnginePid => _enginePidKnown;
 
-    public string DisplayState => StateKey switch
-    {
-        "dead" => "Engine gone",
-        "running" => "Running",
-        "starting" => "Starting",
-        "stopping" => "Stopping",
-        "failed" => "Failed",
-        _ => State is "Defined" or "Stopped" ? "Stopped" : State,
-    };
+    /// <summary>
+    /// UX-18: the card's state key comes from the one lifecycle, so a record
+    /// that says Running while the engine process is gone reads "dead" and not
+    /// a fake Running - the same word the Studio shows for that guest.
+    /// </summary>
+    public string StateKey => Lifecycle.Key;
+
+    public string DisplayState => Lifecycle.Label;
 
     public string StateTooltip
     {
@@ -2066,13 +2079,13 @@ public sealed class LibraryCard : ObservableObject
 
     public string ProfileNote => _profileError;
 
-    public int StateOrder => State switch
+    public int StateOrder => Lifecycle.Phase switch
     {
-        "Running" => 0,
-        "Failed" => 1,
-        "Starting" => 2,
-        "Stopping" => 3,
-        "Defined" => 4,
+        DevicePhase.Running => 0,
+        DevicePhase.Failed or DevicePhase.EngineGone => 1,
+        DevicePhase.Starting => 2,
+        DevicePhase.Stopping => 3,
+        DevicePhase.Stopped => 4,
         _ => 5,
     };
 
@@ -2081,30 +2094,30 @@ public sealed class LibraryCard : ObservableObject
     /// that need attention (1: failed, or a Running record whose engine process is
     /// gone), then everything else (2).
     /// </summary>
-    public int StateRank => StateKey switch
+    public int StateRank => Lifecycle.Phase switch
     {
-        "running" => 0,
-        "failed" or "dead" => 1,
+        DevicePhase.Running => 0,
+        DevicePhase.Failed or DevicePhase.EngineGone => 1,
         _ => 2,
     };
 
     /// <summary>"open" | "start" | "starting" | "stopping" | "recover" | "unknown".</summary>
-    public string PrimaryKind => StateKey switch
+    public string PrimaryKind => Lifecycle.Phase switch
     {
-        "running" => "open",
-        "starting" => "starting",
-        "stopping" => "stopping",
-        "failed" => "recover",
-        "dead" => "start",
-        "stopped" => "start",
+        DevicePhase.Running => "open",
+        DevicePhase.Starting => "starting",
+        DevicePhase.Stopping => "stopping",
+        DevicePhase.Failed => "recover",
+        DevicePhase.EngineGone => "start",
+        DevicePhase.Stopped => "start",
         _ => "unknown",
     };
 
-    public bool CanManage => StateKey is not ("running" or "starting" or "stopping");
+    public bool CanManage => Lifecycle.Phase is not (DevicePhase.Running or DevicePhase.Starting or DevicePhase.Stopping);
 
-    public bool IsRunning => StateKey == "running";
+    public bool IsRunning => Lifecycle.IsRunning;
 
-    public bool CanOpen => StateKey is "running" or "starting";
+    public bool CanOpen => Lifecycle.Phase is DevicePhase.Running or DevicePhase.Starting;
 
     public RelayCommand OpenCommand { get; private set; } = new(() => { });
 
@@ -2122,15 +2135,24 @@ public sealed class LibraryCard : ObservableObject
 
     public AsyncRelayCommand CopyProfileCommand { get; private set; } = new(() => Task.CompletedTask);
 
-    public static LibraryCard From(JsonObject node) => new()
+    public static LibraryCard From(JsonObject node)
     {
-        Name = node["name"]?.GetValue<string>() ?? "",
-        Serial = node["serial"]?.GetValue<string>() ?? "",
-        ImagePackage = node["imagePackage"]?.GetValue<string>() ?? "",
-        DeviceProfile = node["deviceProfile"]?.GetValue<string>() ?? "",
-        Gpu = node["gpu"]?.GetValue<string>() ?? "",
-        State = node["state"]?.GetValue<string>() ?? "Unknown",
-    };
+        var card = new LibraryCard
+        {
+            Name = node["name"]?.GetValue<string>() ?? "",
+            Serial = node["serial"]?.GetValue<string>() ?? "",
+            ImagePackage = node["imagePackage"]?.GetValue<string>() ?? "",
+            DeviceProfile = node["deviceProfile"]?.GetValue<string>() ?? "",
+            Gpu = node["gpu"]?.GetValue<string>() ?? "",
+            State = node["state"]?.GetValue<string>() ?? "Unknown",
+        };
+
+        // The list carries the record's engine pid: a record that points at a
+        // process is a guest that was started, which the lifecycle needs to
+        // tell "never started" from "the process is gone".
+        card._enginePidKnown = node["enginePid"]?.GetValue<int>() is > 0;
+        return card;
+    }
 
     public static LibraryCard Placeholder() => new()
     {
@@ -2145,8 +2167,8 @@ public sealed class LibraryCard : ObservableObject
     internal void Attach(DeviceLibraryViewModel owner)
     {
         OpenCommand = new RelayCommand(() => owner.OpenInStudio(this));
-        StartCommand = new AsyncRelayCommand(() => owner.StartCardAsync(this), () => !owner.IsBusy && CanExecuteStart());
-        StopCommand = new AsyncRelayCommand(() => owner.StopCardAsync(this), () => !owner.IsBusy && State == "Running");
+        StartCommand = new AsyncRelayCommand(() => owner.StartCardAsync(this), () => !owner.IsBusy && Lifecycle.CanStart);
+        StopCommand = new AsyncRelayCommand(() => owner.StopCardAsync(this), () => !owner.IsBusy && Lifecycle.CanStop);
         CloneCommand = new AsyncRelayCommand(() => owner.OpenCloneForAsync(this), () => !owner.IsBusy);
         RecoveryCommand = new AsyncRelayCommand(() => owner.OpenRecoveryForAsync(this), () => !owner.IsBusy);
         ResetCommand = new RelayCommand(() => owner.ConfirmResetFor(this), () => !owner.IsBusy && CanManage);
@@ -2154,18 +2176,25 @@ public sealed class LibraryCard : ObservableObject
         CopyProfileCommand = new AsyncRelayCommand(() => owner.CopyProfileForAsync(this), () => !owner.IsBusy);
     }
 
-    private bool CanExecuteStart() => StateKey is "stopped" or "dead" or "failed";
-
     internal void ApplyState(string state)
     {
         State = state;
         RaiseCommandStates();
     }
 
-    internal void ApplyLive(bool? engineAlive, string lastError)
+    /// <summary>
+    /// UX-18: the live evidence for one card. The engine process, the record's
+    /// pid and the guest's own boot answer are what turn a record's word into
+    /// the lifecycle every surface reads.
+    /// </summary>
+    internal void ApplyLive(bool? engineAlive, bool enginePidKnown, bool bootCompleted, string lastError)
     {
-        var changedChip = _engineAlive != engineAlive;
+        var changedChip = _engineAlive != engineAlive
+            || _enginePidKnown != enginePidKnown
+            || _bootCompleted != bootCompleted;
         _engineAlive = engineAlive;
+        _enginePidKnown = enginePidKnown;
+        _bootCompleted = bootCompleted;
         _lastErrorText = lastError;
         if (changedChip)
         {
@@ -2177,6 +2206,8 @@ public sealed class LibraryCard : ObservableObject
     internal void ApplyIdentity(LibraryCard other)
     {
         State = other.State;
+        _enginePidKnown = other._enginePidKnown;
+        RaiseDerived();
         RaiseCommandStates();
     }
 
@@ -2220,6 +2251,7 @@ public sealed class LibraryCard : ObservableObject
 
     private void RaiseDerived()
     {
+        OnPropertyChanged(nameof(Lifecycle));
         OnPropertyChanged(nameof(StateKey));
         OnPropertyChanged(nameof(PrimaryKind));
         OnPropertyChanged(nameof(IsRunning));
@@ -2234,6 +2266,7 @@ public sealed class LibraryCard : ObservableObject
         OnPropertyChanged(nameof(ResolutionText));
         OnPropertyChanged(nameof(Subtitle));
         OnPropertyChanged(nameof(DisplayState));
+        OnPropertyChanged(nameof(StateTooltip));
         OnPropertyChanged(nameof(ChipTooltip));
     }
 }

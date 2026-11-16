@@ -670,7 +670,14 @@ public partial class AgentSessionsPage : UserControl
                                    ?? templates.FirstOrDefault(IsTemplate);
     }
 
-    private static bool IsTemplate(TemplateRow row) => row.State is "Defined" or "Stopped";
+    /// <summary>
+    /// UX-18: a template is a guest that is not up. The state word is the
+    /// supervisor's own, read through the one lifecycle, so "Defined" (the
+    /// record's word for a guest that was created and never started) and
+    /// "Stopped" mean the same thing here as everywhere else.
+    /// </summary>
+    private static bool IsTemplate(TemplateRow row) =>
+        DeviceLifecycle.From(row.State, null, false, false).Phase == DevicePhase.Stopped;
 
     /// <summary>The supervisor's own name for a guest an approval cloned.</summary>
     private static bool IsAgentClone(TemplateRow row) =>

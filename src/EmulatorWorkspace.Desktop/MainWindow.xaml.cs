@@ -2013,7 +2013,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         }
 
         var device = _viewModel.SelectedDevice;
-        if (device is null || device.State != "Running")
+        if (device is null || !device.Lifecycle.CanInstall)
         {
             _viewModel.StatusMessage = device is null
                 ? "Select a device before dropping an APK."

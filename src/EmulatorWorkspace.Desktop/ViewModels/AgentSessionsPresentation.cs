@@ -287,12 +287,13 @@ public static class AgentSessionsPresentation
         return (chips.Take(max).ToArray(), chips.Count - max);
     }
 
-    /// <summary>A guest's record state as the operator reads it.</summary>
-    public static string InstanceLabel(string? state)
-    {
-        var value = (state ?? "").Trim();
-        return value.Length == 0 ? "Unknown" : Normalize(value) == "defined" ? "Stopped" : Capitalize(value);
-    }
+    /// <summary>
+    /// A guest's record state as the operator reads it.
+    ///
+    /// UX-18: the word comes from the one lifecycle, so the agent table and the
+    /// device surfaces cannot disagree about the same guest.
+    /// </summary>
+    public static string InstanceLabel(string? state) => DeviceLifecycle.StateWord(state);
 
     /// <summary>
     /// UX-15: a request still waiting for an answer. The supervisor calls it

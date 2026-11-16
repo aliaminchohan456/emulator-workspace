@@ -78,6 +78,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _captureRestrictedReason = "";
     private bool _labRecoveryRequired;
     private string _labRecoveryDetail = "";
+    private bool _labInstallInProgress;
     private bool _statusPollInFlight;
     private bool _frameStale;
     private string _frameHold = "";
@@ -115,21 +116,31 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _paths = WorkspacePaths.Resolve();
         _dispatcher = Application.Current.Dispatcher;
 
-        PrimaryActionCommand = new AsyncRelayCommand(PrimaryActionAsync, () => !IsBusy);
+        // UX-18: every device command is enabled from the one lifecycle, so a
+        // control is offered exactly when the supervisor would accept the
+        // action. "Start" is refused while the guest runs, "Stop" is offered
+        // while it boots, and input needs a guest that is really up.
+        PrimaryActionCommand = new AsyncRelayCommand(PrimaryActionAsync, () => !IsBusy && PrimaryActionEnabled);
         CreateDeviceCommand = new AsyncRelayCommand(CreateAndStartAsync, () => !IsBusy && !HasBlockingIssue);
-        StartCommand = new AsyncRelayCommand(() => StartDeviceAsync(), () => SelectedDevice is not null && !IsBusy);
-        StopCommand = new AsyncRelayCommand(() => StopDeviceAsync(), () => SelectedDevice?.IsRunning == true && !IsBusy);
+        StartCommand = new AsyncRelayCommand(
+            () => StartDeviceAsync(),
+            () => SelectedDevice is not null && !IsBusy && SelectedDevice.Lifecycle.CanStart);
+        StopCommand = new AsyncRelayCommand(
+            () => StopDeviceAsync(),
+            () => SelectedDevice?.Lifecycle.CanStop == true && !IsBusy);
         RestartCommand = new AsyncRelayCommand(RestartAsync, () => SelectedDevice is not null && !IsBusy);
         ColdBootCommand = new AsyncRelayCommand(ColdBootAsync, () => SelectedDevice is not null && !IsBusy);
         BackCommand = new AsyncRelayCommand(() => KeyAsync("BACK"), () => CanSendInput);
         HomeCommand = new AsyncRelayCommand(() => KeyAsync("HOME"), () => CanSendInput);
         RecentsCommand = new AsyncRelayCommand(() => KeyAsync("RECENTS"), () => CanSendInput);
-        ScreenshotCommand = new AsyncRelayCommand(ScreenshotAsync, () => SelectedDevice?.IsRunning == true);
-        InstallApkCommand = new AsyncRelayCommand(InstallApkDialogAsync, () => SelectedDevice?.IsRunning == true && !IsBusy);
+        ScreenshotCommand = new AsyncRelayCommand(ScreenshotAsync, () => SelectedDevice?.Lifecycle.EngineAlive == true);
+        InstallApkCommand = new AsyncRelayCommand(
+            InstallApkDialogAsync,
+            () => SelectedDevice?.Lifecycle.CanInstall == true && !IsBusy);
         BuildApkSetCommand = new AsyncRelayCommand(BuildApkSetDialogAsync, () => IsConnected && !IsBusy);
         LaunchSampleCommand = new AsyncRelayCommand(
             () => LaunchAsync("dev.emulatorworkspace.sample"),
-            () => SelectedDevice?.IsRunning == true);
+            () => SelectedDevice?.Lifecycle.CanInstall == true);
         RotateCommand = new AsyncRelayCommand(ToggleRotationAsync, () => CanSendInput);
         RefreshCommand = new AsyncRelayCommand(InitializeAsync);
         ToggleLogcatCommand = new RelayCommand(() => IsLogcatOpen = !IsLogcatOpen);
@@ -185,7 +196,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Palette.Add(new PaletteEntryViewModel(
             "Start device", "Start the selected guest", StartCommand,
             PaletteGroups.Device, "IconPlay",
-            PaletteDisabledReason));
+            () => SelectedDevice is null ? "No device selected"
+                : IsBusy ? "Busy"
+                : "Already running"));
         Palette.Add(new PaletteEntryViewModel(
             "Stop device", "Stop the selected guest", StopCommand,
             PaletteGroups.Device, "IconStop",
@@ -757,7 +770,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// <summary>A subscription is attached to the selected guest right now.</summary>
     public bool HasLogStream => Volatile.Read(ref _logcatSubscription) is not null;
 
-    public bool IsGuestRunning => SelectedDevice?.IsRunning == true;
+    /// <summary>
+    /// The guest's engine is up, so a log stream can be attached to it. The
+    /// stream follows the guest while it boots; it does not wait for Android to
+    /// report interactive.
+    /// </summary>
+    public bool IsGuestUp => SelectedDevice?.Lifecycle.EngineAlive == true;
 
     /// <summary>
     /// Recomputes the two derived presentations and raises them. Called whenever
@@ -771,13 +789,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _logEmpty = LogcatPresentation.Empty(
             HasLogEntries,
             visible,
-            IsGuestRunning,
+            IsGuestUp,
             HasLogStream,
             LogPaused,
             HasLogcatError);
 
         _logState = LogcatPresentation.Stream(
-            IsGuestRunning,
+            IsGuestUp,
             HasLogStream,
             LogPaused,
             SelectedDevice?.Name);
@@ -787,14 +805,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _logPageEmpty = LogcatPresentation.PageEmpty(
             HasLogEntries,
             visible,
-            IsGuestRunning,
+            IsGuestUp,
             HasLogStream,
             LogPaused,
             HasLogcatError,
             logSerial);
 
         _logPageState = LogcatPresentation.PageStream(
-            IsGuestRunning,
+            IsGuestUp,
             HasLogStream,
             LogPaused,
             logSerial);
@@ -806,7 +824,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ShowLogEmpty));
         OnPropertyChanged(nameof(ShowLogPageEmpty));
         OnPropertyChanged(nameof(HasLogStream));
-        OnPropertyChanged(nameof(IsGuestRunning));
+        OnPropertyChanged(nameof(IsGuestUp));
         OnPropertyChanged(nameof(LogSerial));
         OnPropertyChanged(nameof(LogPageSubtitle));
     }
@@ -1271,6 +1289,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return "Stock recovery required";
             }
 
+            if (text.Contains("install in progress", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Install in progress";
+            }
+
             text = text.Replace('_', ' ');
             return char.ToUpperInvariant(text[0]) + text[1..];
         }
@@ -1290,6 +1313,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var text = MagiskState ?? "";
             if (text.Contains("recovery required", StringComparison.OrdinalIgnoreCase)
                 || text.Contains("recovery due", StringComparison.OrdinalIgnoreCase))
+            {
+                return "warn";
+            }
+
+            if (text.Contains("install in progress", StringComparison.OrdinalIgnoreCase))
             {
                 return "warn";
             }
@@ -1379,7 +1407,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return true;
     }
 
-    public bool CanSendInput => SelectedDevice?.IsRunning == true;
+    /// <summary>
+    /// UX-18: input needs a guest that is really up. A guest that is still
+    /// booting or whose engine is gone would only produce a refusal from the
+    /// supervisor, so the controls stay disabled until it is.
+    /// </summary>
+    public bool CanSendInput => SelectedDevice?.Lifecycle.CanSendInput == true;
 
     private bool _isConnected;
 
@@ -2103,12 +2136,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(IsLightTheme));
     }
 
+    /// <summary>
+    /// UX-18: the primary action can do something right now. A guest that is
+    /// between two states (booting or stopping) has no honest primary action,
+    /// so the button says "Working..." and stays disabled instead of stopping a
+    /// boot that the label claims is working.
+    /// </summary>
+    public bool PrimaryActionEnabled => SelectedDevice is null
+        || SelectedDevice.Lifecycle.CanStop
+        || SelectedDevice.Lifecycle.CanStart;
+
     public string PrimaryActionText => SelectedDevice switch
     {
         null => "Create device",
-        { IsRunning: true } => "Stop",
-        { State: "Starting" or "Stopping" } => "Working...",
-        _ => "Start",
+        { } device when device.Lifecycle.CanStop => "Stop",
+        { } device when device.Lifecycle.CanStart => "Start",
+        { } device when device.Lifecycle.Phase == DevicePhase.Unknown => "Unknown state",
+        _ => "Working...",
     };
 
     public async Task InitializeAsync()
@@ -2480,6 +2524,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _captureRestrictedReason = "";
         _labRecoveryRequired = false;
         _labRecoveryDetail = "";
+        _labInstallInProgress = false;
         IsFrameStale = false;
         ClearError();
         ResetBootStages();
@@ -2499,6 +2544,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 new JsonObject { ["name"] = device.Name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
             DesktopLog.Write($"selected status {device.State}");
+            var before = device.Lifecycle;
             device.ApplyStatus(status);
             DesktopLog.Write($"applied status {device.State}");
             if (SelectedDevice?.Name == device.Name)
@@ -2512,8 +2558,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(BootValueText));
             OnPropertyChanged(nameof(BootTooltip));
             OnPropertyChanged(nameof(PrimaryActionText));
+            OnLifecycleChanged(device, before);
 
-            if (device.IsRunning)
+            // UX-18: the frame stream is attached when the guest is really up,
+            // not when a stale record word says so.
+            if (device.Lifecycle.CanAttachFrames)
             {
                 await SubscribeFramesAsync(device).ConfigureAwait(true);
                 if (IsLogcatOpen)
@@ -2560,6 +2609,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
+            var before = device.Lifecycle;
             device.ApplyStatus(status);
             ApplyBootEvidence(status);
             UpdateFrameWait(device);
@@ -2570,7 +2620,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(BootValueText));
             OnPropertyChanged(nameof(BootTooltip));
             OnPropertyChanged(nameof(AbiApiText));
-            if (device.State == "Running" && _frameSubscription is null)
+            OnLifecycleChanged(device, before);
+            if (device.Lifecycle.CanAttachFrames && _frameSubscription is null)
             {
                 await SubscribeFramesAsync(device).ConfigureAwait(true);
             }
@@ -2587,21 +2638,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task PrimaryActionAsync()
     {
-        if (SelectedDevice is null || !SelectedDevice.IsRunning)
+        if (SelectedDevice is null)
         {
-            if (SelectedDevice is null)
-            {
-                await CreateAndStartAsync().ConfigureAwait(true);
-            }
-            else
-            {
-                await StartDeviceAsync().ConfigureAwait(true);
-            }
-
+            await CreateAndStartAsync().ConfigureAwait(true);
             return;
         }
 
-        await StopDeviceAsync().ConfigureAwait(true);
+        // UX-18: the one lifecycle decides what the primary action means. A
+        // booting guest can still be stopped; a stopped or dead one can be
+        // started; a guest in a transition has no primary action at all.
+        var lifecycle = SelectedDevice.Lifecycle;
+        if (lifecycle.CanStop)
+        {
+            await StopDeviceAsync().ConfigureAwait(true);
+            return;
+        }
+
+        if (lifecycle.CanStart)
+        {
+            await StartDeviceAsync().ConfigureAwait(true);
+        }
     }
 
     private async Task CreateAndStartAsync()
@@ -2969,7 +3025,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public async Task SendTapAsync(int x, int y)
     {
-        if (SelectedDevice is not { } device || !device.IsRunning)
+        if (SelectedDevice is not { } device || !device.Lifecycle.CanSendInput)
         {
             return;
         }
@@ -3001,7 +3057,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public async Task SendSwipeAsync(int x1, int y1, int x2, int y2)
     {
-        if (SelectedDevice is not { } device || !device.IsRunning)
+        if (SelectedDevice is not { } device || !device.Lifecycle.CanSendInput)
         {
             return;
         }
@@ -3254,10 +3310,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             // UX-03: a frame subscription is only opened for a guest the
-            // supervisor reports as Running. Starting one while Android boots
+            // supervisor reports as up. Starting one while Android boots
             // holds the guest's ADB channel, which starves the status reads the
             // boot stepper and the state pill depend on.
-            if (_frameSubscription is not null || device.State != "Running" || SelectedDevice?.Name != device.Name)
+            // UX-18: the lifecycle decides, so a guest whose own boot answer
+            // says it is up is attached even if the record still says Starting.
+            if (_frameSubscription is not null
+                || !device.Lifecycle.CanAttachFrames
+                || SelectedDevice?.Name != device.Name)
             {
                 return;
             }
@@ -3295,7 +3355,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // A frame subscription that fails while Android is still starting is
             // a normal part of boot; it is reported in the status line and the
             // frame-wait stage, not as a persistent error the operator must clear.
-            if (device.State == "Starting")
+            if (device.Lifecycle.Phase == DevicePhase.Starting)
             {
                 StatusMessage = "Frame stream waits for the guest display: " + ex.Message;
             }
@@ -3334,7 +3394,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task EnsureLogcatAsync()
     {
-        if (_logcatSubscription is not null || SelectedDevice is null || !SelectedDevice.IsRunning)
+        // UX-18: the log stream follows the guest's engine, so it attaches
+        // while Android is still booting - the boot log is worth reading.
+        if (_logcatSubscription is not null || SelectedDevice is null || !SelectedDevice.Lifecycle.EngineAlive)
         {
             NotifyLogFilterState();
             return;
@@ -3780,7 +3842,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.State == "Failed")
+        // UX-18: the stage reads the one lifecycle, so the Studio says the same
+        // thing about a guest as the device library and the command palette do.
+        var lifecycle = device.Lifecycle;
+
+        if (lifecycle.Phase == DevicePhase.Failed)
         {
             SetStage("error", "Guest failed",
                 string.IsNullOrWhiteSpace(device.LastError)
@@ -3788,6 +3854,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     : device.LastError,
                 "Inspect Diagnostics and the instance log, then retry. A cold boot is only safe once the cause is known.");
             ShowBootStages = true;
+            return;
+        }
+
+        if (lifecycle.Phase == DevicePhase.EngineGone)
+        {
+            SetStage("error", "The guest's engine is gone",
+                string.IsNullOrWhiteSpace(device.LastError)
+                    ? $"The engine process for {device.Name} is no longer running."
+                    : device.LastError,
+                "The guest stopped outside the supervisor. Start it again to bring it back.");
+            ShowBootStages = false;
             return;
         }
 
@@ -3800,7 +3877,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.IsRunning && HasFrame)
+        if (_labInstallInProgress)
+        {
+            // UX-18: a transaction that is still running is not a failure. The
+            // guest is rebooted while the patch is installed, so the stage says
+            // what is happening instead of claiming that recovery is due.
+            SetStage("info", "Magisk lab in progress",
+                string.IsNullOrWhiteSpace(MagiskState)
+                    ? "The lab transaction is running."
+                    : MagiskState,
+                "The guest reboots while the patch is installed. The lab journal keeps every step.");
+            ShowBootStages = false;
+            return;
+        }
+
+        if (lifecycle.IsRunning && HasFrame)
         {
             StageVisible = false;
             ShowBootStages = false;
@@ -3818,7 +3909,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.State == "Starting")
+        if (lifecycle.Phase == DevicePhase.Starting)
         {
             // igr-feedback-ux05 item 2: the elapsed figure lives only in the
             // stepper card's mono line (BootElapsedText); "Elapsed since launch:
@@ -3830,7 +3921,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.State == "Stopping")
+        if (lifecycle.Phase == DevicePhase.Stopping)
         {
             SetStage("info", "Stopping the guest",
                 "The supervisor is shutting the engine down. The window can stay open; the guest is not tied to it.",
@@ -3839,7 +3930,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.IsRunning)
+        if (lifecycle.IsRunning)
         {
             var waited = _frameWaitSince is { } since
                 ? Math.Max(0, (DateTimeOffset.UtcNow - since).TotalSeconds)
@@ -3875,7 +3966,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private void ApplyBootEvidence(JsonObject status)
     {
-        var state = status["state"]?.GetValue<string>() ?? "";
         var engineAlive = status["engineAlive"]?.GetValue<bool>() == true;
         var adbState = (status["adbState"]?.GetValue<string>() ?? "").Trim();
         var bootCompleted = status["bootCompleted"]?.GetValue<string>() == "1";
@@ -3897,16 +3987,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(IsGuestInteractive));
         }
 
-        var booting = state is "Starting" or "Running";
+        // UX-18: the stepper reads the same lifecycle as every other surface,
+        // so a guest that reported boot completion is shown as booted even when
+        // the record's word still says Starting.
+        var lifecycle = DeviceLifecycle.From(
+            status["state"]?.GetValue<string>(),
+            status["engineAlive"]?.GetValue<bool>(),
+            status["pid"]?.GetValue<int>() is > 0,
+            bootCompleted);
+        var starting = lifecycle.Phase == DevicePhase.Starting;
+        var booting = lifecycle.Phase is DevicePhase.Starting or DevicePhase.Running;
 
         BootStages[0].Set(
-            engineAlive ? "done" : state == "Starting" ? "active" : "pending",
-            engineAlive ? "process alive" : state == "Starting" ? "starting process" : "not started");
+            engineAlive ? "done" : starting ? "active" : "pending",
+            engineAlive ? "process alive" : starting ? "starting process" : "not started");
         BootStages[1].Set(
-            bootCompleted ? "done" : adbOnline ? "active" : state == "Starting" ? "active" : booting ? "unknown" : "pending",
+            bootCompleted ? "done" : adbOnline ? "active" : starting ? "active" : booting ? "unknown" : "pending",
             bootCompleted ? "boot_completed reported"
                 : adbOnline ? "ADB transport online"
-                : state == "Starting" ? (adbState == "offline" ? "ADB transport offline" : "waiting for ADB")
+                : starting ? (adbState == "offline" ? "ADB transport offline" : "waiting for ADB")
                 : booting ? "not reported" : "not started");
         BootStages[2].Set(
             interactive ? "done" : bootCompleted ? "active" : "pending",
@@ -3978,7 +4077,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private void TickClock()
     {
         if (StageVisible && SelectedDevice is { } device
-            && (device.State == "Starting" || (device.IsRunning && !HasFrame)))
+            && (device.Lifecycle.Phase == DevicePhase.Starting || (device.IsRunning && !HasFrame)))
         {
             UpdateStage();
         }
@@ -4146,13 +4245,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (device.State != "Running")
+        if (!device.Lifecycle.CanInstall)
         {
             DropAccepted = false;
-            DropTitle = device.State == "Starting"
+            DropTitle = device.Lifecycle.Phase == DevicePhase.Starting
                 ? $"{device.Name} is still starting"
                 : $"Start {device.Name} to install";
-            DropDetail = device.State == "Starting"
+            DropDetail = device.Lifecycle.Phase == DevicePhase.Starting
                 ? "The supervisor installs into a running guest. Drop the APK again once Android is interactive."
                 : "The supervisor installs into a running guest. Start this device, then drop the APK again.";
             return;
@@ -4429,10 +4528,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        // UX-18: the supervisor classifies the lab phase. A transaction that is
+        // still running is reported as running, so the stage never claims that
+        // a healthy install needs a stock recovery.
         var phase = lab["phase"]?.GetValue<string>() ?? "unknown";
         var recoveryRequired = lab["recoveryRequired"]?.GetValue<bool>() == true;
-        MagiskState = "Magisk lab: " + phase + (recoveryRequired ? " (recovery required)" : "");
+        var installInProgress = lab["installInProgress"]?.GetValue<bool>() == true;
+        MagiskState = "Magisk lab: " + phase
+            + (recoveryRequired ? " (recovery required)" : installInProgress ? " (install in progress)" : "");
         _labRecoveryRequired = recoveryRequired;
+        _labInstallInProgress = installInProgress;
         _labRecoveryDetail = recoveryRequired
             ? $"The Magisk lab transaction is in phase '{phase}'. Use Recover stock in Root Lab before starting or changing this guest."
             : "";
@@ -4551,8 +4656,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         string.Join(" · ", new[] { device.Serial, device.Abi, device.ImagePackage }
             .Where(part => !string.IsNullOrWhiteSpace(part)));
 
+    /// <summary>
+    /// UX-18: the consent dialog's state chip takes its tone from the one
+    /// lifecycle, so a guest that is up (or coming up, or failed) reads as
+    /// "warn" and a guest that is safely stopped reads as "neutral".
+    /// </summary>
     private static string GuestStateTone(DeviceItemViewModel device) =>
-        device.State is "Running" or "Starting" or "Stopping" or "Failed" ? "warn" : "neutral";
+        device.Lifecycle.Phase is DevicePhase.Running or DevicePhase.Starting
+            or DevicePhase.Stopping or DevicePhase.Failed or DevicePhase.EngineGone
+            ? "warn"
+            : "neutral";
 
     private static ConsentDialogModel InstallMagiskConsent(
         DeviceItemViewModel device, IReadOnlyList<ConsentArtifact> artifacts) => new()
@@ -4679,6 +4792,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             BeginSupervisorRecovery($"request {op}: {ex.Message}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// UX-18: a guest's lifecycle changed, so every control that is enabled
+    /// from it has to be re-evaluated. Without this the Studio kept offering a
+    /// "Start" for a guest that was already running, and kept accepting input
+    /// for a guest whose engine had gone - the command states were only
+    /// refreshed when the selection or the busy flag changed.
+    /// </summary>
+    private void OnLifecycleChanged(DeviceItemViewModel device, DeviceLifecycle before)
+    {
+        if (device.Lifecycle == before)
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(PrimaryActionText));
+        OnPropertyChanged(nameof(PrimaryActionEnabled));
+        OnPropertyChanged(nameof(CanSendInput));
+        OnPropertyChanged(nameof(IsGuestUp));
+        NotifyLogFilterState();
+        RaiseCommandStates();
     }
 
     private void RaiseCommandStates()
@@ -4826,18 +4961,32 @@ public sealed class DeviceItemViewModel : ObservableObject
 
     private string _state = "Defined";
 
+    /// <summary>
+    /// UX-18: the evidence that came with the last status read. The record's
+    /// word alone cannot tell a booting guest from a running one, and it cannot
+    /// tell a live guest from a dead engine, so the lifecycle is built from
+    /// both.
+    /// </summary>
+    private bool? _engineAlive;
+
+    private bool _enginePidKnown;
+
+    private bool _bootCompleted;
+
     public string State
     {
         get => _state;
-        private set
-        {
-            if (SetProperty(ref _state, value))
-            {
-                OnPropertyChanged(nameof(IsRunning));
-                OnPropertyChanged(nameof(StateLabel));
-            }
-        }
+        private set => SetProperty(ref _state, value);
     }
+
+    /// <summary>
+    /// UX-18: the one lifecycle every surface reads. The Studio, the device
+    /// library and the command palette all resolve the same guest through it,
+    /// so a control is enabled exactly when the supervisor would accept the
+    /// action.
+    /// </summary>
+    public DeviceLifecycle Lifecycle =>
+        DeviceLifecycle.From(_state, _engineAlive, _enginePidKnown, _bootCompleted);
 
     /// <summary>
     /// UX-07 nit 1: the user-facing state word. The supervisor's "Defined" record
@@ -4845,9 +4994,14 @@ public sealed class DeviceItemViewModel : ObservableObject
     /// instead; the enum name stays on <see cref="State"/> for the logic and the
     /// converters.
     /// </summary>
-    public string StateLabel => State == "Defined" ? "Stopped" : State;
+    public string StateLabel => Lifecycle.Label;
 
-    public bool IsRunning => State is "Running" or "Starting";
+    /// <summary>
+    /// UX-18: the guest is up and Android reported boot completion. A guest
+    /// that is still booting is not running, and a guest whose engine is gone is
+    /// not running either.
+    /// </summary>
+    public bool IsRunning => Lifecycle.IsRunning;
 
     private string _foreground = "";
 
@@ -5009,20 +5163,35 @@ public sealed class DeviceItemViewModel : ObservableObject
 
     public int Rotation { get; set; }
 
-    public static DeviceItemViewModel From(JsonObject node) => new()
+    public static DeviceItemViewModel From(JsonObject node)
     {
-        Name = node["name"]!.GetValue<string>(),
-        Serial = node["serial"]!.GetValue<string>(),
-        ImagePackage = node["imagePackage"]?.GetValue<string>() ?? "",
-        ConsolePort = node["consolePort"]?.GetValue<int>() ?? 0,
-        GrpcPort = node["grpcPort"]?.GetValue<int>() ?? 0,
-        Gpu = node["gpu"]?.GetValue<string>() ?? "",
-        State = node["state"]?.GetValue<string>() ?? "Unknown",
-    };
+        var device = new DeviceItemViewModel
+        {
+            Name = node["name"]!.GetValue<string>(),
+            Serial = node["serial"]!.GetValue<string>(),
+            ImagePackage = node["imagePackage"]?.GetValue<string>() ?? "",
+            ConsolePort = node["consolePort"]?.GetValue<int>() ?? 0,
+            GrpcPort = node["grpcPort"]?.GetValue<int>() ?? 0,
+            Gpu = node["gpu"]?.GetValue<string>() ?? "",
+            State = node["state"]?.GetValue<string>() ?? "Unknown",
+        };
+
+        // The list carries the record's engine pid: a record that points at a
+        // process is a guest that was started, which the lifecycle needs to
+        // tell "never started" from "the process is gone".
+        device._enginePidKnown = node["enginePid"]?.GetValue<int>() is > 0;
+        return device;
+    }
 
     public void ApplyStatus(JsonObject status)
     {
-        State = status["state"]?.GetValue<string>() ?? State;
+        var before = Lifecycle;
+
+        // UX-18: the evidence comes first, so the lifecycle is built once from
+        // the record's word and what the supervisor observed about it.
+        _engineAlive = status["engineAlive"]?.GetValue<bool>();
+        _enginePidKnown = status["pid"]?.GetValue<int>() is > 0;
+        _bootCompleted = status["bootCompleted"]?.GetValue<string>()?.Trim() == "1";
         Foreground = status["foreground"]?.GetValue<string>() ?? "";
         Abi = status["abi"]?.GetValue<string>() ?? "";
         SdkLevel = status["sdkLevel"]?.GetValue<string>() ?? "";
@@ -5030,6 +5199,15 @@ public sealed class DeviceItemViewModel : ObservableObject
         if (status["readiness"] is JsonObject readiness)
         {
             Readiness = readiness;
+        }
+
+        State = status["state"]?.GetValue<string>() ?? State;
+
+        if (Lifecycle != before)
+        {
+            OnPropertyChanged(nameof(Lifecycle));
+            OnPropertyChanged(nameof(IsRunning));
+            OnPropertyChanged(nameof(StateLabel));
         }
     }
 }

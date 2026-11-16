@@ -364,6 +364,41 @@ err-soft bar with Retry is what remains when the budget is spent. Evidence in
 `artifacts/ui/ux16-*.png` and `artifacts/ux16/` (UI Automation walks, watchdog
 and exit logs). Build 0 errors / 22 warnings, 542/542 tests, `git diff --check`
 clean, theme keys 69/69/69 (none added).
+UX-18 the implicit state machines (2026-11-16, same uncommitted tree, base HEAD
+`391b942` = UX-17): the inventory, the rated findings and the decisions are in
+[the audit](docs/state-machine-audit.md) and [the filed issues](docs/issues/state-machine-issues.md).
+The managed instance lifecycle is now one explicit state machine instead of five
+independent readings of the same word. The supervisor owns the transition
+(`Core/Instances/InstanceLifecycle.cs`, pure and tested): `instance.status`
+reconciles the record with the evidence it just read, so a guest that reported
+boot completion is Running **without anybody waiting for it** (the old
+`Running` transition was a side effect of `instance.wait`, so `wsctl start`,
+the MCP client, an agent and the device library all left a booted guest reading
+"Starting" forever), a record whose engine process is gone is Stopped, and the
+readiness stages are stamped from the same evidence. `instance.list`
+reconciles the liveness of every record, so `wsctl list` no longer prints
+"Running" for a dead guest. The desktop reads the same lifecycle through one
+model (`Desktop/ViewModels/DeviceLifecycle.cs`, pure and tested): the Studio,
+the device library, the two state converters, the agent table and the command
+palette resolve a guest through it, so the evidence outranks the record, a
+control is enabled exactly when the supervisor would accept the action, and two
+panels can no longer disagree. Consequences: input, the app keys, install,
+launch and the APK drop need a guest that is really up (they used to accept a
+guest that was still booting and answer with a refusal); the primary button no
+longer says "Working..." while it stops the boot; "Start device" is refused
+while the guest runs; the command states are re-evaluated when the guest's
+state changes (they used to be refreshed only on a selection or busy change);
+the Studio gained the "engine gone" stage the device library already had. The
+Magisk lab's phase machine is explicit too (`Core/Supervisor/MagiskLabPhase.cs`):
+`recoveryRequired` no longer claims that a healthy install needs a stock
+recovery (it was true for every phase that was not prepared/verified/recovered),
+`installInProgress` is new and additive, and a transaction that has not moved
+for 10 minutes counts as interrupted. No engine, image, scope, policy, lease,
+journal, viewport or theme change; the wire contract keeps every field it had.
+Build 0 errors / 22 warnings, 604/604 tests (27 new), `git diff --check` clean.
+Hardware proofs (a guest booting without a waiter, a guest that lost its engine,
+a Magisk install in flight) are pending a WHPX guest and are listed in the
+issue file.
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

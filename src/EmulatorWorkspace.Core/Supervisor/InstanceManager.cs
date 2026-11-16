@@ -82,7 +82,46 @@ public sealed class InstanceManager
         public DateTimeOffset? AdbOnlineSeenUtc { get; set; }
     }
 
-    public IReadOnlyList<InstanceRecord> List() => _store.ListInstances();
+    /// <summary>
+    /// The managed instances, each with its state word reconciled against the
+    /// engine process it points at. A guest whose engine process is gone reads
+    /// stopped instead of claiming to be running, and the record is corrected
+    /// once so the next reader sees the same word.
+    /// </summary>
+    public IReadOnlyList<InstanceRecord> List()
+    {
+        var records = _store.ListInstances();
+        foreach (var record in records)
+        {
+            ReconcileLiveness(record);
+        }
+
+        return records;
+    }
+
+    /// <summary>
+    /// Applies the engine-process evidence to one record. Only the process is
+    /// read here: the list stays cheap, so the boot state is reconciled by the
+    /// status path, which can afford an ADB round trip.
+    /// </summary>
+    private void ReconcileLiveness(InstanceRecord record)
+    {
+        var alive = NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc);
+        var next = InstanceLifecycle.Reconcile(
+            record.State,
+            new InstanceEvidence(alive, record.EnginePid is not null, false, false));
+        if (next == record.State)
+        {
+            return;
+        }
+
+        // The engine pid is deliberately left in place: it is the evidence that
+        // the guest had a process and lost it, which is what lets a surface say
+        // "engine gone" instead of a flat "stopped". A deliberate stop and the
+        // adoption path both clear it.
+        record.State = next;
+        _store.UpsertInstance(record);
+    }
 
     public InstanceRecord Get(string name) =>
         _store.GetInstance(name) ?? throw new SupervisorOperationException(
@@ -595,7 +634,23 @@ public sealed class InstanceManager
             }
         }
 
-        var stages = runtime.Ready;
+        var adbOnline = adbState is not null && adbState.Contains("device", StringComparison.Ordinal);
+        var bootCompleted = boot?.Trim() == "1";
+
+        // UX-18: the record's own word and the readiness stages are reconciled
+        // with what the supervisor just observed. A guest that reported boot
+        // completion is Running even when nobody was waiting for it, and a
+        // record that points at an engine process which is gone is Stopped.
+        var stages = UpdateReadiness(runtime, record, adbOnline, bootCompleted, foreground);
+        var reconciled = InstanceLifecycle.Reconcile(
+            record.State,
+            new InstanceEvidence(alive, record.EnginePid is not null, adbOnline, bootCompleted));
+        if (reconciled != record.State)
+        {
+            record.State = reconciled;
+            _store.UpsertInstance(record);
+        }
+
         return new JsonObject
         {
             ["name"] = record.Name,
@@ -635,6 +690,65 @@ public sealed class InstanceManager
             ["frameSubscription"] = _hub.Count(record.Name, "frame"),
             ["logcatSubscription"] = _hub.Count(record.Name, "logcat"),
         };
+    }
+
+    /// <summary>
+    /// Records the readiness stages the supervisor has actually observed.
+    ///
+    /// Every timestamp is a fact, never an estimate: a stage is stamped when the
+    /// guest answered for itself. A guest that booted while nobody was waiting
+    /// for it therefore still reports when it booted, and the desktop's boot
+    /// stepper reads the same three stages the wait operation writes.
+    /// </summary>
+    private ReadyStages? UpdateReadiness(
+        Runtime runtime,
+        InstanceRecord record,
+        bool adbOnline,
+        bool bootCompleted,
+        string? foreground)
+    {
+        var stages = runtime.Ready;
+        if (stages is null)
+        {
+            if (!adbOnline && !bootCompleted)
+            {
+                return null;
+            }
+
+            // A guest that was adopted after a supervisor restart has no launch
+            // stamp of its own. The engine's start time is the closest real
+            // answer, so the elapsed figures stay honest.
+            var launched = DateTimeOffset.TryParse(record.EngineStartTimeUtc, out var parsed)
+                ? parsed
+                : DateTimeOffset.UtcNow;
+            stages = new ReadyStages(launched, null, null, null);
+        }
+
+        var updated = stages;
+        var now = DateTimeOffset.UtcNow;
+        if (adbOnline && updated.AdbOnlineUtc is null)
+        {
+            updated = updated with { AdbOnlineUtc = now };
+        }
+
+        if (bootCompleted && updated.BootCompletedUtc is null)
+        {
+            updated = updated with { BootCompletedUtc = now };
+        }
+
+        // The same rule the wait operation uses: a booted guest with a focused
+        // window is interactive.
+        if (bootCompleted && foreground is not null && updated.InteractiveUtc is null)
+        {
+            updated = updated with { InteractiveUtc = now };
+        }
+
+        if (updated != stages)
+        {
+            runtime.Ready = updated;
+        }
+
+        return runtime.Ready;
     }
 
     public async Task<JsonObject> DeleteAsync(string name, CancellationToken cancellationToken)

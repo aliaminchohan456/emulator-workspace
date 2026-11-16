@@ -1,0 +1,158 @@
+using EmulatorWorkspace.Desktop.ViewModels;
+using Xunit;
+
+namespace EmulatorWorkspace.Tests;
+
+/// <summary>
+/// UX-18: the one lifecycle every surface reads.
+///
+/// These are the rules the Studio, the device library, the command palette and
+/// the agent table all resolve a guest through, so they are tested once here
+/// instead of four times in four surfaces.
+/// </summary>
+public class DeviceLifecycleTests
+{
+    [Fact]
+    public void RunningRecordWithALiveEngine_IsTheRunningPhase()
+    {
+        var lifecycle = DeviceLifecycle.From("Running", true, true, true);
+
+        Assert.Equal(DevicePhase.Running, lifecycle.Phase);
+        Assert.Equal("Running", lifecycle.Label);
+        Assert.Equal("ok", lifecycle.Tone);
+        Assert.True(lifecycle.IsRunning);
+        Assert.True(lifecycle.EngineAlive);
+        Assert.True(lifecycle.CanSendInput);
+        Assert.True(lifecycle.CanAttachFrames);
+        Assert.True(lifecycle.CanStop);
+        Assert.False(lifecycle.CanStart);
+        Assert.False(lifecycle.IsTransitioning);
+    }
+
+    [Fact]
+    public void GuestThatReportedBootCompletion_IsRunningEvenWhileTheRecordSaysStarting()
+    {
+        // The record only reached Running as a side effect of somebody waiting
+        // for readiness, so a guest started anywhere else stayed "Starting".
+        // The guest's own answer outranks the record.
+        var lifecycle = DeviceLifecycle.From("Starting", true, true, true);
+
+        Assert.Equal(DevicePhase.Running, lifecycle.Phase);
+        Assert.True(lifecycle.CanSendInput);
+        Assert.True(lifecycle.CanAttachFrames);
+    }
+
+    [Fact]
+    public void RecordThatPointsAtADeadEngine_IsTheEngineGonePhase()
+    {
+        var lifecycle = DeviceLifecycle.From("Running", false, true, false);
+
+        Assert.Equal(DevicePhase.EngineGone, lifecycle.Phase);
+        Assert.Equal("Engine gone", lifecycle.Label);
+        Assert.Equal("err", lifecycle.Tone);
+        Assert.False(lifecycle.IsRunning);
+        Assert.False(lifecycle.CanSendInput);
+        Assert.False(lifecycle.CanStop);
+        Assert.True(lifecycle.CanStart);
+    }
+
+    [Fact]
+    public void StoppedRecordThatKeepsItsDeadPid_StillReadsEngineGone()
+    {
+        // The supervisor keeps the pid as the evidence that the guest had a
+        // process and lost it.
+        var lifecycle = DeviceLifecycle.From("Stopped", false, true, false);
+
+        Assert.Equal(DevicePhase.EngineGone, lifecycle.Phase);
+        Assert.Equal("dead", lifecycle.Key);
+    }
+
+    [Fact]
+    public void GuestThatWasNeverStarted_IsStoppedAndCanBeStarted()
+    {
+        var lifecycle = DeviceLifecycle.From("Defined", null, false, false);
+
+        Assert.Equal(DevicePhase.Stopped, lifecycle.Phase);
+        Assert.Equal("Stopped", lifecycle.Label);
+        Assert.True(lifecycle.CanStart);
+        Assert.False(lifecycle.CanStop);
+        Assert.False(lifecycle.CanSendInput);
+        Assert.Equal("stopped", lifecycle.Key);
+    }
+
+    [Fact]
+    public void BootingGuest_CanBeStoppedButDoesNotTakeInput()
+    {
+        // "Starting" used to count as running, so the input and app controls
+        // were live while Android was still booting and every one of them came
+        // back with a refusal.
+        var lifecycle = DeviceLifecycle.From("Starting", true, true, false);
+
+        Assert.Equal(DevicePhase.Starting, lifecycle.Phase);
+        Assert.True(lifecycle.IsTransitioning);
+        Assert.True(lifecycle.CanStop);
+        Assert.False(lifecycle.CanStart);
+        Assert.False(lifecycle.CanSendInput);
+        Assert.False(lifecycle.CanAttachFrames);
+        Assert.False(lifecycle.CanInstall);
+    }
+
+    [Fact]
+    public void StoppingGuest_HasNeitherAStartNorAStop()
+    {
+        var lifecycle = DeviceLifecycle.From("Stopping", true, true, true);
+
+        Assert.Equal(DevicePhase.Stopping, lifecycle.Phase);
+        Assert.True(lifecycle.IsTransitioning);
+        Assert.False(lifecycle.CanStart);
+        Assert.False(lifecycle.CanStop);
+        Assert.False(lifecycle.CanSendInput);
+    }
+
+    [Fact]
+    public void FailedGuest_CanBeStartedAgain()
+    {
+        var lifecycle = DeviceLifecycle.From("Failed", false, true, false);
+
+        Assert.Equal(DevicePhase.Failed, lifecycle.Phase);
+        Assert.Equal("Failed", lifecycle.Label);
+        Assert.True(lifecycle.CanStart);
+        Assert.False(lifecycle.CanSendInput);
+    }
+
+    [Fact]
+    public void UnknownState_IsNeutralAndOffersNoMutation()
+    {
+        // The supervisor found a process it could not verify: it is not the
+        // guest's own engine, so neither starting nor stopping it is safe.
+        var lifecycle = DeviceLifecycle.From("Something New", null, false, false);
+
+        Assert.Equal(DevicePhase.Unknown, lifecycle.Phase);
+        Assert.Equal("Unknown", lifecycle.Label);
+        Assert.Equal("neutral", lifecycle.Tone);
+        Assert.False(lifecycle.CanStart);
+        Assert.False(lifecycle.CanStop);
+        Assert.False(lifecycle.CanSendInput);
+    }
+
+    [Fact]
+    public void TheLibraryKeyVocabulary_IsUnchanged()
+    {
+        Assert.Equal("running", DeviceLifecycle.From("Running", true, true, true).Key);
+        Assert.Equal("starting", DeviceLifecycle.From("Starting", true, true, false).Key);
+        Assert.Equal("stopping", DeviceLifecycle.From("Stopping", true, true, true).Key);
+        Assert.Equal("failed", DeviceLifecycle.From("Failed", null, false, false).Key);
+        Assert.Equal("dead", DeviceLifecycle.From("Running", false, true, false).Key);
+        Assert.Equal("stopped", DeviceLifecycle.From("Stopped", null, false, false).Key);
+    }
+
+    [Fact]
+    public void TheStateWord_IsTheOneEverySurfacePrints()
+    {
+        Assert.Equal("Stopped", DeviceLifecycle.StateWord("Defined"));
+        Assert.Equal("Stopped", DeviceLifecycle.StateWord("stopped"));
+        Assert.Equal("Running", DeviceLifecycle.StateWord("Running"));
+        Assert.Equal("Unknown", DeviceLifecycle.StateWord(""));
+        Assert.Equal("Unknown", DeviceLifecycle.StateWord(null));
+    }
+}

@@ -1,0 +1,157 @@
+# Implicit state machines in the Emulator Workspace
+
+Date: 2026-11-16. Scope: the whole workspace - the supervisor (Core), the
+WPF desktop, the CLI, the MCP server and the agent surfaces.
+
+Every state in this product is a word that travels over a pipe: `"Running"`,
+`"Starting"`, `"prepared"`, `"pending"`, `"Paused"`. Most of those words are
+*derived* state, and the derivation used to live in more than one place. This
+is the inventory of those implicit state machines, the defects found inside
+them, and what was changed.
+
+**The rating rule used here:** every finding gets a *frequency* (1-10, how
+often an operator hits it) and a *severity* (1-10, how bad it is when it
+happens). The product decides what happens:
+
+- product **>= 5** - fixed in this slice;
+- product **< 5** - filed as an issue, the code is left alone.
+
+## The inventory
+
+| # | State machine | Where the state lives | Implicit in | Status |
+| --- | --- | --- | --- | --- |
+| SM-1 | Managed instance lifecycle | `InstanceRecord.State` (`InstanceState`), sent as a string | The supervisor (2 writers), the Studio, the device library, two converters, the agent table, the command palette | **Explicit now** (UX-18) |
+| SM-2 | Guest readiness / boot stepper | Three `BootStageViewModel` steps (`done`/`active`/`pending`/`unknown`) | The Studio's status poll | Evidence-driven; now reads SM-1 |
+| SM-3 | Frame stream | `_frameWaitSince`, `IsFrameStale`, `_captureRestricted`, `HasFrame` | The Studio | Untouched (one owner) |
+| SM-4 | Logcat stream | `_logcatSubscription`, `LogPaused`, `_logcatError`, the level chips | The Studio + `LogcatPresentation` | Already explicit and pure |
+| SM-5 | Magisk lab transaction | 14 phase strings in the lab journal | `MagiskLabService`, the Studio's stage, the Root Lab card | **Explicit now** (UX-18) |
+| SM-6 | Agent session / pairing / operation outcome | Session state, pairing status, outcome codes | `AgentStore`, `AgentSessionsPresentation` | Already explicit and pure |
+| SM-7 | Overlay scope | `OverlayStack` | The shell | Already explicit and pure (UX-16) |
+| SM-8 | Theme mode | `ThemeMode` + `ThemeSettingsStore` | The shell, the palette, the settings drawer | Already explicit and pure (UX-17) |
+| SM-9 | Supervisor connection and recovery | `SupervisorWatchdog`, `IsConnected` | The shell | Already explicit and pure (UX-16) |
+| SM-10 | Shell destination | `IsStudioVisible` / `IsLogcatPage` / `IsAgentsPage` | The shell | Two booleans that cannot both be true; left as is (see issue 4) |
+| SM-11 | Busy / notice surfaces | `IsBusy` + `BusyText`, the error bar, the toast, the status line | The Studio | One owner, but one global busy flag (see issue 5) |
+| SM-12 | Consent | `ConsentDialogModel` + the dialog result | The Studio, the Root Lab | One owner; the flow is already modelled (UX-09) |
+
+The interesting ones were SM-1 and SM-5: both were *implicit* in the sense
+that the transition rules were spread over several files, and both produced
+defects.
+
+## SM-1 - the managed instance lifecycle
+
+### What the state machine actually was
+
+The supervisor owns an `InstanceState` enum (`Defined`, `Starting`, `Running`,
+`Stopping`, `Stopped`, `Failed`, `Unknown`) and sends it over the pipe as a
+string. Before UX-18, the *transitions* were implicit and lived in five
+places:
+
+- `InstanceManager.StartAsync` wrote `Starting`, `WaitAsync` wrote `Running`,
+  `StopAsync` wrote `Stopping`/`Stopped`, `AdoptAsync` wrote `Running`/
+  `Starting`/`Stopped`/`Unknown`;
+- `DeviceItemViewModel.IsRunning` read `"Running" or "Starting"` as *running*;
+- `LibraryCard.StateKey` read the same word through a different table
+  (`running`/`starting`/`stopping`/`failed`/`dead`/`stopped`);
+- `Converters.StateToSoftBrush`/`StateToBrush` mapped the word to a colour
+  through a third table;
+- `AgentSessionsPresentation.InstanceLabel` mapped it to a word through a
+  fourth.
+
+### The findings
+
+| # | Finding | Frequency | Severity | Product | Decision |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **The record only reached `Running` as a side effect of somebody waiting.** `InstanceState.Running` was assigned in exactly two places: `AdoptAsync` (supervisor restart) and `WaitAsync`. A guest started by `wsctl start`, by an MCP client, by an agent or by the device library stayed `"Starting"` in durable state until a waiter happened to look at it. `wsctl list` printed "Starting" for a guest that had been up for an hour. | 7 | 7 | **49** | **Fixed** |
+| 2 | **The Studio could not attach to a guest it did not start.** The frame subscription was gated on `device.State == "Running"`, so a guest started elsewhere stayed on the "Starting Android" stage with no picture and no way to recover but restarting it. | 7 | 7 | **49** | **Fixed** |
+| 3 | **The record never learned that the engine died.** The supervisor has no exit watcher (the legacy CLI engine had one), so a crashed guest kept saying "Running" until the supervisor restarted. The device library corrected it with `engineAlive`; the Studio did not, so it offered input for a guest that was gone. | 5 | 6 | **30** | **Fixed** |
+| 4 | **"Starting" counted as "running".** Input, the app keys, rotate, screenshot, install and launch were all live while Android was still booting, and every one of them came back with a refusal from the supervisor. | 5 | 3 | **15** | **Fixed** |
+| 5 | **The primary button said "Working..." and stopped the guest.** Its label was computed from the raw word while its action was computed from `IsRunning`, so during a boot the button claimed to be working and stopped the boot. | 3 | 4 | **12** | **Fixed** |
+| 6 | **The device library offered Start and Stop at the same time** for a guest whose engine was gone: `StopCommand` compared the raw word, `CanExecuteStart` compared the derived key. | 4 | 2 | **8** | **Fixed** |
+| 7 | **"Start device" stayed enabled for a running guest**, and the refusal came back as an error bar. | 3 | 2 | **6** | **Fixed** |
+| 8 | **The command states were never re-evaluated when the guest's state changed.** They were refreshed on a selection change and on the busy flag only, so a guest stopped from the device library left the Studio offering a stop. | 6 | 3 | **18** | **Fixed** |
+| 9 | **The card's state tooltip never refreshed** (the live evidence changed, the tooltip did not). | 5 | 1 | **5** | **Fixed** |
+| 10 | **The state word was spelled in four places**, so a new word would have been added four times or missed once. | 8 | 2 | **16** | **Fixed** |
+| 11 | **The device library's "Needs attention" counter only counted `Failed`**, so a guest that lost its engine was not counted. | 4 | 1 | **4** | **Fixed** (the counter now reads the same two states the card's chip does) |
+| 12 | **A guest in the `Unknown` state offered a "Start"** that the supervisor refuses with `already_running` (the process is alive, it just could not be verified). | 2 | 3 | **6** | **Fixed** (the state now offers no mutation and says "Unknown state") |
+| 13 | **The `Stopping` state left the primary action enabled** - the operator could press it and get a typed refusal while the guest was shutting down. | 3 | 2 | **6** | **Fixed** |
+
+### What changed
+
+**Supervisor (`Core`)**
+
+- `Core/Instances/InstanceLifecycle.cs` (new): the transition table, in one
+  place and pure. `Reconcile(current, evidence)` is monotonic: evidence moves a
+  record forward (`Starting` -> `Running` when the guest reports
+  `sys.boot_completed=1`) or reports that the process is gone (-> `Stopped`).
+  It never invents a state and never overwrites a recorded failure.
+- `InstanceManager.StatusAsync` reconciles the record with what it just
+  observed (the engine process, the ADB transport, the guest's own boot
+  property) and persists the change. The readiness stages are stamped from the
+  same evidence, so a guest that booted while nobody was waiting still reports
+  when it booted.
+- `InstanceManager.List` reconciles the liveness of every record, so
+  `instance.list` and `wsctl list` no longer print "Running" for a guest whose
+  engine is gone.
+
+**Desktop**
+
+- `Desktop/ViewModels/DeviceLifecycle.cs` (new): the one model every surface
+  reads. It takes the supervisor's word **and** the evidence that came with it
+  and returns an explicit phase plus the capabilities that phase allows
+  (`CanStart`, `CanStop`, `CanSendInput`, `CanAttachFrames`, `CanInstall`).
+  The rule that matters: **the evidence outranks the record**. A guest that
+  reported boot completion is running even when the record still says
+  "Starting"; a record that points at an engine process which is gone is a
+  guest that died, not a guest that is running.
+- The Studio, the device library, the two state converters, the agent table and
+  the command palette all resolve a guest through it now, so a control is
+  enabled exactly when the supervisor would accept the action and two panels
+  can no longer disagree about the same guest.
+- The Studio gained an "engine gone" stage, the same word the device library
+  already used, and the boot stepper reads the same lifecycle.
+
+### What did not change
+
+- The wire contract: `instance.status` and `instance.list` keep every field
+  they had. `magisk.status` gained one additive field (`installInProgress`).
+- The supervisor's authorization policy, scopes, leases and journal.
+- The engine, the image, the ADB targeting and the viewport geometry.
+
+## SM-5 - the Magisk lab transaction
+
+### The finding
+
+| # | Finding | Frequency | Severity | Product | Decision |
+| --- | --- | --- | --- | --- | --- |
+| 14 | **`recoveryRequired` was true through the whole successful install.** The lab journal reported "recovery required" for every phase that was not `prepared`, `verified` or `recovered` - so `staging`, `baseline_boot`, `activating`, `provisioned` and `verifying_boot_N` all claimed that the guest needed a stock recovery. The Studio turned that into a "Lab recovery required" stage over the viewport, and told the operator to recover stock while the install was doing exactly what it was asked to do. | 6 | 5 | **30** | **Fixed** |
+| 15 | **An interrupted install was indistinguishable from a running one.** The phase was the only signal, so a transaction that died mid-`activating` looked like a transaction that was still running. | 4 | 4 | **16** | **Fixed** (a journal that has not moved for 10 minutes is an interrupted transaction, and it needs a stock recovery) |
+| 16 | **The lab's phase word was printed raw** ("verifying_boot_1") in the inspector and in the rail dot's tooltip. | 4 | 1 | **4** | Filed (issue 2) |
+
+### What changed
+
+- `Core/Supervisor/MagiskLabPhase.cs` (new): the phases are classified once -
+  failed, running, or interrupted. `RequiresRecovery` is true for a failed
+  transaction and for a transaction that was interrupted after the guest had
+  already booted with the patched ramdisk; `InProgress` is true while the
+  transaction is still moving.
+- `magisk.status` reports `recoveryRequired` (now honest) and the new
+  `installInProgress`.
+- The Studio shows "Magisk lab in progress" while the transaction runs, and
+  keeps "Lab recovery required" for the case that really needs a stock
+  recovery. The agent fence in the supervisor (`Guard`) is unchanged: an
+  active lab still permits observation only until the guest is back on stock.
+
+## Verification
+
+- `dotnet build -c Release`: 0 errors, 22 warnings (the recorded baseline).
+- `dotnet test -c Release --no-build`: **604/604** (577 before this slice,
+  27 new).
+- New unit tests: `DeviceLifecycleTests` (14), `InstanceLifecycleTests` (10),
+  `MagiskLabPhaseTests` (8). They cover the transition table, the capability
+  table and the phase classification.
+- `git diff --check`: clean.
+
+Hardware-dependent behaviour (a real guest booting while nobody waits, a
+guest crashing, a Magisk install in flight) needs a WHPX guest and is listed
+as pending evidence in [the issue file](issues/state-machine-issues.md) and in
+`task.md`.
