@@ -69,14 +69,15 @@ public sealed class SupervisorConnection : IAsyncDisposable
     public static async Task<SupervisorConnection> ConnectAsync(
         string root,
         TimeSpan startupTimeout,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<string>? log = null)
     {
         var pipe = await SupervisorLocator.TryConnectAsync(root, TimeSpan.FromMilliseconds(300), cancellationToken)
             .ConfigureAwait(false);
 
         if (pipe is null)
         {
-            await SupervisorLocator.EnsureRunningAsync(root, startupTimeout, cancellationToken: cancellationToken)
+            await SupervisorLocator.EnsureRunningAsync(root, startupTimeout, log, cancellationToken)
                 .ConfigureAwait(false);
             pipe = await SupervisorLocator.TryConnectAsync(root, TimeSpan.FromSeconds(10), cancellationToken)
                 .ConfigureAwait(false);

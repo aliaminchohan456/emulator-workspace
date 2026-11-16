@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -44,6 +45,7 @@ public sealed class InstanceManager
     private readonly AdbClient _adb;
     private readonly ConcurrentDictionary<string, Runtime> _runtimes = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, (string Instance, string Kind)> _subscriptions = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<int, string> _stopRequests = new();
     private readonly string _frameDirectory;
 
     public InstanceManager(
@@ -180,6 +182,7 @@ public sealed class InstanceManager
                 record.State = boot.Trim() == "1" ? InstanceState.Running : InstanceState.Starting;
                 record.LastError = null;
                 _store.UpsertInstance(record);
+                WatchEngineExit(record.Name, record.EnginePid!.Value, record.EngineStartTimeUtc);
                 adopted.Add(new JsonObject
                 {
                     ["name"] = record.Name,
@@ -402,6 +405,7 @@ public sealed class InstanceManager
             record.EngineArguments = launched.CommandLine;
             record.EngineVersion = await SafeVersionAsync(cancellationToken).ConfigureAwait(false);
             _store.UpsertInstance(record);
+            WatchEngineExit(record.Name, launched.Pid, record.EngineStartTimeUtc);
 
             runtime.Ready = new ReadyStages(startedUtc, null, null, null);
             runtime.AdbOnlineSeenUtc = null;
@@ -568,6 +572,7 @@ public sealed class InstanceManager
 
             var pid = record.EnginePid!.Value;
             var start = record.EngineStartTimeUtc;
+            _stopRequests[pid] = force ? "instance.stop(force)" : "instance.stop";
             var deadline = DateTimeOffset.UtcNow.AddSeconds(force ? 5 : 25);
             while (DateTimeOffset.UtcNow < deadline && NativeProcess.IsAlive(pid, start))
             {
@@ -607,6 +612,48 @@ public sealed class InstanceManager
     }
 
     private static int[] EnginePorts(InstanceRecord record) => [record.ConsolePort, record.ConsolePort + 1, record.GrpcPort];
+
+    /// <summary>
+    /// EV-11b: one line when an engine process ends, with the exit code Windows
+    /// reports and whether this supervisor asked for the stop. The engine used
+    /// to vanish without a trace, which left "the guest stopped" and "the guest
+    /// was killed from outside" indistinguishable in the log.
+    ///
+    /// The wait runs on a pool thread for the life of the engine and holds one
+    /// handle; it is bounded by the process ending, never by a timeout.
+    /// </summary>
+    private void WatchEngineExit(string instance, int pid, string? startedUtc)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var process = Process.GetProcessById(pid);
+                if (!string.IsNullOrWhiteSpace(startedUtc)
+                    && DateTimeOffset.TryParse(startedUtc, out var recorded)
+                    && Math.Abs((process.StartTime.ToUniversalTime() - recorded.UtcDateTime).TotalSeconds) >= 2)
+                {
+                    // The pid now belongs to a different process; the engine
+                    // this record pointed at is already gone and was reported
+                    // when its own handle signalled.
+                    return;
+                }
+
+                await process.WaitForExitAsync().ConfigureAwait(false);
+                var requested = _stopRequests.TryRemove(pid, out var request);
+                SupervisorDiagnostics.Write(
+                    $"Engine pid {pid} ({instance}) exited with code {process.ExitCode}; " +
+                    (requested
+                        ? $"the supervisor requested the stop ({request})."
+                        : "the supervisor did not request the stop."));
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Win32Exception)
+            {
+                SupervisorDiagnostics.Write(
+                    $"Engine pid {pid} ({instance}) is gone; its exit code could not be read ({ex.GetType().Name}: {ex.Message}).");
+            }
+        });
+    }
 
     /// <summary>
     /// UX-18: stops the guest that outlived this instance's engine process.

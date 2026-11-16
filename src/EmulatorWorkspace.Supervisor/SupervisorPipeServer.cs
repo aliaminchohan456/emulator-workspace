@@ -33,6 +33,23 @@ public sealed class SupervisorPipeServer
         _log = log;
     }
 
+    /// <summary>
+    /// EV-11b: how many client sessions are still running. The heartbeat prints
+    /// it so a log slice can tell "nobody holds the supervisor" from "a client
+    /// is in the middle of a request"; completed sessions are pruned on the way.
+    /// </summary>
+    public int ActiveClients
+    {
+        get
+        {
+            lock (_sessionGate)
+            {
+                _sessions.RemoveAll(t => t.IsCompleted);
+                return _sessions.Count;
+            }
+        }
+    }
+
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         _log($"Listening on pipe '{_pipeName}'.");

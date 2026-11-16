@@ -2337,7 +2337,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         try
         {
-            _connection ??= await SupervisorConnection.ConnectAsync(_paths.Root, TimeSpan.FromSeconds(25))
+            _connection ??= await SupervisorConnection.ConnectAsync(
+                    _paths.Root, TimeSpan.FromSeconds(25), log: DesktopLog.Write)
                 .ConfigureAwait(true);
             HookConnection(_connection);
 

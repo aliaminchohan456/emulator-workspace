@@ -1,5 +1,9 @@
-﻿using System.Diagnostics;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
+using System.Text;
+using EmulatorWorkspace.Core.Engine;
 
 namespace EmulatorWorkspace.Core.Supervisor;
 
@@ -41,26 +45,89 @@ public static class SupervisorLocator
         return null;
     }
 
-    /// <summary>Starts the supervisor as a detached, hidden process.</summary>
-    public static Process? StartDetached(string root, string? executable = null)
+    /// <summary>
+    /// Starts the supervisor as a detached, hidden process.
+    ///
+    /// EV-11b: the launch is CreateProcess with CREATE_BREAKAWAY_FROM_JOB,
+    /// CREATE_NEW_PROCESS_GROUP and CREATE_NO_WINDOW, so a process-tree kill of
+    /// whatever shell asked for the supervisor (an editor's tool host, an agent
+    /// runner, a build step) does not take the supervisor and its guests with
+    /// it. Windows refuses that flag when the caller's job forbids breakaway;
+    /// the launch is then retried once without it, exactly as before, and the
+    /// caller is told once through <paramref name="log"/>. No shell is used, so
+    /// the command line is the only thing that decides what runs.
+    /// </summary>
+    public static Process? StartDetached(string root, string? executable = null, Action<string>? log = null)
     {
         var (fileName, prefixArgs) = ResolveLaunchTarget(executable);
-        var startInfo = new ProcessStartInfo(fileName)
+        var arguments = new List<string>(prefixArgs)
         {
-            UseShellExecute = true,
-            WindowStyle = ProcessWindowStyle.Hidden,
-            WorkingDirectory = AppContext.BaseDirectory,
+            "--root",
+            RootIdentity.Canonicalize(root),
         };
 
-        foreach (var argument in prefixArgs)
+        var breakaway = true;
+        while (true)
         {
-            startInfo.ArgumentList.Add(argument);
+            var pid = CreateDetached(fileName, arguments, SupervisorLaunch.Flags(breakaway), out var error);
+            if (pid > 0)
+            {
+                try
+                {
+                    return Process.GetProcessById(pid);
+                }
+                catch (ArgumentException)
+                {
+                    // The child was created and exited before we could open it.
+                    return null;
+                }
+            }
+
+            if (SupervisorLaunch.NextAttempt(error, breakaway) != LaunchRetry.WithoutBreakaway)
+            {
+                throw new Win32Exception(error, $"Could not start '{fileName}' (error {error}).");
+            }
+
+            log?.Invoke(SupervisorLaunch.FallbackNote(error));
+            breakaway = false;
+        }
+    }
+
+    /// <summary>
+    /// One CreateProcess attempt. Returns the child's pid, or 0 with the Win32
+    /// error code. The child inherits the caller's environment and standard
+    /// handles are not passed, because the supervisor owns its own log file.
+    /// </summary>
+    private static int CreateDetached(
+        string fileName,
+        IReadOnlyList<string> arguments,
+        uint flags,
+        out int error)
+    {
+        var commandLine = new StringBuilder(NativeProcess.BuildCommandLine(fileName, arguments));
+        var startup = new StartupInfo { cb = Marshal.SizeOf<StartupInfo>() };
+        var created = CreateProcessW(
+            null,
+            commandLine,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            false,
+            flags,
+            IntPtr.Zero,
+            AppContext.BaseDirectory,
+            ref startup,
+            out var process);
+
+        if (!created)
+        {
+            error = Marshal.GetLastWin32Error();
+            return 0;
         }
 
-        startInfo.ArgumentList.Add("--root");
-        startInfo.ArgumentList.Add(RootIdentity.Canonicalize(root));
-
-        return Process.Start(startInfo);
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+        error = 0;
+        return checked((int)process.dwProcessId);
     }
 
     public static async Task EnsureRunningAsync(
@@ -77,10 +144,11 @@ public static class SupervisorLocator
             return;
         }
 
-        var process = StartDetached(root);
+        var process = StartDetached(root, log: log);
         log?.Invoke(process is null
             ? "Supervisor process did not start."
             : $"Started supervisor pid {process.Id} for {RootIdentity.Canonicalize(root)}.");
+        process?.Dispose();
 
         var connected = await TryConnectAsync(root, timeout, cancellationToken).ConfigureAwait(false);
         if (connected is null)
@@ -154,6 +222,54 @@ public static class SupervisorLocator
 
         return null;
     }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct StartupInfo
+    {
+        public int cb;
+        public string? lpReserved;
+        public string? lpDesktop;
+        public string? lpTitle;
+        public int dwX;
+        public int dwY;
+        public int dwXSize;
+        public int dwYSize;
+        public int dwXCountChars;
+        public int dwYCountChars;
+        public int dwFillAttribute;
+        public int dwFlags;
+        public short wShowWindow;
+        public short cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ProcessInformation
+    {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public uint dwProcessId;
+        public uint dwThreadId;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool CreateProcessW(
+        string? lpApplicationName,
+        StringBuilder lpCommandLine,
+        IntPtr lpProcessAttributes,
+        IntPtr lpThreadAttributes,
+        bool bInheritHandles,
+        uint dwCreationFlags,
+        IntPtr lpEnvironment,
+        string? lpCurrentDirectory,
+        ref StartupInfo lpStartupInfo,
+        out ProcessInformation lpProcessInformation);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr handle);
 }
 
 public sealed class SupervisorUnavailableException(string message, Exception? innerException = null)
