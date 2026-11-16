@@ -396,9 +396,15 @@ recovery (it was true for every phase that was not prepared/verified/recovered),
 for 10 minutes counts as interrupted. No engine, image, scope, policy, lease,
 journal, viewport or theme change; the wire contract keeps every field it had.
 Build 0 errors / 22 warnings, 604/604 tests (27 new), `git diff --check` clean.
-Hardware proofs (a guest booting without a waiter, a guest that lost its engine,
-a Magisk install in flight) are pending a WHPX guest and are listed in the
-issue file.
+Runtime evidence without a guest (a disposable root with a record whose engine
+process was gone): `wsctl list` prints `Stopped` where it used to print
+`Running`, `wsctl status` prints `state=Stopped engineAlive=false pid=...`, the
+Studio reads "Engine gone" and the stage "The guest's engine is gone"
+(`artifacts/ui/ux18-engine-gone.png`), and the Device Manager reads the same
+chip with a Start button and "Needs attention 1 · guest to review"
+(`artifacts/ui/ux18-engine-gone-library.png`). The remaining hardware proofs
+(a guest booting without a waiter, a Magisk install in flight) are listed in
+the issue file.
 ## Goal and baseline
 
 Build a Windows-first Android emulator workspace for developers and QA. The release combines a responsive embedded Android viewport, recoverable device management, reproducible QA recipes, local agent control, and two separately verified root workflows. Deliver the source, a reproducible installer or installable release candidate, and evidence from real guests.

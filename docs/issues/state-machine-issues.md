@@ -26,3 +26,15 @@ WHPX guest. They are listed so the next run knows what to look at.
 | B | A guest whose engine is gone reads "Engine gone" in both the Studio and the device library, and the library offers Start. | Kill the engine process for a running guest, then read the Studio's state pill and the library card. | `artifacts/ux18/` |
 | C | A Magisk install in flight reports "install in progress", not "Lab recovery required"; an interrupted install reports that a stock recovery is due. | Run `magisk.prepare` + `magisk.install` from the CLI while the Studio watches the guest. | `artifacts/ux18/` |
 | D | The supervisor's `instance.status` still answers every agent scope the same way after the reconciliation change (no new write in a read scope, no scope change). | The Phase 2 agent acceptance run. | `artifacts/phase2/` |
+
+### B is already proved (without a guest)
+
+The "engine gone" path was proved against a disposable supervisor root with a
+record whose engine process was gone: `wsctl list` printed `Stopped`,
+`wsctl status` printed `state=Stopped engineAlive=false pid=999999`, the Studio
+showed "Engine gone" and the stage "The guest's engine is gone"
+(`artifacts/ui/ux18-engine-gone.png`), and the Device Manager showed the same
+chip, a Start button and "Needs attention 1 · guest to review"
+(`artifacts/ui/ux18-engine-gone-library.png`). What is still missing is the
+same observation on a *real* guest whose engine process actually died, which is
+why the row stays open.

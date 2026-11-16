@@ -151,7 +151,30 @@ places:
   table and the phase classification.
 - `git diff --check`: clean.
 
-Hardware-dependent behaviour (a real guest booting while nobody waits, a
-guest crashing, a Magisk install in flight) needs a WHPX guest and is listed
-as pending evidence in [the issue file](issues/state-machine-issues.md) and in
+### Runtime evidence (a disposable workspace root, no guest)
+
+A managed record whose engine process was gone was written straight into a
+throwaway supervisor database (state `Running`, a dead pid) and then read
+through the normal entries:
+
+- `wsctl list --root <root>` printed `ghost  emulator-5594  grpc:8584  Stopped`.
+  Before the change it printed `Running` for a guest with no engine process.
+- `wsctl status --name ghost --root <root>` printed
+  `state=Stopped engineAlive=false pid=999999`: the truth, with the pid kept
+  as the evidence that the guest had a process and lost it.
+- The Studio showed the same guest as one word - the state pill read
+  **"Engine gone"** and the stage read "The guest's engine is gone / The engine
+  process for ghost is no longer running. / The guest stopped outside the
+  supervisor. Start it again to bring it back."
+  (`artifacts/ui/ux18-engine-gone.png`).
+- The Device Manager agreed: the card's chip read **"Engine gone"**, the card
+  offered **Start** (and no Stop), "Running 0 of 1" and "Needs attention 1 ·
+  guest to review" (`artifacts/ui/ux18-engine-gone-library.png`).
+
+Two surfaces, one word and one set of capabilities - which is the point of the
+slice.
+
+Hardware-dependent behaviour that still needs a real WHPX guest (a guest
+booting while nobody waits, a Magisk install in flight) is listed as pending
+evidence in [the issue file](issues/state-machine-issues.md) and in
 `task.md`.
