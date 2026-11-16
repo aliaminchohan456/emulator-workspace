@@ -329,6 +329,19 @@ public sealed class InstanceManager
             {
                 if (!PortAllocator.IsPortFree(port))
                 {
+                    // UX-18: the busy port may belong to this instance's own
+                    // leftover guest (the engine's wrapper died and left the
+                    // guest running). The console says whose guest it is, so
+                    // the message can name the instance instead of pointing
+                    // at a stranger.
+                    var orphan = await TryConsoleAvdNameAsync(record, cancellationToken).ConfigureAwait(false);
+                    if (OrphanedGuest.BelongsTo(orphan, record.AvdName))
+                    {
+                        throw new SupervisorOperationException(
+                            ErrorCodes.PortConflict,
+                            OrphanedGuest.PortConflictMessage(record.Name, record.AdbSerial, port));
+                    }
+
                     throw new SupervisorOperationException(
                         ErrorCodes.PortConflict,
                         $"Port {port} is already in use. Another emulator or process owns it; " +
@@ -508,16 +521,30 @@ public sealed class InstanceManager
         {
             var record = runtime.Record;
             await StopPumpsAsync(runtime).ConfigureAwait(false);
+            record.LastError = null;
 
             if (!NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc))
             {
+                // UX-18: the engine process is gone, but the guest it started
+                // may still be alive (the wrapper died and left the guest
+                // behind). That guest holds the instance's reserved ports, so
+                // the next start would fail with a port conflict that names a
+                // stranger. Stopping the instance means stopping the guest:
+                // the console is asked to end it, but only when it answers as
+                // this instance's AVD.
+                var orphanStopped = await TryStopOrphanedGuestAsync(record, cancellationToken).ConfigureAwait(false);
                 await WaitForEngineStopAsync(record, cancellationToken).ConfigureAwait(false);
                 record.State = InstanceState.Stopped;
                 record.EnginePid = null;
                 record.EngineStartTimeUtc = null;
-                record.LastError = null;
                 _store.UpsertInstance(record);
-                return new JsonObject { ["name"] = name, ["stopped"] = true, ["forced"] = false };
+                return new JsonObject
+                {
+                    ["name"] = name,
+                    ["stopped"] = true,
+                    ["forced"] = false,
+                    ["orphanStopped"] = orphanStopped,
+                };
             }
 
             record.State = InstanceState.Stopping;
@@ -579,6 +606,103 @@ public sealed class InstanceManager
     }
 
     private static int[] EnginePorts(InstanceRecord record) => [record.ConsolePort, record.ConsolePort + 1, record.GrpcPort];
+
+    /// <summary>
+    /// UX-18: stops the guest that outlived this instance's engine process.
+    ///
+    /// The engine is a wrapper around the real emulator process. When the
+    /// wrapper dies, the guest it started can survive it and keep the
+    /// instance's reserved ports, so the instance is gone as far as the
+    /// supervisor can see while it still holds the ports the next start
+    /// needs. The guest is only addressed when the console on *this*
+    /// instance's serial answers as *this* instance's AVD - an emulator that
+    /// belongs to somebody else is never touched.
+    /// </summary>
+    private async Task<bool> TryStopOrphanedGuestAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var avdName = await TryConsoleAvdNameAsync(record, cancellationToken).ConfigureAwait(false);
+        if (!OrphanedGuest.BelongsTo(avdName, record.AvdName))
+        {
+            return false;
+        }
+
+        string? failure = null;
+        try
+        {
+            await _adb.EmulatorConsoleAsync(record.AdbSerial, new[] { "kill" }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException or SupervisorOperationException)
+        {
+            // The console can die with the guest it was asked to stop: the
+            // command is delivered and the answer is lost. The ports decide
+            // whether the guest really went.
+            failure = ex.Message;
+        }
+
+        if (await WaitForPortsFreeAsync(record, cancellationToken).ConfigureAwait(false))
+        {
+            return true;
+        }
+
+        record.LastError = "The leftover guest did not release the instance's ports: "
+            + (failure ?? "the console accepted the stop request, but the guest is still running.");
+        return false;
+    }
+
+    /// <summary>
+    /// Waits for the instance's reserved ports to be free, which is what a
+    /// guest that has really stopped does.
+    /// </summary>
+    private static async Task<bool> WaitForPortsFreeAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        var timer = Stopwatch.StartNew();
+        var ports = EnginePorts(record);
+        do
+        {
+            if (ports.All(PortAllocator.IsPortFree))
+            {
+                return true;
+            }
+
+            await Task.Delay(350, cancellationToken).ConfigureAwait(false);
+        } while (timer.Elapsed < TimeSpan.FromSeconds(15));
+
+        return false;
+    }
+
+    /// <summary>
+    /// The AVD name the emulator console on this instance's serial reports, or
+    /// null when nothing answers there.
+    ///
+    /// The probe is bounded: a console that does not answer must not hold the
+    /// caller, and a console that belongs to another emulator must not be
+    /// mistaken for this instance's own.
+    /// </summary>
+    private async Task<string?> TryConsoleAvdNameAsync(InstanceRecord record, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var probe = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            probe.CancelAfter(TimeSpan.FromSeconds(8));
+            var result = await _adb.RunAsync(
+                record.AdbSerial,
+                new[] { "emu", "avd", "name" },
+                TimeSpan.FromSeconds(8),
+                probe.Token).ConfigureAwait(false);
+            if (result.ExitCode != 0)
+            {
+                return null;
+            }
+
+            return OrphanedGuest.ReadConsoleAvdName(result.StandardOutput);
+        }
+        catch (Exception)
+        {
+            // A probe that cannot answer is a guest that cannot be identified.
+            return null;
+        }
+    }
 
     private static async Task WaitForEngineStopAsync(InstanceRecord record, CancellationToken cancellationToken)
     {
