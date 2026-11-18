@@ -1943,10 +1943,16 @@
                             BorderBrush="{DynamicResource DeviceBodyBorder}" BorderThickness="1"
                             Effect="{DynamicResource DeviceFrameShadow}" IsHitTestVisible="False" />
 
-                    <Grid x:Name="ViewportScroll" ClipToBounds="True" Margin="12">
+                    <Grid x:Name="ViewportScroll" ClipToBounds="True" Margin="12"
+                          SizeChanged="OnViewportSizeChanged">
                         <Grid x:Name="ViewportCanvas" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <!-- EV-12: the capture follows the viewport in
+                                 device pixels, so this image is drawn at about
+                                 1:1. Linear is the cheap filter that keeps that
+                                 sharp; HighQuality's Fant resample is a
+                                 per-frame cost this live surface does not need. -->
                             <Image x:Name="ViewportImage" Stretch="Fill"
-                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   RenderOptions.BitmapScalingMode="Linear"
                                    MouseLeftButtonDown="OnViewportMouseDown"
                                    MouseLeftButtonUp="OnViewportMouseUp"
                                    AutomationProperties.Name="Embedded Android viewport"

@@ -53,6 +53,10 @@
          bitmap-reuse rule are pure, so they are pinned here instead of needing a
          window, a guest or a WPF bitmap. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/ViewportFramePipeline.cs" Link="Desktop/ViewportFramePipeline.cs" />
+    <!-- EV-12: the capture-size rule and its 300 ms burst coalescing are pure,
+         so the aspect, even, cap, floor, threshold and DPI cases are pinned
+         here without a window or a display-scaling change. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/CaptureSizePolicy.cs" Link="Desktop/CaptureSizePolicy.cs" />
     <!-- EV-06: the shell's one page and the inspector's five session-only rows
          are pure rules too, so they are pinned here instead of through a WPF
          window. -->

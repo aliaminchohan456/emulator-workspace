@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,19 @@ public partial class MainWindow : Window, IOverlayAnchor
     private bool _logcatDragging;
     private double _logcatDragStartY;
     private double _logcatDragStartHeight;
+
+    // EV-12: a resize burst becomes one capture-size decision after 300 ms of
+    // quiet. The scheduler is pure (and unit-tested); this timer is only its
+    // clock, so a window drag that sends dozens of SizeChanged events does not
+    // resubscribe dozens of times.
+    private readonly CaptureResizeScheduler _captureResize = new();
+    private readonly DispatcherTimer _captureResizeTimer = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(50),
+    };
+    private bool _captureResizeBusy;
+    private bool _captureSchedulePosted;
+    private DpiScale? _captureDpiOverride;
 
     // UX-08 tail following: the dock follows the newest line while it is pinned
     // to the bottom; scrolling up unpins it and counts what arrived since.
@@ -211,6 +225,7 @@ public partial class MainWindow : Window, IOverlayAnchor
         DataContext = _viewModel;
 
         _pillIdle.Tick += (_, _) => CheckPillIdle();
+        _captureResizeTimer.Tick += OnCaptureResizeTick;
         _pillClipTimer.Tick += (_, _) =>
         {
             _pillClipTimer.Stop();
@@ -1506,7 +1521,12 @@ public partial class MainWindow : Window, IOverlayAnchor
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
+        Services.DesktopLog.Write($"dpi {oldDpi.DpiScaleX:N2} -> {newDpi.DpiScaleX:N2}");
         UpdateViewportSize();
+        // EV-12: the visual tree may still report the old scale for the rest of
+        // this callback, so the new one is carried into the decision instead of
+        // being re-read from the tree.
+        ScheduleCaptureResize(newDpi);
     }
 
     /// <summary>
@@ -1524,6 +1544,7 @@ public partial class MainWindow : Window, IOverlayAnchor
             DeviceFrame.Width = 0;
             DeviceFrame.Height = 0;
             UpdatePillPosition();
+            ScheduleCaptureResize();
             return;
         }
 
@@ -1545,6 +1566,120 @@ public partial class MainWindow : Window, IOverlayAnchor
         ViewportCanvas.Width = ViewportImage.Width;
         ViewportCanvas.Height = ViewportImage.Height;
         UpdateStageOverlays();
+        ScheduleCaptureResize();
+    }
+
+    /// <summary>
+    /// EV-12: asks the capture policy for the size this viewport should be
+    /// streaming, and restarts the 300 ms quiet period. Every path that can
+    /// change the answer - a stage or viewport resize, a DPI change, a zoom or
+    /// fit click, a new guest display - ends here, so the toolbar buttons move
+    /// the capture as well as the picture.
+    /// </summary>
+    private void ScheduleCaptureResize(DpiScale? dpiOverride = null)
+    {
+        if (dpiOverride is { } explicitDpi)
+        {
+            _captureDpiOverride = explicitDpi;
+        }
+
+        // WPF can raise SizeChanged and DpiChanged before the visual tree
+        // reports the new scale, so the size is decided one dispatcher turn
+        // later, when the window's own state is the state the picture will use.
+        if (_captureSchedulePosted)
+        {
+            return;
+        }
+
+        _captureSchedulePosted = true;
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
+        {
+            _captureSchedulePosted = false;
+            var dpi = _captureDpiOverride ?? VisualTreeHelper.GetDpi(this);
+            _captureDpiOverride = null;
+            QueueCaptureCandidate(dpi);
+        }));
+    }
+
+    private void QueueCaptureCandidate(DpiScale dpi)
+    {
+        if (ViewportScroll is null || ViewportScroll.ActualWidth <= 0 || ViewportScroll.ActualHeight <= 0)
+        {
+            return;
+        }
+
+        var size = CaptureSizePolicy.ForViewport(
+            ViewportScroll.ActualWidth,
+            ViewportScroll.ActualHeight,
+            dpi.DpiScaleX,
+            dpi.DpiScaleY,
+            _viewModel.GuestWidth,
+            _viewModel.GuestHeight,
+            _viewModel.ZoomMode,
+            _viewModel.ZoomFactor);
+        if (size.IsEmpty)
+        {
+            return;
+        }
+
+        _captureResize.Signal(size, Stopwatch.GetTimestamp());
+        if (!_captureResizeTimer.IsEnabled)
+        {
+            _captureResizeTimer.Start();
+        }
+    }
+
+    /// <summary>
+    /// EV-12: the burst's one decision. The size the policy chose is handed to
+    /// the view model, which unsubscribes and subscribes through EV-05 only when
+    /// the change is worth it (more than 2 %). The guest picture stays on screen
+    /// throughout; only the first frame at the new size replaces it.
+    /// </summary>
+    private async void OnCaptureResizeTick(object? sender, EventArgs e)
+    {
+        if (_captureResizeBusy)
+        {
+            return;
+        }
+
+        if (!_captureResize.TryTake(
+                Stopwatch.GetTimestamp(), _viewModel.CaptureWidth, _viewModel.CaptureHeight, out var size))
+        {
+            if (!_captureResize.HasPending)
+            {
+                _captureResizeTimer.Stop();
+            }
+
+            return;
+        }
+
+        _captureResizeTimer.Stop();
+        _captureResizeBusy = true;
+        try
+        {
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var changed = await _viewModel.ApplyCaptureSizeAsync(size.Width, size.Height);
+            if (changed)
+            {
+                Services.DesktopLog.Write(
+                    $"viewport capture {size.Width}x{size.Height} " +
+                    $"window={ActualWidth:N0}x{ActualHeight:N0} dpi={dpi.DpiScaleX:N2} " +
+                    $"zoom={_viewModel.ZoomStatus} guest={_viewModel.GuestWidth}x{_viewModel.GuestHeight}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Services.DesktopLog.Write(
+                $"viewport capture resize failed: {ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            _captureResizeBusy = false;
+            if (_captureResize.HasPending && !_captureResizeTimer.IsEnabled)
+            {
+                _captureResizeTimer.Start();
+            }
+        }
     }
 
     private bool TryMapToGuest(Point point, out int x, out int y)

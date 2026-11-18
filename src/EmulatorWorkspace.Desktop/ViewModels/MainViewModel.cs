@@ -187,11 +187,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // value to read between status polls.
     private bool _guestInteractive;
 
-    private readonly bool _halfCapture;
+    // EV-12: the capture size the current (or next) subscription asks for, in
+    // device pixels. The window derives it from the viewport and calls
+    // ApplyCaptureSizeAsync after a resize burst; a subscription uses it so a
+    // late attach starts at the right size instead of the old hard-coded 540.
+    private int _captureWidth;
+    private int _captureHeight;
 
     public MainViewModel(bool halfCapture = false)
     {
-        _halfCapture = halfCapture;
+        _captureWidth = halfCapture ? 270 : 540;
+        _captureHeight = halfCapture ? 600 : 1200;
         _paths = WorkspacePaths.Resolve();
         _dispatcher = Application.Current.Dispatcher;
 
@@ -1718,6 +1724,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     public double FramesPerSecond { get; private set; }
+
+    /// <summary>EV-12: the capture width the stream is asked for, in device pixels.</summary>
+    public int CaptureWidth => Volatile.Read(ref _captureWidth);
+
+    /// <summary>EV-12: the capture height the stream is asked for, in device pixels.</summary>
+    public int CaptureHeight => Volatile.Read(ref _captureHeight);
 
     internal string? ViewportSubscription => Volatile.Read(ref _frameSub).Id;
 
@@ -3655,6 +3667,93 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         await _subscribeGate.WaitAsync().ConfigureAwait(true);
         try
         {
+            await SubscribeFramesCoreAsync(device, CaptureWidth, CaptureHeight).ConfigureAwait(true);
+        }
+        finally
+        {
+            _subscribeGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// EV-12: the window's viewport chose a capture size. If the stream is
+    /// live, it is closed through the EV-05 state machine and opened again at
+    /// the new size, which also gives the supervisor a fresh EV-11 ring sized
+    /// for the new frame. The last picture stays on screen for the whole round
+    /// trip (Frame is never cleared here), so the viewport has no black gap.
+    ///
+    /// Returns whether the call changed the size the stream asks for.
+    /// </summary>
+    public async Task<bool> ApplyCaptureSizeAsync(int width, int height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+
+        await _subscribeGate.WaitAsync().ConfigureAwait(true);
+        try
+        {
+            var current = Volatile.Read(ref _frameSub);
+            var device = SelectedDevice;
+            var changed = width != _captureWidth || height != _captureHeight;
+            if (!changed && current.Phase == SubPhase.Live)
+            {
+                return false;
+            }
+
+            if (current.Phase == SubPhase.Live
+                && current.Id is { Length: > 0 } live
+                && device is not null
+                && StreamSubscription.IsSameGuest(current, device.Name))
+            {
+                // The live id is closed locally and handed back; the EV-11 ring
+                // belongs to that id and is closed by the transition.
+                ApplyFrameEvent(new SubEvent.Closed(live));
+                await UnsubscribeAsync(OperationNames.FrameUnsubscribe, live, TimeSpan.FromSeconds(15))
+                    .ConfigureAwait(true);
+
+                Volatile.Write(ref _captureWidth, width);
+                Volatile.Write(ref _captureHeight, height);
+                DesktopLog.Write($"frames capture {device.Name} {width}x{height}");
+
+                // A close or a pipe loss during the unsubscribe is not retried
+                // here - the status poll reattaches with the size above.
+                if (SelectedDevice?.Name == device.Name
+                    && StreamSubscription.ShouldSubscribe(
+                        Volatile.Read(ref _frameSub), device.Lifecycle.CanAttachFrames, device.Name))
+                {
+                    await SubscribeFramesCoreAsync(device, width, height).ConfigureAwait(true);
+                }
+
+                return true;
+            }
+
+            // No live stream (still booting, or between attachments): remember
+            // the size so the next subscribe opens at it.
+            Volatile.Write(ref _captureWidth, width);
+            Volatile.Write(ref _captureHeight, height);
+            if (changed)
+            {
+                DesktopLog.Write($"frames capture pending {width}x{height}");
+            }
+
+            return changed;
+        }
+        finally
+        {
+            _subscribeGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// EV-05 / EV-12: opens one frame subscription at the given capture size.
+    /// The caller holds <see cref="_subscribeGate"/>.
+    /// </summary>
+    private async Task SubscribeFramesCoreAsync(DeviceItemViewModel device, int captureWidth, int captureHeight)
+    {
+        try
+        {
             // UX-03: a frame subscription is only opened for a guest the
             // supervisor reports as up. Starting one while Android boots
             // holds the guest's ADB channel, which starves the status reads the
@@ -3670,7 +3769,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
-            DesktopLog.Write($"frames subscribe {device.Name}");
+            DesktopLog.Write($"frames subscribe {device.Name} {captureWidth}x{captureHeight}");
             ApplyFrameEvent(new SubEvent.Requested(device.Name));
             var data = await RequestAsync(
                 OperationNames.FrameSubscribe,
@@ -3678,8 +3777,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 {
                     ["name"] = device.Name,
                     ["format"] = "rgb",
-                    ["width"] = _halfCapture ? 270 : 540,
-                    ["height"] = _halfCapture ? 600 : 1200,
+                    ["width"] = captureWidth,
+                    ["height"] = captureHeight,
                     // EV-11: read the per-instance ring. A window that falls back
                     // to files asks for "file", which is what the CLI always
                     // asked for, so only a real fallback makes frames/ churn.
@@ -3749,10 +3848,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 ShowError(ex, "frame.subscribe", device.Name);
             }
-        }
-        finally
-        {
-            _subscribeGate.Release();
         }
     }
 
