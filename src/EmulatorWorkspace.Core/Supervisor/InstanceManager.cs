@@ -68,6 +68,14 @@ public sealed class InstanceManager
 
     public string FrameDirectory => _frameDirectory;
 
+    /// <summary>
+    /// EV-13: raised after a record was persisted and its lifecycle word may
+    /// have moved. The publisher decides whether the word really changed; a
+    /// repeated observation is ignored there, so one state transition produces
+    /// one event.
+    /// </summary>
+    public event Action<string>? InstanceChanged;
+
     private sealed class Runtime(InstanceRecord record)
     {
         public InstanceRecord Record { get; set; } = record;
@@ -83,6 +91,18 @@ public sealed class InstanceManager
         public ReadyStages? Ready { get; set; }
 
         public DateTimeOffset? AdbOnlineSeenUtc { get; set; }
+
+        /// <summary>EV-13: the last boot answer this supervisor read for the runtime.</summary>
+        public bool LastBootCompleted { get; set; }
+
+        /// <summary>EV-13: the last ADB transport answer for the runtime.</summary>
+        public bool LastAdbOnline { get; set; }
+    }
+
+    private void SaveAndNotify(InstanceRecord record)
+    {
+        _store.UpsertInstance(record);
+        InstanceChanged?.Invoke(record.Name);
     }
 
     /// <summary>
@@ -123,12 +143,61 @@ public sealed class InstanceManager
         // "engine gone" instead of a flat "stopped". A deliberate stop and the
         // adoption path both clear it.
         record.State = next;
-        _store.UpsertInstance(record);
+        SaveAndNotify(record);
     }
 
     public InstanceRecord Get(string name) =>
         _store.GetInstance(name) ?? throw new SupervisorOperationException(
             ErrorCodes.NotFound, $"No managed instance named '{name}' exists in this workspace root.");
+
+    /// <summary>
+    /// EV-13: the cheap half of <c>instance.status</c> that a change event
+    /// carries. It reads the record, the engine process and the last boot
+    /// answer this supervisor observed - no ADB round trip and no journal read -
+    /// so a reconcile that already paid for its evidence does not pay again to
+    /// announce it.
+    /// </summary>
+    public JsonObject StatusEventSnapshot(string name)
+    {
+        var record = Get(name);
+        var runtime = _runtimes.TryGetValue(name, out var existing) ? existing : null;
+        var alive = NativeProcess.IsAlive(record.EnginePid, record.EngineStartTimeUtc);
+        return new JsonObject
+        {
+            ["name"] = record.Name,
+            ["state"] = record.State.ToString(),
+            ["engineAlive"] = alive,
+            ["pid"] = record.EnginePid,
+            // A stopped guest is not booted now, whatever its last run
+            // reported; the last answer stays a historical fact on the runtime.
+            ["bootCompleted"] = alive && (runtime?.LastBootCompleted ?? false),
+            ["adbOnline"] = alive && (runtime?.LastAdbOnline ?? false),
+            ["lastError"] = record.LastError,
+            ["frameStream"] = new JsonObject
+            {
+                ["running"] = runtime?.Frames?.IsRunning == true,
+                ["subscribers"] = _hub.Count(record.Name, "frame"),
+                ["fileSubscribers"] = _hub.Count(record.Name, "frame", wantsFiles: true),
+                ["lastFrameUtc"] = runtime?.Frames?.LastFrameUtc?.ToString("O"),
+                ["frames"] = runtime?.Frames?.PublishedFrames ?? 0,
+                ["mapName"] = runtime?.Frames?.MapName,
+                ["mapCapacity"] = runtime?.Frames?.MapCapacity ?? 0,
+            },
+        };
+    }
+
+    /// <summary>
+    /// EV-13: a global subscription (no instance name) for the additive
+    /// <c>instance.changed</c> or <c>pairing.changed</c> stream. The id is
+    /// tracked like the frame and log streams, so closing the client session
+    /// removes it from the hub.
+    /// </summary>
+    public string SubscribeStatus(string kind, Func<EventEnvelope, Task> send)
+    {
+        var id = _hub.Add("", kind, send);
+        _subscriptions[id] = ("", kind);
+        return id;
+    }
 
     /// <summary>
     /// Reconciles persisted records with reality at supervisor start. A guest is
@@ -155,7 +224,7 @@ public sealed class InstanceManager
                     record.EnginePid = null;
                     record.EngineStartTimeUtc = null;
                     record.LastError = null;
-                    _store.UpsertInstance(record);
+                    SaveAndNotify(record);
                 }
 
                 stopped.Add(record.Name);
@@ -179,9 +248,11 @@ public sealed class InstanceManager
 
                 var boot = await _adb.GetPropAsync(record.AdbSerial, "sys.boot_completed", cancellationToken)
                     .ConfigureAwait(false);
+                runtime.LastAdbOnline = true;
+                runtime.LastBootCompleted = boot.Trim() == "1";
                 record.State = boot.Trim() == "1" ? InstanceState.Running : InstanceState.Starting;
                 record.LastError = null;
-                _store.UpsertInstance(record);
+                SaveAndNotify(record);
                 WatchEngineExit(record.Name, record.EnginePid!.Value, record.EngineStartTimeUtc);
                 adopted.Add(new JsonObject
                 {
@@ -194,7 +265,7 @@ public sealed class InstanceManager
             {
                 record.State = InstanceState.Unknown;
                 record.LastError = "Process is alive but could not be verified: " + ex.Message;
-                _store.UpsertInstance(record);
+                SaveAndNotify(record);
                 unverified.Add(new JsonObject
                 {
                     ["name"] = record.Name,
@@ -287,7 +358,7 @@ public sealed class InstanceManager
             EngineVersion = await SafeVersionAsync(cancellationToken).ConfigureAwait(false),
         };
 
-        _store.UpsertInstance(record);
+        SaveAndNotify(record);
         _runtimes[record.Name] = new Runtime(record);
         return record;
     }
@@ -404,11 +475,13 @@ public sealed class InstanceManager
             record.EnginePath = _sdk.EmulatorExe;
             record.EngineArguments = launched.CommandLine;
             record.EngineVersion = await SafeVersionAsync(cancellationToken).ConfigureAwait(false);
-            _store.UpsertInstance(record);
+            SaveAndNotify(record);
             WatchEngineExit(record.Name, launched.Pid, record.EngineStartTimeUtc);
 
             runtime.Ready = new ReadyStages(startedUtc, null, null, null);
             runtime.AdbOnlineSeenUtc = null;
+            runtime.LastAdbOnline = false;
+            runtime.LastBootCompleted = false;
 
             await _hub.PublishAsync(name, "state", EventNames.State, new JsonObject
             {
@@ -458,7 +531,7 @@ public sealed class InstanceManager
             {
                 record.State = InstanceState.Failed;
                 record.LastError = "Engine exited before Android reached boot completion.";
-                _store.UpsertInstance(record);
+                SaveAndNotify(record);
                 throw new SupervisorOperationException(
                     ErrorCodes.NotRunning, record.LastError + $" See {_paths.InstanceLogPath(name)}.");
             }
@@ -473,6 +546,7 @@ public sealed class InstanceManager
                         stages = stages with { AdbOnlineUtc = DateTimeOffset.UtcNow };
                         runtime.Ready = stages;
                         runtime.AdbOnlineSeenUtc = stages.AdbOnlineUtc;
+                        runtime.LastAdbOnline = true;
                         await PublishProgress(name, "adb_online", stages).ConfigureAwait(false);
                     }
 
@@ -484,8 +558,9 @@ public sealed class InstanceManager
                         {
                             stages = stages with { BootCompletedUtc = DateTimeOffset.UtcNow };
                             runtime.Ready = stages;
+                            runtime.LastBootCompleted = true;
                             record.State = InstanceState.Running;
-                            _store.UpsertInstance(record);
+                            SaveAndNotify(record);
                             await PublishProgress(name, "boot_completed", stages).ConfigureAwait(false);
                         }
 
@@ -542,7 +617,7 @@ public sealed class InstanceManager
                 record.State = InstanceState.Stopped;
                 record.EnginePid = null;
                 record.EngineStartTimeUtc = null;
-                _store.UpsertInstance(record);
+                SaveAndNotify(record);
                 return new JsonObject
                 {
                     ["name"] = name,
@@ -553,7 +628,7 @@ public sealed class InstanceManager
             }
 
             record.State = InstanceState.Stopping;
-            _store.UpsertInstance(record);
+            SaveAndNotify(record);
 
             var graceful = false;
             if (!force)
@@ -590,7 +665,7 @@ public sealed class InstanceManager
             record.State = InstanceState.Stopped;
             record.EnginePid = null;
             record.EngineStartTimeUtc = null;
-            _store.UpsertInstance(record);
+            SaveAndNotify(record);
             await _hub.PublishAsync(name, "state", EventNames.State, new JsonObject
             {
                 ["state"] = record.State.ToString(),
@@ -808,6 +883,8 @@ public sealed class InstanceManager
 
         var adbOnline = adbState is not null && adbState.Contains("device", StringComparison.Ordinal);
         var bootCompleted = boot?.Trim() == "1";
+        runtime.LastAdbOnline = adbOnline;
+        runtime.LastBootCompleted = bootCompleted;
 
         // UX-18: the record's own word and the readiness stages are reconciled
         // with what the supervisor just observed. A guest that reported boot
@@ -820,7 +897,7 @@ public sealed class InstanceManager
         if (reconciled != record.State)
         {
             record.State = reconciled;
-            _store.UpsertInstance(record);
+            SaveAndNotify(record);
         }
 
         return new JsonObject

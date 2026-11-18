@@ -32,6 +32,7 @@ public sealed class OperationDispatcher
     private readonly DeviceLibraryService _library;
     private readonly RecipeService _recipes;
     private readonly MagiskLabService _magisk;
+    private readonly StatusEventPublisher? _events;
     private readonly Action _requestShutdown;
     private readonly DateTimeOffset _startedUtc = DateTimeOffset.UtcNow;
     private bool _replaying;
@@ -45,7 +46,9 @@ public sealed class OperationDispatcher
         AgentService agents,
         DeviceLibraryService library,
         RecipeService recipes,
-        Action requestShutdown)
+        Action requestShutdown,
+        MagiskLabService? magisk = null,
+        StatusEventPublisher? events = null)
     {
         _paths = paths;
         _sdk = sdk;
@@ -55,7 +58,11 @@ public sealed class OperationDispatcher
         _agents = agents;
         _library = library;
         _recipes = recipes;
-        _magisk = new MagiskLabService(paths, manager, sdk);
+        // EV-13: the supervisor and the status publisher share one lab service,
+        // so a phase the transaction writes is the same phase the status
+        // response and the event carry.
+        _magisk = magisk ?? new MagiskLabService(paths, manager, sdk);
+        _events = events;
         _requestShutdown = requestShutdown;
     }
 
@@ -306,7 +313,8 @@ public sealed class OperationDispatcher
 
     private void AuthorizeAgent(AgentSession session, string op, JsonObject? args)
     {
-        if (op is OperationNames.AgentPairApprove or OperationNames.AgentSessionList
+        if (op is OperationNames.AgentPairApprove or OperationNames.AgentPairDeny
+            or OperationNames.AgentSessionList
             or OperationNames.AgentSessionRevoke or OperationNames.AgentTakeover
             or OperationNames.AgentApproveAction or OperationNames.InstanceInputHold
             or OperationNames.InstanceInputGate)
@@ -1181,12 +1189,42 @@ public sealed class OperationDispatcher
             case OperationNames.DiagnosticsSummary:
                 return new JsonObject { ["summary"] = await DiagnosticsSummaryAsync(cancellationToken).ConfigureAwait(false) };
 
+            case OperationNames.StatusSubscribe:
+            {
+                // EV-13: one request, both additive streams. Instance events
+                // carry the whole lifecycle and lab snapshot; pairing events
+                // carry the queue's pending count. The two ids are tracked by
+                // the pipe session, so a disconnect removes them.
+                var instanceId = _manager.SubscribeStatus("instance", sink.SendEventAsync);
+                var pairingId = _manager.SubscribeStatus("pairing", sink.SendEventAsync);
+                sink.TrackSubscription(instanceId);
+                sink.TrackSubscription(pairingId);
+                return new JsonObject
+                {
+                    ["instanceSubscription"] = instanceId,
+                    ["pairingSubscription"] = pairingId,
+                    ["instanceVersion"] = 0,
+                    ["pairingVersion"] = _events?.PairingVersion ?? 0,
+                };
+            }
+
+            case OperationNames.StatusUnsubscribe:
+            {
+                var subscription = JsonArgs.String(args, "subscription")
+                                   ?? throw new SupervisorOperationException(
+                                       ErrorCodes.InvalidRequest, "subscription is required.");
+                await _manager.UnsubscribeAsync(subscription, cancellationToken).ConfigureAwait(false);
+                return new JsonObject { ["subscription"] = subscription, ["removed"] = true };
+            }
+
             case OperationNames.InstanceList:
             {
                 var array = new JsonArray();
                 foreach (var record in _manager.List())
                 {
-                    array.Add(InstanceJson(record));
+                    var node = InstanceJson(record);
+                    node["eventVersion"] = _events?.InstanceVersion(record.Name) ?? 0;
+                    array.Add(node);
                 }
 
                 return new JsonObject { ["instances"] = array };
@@ -1230,7 +1268,29 @@ public sealed class OperationDispatcher
                     name, null, null, true, null, cancellationToken).ConfigureAwait(false);
 
             case OperationNames.InstanceStatus:
-                return await _manager.StatusAsync(name, cancellationToken).ConfigureAwait(false);
+            {
+                var status = await _manager.StatusAsync(name, cancellationToken).ConfigureAwait(false);
+                // EV-13: the lab reading is part of the instance status now, so
+                // one poll answers both questions. A journal that cannot be read
+                // is reported as unknown without taking the lifecycle with it.
+                try
+                {
+                    status["lab"] = _magisk.Status(name);
+                }
+                catch (Exception ex)
+                {
+                    status["lab"] = new JsonObject
+                    {
+                        ["phase"] = "unknown",
+                        ["installInProgress"] = false,
+                        ["recoveryRequired"] = false,
+                        ["error"] = ex.Message,
+                    };
+                }
+
+                status["eventVersion"] = _events?.InstanceVersion(name) ?? 0;
+                return status;
+            }
 
             case OperationNames.InstanceWait:
             {
@@ -1699,6 +1759,11 @@ public sealed class OperationDispatcher
                     JsonArgs.String(args, "template") ?? throw new SupervisorOperationException(
                         ErrorCodes.InvalidRequest, "template is required."));
 
+            case OperationNames.AgentPairDeny:
+                return _agents.DenyPairing(
+                    JsonArgs.String(args, "pairingId") ?? throw new SupervisorOperationException(
+                        ErrorCodes.InvalidRequest, "pairingId is required."));
+
             case OperationNames.AgentPairComplete:
                 return _agents.CompletePairing(
                     JsonArgs.String(args, "pairingId") ?? throw new SupervisorOperationException(
@@ -1708,6 +1773,10 @@ public sealed class OperationDispatcher
 
             case OperationNames.AgentSessionList:
             {
+                // EV-13: a read of the queue also observes the expiries it can
+                // see, so the change stream names them instead of leaving the
+                // desktop to infer them from a countdown.
+                _agents.ExpirePairings();
                 var sessions = new JsonArray();
                 foreach (var item in _agents.Store.ListSessions())
                 {
@@ -1759,6 +1828,7 @@ public sealed class OperationDispatcher
                     ["sessions"] = sessions,
                     ["pairings"] = pairings,
                     ["recentOperations"] = operations,
+                    ["pairingVersion"] = _events?.PairingVersion ?? 0,
                 };
             }
 

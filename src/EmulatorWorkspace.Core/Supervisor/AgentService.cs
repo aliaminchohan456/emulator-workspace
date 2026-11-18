@@ -38,6 +38,7 @@ public sealed class AgentService
     private readonly SdkLocator _sdk;
     private readonly InstanceManager _manager;
     private readonly AgentStore _store;
+    private readonly StatusEventPublisher? _statusEvents;
     private readonly ConcurrentDictionary<string, Observation> _observations = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, int> _generations = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentQueue<JsonObject> _events = new();
@@ -49,12 +50,14 @@ public sealed class AgentService
         WorkspacePaths paths,
         SdkLocator sdk,
         InstanceManager manager,
-        AgentStore store)
+        AgentStore store,
+        StatusEventPublisher? events = null)
     {
         _paths = paths;
         _sdk = sdk;
         _manager = manager;
         _store = store;
+        _statusEvents = events;
         _artifactRoot = Path.Combine(paths.Root, "artifacts", "agent");
         Directory.CreateDirectory(_artifactRoot);
     }
@@ -176,25 +179,89 @@ public sealed class AgentService
             throw new SupervisorOperationException(ErrorCodes.InvalidRequest, "clientName is required (max 80 chars).");
         }
 
+        ExpirePairings();
         var id = "pair-" + Guid.NewGuid().ToString("N")[..12];
         var code = RandomNumberGenerator.GetHexString(8).ToLowerInvariant();
         var now = DateTimeOffset.UtcNow;
         _store.CreatePairing(new AgentPairing(
             id, clientName, AgentStore.Hash(code), "", null, null, "pending",
             now, now.AddMinutes(2), false));
+        var pending = PublishPairingChange(id, "created");
 
         return new JsonObject
         {
             ["pairingId"] = id,
             ["code"] = code,
             ["clientName"] = clientName,
+            ["pendingCount"] = pending,
             ["expiresUtc"] = now.AddMinutes(2).ToString("O"),
             ["instructions"] = "Show this code to the operator; approve it from the desktop or wsctl, then call pair_complete.",
         };
     }
 
+    /// <summary>
+    /// EV-13: refuses a pending request, the fourth transition the pairing
+    /// queue can make. It is operator-only, like approval.
+    /// </summary>
+    public JsonObject DenyPairing(string pairingId)
+    {
+        ExpirePairings();
+        var pairing = _store.GetPairing(pairingId)
+                      ?? throw new SupervisorOperationException(ErrorCodes.NotFound, "No such pairing request.");
+        if (pairing.Status != "pending" || pairing.ExpiresUtc < DateTimeOffset.UtcNow)
+        {
+            throw new SupervisorOperationException(ErrorCodes.Denied, "The pairing request is not pending or has expired.");
+        }
+
+        _store.UpdatePairing(pairing with { Status = "denied" });
+        var pending = PublishPairingChange(pairingId, "denied");
+        return new JsonObject
+        {
+            ["pairingId"] = pairingId,
+            ["clientName"] = pairing.ClientName,
+            ["status"] = "denied",
+            ["pendingCount"] = pending,
+        };
+    }
+
+    /// <summary>
+    /// EV-13: a pending request whose two-minute window has closed is marked
+    /// expired once and announced once. Detection is demand driven: a new
+    /// request, an approval, a denial and the agent session list all sweep the
+    /// queue first, so a desktop that reads the queue also hears the expiry
+    /// that read just observed.
+    /// </summary>
+    public int ExpirePairings()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var expired = 0;
+        foreach (var pairing in _store.ListPairings())
+        {
+            if (pairing.Status != "pending" || pairing.ExpiresUtc >= now)
+            {
+                continue;
+            }
+
+            _store.UpdatePairing(pairing with { Status = "expired" });
+            expired++;
+            PublishPairingChange(pairing.Id, "expired");
+        }
+
+        return expired;
+    }
+
+    private int PublishPairingChange(string id, string change)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var pending = _store.ListPairings().Count(pairing =>
+            pairing.Status == "pending" && pairing.ExpiresUtc > now);
+        _ = _statusEvents?.PublishPairingAsync(pending, id, change);
+        return pending;
+    }
+
     public JsonObject ApprovePairing(string pairingId, string scopes, string template)
     {
+        ExpirePairings();
         var pairing = _store.GetPairing(pairingId)
                       ?? throw new SupervisorOperationException(ErrorCodes.NotFound, "No such pairing request.");
         if (pairing.Status != "pending" || pairing.ExpiresUtc < DateTimeOffset.UtcNow)
@@ -237,6 +304,7 @@ public sealed class AgentService
             Instance = clone.Name,
             Status = "approved",
         });
+        var pending = PublishPairingChange(pairingId, "approved");
 
         return new JsonObject
         {
@@ -247,6 +315,7 @@ public sealed class AgentService
             ["template"] = templateRecord.Name,
             ["scopes"] = string.Join(',', requested),
             ["status"] = "approved",
+            ["pendingCount"] = pending,
         };
     }
 

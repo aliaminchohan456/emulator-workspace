@@ -146,6 +146,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // dot, the stage and both lab commands cannot disagree.
     private LabUiState _lab = LabUiState.NotChecked;
     private bool _statusPollInFlight;
+    // EV-13: the two additive streams and the version that decides whether an
+    // event is newer than what is already on screen.
+    private readonly StatusEventVersions _eventVersions = new();
+    private bool _statusEventsLive;
+    private string _instanceEventSubscription = "";
+    private string _pairingEventSubscription = "";
+    private bool _statusEventsFallbackLogged;
     private FrameStreamState _frameState = FrameStreamState.Live;
 
     /// <summary>
@@ -2358,6 +2365,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DesktopLog.Write("supervisor connected");
             StatusMessage = "Supervisor connected.";
 
+            // EV-13: one additive subscription per connection. A refused
+            // subscription is not a connection failure: the status timer keeps
+            // its old interval and the window keeps working.
+            await SubscribeStatusEventsAsync().ConfigureAwait(true);
+
             var doctor = await RequestAsync(OperationNames.Doctor, null, TimeSpan.FromMinutes(2)).ConfigureAwait(true);
             ApplyDoctor(doctor);
             await RefreshDevicesAsync().ConfigureAwait(true);
@@ -2446,6 +2458,85 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
+    /// EV-13: asks one connection for both change streams. The call is made once
+    /// per connection - the connection phase calls it every time a pipe is
+    /// (re)established - and it never starts a supervisor of its own.
+    /// </summary>
+    private async Task SubscribeStatusEventsAsync()
+    {
+        if (_connection is null || _statusEventsLive)
+        {
+            return;
+        }
+
+        try
+        {
+            var data = await RequestAsync(
+                OperationNames.StatusSubscribe,
+                null,
+                TimeSpan.FromSeconds(5)).ConfigureAwait(true);
+            _instanceEventSubscription = data["instanceSubscription"]?.GetValue<string>() ?? "";
+            _pairingEventSubscription = data["pairingSubscription"]?.GetValue<string>() ?? "";
+            _statusEventsLive =
+                _instanceEventSubscription.Length > 0 && _pairingEventSubscription.Length > 0;
+            _statusTimer.Interval = StatusEventCadence.Poll(
+                _statusEventsLive,
+                StatusEventCadence.StatusSafetyNet,
+                StatusEventCadence.StatusFallback);
+            if (_statusEventsLive)
+            {
+                _statusEventsFallbackLogged = false;
+                DesktopLog.Write(
+                    $"status events: subscribed instance={_instanceEventSubscription} " +
+                    $"pairing={_pairingEventSubscription} polling={_statusTimer.Interval.TotalSeconds:N0}s");
+            }
+            else
+            {
+                MarkStatusEventsUnavailable("subscribe returned no subscription ids");
+            }
+        }
+        catch (Exception ex)
+        {
+            MarkStatusEventsUnavailable("subscribe failed: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// EV-13: the subscription is not live. The window falls back to the old
+    /// interval and says so once; a later successful subscribe restores the
+    /// safety-net interval and re-arms the log line.
+    /// </summary>
+    private void MarkStatusEventsUnavailable(string reason)
+    {
+        var wasLive = _statusEventsLive;
+        _statusEventsLive = false;
+        _instanceEventSubscription = "";
+        _pairingEventSubscription = "";
+        // The supervisor owns the counters; a new connection may be a new
+        // supervisor whose versions start at 1 again.
+        _eventVersions.Reset();
+        _statusTimer.Interval = StatusEventCadence.StatusFallback;
+        if (wasLive || !_statusEventsFallbackLogged)
+        {
+            _statusEventsFallbackLogged = true;
+            DesktopLog.Write(
+                $"status events: unavailable ({reason}); polling={_statusTimer.Interval.TotalSeconds:N0}s until re-established");
+        }
+    }
+
+    /// <summary>
+    /// EV-13: a status read is also a version. Seeding never moves backwards, so
+    /// a delayed event is still accepted when the read that raced it was older.
+    /// </summary>
+    private void SeedStatusEventVersion(JsonObject status)
+    {
+        if (status["name"]?.GetValue<string>() is { Length: > 0 } name)
+        {
+            _eventVersions.SeedInstance(name, status["eventVersion"]?.GetValue<long>() ?? 0);
+        }
+    }
+
+    /// <summary>
     /// The pipe is gone. The reader raises this off the UI thread, so the state
     /// change and the recovery run are marshalled first.
     /// </summary>
@@ -2469,6 +2560,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _connection = null;
             IsConnected = false;
             ForgetSubscriptions();
+            MarkStatusEventsUnavailable("supervisor pipe closed");
 
             _ = dead.DisposeAsync();
             DesktopLog.Write("supervisor pipe closed");
@@ -2808,6 +2900,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         foreach (var device in incoming)
         {
             Devices.Add(device);
+            // EV-13: the list carries each record's current event version, so a
+            // delayed event from before this read cannot move the device back.
+            if (data["instances"] is JsonArray nodes)
+            {
+                var node = nodes.OfType<JsonObject>()
+                    .FirstOrDefault(item => item["name"]?.GetValue<string>() == device.Name);
+                _eventVersions.SeedInstance(device.Name, node?["eventVersion"]?.GetValue<long>() ?? 0);
+            }
         }
 
         if (selectedName is not null)
@@ -2877,6 +2977,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DesktopLog.Write($"selected status {device.State}");
             var before = device.Lifecycle;
             device.ApplyStatus(status);
+            SeedStatusEventVersion(status);
+            if (status["lab"] is JsonObject selectedLab)
+            {
+                ApplyMagiskStatus(device, selectedLab);
+            }
+
             DesktopLog.Write($"applied status {device.State}");
             if (SelectedDevice?.Name == device.Name)
             {
@@ -2910,14 +3016,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             ShowError(ex, "instance.status", device.Name);
         }
 
-        // The Magisk lab state lives in the supervisor, not in the window: read
-        // it so a guest that needs stock recovery says so on selection instead
-        // of waiting for someone to open the Root Lab panel.
-        await RefreshMagiskStatusAsync(device).ConfigureAwait(true);
-        if (SelectedDevice?.Name == device.Name)
-        {
-            UpdateStage();
-        }
     }
 
     private async Task RefreshStatusAsync()
@@ -2945,17 +3043,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             var before = device.Lifecycle;
             device.ApplyStatus(status);
+            SeedStatusEventVersion(status);
             ApplyBootEvidence(status);
             UpdateFrameWait(device);
             UpdateFrameHealth();
 
-            // UX-18: the Magisk lab state follows its transaction. It used to
-            // be read once, when the guest was selected, so the window kept
-            // saying "Prepared" through the whole install and the stage never
-            // said that a lab was running. The read is a journal read (the
-            // supervisor answers it in ~0.2 s even while the transaction
-            // holds the mutation lease).
-            await RefreshMagiskStatusAsync(device).ConfigureAwait(true);
+            // EV-13: the lab reading arrives inside the same status object, so
+            // the poll no longer needs a second request. UX-18's live lab row
+            // is unchanged: the stage still follows every phase write.
+            if (status["lab"] is JsonObject lab)
+            {
+                ApplyMagiskStatus(device, lab);
+            }
 
             UpdateStage();
             OnPropertyChanged(nameof(PrimaryActionText));
@@ -3095,6 +3194,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 new JsonObject { ["name"] = name },
                 TimeSpan.FromSeconds(30)).ConfigureAwait(true);
             target.ApplyStatus(status);
+            SeedStatusEventVersion(status);
+            if (SelectedDevice?.Name == target.Name && status["lab"] is JsonObject startLab)
+            {
+                ApplyMagiskStatus(target, startLab);
+            }
+
             if (SelectedDevice?.Name == target.Name)
             {
                 ApplyBootEvidence(status);
@@ -3140,6 +3245,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             device.ApplyStatus(status);
+            SeedStatusEventVersion(status);
+            if (SelectedDevice?.Name == name && status["lab"] is JsonObject lab)
+            {
+                ApplyMagiskStatus(device, lab);
+            }
+
             DesktopLog.Write($"boot poll {name} state={device.State} adb={status["adbState"]} "
                 + $"boot={status["bootCompleted"]} in {stopwatch.ElapsedMilliseconds} ms");
             if (SelectedDevice?.Name == name)
@@ -3974,10 +4085,96 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ApplyLogcatEvent(new SubEvent.PipeLost());
     }
 
+    /// <summary>
+    /// EV-13: applies one instance.changed event on the UI thread. A version at
+    /// or below the one a read already applied is stale and changes nothing;
+    /// the same rule EV-08 uses for the pairing count keeps the newest read the
+    /// one on screen.
+    /// </summary>
+    private void ApplyInstanceEvent(JsonObject snapshot, DateTimeOffset receivedUtc, long receivedTicks)
+    {
+        var name = snapshot["name"]?.GetValue<string>() ?? "";
+        if (name.Length == 0)
+        {
+            return;
+        }
+
+        var version = snapshot["version"]?.GetValue<long>() ?? 0;
+        if (!_eventVersions.AcceptInstance(name, version))
+        {
+            DesktopLog.Write(
+                $"instance event stale id={name} v={version} current={_eventVersions.InstanceVersion(name)}");
+            return;
+        }
+
+        var device = Devices.FirstOrDefault(item =>
+            string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (device is null)
+        {
+            return;
+        }
+
+        device.ApplyInstanceChanged(snapshot);
+        if (snapshot["frameStream"] is JsonObject stream)
+        {
+            _frameStreamRunning = stream["running"]?.GetValue<bool>() ?? _frameStreamRunning;
+        }
+
+        if (snapshot["engineAlive"]?.GetValue<bool>() == true)
+        {
+            _guestResponsive = true;
+        }
+
+        if (SelectedDevice?.Name == name)
+        {
+            if (snapshot["lab"] is JsonObject lab)
+            {
+                ApplyMagiskStatus(device, lab);
+            }
+
+            UpdateFrameWait(device);
+            UpdateFrameHealth();
+            UpdateStage();
+            OnPropertyChanged(nameof(PrimaryActionText));
+            OnPropertyChanged(nameof(ReadinessText));
+            OnPropertyChanged(nameof(BootValueText));
+            OnPropertyChanged(nameof(BootTooltip));
+            OnPropertyChanged(nameof(AbiApiText));
+            if (StreamSubscription.ShouldSubscribe(
+                    Volatile.Read(ref _frameSub), device.Lifecycle.CanAttachFrames, device.Name))
+            {
+                _ = SubscribeFramesAsync(device);
+            }
+        }
+
+        var latency = (Stopwatch.GetTimestamp() - receivedTicks) * 1000.0 / Stopwatch.Frequency;
+        DesktopLog.Write(
+            $"instance event applied id={name} v={version} state={device.State} " +
+            $"eventUtc={receivedUtc:O} uiUtc={DateTimeOffset.UtcNow:O} latency={latency:N1}ms");
+    }
+
     private void OnSupervisorEvent(EventEnvelope envelope)
     {
         switch (envelope.Event)
         {
+            case EventNames.InstanceChanged:
+                if (envelope.Data is JsonObject instance)
+                {
+                    // The event-to-UI measurement starts here, on the reader
+                    // thread, and ends when the dispatcher applied it.
+                    var receivedUtc = DateTimeOffset.UtcNow;
+                    var received = Stopwatch.GetTimestamp();
+                    _dispatcher.BeginInvoke(DispatcherPriority.Background,
+                        new Action(() => ApplyInstanceEvent(instance, receivedUtc, received)));
+                }
+
+                break;
+
+            case EventNames.PairingChanged:
+                // The Studio does not show the badge; the Agents page owns its
+                // own connection and its own pairing subscription.
+                break;
+
             case EventNames.Frame:
                 if (AcceptsFrames(envelope.Subscription) && envelope.Data is JsonObject frame)
                 {
@@ -4941,6 +5138,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
+            DesktopLog.Write($"busy '{busyText}' failed: {ex}");
             ShowError(ex, busyText);
             StatusMessage = "Operation failed.";
         }
@@ -5194,6 +5392,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private void ShowError(Exception ex, string operation, string? device = null)
     {
+        DesktopLog.Write(
+            $"error op={operation} device={device ?? SelectedDevice?.Name ?? ""} " +
+            $"type={ex.GetType().Name}: {ex}");
         var code = ex switch
         {
             SupervisorRequestException supervisor => supervisor.Code,
@@ -5205,6 +5406,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _ => "error",
         };
 
+        DesktopLog.Write($"error op={operation} device={device ?? SelectedDevice?.Name ?? "(none)"} code={code} {ex}");
         var (title, action) = DescribeError(code);
         ErrorBarTitle = title;
         ErrorBarText = ex.Message;
@@ -5971,6 +6173,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             // stops saying "Following" when nothing is streaming any more.
             // EV-05: that is PipeLost on both streams.
             ForgetSubscriptions();
+            // EV-13: the hub lives in the supervisor that just went away; the
+            // ids are gone with it, so the poll interval comes back until a
+            // reconnect subscribes again.
+            MarkStatusEventsUnavailable("request failed on a closed pipe");
 
             if (dead is not null)
             {
@@ -6541,6 +6747,33 @@ public sealed class DeviceItemViewModel : ObservableObject
             ? image.Api.ToString(CultureInfo.InvariantCulture)
             : "";
         return device;
+    }
+
+    /// <summary>
+    /// EV-13: the lifecycle half of an <c>instance.changed</c> event. It is
+    /// deliberately narrower than <see cref="ApplyStatus"/>: the event carries
+    /// no ADB properties, so fields the poll owns (ABI, API, foreground) keep
+    /// their last real value instead of being blanked.
+    /// </summary>
+    public void ApplyInstanceChanged(JsonObject snapshot)
+    {
+        var before = Lifecycle;
+        _engineAlive = snapshot["engineAlive"]?.GetValue<bool>();
+        _enginePidKnown = snapshot["pid"]?.GetValue<int>() is > 0;
+        _bootCompleted = snapshot["bootCompleted"]?.GetValue<bool>() == true;
+        LastError = snapshot["lastError"]?.GetValue<string>() ?? LastError;
+        State = snapshot["state"]?.GetValue<string>() ?? State;
+        if (!InspectorSessionRows.IsReported(Lifecycle.Phase))
+        {
+            Readiness = null;
+        }
+
+        if (Lifecycle != before)
+        {
+            OnPropertyChanged(nameof(Lifecycle));
+            OnPropertyChanged(nameof(IsRunning));
+            OnPropertyChanged(nameof(StateLabel));
+        }
     }
 
     public void ApplyStatus(JsonObject status)

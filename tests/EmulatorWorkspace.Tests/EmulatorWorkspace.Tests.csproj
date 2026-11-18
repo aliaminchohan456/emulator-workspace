@@ -57,6 +57,10 @@
          so the aspect, even, cap, floor, threshold and DPI cases are pinned
          here without a window or a display-scaling change. -->
     <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/CaptureSizePolicy.cs" Link="Desktop/CaptureSizePolicy.cs" />
+    <!-- EV-13: the version gate and the event/fallback cadences are pure
+         rules, so the stale-event and disconnected-poll cases are pinned here
+         without a supervisor or a window. -->
+    <Compile Include="../../src/EmulatorWorkspace.Desktop/ViewModels/StatusEventRules.cs" Link="Desktop/StatusEventRules.cs" />
     <!-- EV-06: the shell's one page and the inspector's five session-only rows
          are pure rules too, so they are pinned here instead of through a WPF
          window. -->

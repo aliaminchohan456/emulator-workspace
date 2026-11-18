@@ -185,8 +185,17 @@ public static class OperationNames
 
     public const string DiagnosticsSummary = "diagnostics.summary";
 
+    /// <summary>
+    /// EV-13: one additive subscription for the status changes the desktop
+    /// used to poll for. It takes no instance name and returns the two ids and
+    /// the current versions.
+    /// </summary>
+    public const string StatusSubscribe = "status.subscribe";
+    public const string StatusUnsubscribe = "status.unsubscribe";
+
     public const string AgentPairRequest = "agent.pair.request";
     public const string AgentPairApprove = "agent.pair.approve";
+    public const string AgentPairDeny = "agent.pair.deny";
     public const string AgentPairComplete = "agent.pair.complete";
     public const string AgentSessionList = "agent.session.list";
     public const string AgentSessionRevoke = "agent.session.revoke";
@@ -212,4 +221,10 @@ public static class EventNames
     public const string State = "state";
     public const string Progress = "progress";
     public const string SubscriptionClosed = "subscription.closed";
+
+    /// <summary>EV-13: one instance's lifecycle and lab state changed.</summary>
+    public const string InstanceChanged = "instance.changed";
+
+    /// <summary>EV-13: the pairing queue changed (create, approve, deny, expire).</summary>
+    public const string PairingChanged = "pairing.changed";
 }

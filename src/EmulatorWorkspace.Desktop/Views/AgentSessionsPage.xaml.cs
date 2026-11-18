@@ -66,7 +66,14 @@ public partial class AgentSessionsPage : UserControl
     private readonly DispatcherTimer _countdown;
     private readonly DispatcherTimer _badgePoll;
     private readonly PendingPairingPoll _pollState = new();
+    // EV-13: the badge follows pairing.changed and applies only newer versions.
+    private readonly StatusEventVersions _eventVersions = new();
+    private bool _pairingEventsLive;
+    private string _instanceEventSubscription = "";
+    private string _pairingEventSubscription = "";
+    private bool _pairingEventsFallbackLogged;
     private SupervisorConnection? _connection;
+    private readonly SemaphoreSlim _connectGate = new(1, 1);
     private Window? _shellWindow;
     private MainViewModel? _shellModel;
     private bool _busy;
@@ -528,10 +535,15 @@ public partial class AgentSessionsPage : UserControl
         if (connected)
         {
             _pollState.OnConnected();
+            // EV-13: the badge subscribes as soon as the shell is connected,
+            // even while the page is hidden, so a new request reaches the rail
+            // without waiting for the safety-net read.
+            _ = EnsureSubscriptionAsync();
         }
         else
         {
             _pollState.OnDisconnected();
+            MarkPairingEventsUnavailable("shell disconnected");
         }
 
         if (was != _pollState.State)
@@ -540,6 +552,18 @@ public partial class AgentSessionsPage : UserControl
         }
 
         SyncBadgePoll();
+    }
+
+    private async Task EnsureSubscriptionAsync()
+    {
+        try
+        {
+            await EnsureConnectionAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception ex)
+        {
+            MarkPairingEventsUnavailable("connect failed: " + ex.Message);
+        }
     }
 
     /// <summary>
@@ -629,10 +653,10 @@ public partial class AgentSessionsPage : UserControl
                 .Count(node => AgentSessionsPresentation.IsPendingPairing(
                     Text(node, "status"), Time(node, "expiresUtc"), now));
 
-            // EV-08 item 3: the poll offers its count to the badge's one writer;
-            // the writer keeps whichever of the poll and the refresh finished
-            // last, so a poll that started earlier cannot undo a refresh.
-            PublishPendingCount("poll", pending);
+            // EV-13: the read's version orders it against the change stream; a
+            // read computed before a newer event cannot put the old count back.
+            PublishPendingFromRead(
+                "poll", pending, data["pairingVersion"]?.GetValue<long>() ?? 0);
         }
         catch (SupervisorUnavailableException ex)
         {
@@ -662,6 +686,7 @@ public partial class AgentSessionsPage : UserControl
         _connection = null;
         _pollState.OnDisconnected();
         _badgePoll.Stop();
+        MarkPairingEventsUnavailable(reason);
         DesktopLog.Write($"badge poll: stopped (disconnected) {reason}");
     }
 
@@ -786,10 +811,20 @@ public partial class AgentSessionsPage : UserControl
             PublishCounts();
 
             // EV-08 item 3: the refresh is one of the two reads allowed to move
-            // the rail badge, and only while it is the newest read.
-            PublishPendingCount("refresh", _pairings.Count(row => row.IsPending));
+            // the rail badge, and only while it is the newest read. EV-13 adds
+            // the supervisor's version as the tie-breaker against events.
+            PublishPendingFromRead(
+                "refresh", _pairings.Count(row => row.IsPending),
+                data["pairingVersion"]?.GetValue<long>() ?? 0);
             HasError = false;
             ErrorText = "";
+
+            // EV-13: a successful read is also the moment to retry a
+            // subscription that was refused when the page first connected.
+            if (!_pairingEventsLive)
+            {
+                await SubscribeStatusEventsAsync(connection);
+            }
 
             // The read just succeeded, so a supervisor is reachable again: a
             // poll that stopped on a broken pipe may resume, unless the window
@@ -833,6 +868,19 @@ public partial class AgentSessionsPage : UserControl
     /// one. The one-second ticker never calls this, so it cannot put the count
     /// from rows read earlier back on the rail after a fresher read has landed.
     /// </summary>
+    private void PublishPendingFromRead(string source, int pending, long version)
+    {
+        if (version < _eventVersions.PairingVersion)
+        {
+            DesktopLog.Write(
+                $"badge read stale from {source} v={version} current={_eventVersions.PairingVersion}");
+            return;
+        }
+
+        _eventVersions.SeedPairing(version);
+        PublishPendingCount(source, pending);
+    }
+
     private void PublishPendingCount(string source, int pending)
     {
         var sequence = Interlocked.Increment(ref _readSequence);
@@ -1018,9 +1066,160 @@ public partial class AgentSessionsPage : UserControl
             return _connection;
         }
 
-        _connection = await SupervisorConnection.ConnectAsync(
-            WorkspacePaths.Resolve().Root, startup ?? TimeSpan.FromSeconds(20));
-        return _connection;
+        await _connectGate.WaitAsync();
+        try
+        {
+            if (_connection is not null)
+            {
+                return _connection;
+            }
+
+            var connection = await SupervisorConnection.ConnectAsync(
+                WorkspacePaths.Resolve().Root, startup ?? TimeSpan.FromSeconds(20));
+            connection.Trace = DesktopLog.Write;
+            connection.EventReceived += OnStatusEvent;
+            connection.Closed += OnConnectionClosed;
+            _connection = connection;
+            await SubscribeStatusEventsAsync(connection);
+            return connection;
+        }
+        finally
+        {
+            _connectGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// EV-13: one additive subscription per connection. A refusal is not fatal:
+    /// the badge keeps its ten-second read until a later connection succeeds.
+    /// </summary>
+    private async Task SubscribeStatusEventsAsync(SupervisorConnection connection)
+    {
+        if (_pairingEventsLive)
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await connection.RequestAsync(
+                OperationNames.StatusSubscribe, null, TimeSpan.FromSeconds(5));
+            if (!response.Ok)
+            {
+                MarkPairingEventsUnavailable($"{response.Code}: {response.Message}");
+                return;
+            }
+
+            var data = response.Data as JsonObject ?? new JsonObject();
+            _instanceEventSubscription = data["instanceSubscription"]?.GetValue<string>() ?? "";
+            _pairingEventSubscription = data["pairingSubscription"]?.GetValue<string>() ?? "";
+            _pairingEventsLive =
+                _instanceEventSubscription.Length > 0 && _pairingEventSubscription.Length > 0;
+            _pollState.SetEventSubscription(_pairingEventsLive);
+            _badgePoll.Interval = _pollState.CurrentInterval;
+            if (_pairingEventsLive)
+            {
+                _pairingEventsFallbackLogged = false;
+                DesktopLog.Write(
+                    $"badge events: subscribed instance={_instanceEventSubscription} " +
+                    $"pairing={_pairingEventSubscription} polling={_badgePoll.Interval.TotalSeconds:N0}s");
+            }
+            else
+            {
+                MarkPairingEventsUnavailable("subscribe returned no subscription ids");
+            }
+        }
+        catch (Exception ex)
+        {
+            MarkPairingEventsUnavailable("subscribe failed: " + ex.Message);
+        }
+    }
+
+    private void MarkPairingEventsUnavailable(string reason)
+    {
+        var wasLive = _pairingEventsLive;
+        _pairingEventsLive = false;
+        _instanceEventSubscription = "";
+        _pairingEventSubscription = "";
+        _eventVersions.Reset();
+        _pollState.SetEventSubscription(false);
+        _badgePoll.Interval = _pollState.CurrentInterval;
+        if (wasLive || !_pairingEventsFallbackLogged)
+        {
+            _pairingEventsFallbackLogged = true;
+            DesktopLog.Write(
+                $"badge events: unavailable ({reason}); polling={_badgePoll.Interval.TotalSeconds:N0}s until re-established");
+        }
+    }
+
+    private void OnConnectionClosed()
+    {
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            _connection = null;
+            _pollState.OnDisconnected();
+            _badgePoll.Stop();
+            MarkPairingEventsUnavailable("supervisor pipe closed");
+        }));
+    }
+
+    private void OnStatusEvent(EventEnvelope envelope)
+    {
+        if (envelope.Event != EventNames.PairingChanged || envelope.Data is not JsonObject change)
+        {
+            return;
+        }
+
+        var receivedUtc = DateTimeOffset.UtcNow;
+        var received = System.Diagnostics.Stopwatch.GetTimestamp();
+        Dispatcher.BeginInvoke(DispatcherPriority.Background,
+            new Action(() => ApplyPairingEvent(change, receivedUtc, received)));
+    }
+
+    /// <summary>
+    /// EV-13: newest version wins. The event is applied only when its version is
+    /// newer than the one already on screen; a repeated or reordered event
+    /// changes nothing. The badge's own sequence still orders it against reads.
+    /// </summary>
+    private void ApplyPairingEvent(JsonObject change, DateTimeOffset receivedUtc, long receivedTicks)
+    {
+        var version = change["version"]?.GetValue<long>() ?? 0;
+        if (!_eventVersions.AcceptPairing(version))
+        {
+            DesktopLog.Write(
+                $"pairing event stale v={version} current={_eventVersions.PairingVersion}");
+            return;
+        }
+
+        var pending = change["pendingCount"]?.GetValue<int>() ?? 0;
+        PublishPendingCount("event", pending);
+
+        // A row already on screen follows the transition at once; the changed
+        // id names exactly one row, and a later full read replaces it anyway.
+        var id = change["id"]?.GetValue<string>() ?? "";
+        var status = change["change"]?.GetValue<string>() switch
+        {
+            "created" => "pending",
+            "approved" => "approved",
+            "denied" => "denied",
+            "expired" => "expired",
+            _ => "",
+        };
+        if (id.Length > 0 && status.Length > 0)
+        {
+            var row = _pairings.FirstOrDefault(item => item.Pairing == id);
+            if (row is not null && row.Status != status)
+            {
+                row.ApplyStatus(status, DateTimeOffset.Now);
+                PublishCounts();
+            }
+        }
+
+        var latency = (System.Diagnostics.Stopwatch.GetTimestamp() - receivedTicks) * 1000.0
+                      / System.Diagnostics.Stopwatch.Frequency;
+        DesktopLog.Write(
+            $"pairing event applied v={version} id={id} change={change["change"]} pending={pending} " +
+            $"eventUtc={receivedUtc:O} uiUtc={DateTimeOffset.UtcNow:O} latency={latency:N1}ms");
     }
 
     private static async Task<JsonObject> RequestAsync(
@@ -1530,8 +1729,16 @@ public partial class AgentSessionsPage : UserControl
             Template = template;
             Instance = instance;
             ExpiresUtc = expiresUtc;
-            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm:ss", CultureInfo.CurrentCulture) ?? "—";
+            ExpiresText = expiresUtc?.ToString("dd MMM HH:mm:ss", CultureInfo.CurrentCulture) ?? "-";
             IsPast = AgentSessionsPresentation.IsPastPairing(status, expiresUtc, now);
+            Tick(now);
+        }
+
+        /// <summary>EV-13: the row follows a pairing.changed transition at once.</summary>
+        public void ApplyStatus(string status, DateTimeOffset now)
+        {
+            Status = status;
+            IsPast = AgentSessionsPresentation.IsPastPairing(status, ExpiresUtc, now);
             Tick(now);
         }
 

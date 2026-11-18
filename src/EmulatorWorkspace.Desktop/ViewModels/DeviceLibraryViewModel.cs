@@ -37,9 +37,17 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     // and end the session. The library loads four profiles at once and they
     // queue here instead.
     private readonly SemaphoreSlim _requestGate = new(1, 1);
+    private readonly SemaphoreSlim _connectGate = new(1, 1);
     private SupervisorConnection? _connection;
     private JsonObject? _doctor;
     private bool _disposed;
+    // EV-13: the library follows the same additive change stream as the Studio,
+    // so its 2 s list read becomes a 30 s safety net while the stream is live.
+    private readonly StatusEventVersions _eventVersions = new();
+    private bool _statusEventsLive;
+    private string _instanceEventSubscription = "";
+    private string _pairingEventSubscription = "";
+    private bool _statusEventsFallbackLogged;
 
     private string _searchText = "";
     // UX-05 fix pass (igr-feedback-ux04b item 3): the library opens on State,
@@ -121,7 +129,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
         ClearSearchCommand = new RelayCommand(() => SearchText = "", () => SearchText.Length > 0);
 
         _stateTimer = new DispatcherTimer(
-            TimeSpan.FromSeconds(2), DispatcherPriority.Background, (_, _) => _ = RefreshStatesAsync(), _dispatcher);
+            StatusEventCadence.LibraryFallback, DispatcherPriority.Background, (_, _) => _ = RefreshStatesAsync(), _dispatcher);
     }
 
     /// <summary>Raised when the operator asks to open a guest in the Studio window.</summary>
@@ -878,6 +886,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             var data = await RequestAsync(OperationNames.InstanceList, null, TimeSpan.FromSeconds(30))
                 .ConfigureAwait(true);
             var nodes = data["instances"] as JsonArray ?? new JsonArray();
+            SeedInstanceVersions(nodes);
             Merge(nodes.OfType<JsonObject>().Select(LibraryCard.From).ToList());
 
             await LoadDoctorAsync().ConfigureAwait(true);
@@ -888,7 +897,10 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
 
             ApplyFilterAndSort();
             RaiseCounts();
-            await VerifyLiveStatesAsync().ConfigureAwait(true);
+            // EV-13: the first pass still reads the live evidence once, so a
+            // card that loaded while an event was already behind it has a real
+            // engine/boot reading; later ticks rely on the stream.
+            await VerifyLiveStatesAsync(force: true).ConfigureAwait(true);
             RaiseCounts();
             StatusMessage = _cards.Count == 0
                 ? "No managed instance yet. Create one from the pinned AOSP profile."
@@ -923,6 +935,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             var data = await RequestAsync(OperationNames.InstanceList, null, TimeSpan.FromSeconds(20))
                 .ConfigureAwait(true);
             var nodes = data["instances"] as JsonArray ?? new JsonArray();
+            SeedInstanceVersions(nodes);
             var incoming = nodes.OfType<JsonObject>().Select(LibraryCard.From).ToList();
             if (incoming.Count != _cards.Count || incoming.Any(card => _cards.All(existing => existing.Name != card.Name)))
             {
@@ -967,9 +980,12 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
     /// that field so the chip never repeats a state the supervisor cannot back
     /// with a live process.
     /// </summary>
-    private async Task VerifyLiveStatesAsync()
+    private async Task VerifyLiveStatesAsync(bool force = false)
     {
-        if (_statusTickBusy || _connection is null)
+        // EV-13: with the change stream live, the event already carries
+        // engineAlive/bootCompleted; the per-card status read would be the
+        // duplicate this slice removes. The first load forces one read.
+        if (_statusTickBusy || _connection is null || (_statusEventsLive && !force))
         {
             return;
         }
@@ -1937,11 +1953,168 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             return _connection;
         }
 
-        _connection = await SupervisorConnection.ConnectAsync(_paths.Root, TimeSpan.FromSeconds(25))
-            .ConfigureAwait(true);
-        _connection.Trace = DesktopLog.Write;
-        IsConnected = true;
-        return _connection;
+        await _connectGate.WaitAsync().ConfigureAwait(true);
+        try
+        {
+            if (_connection is not null)
+            {
+                return _connection;
+            }
+
+            _connection = await SupervisorConnection.ConnectAsync(_paths.Root, TimeSpan.FromSeconds(25))
+                .ConfigureAwait(true);
+            _connection.Trace = DesktopLog.Write;
+            _connection.EventReceived += OnStatusEvent;
+            _connection.Closed += OnConnectionClosed;
+            IsConnected = true;
+            await SubscribeStatusEventsAsync(_connection).ConfigureAwait(true);
+            return _connection;
+        }
+        finally
+        {
+            _connectGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// EV-13: one additive subscription per connection. A refusal leaves the
+    /// library on its 2 s read; it never fails the load.
+    /// </summary>
+    private async Task SubscribeStatusEventsAsync(SupervisorConnection connection)
+    {
+        if (_statusEventsLive)
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await connection.RequestAsync(
+                OperationNames.StatusSubscribe, null, TimeSpan.FromSeconds(5)).ConfigureAwait(true);
+            if (!response.Ok)
+            {
+                MarkStatusEventsUnavailable($"{response.Code}: {response.Message}");
+                return;
+            }
+
+            var data = response.Data as JsonObject ?? new JsonObject();
+            _instanceEventSubscription = data["instanceSubscription"]?.GetValue<string>() ?? "";
+            _pairingEventSubscription = data["pairingSubscription"]?.GetValue<string>() ?? "";
+            _statusEventsLive =
+                _instanceEventSubscription.Length > 0 && _pairingEventSubscription.Length > 0;
+            _stateTimer.Interval = StatusEventCadence.Poll(
+                _statusEventsLive,
+                StatusEventCadence.LibrarySafetyNet,
+                StatusEventCadence.LibraryFallback);
+            if (_statusEventsLive)
+            {
+                _statusEventsFallbackLogged = false;
+                DesktopLog.Write(
+                    $"library status events: subscribed instance={_instanceEventSubscription} " +
+                    $"pairing={_pairingEventSubscription} polling={_stateTimer.Interval.TotalSeconds:N0}s");
+            }
+            else
+            {
+                MarkStatusEventsUnavailable("subscribe returned no subscription ids");
+            }
+        }
+        catch (Exception ex)
+        {
+            MarkStatusEventsUnavailable("subscribe failed: " + ex.Message);
+        }
+    }
+
+    private void MarkStatusEventsUnavailable(string reason)
+    {
+        var wasLive = _statusEventsLive;
+        _statusEventsLive = false;
+        _instanceEventSubscription = "";
+        _pairingEventSubscription = "";
+        _eventVersions.Reset();
+        _stateTimer.Interval = StatusEventCadence.LibraryFallback;
+        if (wasLive || !_statusEventsFallbackLogged)
+        {
+            _statusEventsFallbackLogged = true;
+            DesktopLog.Write(
+                $"library status events: unavailable ({reason}); polling={_stateTimer.Interval.TotalSeconds:N0}s until re-established");
+        }
+    }
+
+    private void OnConnectionClosed()
+    {
+        _dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _connection = null;
+            IsConnected = false;
+            MarkStatusEventsUnavailable("supervisor pipe closed");
+        }));
+    }
+
+    private void OnStatusEvent(EventEnvelope envelope)
+    {
+        if (envelope.Event != EventNames.InstanceChanged || envelope.Data is not JsonObject snapshot)
+        {
+            return;
+        }
+
+        var receivedUtc = DateTimeOffset.UtcNow;
+        var received = System.Diagnostics.Stopwatch.GetTimestamp();
+        _dispatcher.BeginInvoke(DispatcherPriority.Background,
+            new Action(() => ApplyInstanceEvent(snapshot, receivedUtc, received)));
+    }
+
+    private void ApplyInstanceEvent(JsonObject snapshot, DateTimeOffset receivedUtc, long receivedTicks)
+    {
+        var name = snapshot["name"]?.GetValue<string>() ?? "";
+        if (name.Length == 0)
+        {
+            return;
+        }
+
+        var version = snapshot["version"]?.GetValue<long>() ?? 0;
+        if (!_eventVersions.AcceptInstance(name, version))
+        {
+            DesktopLog.Write(
+                $"library instance event stale id={name} v={version} current={_eventVersions.InstanceVersion(name)}");
+            return;
+        }
+
+        var card = _cards.FirstOrDefault(item =>
+            string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (card is null)
+        {
+            return;
+        }
+
+        card.ApplyState(snapshot["state"]?.GetValue<string>() ?? card.State);
+        card.ApplyLive(
+            snapshot["engineAlive"]?.GetValue<bool>(),
+            snapshot["pid"]?.GetValue<int>() is > 0,
+            snapshot["bootCompleted"]?.GetValue<bool>() == true,
+            snapshot["lastError"]?.GetValue<string>() ?? "");
+        ApplyFilterAndSort();
+        RaiseCounts();
+        var latency = (System.Diagnostics.Stopwatch.GetTimestamp() - receivedTicks) * 1000.0
+                      / System.Diagnostics.Stopwatch.Frequency;
+        DesktopLog.Write(
+            $"library instance event applied id={name} v={version} state={card.State} " +
+            $"eventUtc={receivedUtc:O} uiUtc={DateTimeOffset.UtcNow:O} latency={latency:N1}ms");
+    }
+
+    private void SeedInstanceVersions(JsonArray nodes)
+    {
+        foreach (var node in nodes.OfType<JsonObject>())
+        {
+            if (node["name"]?.GetValue<string>() is { Length: > 0 } name)
+            {
+                _eventVersions.SeedInstance(name, node["eventVersion"]?.GetValue<long>() ?? 0);
+            }
+        }
     }
 
     private async Task<JsonObject> RequestAsync(string op, JsonObject? args, TimeSpan deadline)
@@ -1965,6 +2138,7 @@ public sealed class DeviceLibraryViewModel : ObservableObject, IAsyncDisposable
             // dead stream.
             _connection = null;
             IsConnected = false;
+            MarkStatusEventsUnavailable("supervisor pipe closed");
             _ = connection.DisposeAsync();
             throw;
         }

@@ -86,7 +86,39 @@ internal static class Program
             agentStore.ReconcileInProgressMutations();
             var hub = new SupervisorEventHub();
             var manager = new InstanceManager(paths, sdk, store, hub);
-            var agents = new AgentService(paths, sdk, manager, agentStore);
+            var magisk = new MagiskLabService(paths, manager, sdk);
+            var events = new StatusEventPublisher(hub, manager, magisk);
+            // EV-13: both lifecycle writers feed the same publisher; the
+            // publisher collapses a repeated lifecycle word and always emits a
+            // lab phase write.
+            // A change announcement is never allowed to fail the mutation that
+            // caused it: the record is already persisted, so the event runs on
+            // its own and any failure is logged instead of surfacing as a
+            // failed start/stop.
+            manager.InstanceChanged += name => _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var record = manager.Get(name);
+                    await events.PublishInstanceStateAsync(name, record.State).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log($"Status event for '{name}' failed: {ex}");
+                }
+            });
+            magisk.PhaseWritten += name => _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await events.PublishLabPhaseAsync(name).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log($"Lab status event for '{name}' failed: {ex}");
+                }
+            });
+            var agents = new AgentService(paths, sdk, manager, agentStore, events);
             var library = new DeviceLibraryService(paths, manager);
             var recipes = new RecipeService(paths);
             var adopted = await manager.AdoptAsync(shutdown.Token).ConfigureAwait(false);
@@ -94,12 +126,13 @@ internal static class Program
 
             OperationDispatcher dispatcher;
             SupervisorPipeServer server;
-            dispatcher = new OperationDispatcher(paths, sdk, store, manager, journal, agents, library, recipes, () =>
+            dispatcher = new OperationDispatcher(
+                paths, sdk, store, manager, journal, agents, library, recipes, () =>
             {
                 Log("Shutdown requested by client.");
                 NoteExit(SupervisorExitReason.ClientRequest, 0);
                 shutdown.Cancel();
-            });
+            }, magisk, events);
             server = new SupervisorPipeServer(RootIdentity.PipeName(rootLock.CanonicalRoot), dispatcher, manager, Log);
 
             Log($"Ready. Database: {store.DatabasePath}");

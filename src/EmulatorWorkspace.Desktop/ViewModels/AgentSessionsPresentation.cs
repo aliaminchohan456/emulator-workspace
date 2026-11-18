@@ -597,14 +597,35 @@ public sealed class PendingPairingBadge
 /// </summary>
 public sealed class PendingPairingPoll
 {
-    /// <summary>One light read every ten seconds, as the design sheet asks.</summary>
+    /// <summary>One light read every ten seconds while the change stream is unavailable.</summary>
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(10);
+
+    /// <summary>EV-13: with a live pairing.changed subscription the read is only a safety net.</summary>
+    public static readonly TimeSpan EventInterval = TimeSpan.FromSeconds(60);
 
     private bool _connected;
     private bool _minimised;
+    private bool _eventDriven;
 
     /// <summary>True when the timer is allowed to run and its next tick may read.</summary>
     public bool ShouldPoll => _connected && !_minimised;
+
+    /// <summary>True while a pairing change subscription is carrying the queue.</summary>
+    public bool EventDriven => _eventDriven;
+
+    /// <summary>The interval the timer should use right now.</summary>
+    public TimeSpan CurrentInterval => _eventDriven ? EventInterval : Interval;
+
+    /// <summary>
+    /// Records whether the pairing subscription is live. The old interval comes
+    /// back the moment it is not, and a re-established subscription makes the
+    /// timer a safety net again.
+    /// </summary>
+    public bool SetEventSubscription(bool subscribed)
+    {
+        _eventDriven = subscribed;
+        return ShouldPoll;
+    }
 
     /// <summary>The reason the poll is in its current state, for the desktop log.</summary>
     public string State => !_connected

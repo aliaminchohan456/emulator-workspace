@@ -17,6 +17,14 @@ public sealed class MagiskLabService
     private readonly string _logs;
     private readonly MagiskGuestAdapter _guest;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// EV-13: raised after a lab phase was written. The event carries the whole
+    /// instance snapshot, so the Studio's lab row follows the transaction
+    /// instead of waiting for its safety-net poll.
+    /// </summary>
+    public event Action<string>? PhaseWritten;
+
     public MagiskLabService(WorkspacePaths paths, InstanceManager manager, SdkLocator sdk)
     {
         _manager = manager; _sdk = sdk;
@@ -54,8 +62,11 @@ public sealed class MagiskLabService
         state["updatedUtc"] = DateTimeOffset.UtcNow.ToString("O");
         MagiskLabArtifacts.WriteAtomic(StatePath(name), state);
         if (phase is not null)
+        {
             _ = _manager.Hub.PublishAsync(name, "state", EventNames.Progress,
                 new JsonObject { ["phase"] = "magisk_" + phase, ["detail"] = "Magisk lab: " + phase });
+            PhaseWritten?.Invoke(name);
+        }
     }
     private string DirectoryFor(JsonObject state)
     {
